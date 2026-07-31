@@ -38,6 +38,11 @@ $moduleTitles = [
 
 $title = $moduleTitles[$module] ?? 'System Module';
 
+// This page renders its own richer <div class="admin-page-header"> below
+// (icon, specific title, detailed subtitle, action buttons), so suppress the
+// generic one in includes/header.php — otherwise both draw and the page shows
+// two titles. Same pattern as product_form.php.
+$hideHeaderTitle = true;
 require_once __DIR__ . '/includes/header.php';
 ?>
 

@@ -26,23 +26,27 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
     $params = [];
     
     if (!empty($categoriesList)) {
-        $catClauses = [];
-        foreach ($categoriesList as $cVal) {
-            $catClauses[] = "category = ?";
-            $params[] = $cVal;
-            if (stripos($cVal, 'kurti') !== false || stripos($cVal, 'kurta') !== false) {
-                $catClauses[] = "category LIKE '%Kurti%'";
-                $catClauses[] = "category LIKE '%Kurta%'";
-            }
-            if (stripos($cVal, 'suit') !== false) {
-                $catClauses[] = "category LIKE '%Suit%'";
-            }
-            if (stripos($cVal, 'coord') !== false || stripos($cVal, 'co-ord') !== false) {
-                $catClauses[] = "category LIKE '%Coord%'";
-                $catClauses[] = "category LIKE '%Co-Ord%'";
-            }
+        // Resolve the requested category names to real ids plus everything nested
+        // beneath them, so "Kurtis" includes Long/Short Kurtis and Anarkali Sets while
+        // "Short Kurtis" returns ONLY short kurtis. This replaced a set of hardcoded
+        // `category LIKE '%Kurti%'` rules that returned the wrong products and covered
+        // only three category families; any new family needed a PHP edit to work.
+        $catIds = categoryIdsForNames($pdo, $categoriesList);
+
+        if (!empty($catIds)) {
+            $in = str_repeat('?,', count($catIds) - 1) . '?';
+            // The name fallback keeps products whose category_id was never backfilled
+            // (or was nulled by a category deletion) reachable by their stored name.
+            $nameIn = str_repeat('?,', count($categoriesList) - 1) . '?';
+            $sql .= " AND (category_id IN ($in) OR (category_id IS NULL AND category IN ($nameIn)))";
+            $params = array_merge($params, $catIds, $categoriesList);
+        } else {
+            // Unknown category name — match on the stored name only rather than
+            // silently returning the whole catalogue.
+            $nameIn = str_repeat('?,', count($categoriesList) - 1) . '?';
+            $sql .= " AND category IN ($nameIn)";
+            $params = array_merge($params, $categoriesList);
         }
-        $sql .= " AND (" . implode(" OR ", array_unique($catClauses)) . ")";
     }
     
     if (!empty($colorsList)) {
@@ -277,7 +281,7 @@ try {
         <?php if ($activeSearch !== ''): ?>
             <span class="luxury-hero-eyebrow">Search Results</span>
             <h1>Search: "<?= htmlspecialchars($activeSearch) ?>"</h1>
-            <p>Showing curated results matching your query. <a href="shop" style="color: var(--color-accent); text-decoration: underline; font-weight: 600; margin-left: 8px;">Clear Search ✕</a></p>
+            <p>Showing curated results matching your query. <a href="<?= SITE_URL ?>/shop" style="color: var(--color-accent); text-decoration: underline; font-weight: 600; margin-left: 8px;">Clear Search ✕</a></p>
         <?php elseif (!empty($_GET['sale'])): ?>
             <span class="luxury-hero-eyebrow">Limited Time</span>
             <h1>Sale</h1>
@@ -505,7 +509,7 @@ try {
                 } catch (PDOException $e) {}
                 
                 foreach ($initialProducts as $p):
-                    $imgSrc = !empty($p['image']) ? 'uploads/products/' . htmlspecialchars($p['image']) : '';
+                    $imgSrc = !empty($p['image']) ? SITE_URL . '/uploads/products/' . htmlspecialchars($p['image']) : '';
                     $formattedPrice = formatPrice($p['price']);
                     $pMrp = (float)($p['mrp_price'] ?? 0);
                     $pHasDiscount = $pMrp > (float)$p['price'];
@@ -523,9 +527,9 @@ try {
                     <div class="card-img-container">
                         <a href="<?= productUrl($p['id'], $p['name']) ?>" class="card-img-link">
                             <?php if (!empty($p['image'])): ?>
-                                <img src="uploads/products/<?= htmlspecialchars($p['image']) ?>" alt="<?= htmlspecialchars($p['name']) ?>" loading="lazy" class="card-img">
+                                <img src="<?= SITE_URL ?>/uploads/products/<?= htmlspecialchars($p['image']) ?>" alt="<?= htmlspecialchars($p['name']) ?>" loading="lazy" class="card-img">
                             <?php elseif (!empty($p['video_url'])): ?>
-                                <?php $vUrl = trim($p['video_url']); $vSrc = (strpos($vUrl, 'http://') === 0 || strpos($vUrl, 'https://') === 0) ? $vUrl : 'uploads/products/' . $vUrl; ?>
+                                <?php $vUrl = trim($p['video_url']); $vSrc = (strpos($vUrl, 'http://') === 0 || strpos($vUrl, 'https://') === 0) ? $vUrl : SITE_URL . '/uploads/products/' . $vUrl; ?>
                                 <video src="<?= htmlspecialchars($vSrc) ?>" autoplay loop muted playsinline class="card-img"></video>
                             <?php else: ?>
                                 <div class="card-img-fallback"><?= htmlspecialchars($p['emoji'] ?? '👗') ?></div>
@@ -767,9 +771,9 @@ try {
 
         let imgHtml = '';
         if (p.image) {
-            imgHtml = `<img src="uploads/products/${escHtml(p.image)}" alt="${escHtml(p.name)}" loading="lazy" class="card-img">`;
+            imgHtml = `<img src="<?= SITE_URL ?>/uploads/products/${escHtml(p.image)}" alt="${escHtml(p.name)}" loading="lazy" class="card-img">`;
         } else if (p.video_url) {
-            const vSrc = (p.video_url.startsWith('http://') || p.video_url.startsWith('https://')) ? p.video_url : `uploads/products/${p.video_url}`;
+            const vSrc = (p.video_url.startsWith('http://') || p.video_url.startsWith('https://')) ? p.video_url : `${window.SITE_URL}/uploads/products/${p.video_url}`;
             imgHtml = `<video src="${escHtml(vSrc)}" autoplay loop muted playsinline class="card-img"></video>`;
         } else {
             imgHtml = `<div class="card-img-fallback" aria-label="No image available">${escHtml(p.emoji)}</div>`;

@@ -78,7 +78,20 @@ try {
                         <span class="slide-eyebrow">Edition <?= $idx + 1 ?></span>
                         <h1><?= htmlspecialchars($banner['title']) ?></h1>
                         <p><?= htmlspecialchars($banner['subtitle'] ?? 'Curated luxury fashion ensembles crafted for elegant moods.') ?></p>
-                        <a href="<?= htmlspecialchars($banner['link'] ?? 'shop') ?>" class="btn-luxury btn-hero-explore">Explore Collection</a>
+                        <?php
+                        // Banner links are authored in the admin panel and are usually stored
+                        // relative (e.g. "shop?category=Kurtis"). A relative href resolves
+                        // against the current directory, so it 404s on any multi-segment route
+                        // such as /product/<slug>-<id>. Make it absolute unless it is already
+                        // an absolute URL or root-relative path.
+                        $bannerLink = trim($banner['link'] ?? '') ?: 'shop';
+                        // `~` delimiter, not `#` — the pattern itself contains a literal `#`
+                        // (anchor links), which would terminate a `#`-delimited regex early.
+                        if (!preg_match('~^(https?://|//|/|#|mailto:|tel:)~i', $bannerLink)) {
+                            $bannerLink = SITE_URL . '/' . ltrim($bannerLink, '/');
+                        }
+                        ?>
+                        <a href="<?= htmlspecialchars($bannerLink) ?>" class="btn-luxury btn-hero-explore">Explore Collection</a>
                     </div>
                 </div>
             <?php endforeach; ?>
@@ -90,7 +103,7 @@ try {
                     <span class="slide-eyebrow">Volume I</span>
                     <h1>The Silk Kurtis</h1>
                     <p>Fluid silhouettes draped in pure heavy mulberry silk. Designed for grace in motion.</p>
-                    <a href="shop?category=Kurtis" class="btn-luxury btn-hero-explore">Explore Edition</a>
+                    <a href="<?= SITE_URL ?>/shop?category=Kurtis" class="btn-luxury btn-hero-explore">Explore Edition</a>
                 </div>
             </div>
             <div class="slide slide-2">
@@ -99,7 +112,7 @@ try {
                     <span class="slide-eyebrow">Volume II</span>
                     <h2>3-Piece Suits</h2>
                     <p>Elegant tailored brocades and soft raw silks. Perfect for premium celebrations.</p>
-                    <a href="shop?category=3+Piece+Suits" class="btn-luxury btn-hero-explore">View Collection</a>
+                    <a href="<?= SITE_URL ?>/shop?category=3+Piece+Suits" class="btn-luxury btn-hero-explore">View Collection</a>
                 </div>
             </div>
             <div class="slide slide-3">
@@ -108,7 +121,7 @@ try {
                     <span class="slide-eyebrow">Volume III</span>
                     <h2>Coord Sets</h2>
                     <p>Luxurious satin wide-legs and tailored organic linens. Designed for refined modern loungewear.</p>
-                    <a href="shop?category=Coord+Sets" class="btn-luxury btn-hero-explore">Discover Sets</a>
+                    <a href="<?= SITE_URL ?>/shop?category=Coord+Sets" class="btn-luxury btn-hero-explore">Discover Sets</a>
                 </div>
             </div>
         <?php endif; ?>
@@ -145,9 +158,9 @@ try {
                 $stmtProdImg = $pdo->prepare("SELECT image FROM products WHERE category = :cat AND image != '' LIMIT 1");
                 $stmtProdImg->execute(['cat' => $cat['name']]);
                 $prodImg = $stmtProdImg->fetchColumn();
-                $catImgSrc = $prodImg ? 'uploads/products/' . htmlspecialchars($prodImg) : 'assets/images/placeholder.png'; 
+                $catImgSrc = $prodImg ? SITE_URL . '/uploads/products/' . htmlspecialchars($prodImg) : SITE_URL . '/assets/images/placeholder.png'; 
             ?>
-            <a href="shop?category=<?= urlencode($cat['name']) ?>" class="category-card zoom-box">
+            <a href="<?= SITE_URL ?>/shop?category=<?= urlencode($cat['name']) ?>" class="category-card zoom-box">
                 <img class="zoom-img" src="<?= $catImgSrc ?>" alt="<?= htmlspecialchars($cat['name']) ?>" loading="lazy">
                 <div class="category-card-overlay">
                     <div>
@@ -177,7 +190,7 @@ try {
 
         <div id="newArrivalsCarousel" class="new-arrivals-carousel hide-scrollbar">
             <?php foreach ($newArrivals as $p):
-                $imgSrc = !empty($p['image']) ? 'uploads/products/' . htmlspecialchars($p['image']) : '';
+                $imgSrc = !empty($p['image']) ? SITE_URL . '/uploads/products/' . htmlspecialchars($p['image']) : '';
                 $pMrp = (float)($p['mrp_price'] ?? 0);
                 $pHasDiscount = $pMrp > (float)$p['price'];
                 $pDiscountPercent = $pHasDiscount ? (int)round((($pMrp - (float)$p['price']) / $pMrp) * 100) : 0;
@@ -228,7 +241,7 @@ try {
 
         <div id="gridBestSellers" class="home-best-sellers-grid">
             <?php foreach ($bestSellers as $p):
-                $imgSrc = !empty($p['image']) ? 'uploads/products/' . htmlspecialchars($p['image']) : '';
+                $imgSrc = !empty($p['image']) ? SITE_URL . '/uploads/products/' . htmlspecialchars($p['image']) : '';
                 $pMrp = (float)($p['mrp_price'] ?? 0);
                 $pHasDiscount = $pMrp > (float)$p['price'];
                 $pDiscountPercent = $pHasDiscount ? (int)round((($pMrp - (float)$p['price']) / $pMrp) * 100) : 0;
@@ -263,7 +276,7 @@ try {
 
         <div id="gridTrending" class="home-best-sellers-grid" style="display: none;">
             <?php foreach ($trending as $p):
-                $imgSrc = !empty($p['image']) ? 'uploads/products/' . htmlspecialchars($p['image']) : '';
+                $imgSrc = !empty($p['image']) ? SITE_URL . '/uploads/products/' . htmlspecialchars($p['image']) : '';
                 $pMrp = (float)($p['mrp_price'] ?? 0);
                 $pHasDiscount = $pMrp > (float)$p['price'];
                 $pDiscountPercent = $pHasDiscount ? (int)round((($pMrp - (float)$p['price']) / $pMrp) * 100) : 0;
@@ -303,10 +316,10 @@ try {
     <div class="container">
         <span class="occasion-bar-title">Shop by Occasion</span>
         <div class="occasion-bar-pills">
-            <a href="shop?category=Dresses" class="btn-luxury-outline pill-btn">Wedding Guest</a>
-            <a href="shop?category=Outerwear" class="btn-luxury-outline pill-btn">Office Chic</a>
-            <a href="shop?category=Dresses" class="btn-luxury-outline pill-btn">Evening Party</a>
-            <a href="shop?category=Jewelry%20%26%20Accessories" class="btn-luxury-outline pill-btn">Festive Look</a>
+            <a href="<?= SITE_URL ?>/shop?category=Dresses" class="btn-luxury-outline pill-btn">Wedding Guest</a>
+            <a href="<?= SITE_URL ?>/shop?category=Outerwear" class="btn-luxury-outline pill-btn">Office Chic</a>
+            <a href="<?= SITE_URL ?>/shop?category=Dresses" class="btn-luxury-outline pill-btn">Evening Party</a>
+            <a href="<?= SITE_URL ?>/shop?category=Jewelry%20%26%20Accessories" class="btn-luxury-outline pill-btn">Festive Look</a>
         </div>
     </div>
 </section>
@@ -322,7 +335,7 @@ try {
             <p>
                 Graceful silk slip gowns and metallic gold heels curated for your celebratory invitations.
             </p>
-            <a href="shop?category=Dresses" class="btn-luxury btn-banner">Shop the Edit</a>
+            <a href="<?= SITE_URL ?>/shop?category=Dresses" class="btn-luxury btn-banner">Shop the Edit</a>
         </div>
     </div>
 
@@ -335,7 +348,7 @@ try {
             <p>
                 Fluid silk 3-piece suits, hand-embroidered organza dupattas, and tailored linen co-ord sets.
             </p>
-            <a href="shop?category=3+Piece+Suits" class="btn-luxury btn-banner">Shop Ensembles</a>
+            <a href="<?= SITE_URL ?>/shop?category=3+Piece+Suits" class="btn-luxury btn-banner">Shop Ensembles</a>
         </div>
     </div>
 </section>
@@ -416,7 +429,7 @@ try {
             foreach ($instaImages as $img):
             ?>
             <div class="insta-item">
-                <img src="uploads/<?= strpos($img, 'lookbook') !== false ? 'gallery/' : 'products/' ?><?= $img ?>" alt="Instagram high-fashion photo" loading="lazy">
+                <img src="<?= SITE_URL ?>/uploads/<?= strpos($img, 'lookbook') !== false ? 'gallery/' : 'products/' ?><?= $img ?>" alt="Instagram high-fashion photo" loading="lazy">
                 <div class="insta-overlay">
                     <div class="insta-meta">
                         <i class="fa-brands fa-instagram"></i> @dievon.official
@@ -457,27 +470,27 @@ try {
                 <div class="blog-card-img blog-img-1"></div>
                 <div class="blog-card-content">
                     <span class="blog-card-tag">Style Guide &bull; July 15</span>
-                    <h3 class="blog-card-title"><a href="blog-single?id=1">Summer Silk Draping: A Study in Ethnic Elegance</a></h3>
+                    <h3 class="blog-card-title"><a href="<?= SITE_URL ?>/blog-single?id=1">Summer Silk Draping: A Study in Ethnic Elegance</a></h3>
                     <p class="blog-card-text">How to style and drape our signature Organza and Mulberry Silk Kurtis for festive gatherings.</p>
-                    <a href="blog-single?id=1" class="blog-card-link">Read Journal <i class="fa-solid fa-arrow-right-long"></i></a>
+                    <a href="<?= SITE_URL ?>/blog-single?id=1" class="blog-card-link">Read Journal <i class="fa-solid fa-arrow-right-long"></i></a>
                 </div>
             </article>
             <article class="blog-card">
                 <div class="blog-card-img blog-img-2"></div>
                 <div class="blog-card-content">
                     <span class="blog-card-tag">Craftsmanship &bull; July 10</span>
-                    <h3 class="blog-card-title"><a href="blog-single?id=2">Hand-Embroidered Zari: Preserving Heritage Craft</a></h3>
+                    <h3 class="blog-card-title"><a href="<?= SITE_URL ?>/blog-single?id=2">Hand-Embroidered Zari: Preserving Heritage Craft</a></h3>
                     <p class="blog-card-text">A journey inside our craft ateliers in Jaipur &amp; Lucknow, where raw silk meets intricate hand embroidery.</p>
-                    <a href="blog-single?id=2" class="blog-card-link">Read Journal <i class="fa-solid fa-arrow-right-long"></i></a>
+                    <a href="<?= SITE_URL ?>/blog-single?id=2" class="blog-card-link">Read Journal <i class="fa-solid fa-arrow-right-long"></i></a>
                 </div>
             </article>
             <article class="blog-card">
                 <div class="blog-card-img blog-img-3"></div>
                 <div class="blog-card-content">
                     <span class="blog-card-tag">Editorial &bull; July 01</span>
-                    <h3 class="blog-card-title"><a href="blog-single?id=3">The Festive Lookbook Sneak Preview</a></h3>
+                    <h3 class="blog-card-title"><a href="<?= SITE_URL ?>/blog-single?id=3">The Festive Lookbook Sneak Preview</a></h3>
                     <p class="blog-card-text">A glimpse into next season's royal velvet 3-piece ensembles and hand-woven Chanderi suits.</p>
-                    <a href="blog-single?id=3" class="blog-card-link">Read Journal <i class="fa-solid fa-arrow-right-long"></i></a>
+                    <a href="<?= SITE_URL ?>/blog-single?id=3" class="blog-card-link">Read Journal <i class="fa-solid fa-arrow-right-long"></i></a>
                 </div>
             </article>
         </div>
@@ -489,7 +502,7 @@ try {
     <div class="container">
         <div class="editorial-grid">
             <div class="editorial-img">
-                <img src="uploads/gallery/lookbook_2.png" alt="Dievon Atelier Couture" loading="lazy">
+                <img src="<?= SITE_URL ?>/uploads/gallery/lookbook_2.png" alt="Dievon Atelier Couture" loading="lazy">
             </div>
             <div class="editorial-content">
                 <span class="editorial-label">Artisanal Curation</span>
@@ -497,7 +510,7 @@ try {
                 <p class="editorial-text">
                     Our fabrics are sourced from organic silk collectives, handloom Chanderi weavers, and artisanal embroidery masters across India. Every thread is woven with utmost care, and every silhouette is tailored to maximize comfort while exuding regal poise. Dievon is a celebration of timeless grace.
                 </p>
-                <a href="about" class="btn-luxury-outline">
+                <a href="<?= SITE_URL ?>/about" class="btn-luxury-outline">
                     Our Full Story
                 </a>
             </div>
@@ -628,7 +641,13 @@ try {
     // ── New Arrivals Carousel Arrow Scroll ──────────────────
     function scrollCarousel(dir) {
         const carousel = document.getElementById('newArrivalsCarousel');
-        const scrollAmount = 310; // width + gap
+        if (!carousel) return;
+        // Measure the real card pitch (card width + gap) instead of hardcoding it — the
+        // hardcoded 310 no longer matched the CSS after the gap changed to 24px, so every
+        // arrow click drifted ~6px out of alignment.
+        const card = carousel.querySelector('.product-card-carousel');
+        const gap = parseFloat(getComputedStyle(carousel).columnGap) || 0;
+        const scrollAmount = card ? card.getBoundingClientRect().width + gap : 304;
         carousel.scrollBy({ left: dir * scrollAmount, behavior: 'smooth' });
     }
 

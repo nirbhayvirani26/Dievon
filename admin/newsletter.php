@@ -79,7 +79,7 @@ require_once __DIR__ . '/includes/header.php';
                 <td><?= htmlspecialchars($s['email']) ?></td>
                 <td><?= date('d M Y, H:i', strtotime($s['created_at'])) ?></td>
                 <td style="text-align:right;">
-                    <form method="POST" style="margin:0; display:inline;" onsubmit="return confirm('Remove this subscriber?');">
+                    <form method="POST" style="margin:0; display:inline;" onsubmit="return dvConfirmForm(this,'Remove this subscriber?');">
                         <input type="hidden" name="action" value="delete_subscriber">
                         <input type="hidden" name="subscriber_id" value="<?= (int)$s['id'] ?>">
                         <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">

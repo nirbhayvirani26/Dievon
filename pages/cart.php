@@ -37,7 +37,7 @@ require_once __DIR__ . '/../includes/header.php';
                 
                 <!-- Bottom Cart Action Bar -->
                 <div class="cart-bottom-actions" style="margin-top: 35px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; border-top: 1px solid var(--border-light); padding-top: 25px;">
-                    <a href="shop" class="btn-luxury-outline" style="font-size: 12px; padding: 12px 24px;">
+                    <a href="<?= SITE_URL ?>/shop" class="btn-luxury-outline" style="font-size: 12px; padding: 12px 24px;">
                         <i class="fa-solid fa-arrow-left"></i> Continue Shopping
                     </a>
                 </div>
@@ -121,7 +121,7 @@ require_once __DIR__ . '/../includes/header.php';
                     </div>
 
                     <!-- Proceed to Checkout Button -->
-                    <a href="checkout" class="btn-luxury" style="display: flex; justify-content: center; width: 100%; text-align: center; height: 52px; align-items: center; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; gap: 10px;">
+                    <a href="<?= SITE_URL ?>/checkout" class="btn-luxury" style="display: flex; justify-content: center; width: 100%; text-align: center; height: 52px; align-items: center; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; gap: 10px;">
                         Proceed to Checkout <i class="fa-solid fa-lock"></i>
                     </a>
                 </div>
@@ -136,7 +136,7 @@ require_once __DIR__ . '/../includes/header.php';
             <p style="color: var(--text-secondary); font-size: 14px; max-width: 440px; margin: 0 auto 30px; line-height: 1.7;">
                 Your shopping bag is currently waiting for exquisite couture pieces. Explore our latest arrivals to update your wardrobe.
             </p>
-            <a href="shop" class="btn-luxury" style="padding: 16px 36px; font-size: 13px;">Shop New Collections</a>
+            <a href="<?= SITE_URL ?>/shop" class="btn-luxury" style="padding: 16px 36px; font-size: 13px;">Shop New Collections</a>
         </div>
 
     </div>
@@ -170,7 +170,7 @@ require_once __DIR__ . '/../includes/header.php';
             const itemSubtotalRaw = item.price * item.quantity;
             const cartKey = item.cart_key || item.product_id;
             const imgHtml = item.image
-                ? `<img src="uploads/products/${escHtml(item.image)}" alt="${escHtml(item.name)}" style="width: 90px; height: 110px; object-fit: cover; border: 1px solid var(--border-light);" onerror="this.outerHTML='<div style=&quot;width:90px;height:110px;background:var(--bg-surface-soft);display:flex;align-items:center;justify-content:center;font-size:30px;&quot;>${escHtml(item.emoji || '🛍️')}</div>';">`
+                ? `<img src="${window.SITE_URL}/uploads/products/${escHtml(item.image)}" alt="${escHtml(item.name)}" style="width: 90px; height: 110px; object-fit: cover; border: 1px solid var(--border-light);" onerror="this.outerHTML='<div style=&quot;width:90px;height:110px;background:var(--bg-surface-soft);display:flex;align-items:center;justify-content:center;font-size:30px;&quot;>${escHtml(item.emoji || '🛍️')}</div>';">`
                 : `<div style="width: 90px; height: 110px; background: var(--bg-surface-soft); display: flex; align-items: center; justify-content: center; font-size: 30px;">${escHtml(item.emoji || '🛍️')}</div>`;
             const colorLabel = item.color_name ? `<span style="font-size:12px;color:var(--text-muted);font-weight:500;">Colour: ${escHtml(item.color_name)}</span>` : '';
             const variantLabel = item.variant_name ? `<span style="font-size:12px;color:var(--text-muted);font-weight:500;">${item.color_name ? ' · Size: ' : 'Option: '}${escHtml(item.variant_name)}</span>` : '';
@@ -180,7 +180,7 @@ require_once __DIR__ . '/../includes/header.php';
                 ${imgHtml}
                 <div style="flex: 1; min-width: 200px;">
                     <h3 style="font-family: var(--font-heading); font-size: 18px; font-weight: 400; margin-bottom: 6px;">
-                        <a href="product.php?id=${item.product_id}" style="color: var(--text-primary); text-decoration: none;">${escHtml(item.name)}</a>
+                        <a href="<?= SITE_URL ?>/product.php?id=${item.product_id}" style="color: var(--text-primary); text-decoration: none;">${escHtml(item.name)}</a>
                     </h3>
                     <div style="margin-bottom: 8px;">${colorLabel}${variantLabel}</div>
                     <div style="font-size: 14px; color: var(--color-primary); font-weight: 600;">${formatPriceJS(item.price)}</div>

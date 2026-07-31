@@ -48,6 +48,11 @@ try {
     <?php endif; ?>
     <title><?= $title ?></title>
     <meta name="description" content="<?= $desc ?>">
+    <?php if (!empty($metaKeywords)): ?>
+    <meta name="keywords" content="<?= htmlspecialchars($metaKeywords) ?>">
+    <?php endif; ?>
+    <?php // NOTE: the canonical link is emitted further down (it strips the query string
+          // and honours a $canonicalUrl override) — do not add a second one here. ?>
 
     <?php if (defined('META_PIXEL_ID') && !empty(META_PIXEL_ID) && META_PIXEL_ID !== 'YOUR_FACEBOOK_PIXEL_ID'): ?>
     <!-- Facebook / Meta Pixel Base Code -->
@@ -66,11 +71,24 @@ try {
     <?php endif; ?>
     
     <!-- Open Graph / Facebook / Instagram -->
-    <meta property="og:type" content="website">
+    <!-- og:type is "product" on product pages so shares render as a rich product
+         card rather than a generic link; pages set $ogType to opt in. -->
+    <meta property="og:type" content="<?= htmlspecialchars($ogType ?? 'website') ?>">
+    <meta property="og:site_name" content="<?= htmlspecialchars(SHOP_NAME) ?>">
+    <meta property="og:locale" content="en_GB">
     <meta property="og:url" content="<?= htmlspecialchars($currentUrl) ?>">
     <meta property="og:title" content="<?= $title ?>">
     <meta property="og:description" content="<?= $desc ?>">
     <meta property="og:image" content="<?= $image ?>">
+    <meta property="og:image:alt" content="<?= $title ?>">
+    <?php if (!empty($ogProduct) && is_array($ogProduct)): ?>
+    <meta property="product:price:amount" content="<?= htmlspecialchars((string)$ogProduct['price']) ?>">
+    <meta property="product:price:currency" content="<?= htmlspecialchars($ogProduct['currency']) ?>">
+    <meta property="product:availability" content="<?= htmlspecialchars($ogProduct['availability']) ?>">
+    <?php if (!empty($ogProduct['brand'])): ?>
+    <meta property="product:brand" content="<?= htmlspecialchars($ogProduct['brand']) ?>">
+    <?php endif; ?>
+    <?php endif; ?>
 
     <!-- Twitter Cards -->
     <meta name="twitter:card" content="summary_large_image">
@@ -257,7 +275,7 @@ try {
     <div class="bottom-header-bar hide-mobile">
         <div class="container bottom-header-container">
             <ul class="nav-links">
-                <li><a href="shop?badge=New" class="nav-link-item nav-highlight-new <?= $isNewAct ? 'active' : '' ?>">NEW</a></li>
+                <li><a href="<?= SITE_URL ?>/shop?badge=New" class="nav-link-item nav-highlight-new <?= $isNewAct ? 'active' : '' ?>">NEW</a></li>
                 
                 <?php foreach ($headerParents as $pCat): ?>
                     <?php 
@@ -268,7 +286,7 @@ try {
                     ?>
                     <!-- Dynamic Mega Menu for <?= $pName ?> -->
                     <li class="has-mega-menu">
-                        <a href="shop?category=<?= urlencode($pCat['name']) ?>" class="nav-link-item <?= $pActive ? 'active' : '' ?>">
+                        <a href="<?= SITE_URL ?>/shop?category=<?= urlencode($pCat['name']) ?>" class="nav-link-item <?= $pActive ? 'active' : '' ?>">
                             <?= strtoupper($pName) ?> <i class="fa-solid fa-angle-down nav-arrow"></i>
                         </a>
                         <div class="mega-dropdown">
@@ -276,33 +294,33 @@ try {
                                 <div class="mega-column">
                                     <h5 class="mega-heading">Sub-Categories</h5>
                                     <ul>
-                                        <li><a href="shop?category=<?= urlencode($pCat['name']) ?>">Shop All <?= $pName ?></a></li>
+                                        <li><a href="<?= SITE_URL ?>/shop?category=<?= urlencode($pCat['name']) ?>">Shop All <?= $pName ?></a></li>
                                         <?php if (!empty($subCats)): ?>
                                             <?php foreach ($subCats as $sub): ?>
-                                            <li><a href="shop?category=<?= urlencode($sub['name']) ?>"><?= htmlspecialchars($sub['name']) ?></a></li>
+                                            <li><a href="<?= SITE_URL ?>/shop?category=<?= urlencode($sub['name']) ?>"><?= htmlspecialchars($sub['name']) ?></a></li>
                                             <?php endforeach; ?>
                                         <?php else: ?>
-                                            <li><a href="shop?category=<?= urlencode($pCat['name']) ?>&style=Classic">Classic Edit</a></li>
-                                            <li><a href="shop?category=<?= urlencode($pCat['name']) ?>&style=Handcrafted">Handcrafted Essentials</a></li>
-                                            <li><a href="shop?category=<?= urlencode($pCat['name']) ?>&style=Printed">Printed Curation</a></li>
+                                            <li><a href="<?= SITE_URL ?>/shop?category=<?= urlencode($pCat['name']) ?>&style=Classic">Classic Edit</a></li>
+                                            <li><a href="<?= SITE_URL ?>/shop?category=<?= urlencode($pCat['name']) ?>&style=Handcrafted">Handcrafted Essentials</a></li>
+                                            <li><a href="<?= SITE_URL ?>/shop?category=<?= urlencode($pCat['name']) ?>&style=Printed">Printed Curation</a></li>
                                         <?php endif; ?>
                                     </ul>
                                 </div>
                                 <div class="mega-column">
                                     <h5 class="mega-heading">Collections &amp; Edits</h5>
                                     <ul>
-                                        <li><a href="shop?category=<?= urlencode($pCat['name']) ?>&badge=New">New Arrivals</a></li>
-                                        <li><a href="shop?category=<?= urlencode($pCat['name']) ?>&badge=Bestseller">Bestseller Edit</a></li>
-                                        <li><a href="shop?category=<?= urlencode($pCat['name']) ?>&badge=Festive">Festive Curation</a></li>
-                                        <li><a href="shop?category=<?= urlencode($pCat['name']) ?>&fabric=Pure+Silk">Pure Silk Ensemble</a></li>
+                                        <li><a href="<?= SITE_URL ?>/shop?category=<?= urlencode($pCat['name']) ?>&badge=New">New Arrivals</a></li>
+                                        <li><a href="<?= SITE_URL ?>/shop?category=<?= urlencode($pCat['name']) ?>&badge=Bestseller">Bestseller Edit</a></li>
+                                        <li><a href="<?= SITE_URL ?>/shop?category=<?= urlencode($pCat['name']) ?>&badge=Festive">Festive Curation</a></li>
+                                        <li><a href="<?= SITE_URL ?>/shop?category=<?= urlencode($pCat['name']) ?>&fabric=Pure+Silk">Pure Silk Ensemble</a></li>
                                     </ul>
                                 </div>
                                 <div class="mega-promo-column">
                                     <div class="mega-promo-card">
-                                        <img src="uploads/gallery/lookbook_1.png" alt="<?= $pName ?>">
+                                        <img src="<?= SITE_URL ?>/uploads/gallery/lookbook_1.png" alt="<?= $pName ?>">
                                         <div class="mega-promo-overlay">
                                             <h4><?= $pName ?> Collection</h4>
-                                            <a href="shop?category=<?= urlencode($pCat['name']) ?>" class="btn-mega-shop">Shop Now <i class="fa-solid fa-arrow-right"></i></a>
+                                            <a href="<?= SITE_URL ?>/shop?category=<?= urlencode($pCat['name']) ?>" class="btn-mega-shop">Shop Now <i class="fa-solid fa-arrow-right"></i></a>
                                         </div>
                                     </div>
                                 </div>
@@ -311,9 +329,9 @@ try {
                     </li>
                 <?php endforeach; ?>
 
-                <li><a href="blog" class="nav-link-item <?= $isJournalAct ? 'active' : '' ?>">JOURNAL</a></li>
-                <li><a href="about" class="nav-link-item <?= $isStoryAct ? 'active' : '' ?>">OUR STORY</a></li>
-                <li><a href="shop?sale=1" class="nav-link-item <?= $isSaleAct ? 'active' : '' ?>">SALE</a></li>
+                <li><a href="<?= SITE_URL ?>/blog" class="nav-link-item <?= $isJournalAct ? 'active' : '' ?>">JOURNAL</a></li>
+                <li><a href="<?= SITE_URL ?>/about" class="nav-link-item <?= $isStoryAct ? 'active' : '' ?>">OUR STORY</a></li>
+                <li><a href="<?= SITE_URL ?>/shop?sale=1" class="nav-link-item <?= $isSaleAct ? 'active' : '' ?>">SALE</a></li>
             </ul>
         </div>
     </div>
@@ -325,8 +343,8 @@ try {
         
         <!-- Header Bar -->
         <div class="mobile-drawer-header">
-            <a href="home" class="mobile-drawer-logo-link" onclick="closeMobileMenu()">
-                <img src="assets/images/logo/logo.PNG" alt="Dievon Luxury">
+            <a href="<?= SITE_URL ?>/home" class="mobile-drawer-logo-link" onclick="closeMobileMenu()">
+                <img src="<?= SITE_URL ?>/assets/images/logo/logo.PNG" alt="Dievon Luxury">
             </a>
             <button class="mobile-drawer-close" id="mobileDrawerClose" onclick="closeMobileMenu()" aria-label="Close menu">
                 <i class="fa-solid fa-xmark"></i>
@@ -342,8 +360,8 @@ try {
         <!-- Main Navigation Links -->
         <div class="mobile-drawer-body">
             <ul class="mobile-nav-links">
-                <li><a href="home" onclick="closeMobileMenu()" class="<?php echo $path == 'home' ? 'active' : ''; ?>">Home</a></li>
-                <li><a href="shop?badge=New" onclick="closeMobileMenu()" class="nav-highlight-new">New Arrivals</a></li>
+                <li><a href="<?= SITE_URL ?>/home" onclick="closeMobileMenu()" class="<?php echo $path == 'home' ? 'active' : ''; ?>">Home</a></li>
+                <li><a href="<?= SITE_URL ?>/shop?badge=New" onclick="closeMobileMenu()" class="nav-highlight-new">New Arrivals</a></li>
                 
                 <!-- Dynamic Mobile Accordion Categories (Matches Desktop Mega Menu) -->
                 <?php foreach ($headerParents as $pCat): ?>
@@ -359,39 +377,39 @@ try {
                         </div>
                         <div class="mobile-accordion-body" style="display:none;">
                             <ul class="mobile-subnav-list">
-                                <li><a href="shop?category=<?= urlencode($pCat['name']) ?>" onclick="closeMobileMenu()" style="font-weight:700; color:var(--color-primary);">Shop All <?= $pName ?> →</a></li>
+                                <li><a href="<?= SITE_URL ?>/shop?category=<?= urlencode($pCat['name']) ?>" onclick="closeMobileMenu()" style="font-weight:700; color:var(--color-primary);">Shop All <?= $pName ?> →</a></li>
                                 <?php if (!empty($subCats)): ?>
                                     <?php foreach ($subCats as $sub): ?>
-                                    <li><a href="shop?category=<?= urlencode($sub['name']) ?>" onclick="closeMobileMenu()"><?= htmlspecialchars($sub['name']) ?></a></li>
+                                    <li><a href="<?= SITE_URL ?>/shop?category=<?= urlencode($sub['name']) ?>" onclick="closeMobileMenu()"><?= htmlspecialchars($sub['name']) ?></a></li>
                                     <?php endforeach; ?>
                                 <?php else: ?>
-                                    <li><a href="shop?category=<?= urlencode($pCat['name']) ?>&style=Classic" onclick="closeMobileMenu()">Classic Edit</a></li>
-                                    <li><a href="shop?category=<?= urlencode($pCat['name']) ?>&style=Handcrafted" onclick="closeMobileMenu()">Handcrafted Essentials</a></li>
-                                    <li><a href="shop?category=<?= urlencode($pCat['name']) ?>&style=Printed" onclick="closeMobileMenu()">Printed Curation</a></li>
+                                    <li><a href="<?= SITE_URL ?>/shop?category=<?= urlencode($pCat['name']) ?>&style=Classic" onclick="closeMobileMenu()">Classic Edit</a></li>
+                                    <li><a href="<?= SITE_URL ?>/shop?category=<?= urlencode($pCat['name']) ?>&style=Handcrafted" onclick="closeMobileMenu()">Handcrafted Essentials</a></li>
+                                    <li><a href="<?= SITE_URL ?>/shop?category=<?= urlencode($pCat['name']) ?>&style=Printed" onclick="closeMobileMenu()">Printed Curation</a></li>
                                 <?php endif; ?>
                                 <li class="mobile-subnav-divider" style="margin-top:6px; padding-top:6px; border-top:1px dashed var(--border-light); font-size:11px; font-weight:700; text-transform:uppercase; color:var(--text-muted);">Curated Edits</li>
-                                <li><a href="shop?category=<?= urlencode($pCat['name']) ?>&badge=New" onclick="closeMobileMenu()">New Arrivals</a></li>
-                                <li><a href="shop?category=<?= urlencode($pCat['name']) ?>&badge=Bestseller" onclick="closeMobileMenu()">Bestseller Edit</a></li>
-                                <li><a href="shop?category=<?= urlencode($pCat['name']) ?>&badge=Festive" onclick="closeMobileMenu()">Festive Curation</a></li>
+                                <li><a href="<?= SITE_URL ?>/shop?category=<?= urlencode($pCat['name']) ?>&badge=New" onclick="closeMobileMenu()">New Arrivals</a></li>
+                                <li><a href="<?= SITE_URL ?>/shop?category=<?= urlencode($pCat['name']) ?>&badge=Bestseller" onclick="closeMobileMenu()">Bestseller Edit</a></li>
+                                <li><a href="<?= SITE_URL ?>/shop?category=<?= urlencode($pCat['name']) ?>&badge=Festive" onclick="closeMobileMenu()">Festive Curation</a></li>
                             </ul>
                         </div>
                     </li>
                 <?php endforeach; ?>
 
-                <li><a href="blog" onclick="closeMobileMenu()" class="<?php echo $path == 'blog' ? 'active' : ''; ?>">Journal</a></li>
-                <li><a href="about" onclick="closeMobileMenu()" class="<?php echo $path == 'about' ? 'active' : ''; ?>">Our Story</a></li>
-                <li><a href="shop?sale=1" onclick="closeMobileMenu()" class="<?= $isSaleAct ? 'active' : '' ?>">Sale</a></li>
-                <li><a href="contact" onclick="closeMobileMenu()" class="<?php echo $path == 'contact' ? 'active' : ''; ?>">Contact Us</a></li>
+                <li><a href="<?= SITE_URL ?>/blog" onclick="closeMobileMenu()" class="<?php echo $path == 'blog' ? 'active' : ''; ?>">Journal</a></li>
+                <li><a href="<?= SITE_URL ?>/about" onclick="closeMobileMenu()" class="<?php echo $path == 'about' ? 'active' : ''; ?>">Our Story</a></li>
+                <li><a href="<?= SITE_URL ?>/shop?sale=1" onclick="closeMobileMenu()" class="<?= $isSaleAct ? 'active' : '' ?>">Sale</a></li>
+                <li><a href="<?= SITE_URL ?>/contact" onclick="closeMobileMenu()" class="<?php echo $path == 'contact' ? 'active' : ''; ?>">Contact Us</a></li>
             </ul>
         </div>
 
         <!-- Footer Action Buttons -->
         <div class="mobile-drawer-footer">
             <?php if (isset($_SESSION['customer_id'])): ?>
-                <a href="account" onclick="closeMobileMenu()" class="btn-mobile-action-primary"><i class="fa-solid fa-user"></i> My Account</a>
-                <a href="logout.php" onclick="closeMobileMenu()" class="btn-mobile-action-secondary"><i class="fa-solid fa-arrow-right-from-bracket"></i> Logout</a>
+                <a href="<?= SITE_URL ?>/account" onclick="closeMobileMenu()" class="btn-mobile-action-primary"><i class="fa-solid fa-user"></i> My Account</a>
+                <a href="<?= SITE_URL ?>/logout.php" onclick="closeMobileMenu()" class="btn-mobile-action-secondary"><i class="fa-solid fa-arrow-right-from-bracket"></i> Logout</a>
             <?php else: ?>
-                <a href="login" onclick="closeMobileMenu()" class="btn-mobile-action-primary"><i class="fa-regular fa-user"></i> Login / Register</a>
+                <a href="<?= SITE_URL ?>/login" onclick="closeMobileMenu()" class="btn-mobile-action-primary"><i class="fa-regular fa-user"></i> Login / Register</a>
             <?php endif; ?>
             
             <button class="btn-mobile-action-secondary" onclick="closeMobileMenu(); openCart();">
@@ -439,10 +457,10 @@ function toggleMobileCategoryMenu(el) {
             <div class="search-suggestions">
                 <h4>Popular Searches</h4>
                 <ul>
-                    <li><a href="shop?category=Kurtis">Kurtis</a></li>
-                    <li><a href="shop?category=Wedding+Guest+Edit">Wedding Guest Edit</a></li>
-                    <li><a href="shop?category=Co-Ord+Sets">Co-Ord Sets</a></li>
-                    <li><a href="shop?search=Silk">Silk Dresses</a></li>
+                    <li><a href="<?= SITE_URL ?>/shop?category=Kurtis">Kurtis</a></li>
+                    <li><a href="<?= SITE_URL ?>/shop?category=Wedding+Guest+Edit">Wedding Guest Edit</a></li>
+                    <li><a href="<?= SITE_URL ?>/shop?category=Co-Ord+Sets">Co-Ord Sets</a></li>
+                    <li><a href="<?= SITE_URL ?>/shop?search=Silk">Silk Dresses</a></li>
                 </ul>
                 
                 <h4>Recent Searches</h4>

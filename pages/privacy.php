@@ -8,7 +8,7 @@ $pageTitle = "Privacy Policy | Dievon Atelier";
 require_once __DIR__ . '/../includes/header.php';
 ?>
 
-<section class="luxury-hero" style="padding: 100px 0 40px;">
+<section class="luxury-hero has-bg-image" style="--hero-bg-image: url('<?= SITE_URL ?>/uploads/gallery/lookbook_1.png')">
     <div class="container">
         <span class="luxury-hero-eyebrow">Legal &amp; Privacy</span>
         <h1>Privacy Policy</h1>

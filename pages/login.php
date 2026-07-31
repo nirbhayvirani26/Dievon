@@ -141,7 +141,7 @@ require_once __DIR__ . '/../includes/header.php';
                 </div>
 
                 <div class="auth-forgot-row">
-                    <a href="forgot_password.php">Forgot Password?</a>
+                    <a href="<?= SITE_URL ?>/forgot_password.php">Forgot Password?</a>
                 </div>
 
                 <button type="submit" class="btn-luxury auth-submit-btn">
@@ -165,11 +165,11 @@ require_once __DIR__ . '/../includes/header.php';
 
             <!-- Create Account Link -->
             <p class="auth-footer-text">
-                New to Dievon? <a href="register">Create account</a>
+                New to Dievon? <a href="<?= SITE_URL ?>/register">Create account</a>
             </p>
 
             <div class="auth-admin-link">
-                <a href="admin/login.php"><i class="fa-solid fa-user-lock"></i> Atelier Admin Portal</a>
+                <a href="<?= SITE_URL ?>/admin/login.php"><i class="fa-solid fa-user-lock"></i> Atelier Admin Portal</a>
             </div>
 
         </div>

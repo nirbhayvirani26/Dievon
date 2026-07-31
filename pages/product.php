@@ -113,13 +113,31 @@ try {
     $sizeGuideChart = $sgStmt->fetch();
 
     if (!$sizeGuideChart) {
-        $catStmt = $pdo->prepare("SELECT id FROM categories WHERE name = :name LIMIT 1");
+        $catStmt = $pdo->prepare("SELECT id, parent_id FROM categories WHERE name = :name LIMIT 1");
         $catStmt->execute(['name' => $product['category']]);
-        $catId = $catStmt->fetchColumn();
-        if ($catId) {
+        $cat = $catStmt->fetch();
+        if ($cat) {
             $sgStmt2 = $pdo->prepare("SELECT * FROM size_guide_charts WHERE category_id = :cid AND product_id IS NULL");
-            $sgStmt2->execute(['cid' => $catId]);
+            $sgStmt2->execute(['cid' => $cat['id']]);
             $sizeGuideChart = $sgStmt2->fetch();
+
+            // Fall back to the parent category. Subcategories (e.g. "Long Kurtis" under
+            // "Kurtis") usually have no chart of their own, and without this the modal
+            // opens completely empty even though the parent has a perfectly good chart.
+            // Walks up the tree so deeper nesting keeps working; the seen-guard stops a
+            // self-referential or circular parent_id from looping forever.
+            $seen = [(int)$cat['id']];
+            $parentId = (int)($cat['parent_id'] ?? 0);
+            while (!$sizeGuideChart && $parentId > 0 && !in_array($parentId, $seen, true)) {
+                $seen[] = $parentId;
+                $sgStmt3 = $pdo->prepare("SELECT * FROM size_guide_charts WHERE category_id = :cid AND product_id IS NULL");
+                $sgStmt3->execute(['cid' => $parentId]);
+                $sizeGuideChart = $sgStmt3->fetch();
+                if ($sizeGuideChart) { break; }
+                $pStmt = $pdo->prepare("SELECT parent_id FROM categories WHERE id = :id LIMIT 1");
+                $pStmt->execute(['id' => $parentId]);
+                $parentId = (int)$pStmt->fetchColumn();
+            }
         }
     }
 
@@ -131,7 +149,23 @@ try {
             else { $sizeGuideBody[] = $r; }
         }
     }
+    // Body measurements come from the ONE global table — a 34" bust is a size M
+    // whatever the garment. The per-chart body rows above are only a fallback for a
+    // database where the global table has not been created or filled in yet.
+    $sizeGuideBody = globalBodySizeRows($pdo, $sizeGuideBody);
 } catch (PDOException $e) {}
+
+// Whether there is anything to actually show. The "SIZE GUIDE" trigger buttons used to
+// render unconditionally, so a product whose category has no chart (a newly added
+// top-level category, for example) showed the button and then opened a completely empty
+// popup. This must stay identical to the condition guarding the modal markup itself.
+// Deliberately does NOT require a category chart. Body measurements and the
+// "how to measure" picture are both shop-wide now, so a category with no chart of
+// its own can still show a genuinely useful size guide — the body table and the
+// diagram — and simply omits the garment column and the per-category instructions.
+// Requiring a chart meant a shop that had not filled in every category showed no
+// Size Guide button at all, and hid the uploaded how-to-measure image with it.
+$hasSizeGuide = !empty($sizeGuideBody) || !empty($sizeGuideGarment);
 
 // A chart with no shoulder/bust instructions is a lower-body-only garment (e.g. Bottoms) —
 // swap in the leg/waist/hip diagram instead of the full-figure one.
@@ -192,11 +226,28 @@ try {
     $productComponents = array_values(array_filter($productComponents, fn($c) => !empty($c['specs'])));
 } catch (PDOException $e) {}
 
-$pageTitle = !empty($product['meta_title']) ? $product['meta_title'] : $product['name'];
-$metaDescription = !empty($product['meta_description']) ? $product['meta_description'] : (substr(strip_tags($product['description']), 0, 155) . '...');
+// SEO values are derived from the product's own data (name, category, description,
+// fabric/colour/occasion) whenever the admin has not typed an explicit override.
+// See resolveProductSeo() in config/config.php — the admin form shows exactly the
+// same generated values as placeholders, so what is previewed is what ships.
+$productSeo = resolveProductSeo($product);
+$pageTitle = $productSeo['meta_title'];
+$metaDescription = $productSeo['meta_description'];
+$metaKeywords = $productSeo['tags'];
 if (!empty($product['image'])) {
     $ogImage = SITE_URL . "/uploads/products/" . $product['image'];
 }
+// Renders the share preview as a product card (price + availability) instead of a plain link.
+$ogType = 'product';
+// priceForMachines()/getCurrentCurrency() are the single source of truth for money in
+// machine-readable output, so the OG tags and the JSON-LD below always agree — and both
+// stay correct if the currency switcher (ENABLE_CURRENCY_SWITCHER) is ever turned on.
+$ogProduct = [
+    'price'        => priceForMachines($product['price']),
+    'currency'     => getCurrentCurrency(),
+    'availability' => ((int)($product['available'] ?? 0) === 1) ? 'in stock' : 'out of stock',
+    'brand'        => trim((string)($product['brand'] ?? '')) ?: 'Dievon Atelier',
+];
 require_once __DIR__ . '/../includes/header.php';
 ?>
 
@@ -229,8 +280,8 @@ require_once __DIR__ . '/../includes/header.php';
   "offers": {
     "@type": "Offer",
     "url": <?= json_encode($canonicalUrl) ?>,
-    "priceCurrency": "INR",
-    "price": <?= json_encode(number_format((float)$product['price'], 2, '.', '')) ?>,
+    "priceCurrency": <?= json_encode(getCurrentCurrency()) ?>,
+    "price": <?= json_encode(priceForMachines($product["price"])) ?>,
     "availability": <?= json_encode(($product['available'] == 1) ? "https://schema.org/InStock" : "https://schema.org/OutOfStock") ?>,
     "itemCondition": "https://schema.org/NewCondition",
     "hasMerchantReturnPolicy": {
@@ -334,8 +385,8 @@ require_once __DIR__ . '/../includes/header.php';
                 <div class="product-buy-box">
                 <!-- Breadcrumbs -->
                 <nav class="product-breadcrumbs">
-                    <a href="home">Dievon</a> &nbsp;&bull;&nbsp;
-                    <a href="shop?category=<?= urlencode($product['category']) ?>"><?= htmlspecialchars($product['category']) ?></a> &nbsp;&bull;&nbsp;
+                    <a href="<?= SITE_URL ?>/home">Dievon</a> &nbsp;&bull;&nbsp;
+                    <a href="<?= SITE_URL ?>/shop?category=<?= urlencode($product['category']) ?>"><?= htmlspecialchars($product['category']) ?></a> &nbsp;&bull;&nbsp;
                     <span><?= htmlspecialchars($product['name']) ?></span>
                 </nav>
 
@@ -391,9 +442,11 @@ require_once __DIR__ . '/../includes/header.php';
                 <div class="product-variants-wrap" id="colorSizeSelectorWrap">
                     <div class="size-select-header-row">
                         <span class="variant-select-label">Select Size *</span>
+                        <?php if ($hasSizeGuide): ?>
                         <button type="button" onclick="openSizeGuideModal()" class="size-guide-trigger-btn">
                             📏 SIZE GUIDE
                         </button>
+                        <?php endif; ?>
                     </div>
                     <div class="variant-pills-grid size-ladder-grid" id="sizeLadderGrid"></div>
                     <p id="sizeSelectValidationMsg" class="size-select-validation-msg" style="display:none;"></p>
@@ -402,9 +455,11 @@ require_once __DIR__ . '/../includes/header.php';
                 <div class="product-variants-wrap">
                     <div class="size-select-header-row">
                         <span class="variant-select-label">Select Size / Option *</span>
+                        <?php if ($hasSizeGuide): ?>
                         <button type="button" onclick="openSizeGuideModal()" class="size-guide-trigger-btn">
                             📏 SIZE GUIDE
                         </button>
+                        <?php endif; ?>
                     </div>
                     <div class="variant-pills-grid">
                         <?php foreach ($variants as $v): ?>
@@ -420,9 +475,11 @@ require_once __DIR__ . '/../includes/header.php';
                 <div class="product-variants-wrap">
                     <div class="size-select-header-row">
                         <span class="variant-select-label">Select Size *</span>
+                        <?php if ($hasSizeGuide): ?>
                         <button type="button" onclick="openSizeGuideModal()" class="size-guide-trigger-btn">
                             📏 SIZE GUIDE
                         </button>
+                        <?php endif; ?>
                     </div>
                     <div class="variant-pills-grid">
                         <?php foreach (['S', 'M', 'L', 'XL', 'XXL'] as $sz): ?>
@@ -500,6 +557,30 @@ require_once __DIR__ . '/../includes/header.php';
                     </div>
                 </div>
 
+                <?php if (!empty($activeCoupons)): ?>
+                <!-- Available offers sit just ABOVE the delivery box, as its own line —
+                     grouped with the "what it costs / when it arrives" details, but not
+                     boxed in with them. -->
+                <p class="product-offers-line">
+                    <i class="fa-solid fa-tag"></i>
+                    <?php
+                    $offerBits = [];
+                    foreach ($activeCoupons as $c) {
+                        $discountLabel = $c['discount_type'] === 'percentage'
+                            ? (rtrim(rtrim(number_format((float)$c['discount_value'], 1), '0'), '.') . '% off')
+                            : (formatPrice($c['discount_value']) . ' off');
+                        $minOrderNote = (float)$c['min_order'] > 0 ? ' over ' . formatPrice($c['min_order']) : '';
+                        // The code stays click-to-copy, just rendered as plain text
+                        // rather than a chip with its own button.
+                        $offerBits[] = '<button type="button" class="offer-code" onclick="copyCouponCode(\''
+                            . addslashes($c['code']) . '\', this)" title="Click to copy">'
+                            . htmlspecialchars($c['code']) . '</button> ' . htmlspecialchars($discountLabel . $minOrderNote);
+                    }
+                    echo implode(' <span class="offer-sep">·</span> ', $offerBits);
+                    ?>
+                </p>
+                <?php endif; ?>
+
                 <!-- COD Availability Checker -->
                 <div class="delivery-checker-box">
                     <div class="delivery-estimate-row">
@@ -529,34 +610,10 @@ require_once __DIR__ . '/../includes/header.php';
                 <!-- Product Detail Accordions -->
                 <div class="product-accordions">
 
-                    <?php if (!empty($activeCoupons)): ?>
-                    <div class="product-accordion">
-                        <div class="product-accordion-header" onclick="toggleProductAccordion(this)">
-                            Offers &amp; Coupons <i class="fa-solid fa-plus toggle-icon"></i>
-                        </div>
-                        <div class="product-accordion-content">
-                            <div class="coupon-list">
-                                <?php foreach ($activeCoupons as $c):
-                                    $discountLabel = $c['discount_type'] === 'percentage'
-                                        ? (rtrim(rtrim(number_format((float)$c['discount_value'], 1), '0'), '.') . '% OFF')
-                                        : (formatPrice($c['discount_value']) . ' OFF');
-                                    $minOrderNote = (float)$c['min_order'] > 0 ? ' on orders above ' . formatPrice($c['min_order']) : '';
-                                ?>
-                                <div class="coupon-row">
-                                    <div class="coupon-code-chip">
-                                        <span class="coupon-code-text"><?= htmlspecialchars($c['code']) ?></span>
-                                        <button type="button" class="coupon-copy-btn" onclick="copyCouponCode('<?= addslashes($c['code']) ?>', this)" title="Copy code"><i class="fa-regular fa-copy"></i></button>
-                                    </div>
-                                    <div class="coupon-desc">
-                                        <strong><?= htmlspecialchars($discountLabel) ?></strong><?= htmlspecialchars($minOrderNote) ?>
-                                        <?php if (!empty($c['description'])): ?><div class="coupon-desc-sub"><?= htmlspecialchars($c['description']) ?></div><?php endif; ?>
-                                    </div>
-                                </div>
-                                <?php endforeach; ?>
-                            </div>
-                        </div>
-                    </div>
-                    <?php endif; ?>
+                    <?php /* "Offers & Coupons" was moved out of this accordion and up next to
+                             the price — see the .product-offers block above. Coupon codes only
+                             work if a shopper actually sees them, and an accordion collapsed by
+                             default meant almost nobody did. */ ?>
 
                     <?php if (!empty($generalSpecs) || !empty($productComponents)): ?>
                     <div class="product-accordion">
@@ -1155,7 +1212,7 @@ document.addEventListener('keydown', e => {
                 </div>
                 <div class="compact-card-details">
                     <span class="compact-card-cat"><?= htmlspecialchars($p['category']) ?></span>
-                    <h3 class="compact-card-name"><a href="product.php?id=<?= $p['id'] ?>"><?= htmlspecialchars($p['name']) ?></a></h3>
+                    <h3 class="compact-card-name"><a href="<?= SITE_URL ?>/product.php?id=<?= $p['id'] ?>"><?= htmlspecialchars($p['name']) ?></a></h3>
                     <div class="compact-card-price"><?= formatPrice($p['price']) ?></div>
                 </div>
             </article>
@@ -1358,35 +1415,40 @@ document.addEventListener('keydown', e => {
     // state (vs. just scrolling normally) and toggles a class for a subtle
     // shadow — confirms the sticky behaviour visually instead of leaving it
     // as an invisible layout detail.
+    // The previous implementation observed .sticky-sentinel with a negative rootMargin.
+    // That could not work: the sentinel is position:absolute INSIDE the sticky element,
+    // so it pins along with it and always sits exactly at the sticky offset — leaving a
+    // sub-pixel intersection edge case. It also cached the rootMargin from the 90px
+    // fallback, because --header-height is only set later (syncHeaderPadding() in
+    // includes/header.php runs on DOMContentLoaded). Comparing the element's own top
+    // against the offset is exact and has no ordering dependency.
     (function () {
         const section = document.getElementById('productImageSection');
-        const sentinel = section ? section.querySelector('.sticky-sentinel') : null;
-        if (!section || !sentinel || !('IntersectionObserver' in window)) return;
-
-        let observer = null;
+        if (!section) return;
 
         function stickyOffset() {
             const raw = getComputedStyle(document.documentElement).getPropertyValue('--header-height').trim();
-            const headerH = parseFloat(raw) || 90;
-            return headerH + 16;
+            return (parseFloat(raw) || 90) + 16;
         }
 
-        function setup() {
-            if (observer) observer.disconnect();
-            if (window.innerWidth < 992) {
-                section.classList.remove('is-stuck');
-                return;
-            }
-            observer = new IntersectionObserver((entries) => {
-                entries.forEach((entry) => {
-                    section.classList.toggle('is-stuck', !entry.isIntersecting);
-                });
-            }, { rootMargin: `-${stickyOffset() + 1}px 0px 0px 0px`, threshold: 0 });
-            observer.observe(sentinel);
+        let ticking = false;
+        function update() {
+            ticking = false;
+            if (window.innerWidth < 992) { section.classList.remove('is-stuck'); return; }
+            // 1px of tolerance absorbs sub-pixel layout rounding.
+            section.classList.toggle('is-stuck', section.getBoundingClientRect().top <= stickyOffset() + 1);
+        }
+        function onScroll() {
+            if (ticking) return;
+            ticking = true;
+            requestAnimationFrame(update);
         }
 
-        setup();
-        window.addEventListener('resize', setup);
+        update();
+        window.addEventListener('scroll', onScroll, { passive: true });
+        window.addEventListener('resize', onScroll);
+        document.addEventListener('DOMContentLoaded', update);
+        window.addEventListener('load', update);
     })();
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -1805,7 +1867,7 @@ document.addEventListener('keydown', e => {
             <button type="button" id="dievonSgCloseBtn" class="dievon-sg-close" onclick="closeSizeGuideModal()" aria-label="Close size guide">&times;</button>
         </div>
 
-        <?php if ($sizeGuideChart && (!empty($sizeGuideBody) || !empty($sizeGuideGarment))): ?>
+        <?php if ($hasSizeGuide): ?>
         <p class="dievon-sg-intro">Compare your body measurements against the chart below to find your perfect Dievon fit. All measurements are shown in <?= ($sizeGuideChart['unit'] ?? 'in') === 'in' ? 'inches' : 'centimetres' ?> by default — toggle units at any time.</p>
         <div class="dievon-sg-controls">
             <div class="dievon-sg-tabs" role="tablist">
@@ -1860,15 +1922,53 @@ document.addEventListener('keydown', e => {
                 </table>
             </div>
 
+            <?php
+            // Site-wide "How to Measure" picture: uploaded once in admin and shown on
+            // every category. It sits between the size table and the diagrams below, and
+            // is purely additive — the built-in SVG illustrations still render as normal.
+            $sgHowToMeasure       = storeSetting($pdo, 'size_guide_illustration');
+            $sgHowToMeasureMobile = storeSetting($pdo, 'size_guide_illustration_mobile');
+            // Either one alone is enough — whichever exists is used at every width.
+            $sgHowToDesktop = $sgHowToMeasure ?: $sgHowToMeasureMobile;
+            $sgHowToMobile  = $sgHowToMeasureMobile ?: $sgHowToMeasure;
+            ?>
+            <?php if ($sgHowToDesktop): ?>
+            <?php /* No caption on this figure on purpose: the written instructions further
+                     down already carry a "How to measure" heading, and captioning the image
+                     the same way showed the title twice in one popup.
+                     <picture> is used rather than CSS show/hide so a phone only ever
+                     downloads the mobile file — display:none still costs the download.
+                     (PHP comment, not an HTML one, so none of this reaches the browser.) */ ?>
+            <figure class="dievon-sg-howto">
+                <picture>
+                    <?php if ($sgHowToMobile !== $sgHowToDesktop): ?>
+                    <source media="(max-width: 768px)" srcset="<?= SITE_URL ?>/uploads/gallery/<?= htmlspecialchars($sgHowToMobile) ?>">
+                    <?php endif; ?>
+                    <img src="<?= SITE_URL ?>/uploads/gallery/<?= htmlspecialchars($sgHowToDesktop) ?>"
+                         alt="Diagram showing how to measure bust, waist, hips and length"
+                         class="dievon-sg-howto-img" loading="lazy">
+                </picture>
+            </figure>
+            <?php endif; ?>
+
             <div class="dievon-sg-illustration-row">
                 <div class="dievon-sg-illustration">
-                    <?php if (!empty($sizeGuideChart['illustration_image'])): ?>
+                    <?php
+                    // ONLY this chart's own overlay photo here. The site-wide "how to
+                    // measure" image is a separate thing and renders above this row, so
+                    // it must not also fall through to here — otherwise it would appear
+                    // twice and replace the built-in SVG diagram.
+                    $sgIllustration = !empty($sizeGuideChart['illustration_image'])
+                        ? SITE_URL . '/uploads/products/' . $sizeGuideChart['illustration_image']
+                        : null;
+                    ?>
+                    <?php if ($sgIllustration): ?>
                     <?php
                         $sgLenTop    = $sizeGuideChart['pos_length_top'] ?? 15;
                         $sgLenBottom = $sizeGuideChart['pos_length_bottom'] ?? 95;
                     ?>
                     <div class="dievon-sg-photo-stage">
-                        <img src="<?= SITE_URL ?>/uploads/products/<?= htmlspecialchars($sizeGuideChart['illustration_image']) ?>" alt="Measurement illustration" class="dievon-sg-photo-img">
+                        <img src="<?= htmlspecialchars($sgIllustration) ?>" alt="How to measure — body measurement diagram" class="dievon-sg-photo-img">
                         <?php if ($sgShowShoulder): ?>
                         <div class="dievon-sg-photo-line" style="top:<?= $sizeGuideChart['pos_shoulder_top'] ?? 18 ?>%; width:<?= $sizeGuideChart['pos_shoulder_width'] ?? 45 ?>%;"><span>Shoulder</span></div>
                         <?php endif; ?>
@@ -1939,14 +2039,11 @@ document.addEventListener('keydown', e => {
                     <?php endif; ?>
                 </div>
                 <?php
-                    $instructionPairs = [
-                        'Shoulder' => $sizeGuideChart['instructions_shoulder'] ?? '',
-                        'Bust'     => $sizeGuideChart['instructions_bust'] ?? '',
-                        'Waist'    => $sizeGuideChart['instructions_waist'] ?? '',
-                        'Hips'     => $sizeGuideChart['instructions_hips'] ?? '',
-                        'Garment Length' => $sizeGuideChart['instructions_length'] ?? '',
-                    ];
-                    $instructionPairs = array_filter($instructionPairs, fn($v) => trim($v) !== '');
+                    // This category's own wording where it has any, otherwise the shop-wide
+                    // default. Previously it read the chart only, so a category with no chart
+                    // showed a completely blank "How to measure" panel — measuring a bust is
+                    // the same whatever the garment, so there is no reason to hide it.
+                    $instructionPairs = resolveSizeGuideInstructions($pdo, $sizeGuideChart);
                 ?>
                 <?php if (!empty($instructionPairs)): ?>
                 <div class="dievon-sg-instructions">
@@ -2023,7 +2120,7 @@ function submitProductEnquiry(e) {
     statusMsg.style.display = 'none';
 
     const formData = new FormData(form);
-    fetch('actions/product_enquiry_action.php', {
+    fetch(window.SITE_URL + '/actions/product_enquiry_action.php', {
         method: 'POST',
         body: formData
     })
@@ -2068,7 +2165,7 @@ function submitProductReview(e, productId) {
     const formData = new FormData(form);
     formData.append('product_id', productId);
 
-    fetch('actions/review_action.php', {
+    fetch(window.SITE_URL + '/actions/review_action.php', {
         method: 'POST',
         body: formData
     })

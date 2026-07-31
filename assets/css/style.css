@@ -80,7 +80,10 @@
 
 /* ── Reset ─────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; overflow-x: hidden; }
+/* overflow-x uses `clip` (with `hidden` as the legacy fallback) so that html never
+   becomes a scroll container — `hidden` would break position:sticky site-wide.
+   See the matching note in responsive.css. */
+html { scroll-behavior: smooth; overflow-x: hidden; overflow-x: clip; }
 
 /* ── Focus Outline Reset ───────────────────────────────────── */
 button:focus, button:focus-visible,
@@ -620,7 +623,10 @@ h1, h2, h3, h4, h5 {
     border: 1px solid var(--border-light);
     background: var(--bg-surface);
     padding-bottom: 25px;
-    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+    /* overflow:hidden is what makes the card image actually respect border-radius. */
+    border-radius: 4px;
+    overflow: hidden;
+    transition: all 0.5s ease 0s !important;
 }
 .product-card:hover {
     transform: translateY(-6px);
@@ -2028,17 +2034,13 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
     opacity: 1;
 }
 
-/* Sticky buying section — desktop only. Sticks below the fixed header while
-   product images scroll, and naturally un-sticks at the end of its own
-   column (well above the accordions/related-products/footer) since it is
-   constrained to the height of .product-details-col. */
-@media (min-width: 992px) {
-    .product-buy-box {
-        position: sticky;
-        top: calc(var(--header-height, 90px) + 16px);
-        align-self: start;
-    }
-}
+/* .product-buy-box is intentionally NOT sticky. Only the gallery
+   (.product-image-section) pins while the buy box and the detail content scroll
+   normally past it. This rule previously declared position:sticky here too, but it
+   never actually took effect because overflow-x:hidden on html/body made them scroll
+   containers and silently disabled every position:sticky on the site. Once that was
+   corrected to overflow-x:clip the rule activated and pinned the buy box as well,
+   which is not the intended behaviour — so it has been removed. */
 .product-breadcrumbs { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 15px; }
 .product-breadcrumbs a { color: var(--text-muted); text-decoration: none; }
 .product-breadcrumbs span { color: var(--text-primary); }
@@ -2284,7 +2286,7 @@ body.admin-wrapper .product-form-grid {
     margin: 14px auto 0;
 }
 
-.category-card { position: relative; overflow: hidden; display: block; border: 1px solid var(--border-light); height: 450px; }
+.category-card { position: relative; overflow: hidden; display: block; border: 1px solid var(--border-light); height: 450px; border-radius: 4px; }
 .category-card img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s ease; }
 .category-card-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 50%); display: flex; align-items: flex-end; padding: 30px; z-index: 2; }
 .category-card-overlay h3 { font-family: var(--font-heading); font-size: 26px; font-weight: 400; text-transform: uppercase; color: white; margin-bottom: 5px; }
@@ -2293,7 +2295,9 @@ body.admin-wrapper .product-form-grid {
 .new-arrivals-section { background: var(--bg-surface); font-family: var(--font-body); position: relative; }
 .btn-carousel-arrow { width: 44px; height: 44px; border: 1px solid var(--border-strong); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-primary); background: transparent; transition: var(--transition); }
 .btn-carousel-arrow:hover { background: var(--color-primary); color: white; }
-.new-arrivals-carousel { display: flex; gap: 30px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth; padding-bottom: 20px; }
+/* NOTE: this block is overridden by the identical selector later in this file (search
+   ".new-arrivals-carousel"). Kept in sync so whichever one wins behaves the same. */
+.new-arrivals-carousel { display: flex; gap: 24px; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scroll-snap-type: x proximity; padding-top: 12px; padding-bottom: 20px; }
 
 .product-card-details { padding: 20px 20px 0; text-align: center; display: flex; flex-direction: column; align-items: center; flex: 1; }
 .product-card-category { font-size: 11px; color: var(--text-muted); text-transform: uppercase; display: block; margin-bottom: 6px; letter-spacing: 0.1em; }
@@ -2529,7 +2533,7 @@ body.admin-wrapper .product-form-grid {
 .header-image-search-btn:hover { background: var(--border-light); color: var(--text-primary); }
 
 /* Right Action Icons */
-.nav-actions { display: flex; align-items: center; gap: 22px; }
+.nav-actions { display: flex; align-items: center; gap: 8px; }
 .nav-action-item { display: flex; flex-direction: column; align-items: center; text-decoration: none; color: var(--text-primary); font-size: 17px; position: relative; cursor: pointer; background: none; border: none; transition: color 0.2s; }
 .nav-action-item:hover { color: var(--color-accent); }
 .nav-action-item span { font-size: 10px; font-weight: 600; text-transform: uppercase; margin-top: 3px; color: var(--text-secondary); letter-spacing: 0.05em; }
@@ -2708,7 +2712,7 @@ body.admin-wrapper .product-form-grid {
 /* ── Dievon Size Guide Modal ────────────────────────────────── */
 .dievon-sg-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px; opacity: 0; transition: opacity 0.3s ease; }
 .dievon-sg-overlay.is-visible { opacity: 1; }
-.dievon-sg-modal { background: var(--bg-surface); border: 1px solid var(--border-strong); width: 100%; max-width: 860px; max-height: 88vh; border-radius: 10px; overflow-y: auto; position: relative; box-shadow: var(--shadow-lg); transform: scale(0.95) translateY(10px); transition: transform 0.3s ease; }
+.dievon-sg-modal { background: var(--bg-surface); border: 1px solid var(--border-strong); width: 100%; max-width: 1120px; max-height: 94vh; border-radius: 10px; overflow-y: auto; position: relative; box-shadow: var(--shadow-lg); transform: scale(0.95) translateY(10px); transition: transform 0.3s ease; }
 .dievon-sg-overlay.is-visible .dievon-sg-modal { transform: scale(1) translateY(0); }
 .dievon-sg-header { position: sticky; top: 0; background: var(--bg-surface); z-index: 2; padding: 22px 28px; border-bottom: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center; }
 .dievon-sg-header-text { display: flex; flex-direction: column; gap: 4px; }
@@ -3510,7 +3514,14 @@ body.admin-wrapper {
 .btn-carousel-arrow { width: 44px; height: 44px; border: 1px solid var(--border-strong); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-primary); background: transparent; transition: all 0.2s; border-radius: 4px; }
 .btn-carousel-arrow:hover { background: var(--color-primary); color: #ffffff; }
 
-.new-arrivals-carousel { display: flex; gap: 24px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth; padding-bottom: 20px; }
+/* overflow-y is set explicitly: with only overflow-x:auto the spec forces overflow-y to
+   compute to `auto`, which makes this band a scroll container on BOTH axes and lets it
+   swallow vertical page-scroll gestures. `proximity` (not `mandatory`) keeps the snap
+   without the browser claiming every slightly-diagonal trackpad/touch swipe. Smooth
+   scrolling is NOT set here on purpose — scrollCarousel() in pages/home.php passes
+   behavior:'smooth' explicitly, so the arrows stay animated while user gestures do not.
+   padding-top leaves room for the .product-card:hover lift (-6px) and its shadow. */
+.new-arrivals-carousel { display: flex; gap: 24px; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scroll-snap-type: x proximity; padding-top: 12px; padding-bottom: 20px; }
 .product-card-carousel { flex: 0 0 280px; width: 280px; scroll-snap-align: start; }
 
 .hide-scrollbar::-webkit-scrollbar { display: none; }
@@ -4223,3 +4234,158 @@ body.admin-wrapper {
     }
 }
 
+
+/* ═══════════════════════════════════════════════════════════
+   SUPPORT TICKETS — photo attachment & advisor replies
+   (classes rather than inline styles so the markup stays clean
+   and these are themeable in one place)
+   ═══════════════════════════════════════════════════════════ */
+.ticket-list { margin-bottom: 25px; display: flex; flex-direction: column; gap: 10px; }
+.ticket-item { border: 1px solid var(--border-light); padding: 14px; border-radius: 4px; background: var(--bg-surface-soft); font-size: 13px; }
+.ticket-item-head { display: flex; justify-content: space-between; gap: 10px; }
+.ticket-item-status { font-weight: 700; color: var(--color-primary); white-space: nowrap; }
+.ticket-item-msg { margin: 6px 0 0; color: var(--text-secondary); }
+.ticket-item-photo { margin-top: 10px; max-width: 130px; border: 1px solid var(--border-light); border-radius: 4px; }
+
+.ticket-reply { margin-top: 12px; padding: 12px 14px; background: var(--bg-surface); border-left: 3px solid var(--color-primary); border-radius: 3px; }
+.ticket-reply-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-primary); font-weight: 700; margin-bottom: 5px; }
+.ticket-reply-body { color: var(--text-primary); }
+
+.ticket-form-group { margin-bottom: 15px; }
+.ticket-form-label { display: block; font-size: 11px; text-transform: uppercase; margin-bottom: 6px; }
+.ticket-file-input { padding: 8px; }
+.ticket-file-hint { display: block; color: var(--text-muted); font-size: 11px; margin-top: 5px; }
+.ticket-photo-preview { display: none; margin-top: 10px; max-width: 160px; border: 1px solid var(--border-light); border-radius: 4px; }
+.ticket-photo-preview.is-visible { display: block; }
+.ticket-submit-btn { padding: 10px 24px; font-size: 12px; }
+
+/* ═══════════════════════════════════════════════════════════
+   DIEVON DIALOG — branded replacement for window.alert/confirm
+   Loaded on both the storefront and the admin panel so the whole
+   product never shows the grey "localhost says…" browser dialog.
+   ═══════════════════════════════════════════════════════════ */
+.dv-dialog-overlay {
+    position: fixed; inset: 0; z-index: 100000;
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+    background: rgba(28, 10, 16, 0.55);
+    -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+    opacity: 0; visibility: hidden;
+    transition: opacity 0.22s ease, visibility 0.22s ease;
+}
+.dv-dialog-overlay.is-open { opacity: 1; visibility: visible; }
+
+.dv-dialog {
+    width: 100%; max-width: 420px;
+    background: var(--bg-surface, #fff);
+    border: 1px solid var(--border-light, #eae4dc);
+    border-radius: 6px;
+    box-shadow: 0 24px 60px rgba(40, 12, 24, 0.28);
+    padding: 30px 28px 24px;
+    text-align: center;
+    transform: translateY(12px) scale(0.97);
+    transition: transform 0.26s cubic-bezier(0.22, 1, 0.36, 1);
+    max-height: 90vh; overflow-y: auto;
+}
+.dv-dialog-overlay.is-open .dv-dialog { transform: translateY(0) scale(1); }
+
+.dv-dialog-icon {
+    width: 54px; height: 54px; margin: 0 auto 16px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px; line-height: 1;
+}
+.dv-dialog--success .dv-dialog-icon { background: rgba(16,185,129,0.12); color: #10b981; }
+.dv-dialog--error   .dv-dialog-icon { background: rgba(239,68,68,0.12);  color: #ef4444; }
+.dv-dialog--warning .dv-dialog-icon { background: rgba(245,158,11,0.14); color: #f59e0b; }
+.dv-dialog--confirm .dv-dialog-icon,
+.dv-dialog--info    .dv-dialog-icon { background: rgba(81,17,38,0.10);   color: var(--color-primary, #511126); }
+
+.dv-dialog-title {
+    font-family: var(--font-heading, Georgia, serif);
+    font-size: 20px; font-weight: 400; letter-spacing: 0.02em;
+    color: var(--text-primary, #241017);
+    margin: 0 0 8px;
+}
+.dv-dialog-message {
+    font-size: 14px; line-height: 1.6;
+    color: var(--text-secondary, #6b5b62);
+    margin: 0 0 24px;
+    white-space: pre-line;   /* keeps \n from the original alert() strings readable */
+    word-break: break-word;
+}
+.dv-dialog-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.dv-dialog-btn {
+    font-family: var(--font-body, inherit);
+    font-size: 12px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    padding: 12px 26px; border-radius: 4px;
+    cursor: pointer; border: 1px solid transparent;
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    min-width: 116px;
+}
+.dv-dialog-btn--primary { background: var(--color-primary, #511126); color: #fff; }
+.dv-dialog-btn--primary:hover { background: var(--color-secondary, #6d1832); }
+.dv-dialog-btn--ghost { background: transparent; color: var(--text-secondary, #6b5b62); border-color: var(--border-strong, #d8cec4); }
+.dv-dialog-btn--ghost:hover { background: var(--bg-surface-soft, #faf8f5); color: var(--text-primary, #241017); }
+.dv-dialog-btn--danger { background: #c0392b; color: #fff; }
+.dv-dialog-btn--danger:hover { background: #a93226; }
+
+body.dv-dialog-open { overflow: hidden; }
+
+@media (max-width: 480px) {
+    .dv-dialog { padding: 26px 20px 20px; }
+    .dv-dialog-actions { flex-direction: column-reverse; }
+    .dv-dialog-btn { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .dv-dialog-overlay, .dv-dialog { transition: none; }
+}
+
+/* Available offers — one quiet line under the price. Deliberately no border, no
+   box and no chips: the codes should be findable without competing with the
+   price or the Add to Bag button. The code itself is still click-to-copy. */
+.product-offers-line {
+    font-size: 12.5px;
+    line-height: 1.7;
+    color: var(--text-secondary);
+    /* Its own line directly above .delivery-checker-box — no border or padding,
+       so it reads as a standalone note rather than part of the box below it. */
+    margin: 0 0 10px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px;
+}
+.product-offers-line > i { color: var(--color-accent); font-size: 11px; }
+.offer-code {
+    font-family: var(--font-body);
+    font-size: 12.5px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--color-primary);
+    background: none;
+    border: none;
+    border-bottom: 1px dashed var(--color-primary);
+    padding: 0;
+    cursor: pointer;
+}
+.offer-code:hover { color: var(--color-secondary); border-bottom-style: solid; }
+.offer-sep { color: var(--text-muted); opacity: 0.6; }
+
+/* Site-wide "How to Measure" picture inside the size guide popup.
+   Sits between the measurement table and the built-in SVG diagrams — additive,
+   it does not replace them. Uploaded once in Admin → Size Guide. */
+.dievon-sg-howto {
+    margin: 24px 0 4px;
+    padding-top: 22px;
+    border-top: 1px solid var(--border-light);
+    text-align: center;
+}
+.dievon-sg-howto-img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+    display: block;
+    margin: 0 auto;
+}

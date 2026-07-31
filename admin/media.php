@@ -175,7 +175,7 @@ require_once __DIR__ . '/includes/header.php';
                 <span style="display:inline-block; font-size:10px; font-weight:700; padding:2px 8px; border-radius:20px; margin-bottom:8px; <?= $m['inUse'] ? 'background:rgba(16,185,129,0.12); color:#10b981;' : 'background:rgba(245,158,11,0.12); color:#f59e0b;' ?>">
                     <?= $m['inUse'] ? 'In use' : 'Unused' ?>
                 </span>
-                <form method="POST" style="margin:0;" onsubmit="return confirm('<?= $m['inUse'] ? 'This file is still in use somewhere on the site. Deleting it will break that image. Delete anyway?' : 'Delete this file?' ?>');">
+                <form method="POST" style="margin:0;" onsubmit="return dvConfirmForm(this,'<?= $m['inUse'] ? 'This file is still in use somewhere on the site. Deleting it will break that image. Delete anyway?' : 'Delete this file?' ?>');">
                     <input type="hidden" name="action" value="delete_media">
                     <input type="hidden" name="folder" value="<?= htmlspecialchars($m['folder']) ?>">
                     <input type="hidden" name="filename" value="<?= htmlspecialchars($m['filename']) ?>">

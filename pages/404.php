@@ -19,8 +19,8 @@ require_once __DIR__ . '/../includes/header.php';
             The page or garment collection you were searching for may have moved or is no longer available.
         </p>
         <div style="display: flex; justify-content: center; gap: 15px;">
-            <a href="home" class="btn-luxury">Return to Homepage</a>
-            <a href="shop" class="btn-luxury-outline">Browse Shop Collections</a>
+            <a href="<?= SITE_URL ?>/home" class="btn-luxury">Return to Homepage</a>
+            <a href="<?= SITE_URL ?>/shop" class="btn-luxury-outline">Browse Shop Collections</a>
         </div>
     </div>
 </section>

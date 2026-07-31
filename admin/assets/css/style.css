@@ -69,22 +69,13 @@
     --transition:        all 0.3s ease;
     --transition-bounce: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
     --transition-slow:   all 0.6s cubic-bezier(0.25, 1, 0.5, 1);
-}──────────────────────── */
-    --font-heading: 'Outfit', sans-serif;
-    --font-body:    'Plus Jakarta Sans', sans-serif;
-
-    /* ── Radius ───────────────────────────────────────────── */
-    --radius-xs: 6px;
-    --radius-sm: 12px;
-    --radius-md: 20px;
-    --radius-lg: 28px;
-    --radius-xl: 40px;
-
-    /* ── Transitions ──────────────────────────────────────── */
-    --transition:        all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-bounce: all 0.4s  cubic-bezier(0.34, 1.56, 0.64, 1);
-    --transition-slow:   all 0.5s  cubic-bezier(0.4, 0, 0.2, 1);
 }
+/* NOTE: a stray closing brace plus an orphaned duplicate variable block used to sit
+   here (the remains of a half-deleted edit). It closed :root early and left ~15
+   declarations outside any selector, which browsers discard — and it left the whole
+   stylesheet with unbalanced braces. Every variable it declared is already defined in
+   the :root block above with the values actually in use, so removing it changes
+   nothing visually; it only makes the file valid again. */
 
 /* ── Reset ─────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -1664,3 +1655,109 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 
 
 
+
+/* ═══════════════════════════════════════════════════════════
+   SUPPORT TICKETS — customer photo, advisor reply, reply form
+   ═══════════════════════════════════════════════════════════ */
+.ticket-photo-thumb { margin-top: 8px; max-width: 110px; border: 1px solid var(--border-light, #e2e8f0); border-radius: 4px; display: block; }
+.ticket-admin-reply { margin-top: 8px; padding: 8px 10px; background: rgba(16,185,129,0.07); border-left: 3px solid #10b981; border-radius: 3px; font-size: 12px; }
+.ticket-admin-reply-label { color: #10b981; font-size: 10px; text-transform: uppercase; letter-spacing: .06em; }
+.ticket-action-cell { text-align: right; min-width: 260px; }
+.ticket-reply-form { margin: 0; display: flex; flex-direction: column; gap: 6px; align-items: stretch; }
+.ticket-reply-textarea { font-size: 12px; padding: 6px 8px; height: auto; resize: vertical; }
+.ticket-reply-controls { display: flex; gap: 6px; justify-content: flex-end; }
+.ticket-status-select { font-size: 12px; padding: 4px 8px; height: auto; }
+
+/* ═══════════════════════════════════════════════════════════
+   PRODUCT FORM — colour-variant empty state & auto-SEO panel
+   ═══════════════════════════════════════════════════════════ */
+.colors-empty-state { text-align: center; padding: 26px 20px; border: 1px solid var(--border-light); border-radius: var(--radius-md); background: var(--bg-surface); color: var(--text-secondary); }
+.colors-empty-icon { font-size: 26px; color: var(--border-strong); display: block; margin-bottom: 10px; }
+.colors-empty-title { display: block; color: var(--text-primary); margin-bottom: 4px; }
+.colors-empty-text { font-size: 13px; }
+
+.seo-auto-note { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; margin-bottom: 18px; border-radius: var(--radius-sm); background: rgba(16,185,129,0.08); border-left: 3px solid #10b981; font-size: 13px; }
+.seo-auto-note-icon { color: #10b981; margin-top: 2px; }
+.seo-auto-note-title { display: block; margin-bottom: 2px; }
+.seo-auto-fill-btn { margin-left: 6px; background: none; border: none; color: #10b981; font-weight: 700; cursor: pointer; text-decoration: underline; padding: 0; font-size: 13px; }
+.seo-count-over { color: #e67e22; }
+
+/* Ticket status pills — replaces the per-row inline background/colour that was
+   previously computed in PHP via match() and echoed into a style attribute. */
+.ticket-status-badge { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; display: inline-block; }
+.ticket-status-badge--open        { background: rgba(239,68,68,0.12);  color: #ef4444; }
+.ticket-status-badge--in-progress { background: rgba(245,158,11,0.12); color: #f59e0b; }
+.ticket-status-badge--resolved    { background: rgba(16,185,129,0.12); color: #10b981; }
+.ticket-status-badge--closed      { background: rgba(148,163,184,0.15); color: #64748b; }
+
+/* ═══════════════════════════════════════════════════════════
+   SIZE GUIDE — starter templates & missing-guide warning
+   ═══════════════════════════════════════════════════════════ */
+.sg-template-bar { display: flex; gap: 18px; flex-wrap: wrap; align-items: center; justify-content: space-between;
+    padding: 16px 18px; margin-bottom: 22px; border-radius: var(--radius-md);
+    background: rgba(16,185,129,0.07); border-left: 3px solid #10b981; }
+.sg-template-copy { flex: 1; min-width: 260px; font-size: 13px; line-height: 1.6; }
+.sg-template-title { display: block; margin-bottom: 3px; color: #10b981; }
+.sg-template-controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.sg-template-controls .form-control { min-width: 240px; }
+.sg-template-apply { white-space: nowrap; }
+
+.sg-missing-warning { display: flex; gap: 12px; align-items: flex-start;
+    padding: 14px 16px; margin-bottom: 20px; border-radius: var(--radius-md);
+    background: rgba(245,158,11,0.10); border-left: 3px solid #f59e0b; font-size: 13px; line-height: 1.6; }
+.sg-missing-icon { color: #f59e0b; margin-top: 3px; font-size: 16px; }
+.sg-missing-title { display: block; margin-bottom: 2px; }
+.sg-missing-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.sg-missing-chip { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;
+    background: #fff; border: 1px solid #f59e0b; color: #b45309; text-decoration: none; }
+.sg-missing-chip:hover { background: #f59e0b; color: #fff; }
+
+/* Size guide save row, undo, and the "this looks like a typo" cell outline */
+.sg-save-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 20px; }
+.sg-save-btn { padding: 12px 28px; }
+.sg-undo-btn { padding: 12px 20px; background: transparent; border: 1px solid var(--border-strong); color: var(--text-secondary); border-radius: var(--radius-sm); cursor: pointer; font-weight: 600; }
+.sg-undo-btn:hover { background: var(--bg-surface-soft); color: var(--text-primary); }
+.sg-save-status { font-size: 13px; color: var(--text-muted); }
+.sg-save-note { font-size: 12px; color: var(--text-muted); margin-top: 8px; max-width: 640px; line-height: 1.6; }
+.sg-cell-suspect { border: 2px solid #e74c3c !important; background: rgba(231,76,60,0.06) !important; }
+
+/* Site-wide "how to measure" image — one upload used by every category */
+.sg-global-image { display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start; justify-content: space-between;
+    padding: 16px 18px; margin-bottom: 20px; border-radius: var(--radius-md);
+    background: var(--bg-main); border: 1px solid var(--border-light); }
+.sg-global-image-copy { flex: 1; min-width: 280px; font-size: 13px; line-height: 1.65; }
+.sg-global-image-title { display: block; margin-bottom: 4px; }
+.sg-global-image-note { display: block; margin-top: 6px; font-size: 12px; color: var(--text-muted); }
+.sg-global-image-side { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; min-width: 230px; }
+.sg-global-image-preview { max-width: 120px; border: 1px solid var(--border-light); border-radius: var(--radius-sm); display: block; }
+.sg-global-image-empty { width: 120px; height: 90px; border: 2px dashed var(--border-strong); border-radius: var(--radius-sm);
+    display: flex; align-items: center; justify-content: center; text-align: center;
+    font-size: 11px; color: var(--text-muted); line-height: 1.4; }
+.sg-global-image-form { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+.sg-global-image-input { font-size: 12px; padding: 6px; }
+.sg-global-image-btn { padding: 8px 14px; font-size: 12px; }
+.sg-global-image-remove { background: none; border: none; color: #c0392b; font-size: 12px; cursor: pointer; text-decoration: underline; padding: 0; align-self: flex-start; }
+
+/* Desktop / mobile variants of the site-wide how-to-measure image */
+.sg-global-image-variants { display: flex; gap: 18px; flex-wrap: wrap; }
+.sg-variant-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--text-primary); }
+.sg-variant-hint { font-size: 11px; color: var(--text-muted); max-width: 210px; line-height: 1.5; }
+
+/* Scope notice on the size guide tabs — makes it unmistakable which numbers are
+   shop-wide (body) and which belong only to this category (garment). */
+.sg-scope-note { display: flex; gap: 10px; align-items: flex-start; padding: 11px 14px; margin-bottom: 14px;
+    border-radius: var(--radius-sm); font-size: 12.5px; line-height: 1.6; }
+.sg-scope-note i { margin-top: 3px; font-size: 14px; }
+.sg-scope-note--global { background: rgba(59,130,246,0.08); border-left: 3px solid #3b82f6; }
+.sg-scope-note--global i { color: #3b82f6; }
+.sg-scope-note--local  { background: rgba(245,158,11,0.09); border-left: 3px solid #f59e0b; }
+.sg-scope-note--local i { color: #f59e0b; }
+
+/* Upload result banner on the size guide page */
+.sg-img-status { display: flex; gap: 9px; align-items: flex-start; padding: 12px 15px; margin-bottom: 16px;
+    border-radius: var(--radius-sm); font-size: 13px; line-height: 1.6; }
+.sg-img-status i { margin-top: 2px; }
+.sg-img-status--ok  { background: rgba(16,185,129,0.10); border-left: 3px solid #10b981; }
+.sg-img-status--ok i { color: #10b981; }
+.sg-img-status--err { background: rgba(239,68,68,0.09); border-left: 3px solid #ef4444; }
+.sg-img-status--err i { color: #ef4444; }

@@ -642,7 +642,6 @@
     .product-detail-container { padding: 0 12px; }
     .delivery-checker-input-wrap { flex-direction: column; }
     .delivery-checker-input-wrap button { width: 100%; margin-top: 5px; }
-}
 
     .gallery-grid        { columns: 1; }
 
@@ -840,7 +839,14 @@ body.admin-wrapper .table-wrapper {
 /* Site-wide Overflow Prevention */
 html, body {
     max-width: 100% !important;
+    /* `hidden` first as the fallback for old browsers, then `clip` for everything
+       modern. This matters: overflow-x:hidden makes html/body a scroll container
+       (the spec forces the other axis to `auto`), which silently breaks every
+       position:sticky on the site — including the sticky product gallery. `clip`
+       suppresses the horizontal overflow exactly the same way WITHOUT creating a
+       scroll container, so sticky keeps working. */
     overflow-x: hidden !important;
+    overflow-x: clip !important;
 }
 
 @media (max-width: 991px) {
@@ -1190,4 +1196,33 @@ html, body {
 
     /* Step Navigation Bar */
     .step-nav-header { margin-bottom: 15px !important; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   GLOBAL CARD RADIUS
+   Single source of truth: every storefront card container is 4px.
+   Lives at the end of responsive.css because this file loads AFTER
+   style.css, so this reliably wins over the per-card radii that were
+   previously scattered across both files (6px, 8px, var(--radius-sm)
+   which is 0px, etc.). Admin cards are intentionally excluded — their
+   `body.admin-wrapper .stat-card` rule has higher specificity and keeps
+   its own radius.
+   ═══════════════════════════════════════════════════════════ */
+.product-card,
+.category-card,
+.blog-card,
+.mega-promo-card,
+.compact-product-card,
+.review-card-item,
+.search-product-card,
+.product-modal-card,
+.auth-card-box,
+.stat-card,
+.acc-form-card,
+.acc-address-card,
+.acc-stat-card,
+.acc-wishlist-card,
+.cart-summary-card,
+.checkout-summary-card {
+    border-radius: 4px;
 }

@@ -114,7 +114,7 @@ require_once __DIR__ . '/../includes/header.php';
             </form>
 
             <p class="auth-footer-text" style="margin-top: 25px;">
-                Remembered your password? <a href="login.php">Back to Sign In</a>
+                Remembered your password? <a href="<?= SITE_URL ?>/login.php">Back to Sign In</a>
             </p>
         </div>
     </div>

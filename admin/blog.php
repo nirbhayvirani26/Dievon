@@ -136,6 +136,11 @@ try {
     $posts = $pdo->query("SELECT * FROM blog_posts ORDER BY published_date DESC, id DESC")->fetchAll();
 } catch (PDOException $e) {}
 
+// This page renders its own richer <div class="admin-page-header"> below
+// (icon, specific title, detailed subtitle, action buttons), so suppress the
+// generic one in includes/header.php — otherwise both draw and the page shows
+// two titles. Same pattern as product_form.php.
+$hideHeaderTitle = true;
 require_once __DIR__ . '/includes/header.php';
 ?>
 
@@ -298,7 +303,7 @@ require_once __DIR__ . '/includes/header.php';
                                 <a href="blog.php?edit=<?= $p['id'] ?>" class="btn-sm btn-sm-primary" style="padding:4px 10px; text-decoration:none; margin-right:4px;">
                                     <i class="fa-solid fa-pen-to-square"></i> Edit
                                 </a>
-                                <a href="blog.php?delete=<?= $p['id'] ?>" onclick="return confirm('Delete this article?');" class="btn-sm btn-sm-danger" style="padding:4px 10px; text-decoration:none;">
+                                <a href="blog.php?delete=<?= $p['id'] ?>" onclick="return dvConfirmLink(this,'Delete this article?');" class="btn-sm btn-sm-danger" style="padding:4px 10px; text-decoration:none;">
                                     <i class="fa-solid fa-trash"></i> Delete
                                 </a>
                             </td>

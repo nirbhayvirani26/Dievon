@@ -82,7 +82,7 @@ require_once __DIR__ . '/includes/header.php';
                         <td style="padding: 14px 16px;"><span style="background: #ecfdf5; color: #065f46; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 700;"><?= $b['status'] ?></span></td>
                         <td style="padding: 14px 16px; color: #6b7280;"><?= date('M d, Y', strtotime($b['created_at'])) ?></td>
                         <td style="padding: 14px 16px;">
-                            <a href="brands.php?delete=<?= $b['id'] ?>" onclick="return confirm('Delete this brand?');" style="color: #ef4444; font-weight: 600; text-decoration: none;">Delete</a>
+                            <a href="brands.php?delete=<?= $b['id'] ?>" onclick="return dvConfirmLink(this,'Delete this brand?');" style="color: #ef4444; font-weight: 600; text-decoration: none;">Delete</a>
                         </td>
                     </tr>
                 <?php endforeach; ?>

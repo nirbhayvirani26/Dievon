@@ -60,7 +60,7 @@ require_once __DIR__ . '/../includes/header.php';
                 
                 <?php if (isset($_SESSION['customer_id'])): ?>
                     <div style="margin-top: 25px;">
-                        <a href="account" style="font-size: 12px; color: var(--color-accent); font-weight: 600; text-decoration: underline;">Back to Dashboard</a>
+                        <a href="<?= SITE_URL ?>/account" style="font-size: 12px; color: var(--color-accent); font-weight: 600; text-decoration: underline;">Back to Dashboard</a>
                     </div>
                 <?php endif; ?>
             </div>
@@ -191,9 +191,9 @@ require_once __DIR__ . '/../includes/header.php';
                 </div>
 
                 <div style="margin-top: 40px; text-align: center; border-top: 1px solid var(--border-light); padding-top: 30px; display: flex; gap: 20px; justify-content: center;">
-                    <a href="orders" class="btn-luxury-outline" style="font-size: 11px; padding: 10px 24px;">Track Another Order</a>
+                    <a href="<?= SITE_URL ?>/orders" class="btn-luxury-outline" style="font-size: 11px; padding: 10px 24px;">Track Another Order</a>
                     <?php if (isset($_SESSION['customer_id'])): ?>
-                        <a href="account" class="btn-luxury" style="font-size: 11px; padding: 10px 24px;">Member Dashboard</a>
+                        <a href="<?= SITE_URL ?>/account" class="btn-luxury" style="font-size: 11px; padding: 10px 24px;">Member Dashboard</a>
                     <?php endif; ?>
                 </div>
 

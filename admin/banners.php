@@ -123,6 +123,11 @@ try {
     $banners = $pdo->query("SELECT * FROM banners ORDER BY sort_order ASC, id DESC")->fetchAll();
 } catch (PDOException $e) {}
 
+// This page renders its own richer <div class="admin-page-header"> below
+// (icon, specific title, detailed subtitle, action buttons), so suppress the
+// generic one in includes/header.php — otherwise both draw and the page shows
+// two titles. Same pattern as product_form.php.
+$hideHeaderTitle = true;
 require_once __DIR__ . '/includes/header.php';
 ?>
 
@@ -254,7 +259,7 @@ require_once __DIR__ . '/includes/header.php';
                                 <a href="banners.php?edit=<?= $b['id'] ?>" class="btn-sm btn-sm-primary" style="padding:6px 12px; text-decoration:none; margin-right:6px;">
                                     <i class="fa-solid fa-pen-to-square"></i> Edit
                                 </a>
-                                <a href="banners.php?delete=<?= $b['id'] ?>" onclick="return confirm('Delete this banner slide?');" class="btn-sm btn-sm-danger" style="padding:6px 12px; text-decoration:none;">
+                                <a href="banners.php?delete=<?= $b['id'] ?>" onclick="return dvConfirmLink(this,'Delete this banner slide?');" class="btn-sm btn-sm-danger" style="padding:6px 12px; text-decoration:none;">
                                     <i class="fa-solid fa-trash"></i> Delete
                                 </a>
                             </td>

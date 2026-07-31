@@ -109,7 +109,7 @@ require_once __DIR__ . '/includes/header.php';
                                     <button type="submit" style="background:none; border:none; padding:0; color: #10b981; font-weight: 600; cursor: pointer;">Approve</button>
                                 </form>
                                 <?php endif; ?>
-                                <form method="POST" style="margin:0;" onsubmit="return confirm('Delete this review?');">
+                                <form method="POST" style="margin:0;" onsubmit="return dvConfirmForm(this,'Delete this review?');">
                                     <input type="hidden" name="action" value="delete_review">
                                     <input type="hidden" name="review_id" value="<?= (int)$r['id'] ?>">
                                     <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">

@@ -107,7 +107,7 @@ require_once __DIR__ . '/../includes/header.php';
                 <?php if (!$customer): ?>
                 <div id="checkoutLoginBox" style="display: none; background: #fafafa; border: 1px solid var(--border-strong); padding: 25px; margin-bottom: 30px; border-radius: 6px;">
                     <h4 style="font-family: var(--font-heading); font-size: 16px; margin-bottom: 15px;">Customer Login</h4>
-                    <form action="actions/customer_action.php?action=login" method="POST">
+                    <form action="<?= SITE_URL ?>/actions/customer_action.php?action=login" method="POST">
                         <div class="form-row">
                             <input type="email" name="email" placeholder="Email Address" required class="form-luxury-input" style="padding: 10px; font-size: 13px;">
                             <input type="password" name="password" placeholder="Password" required class="form-luxury-input" style="padding: 10px; font-size: 13px;">
@@ -374,7 +374,7 @@ require_once __DIR__ . '/../includes/header.php';
                             <div class="summary-item-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 13px; border-bottom: 1px dashed var(--border-light); padding-bottom: 8px;">
                                 <div style="display: flex; gap: 10px; align-items: center;">
                                     <?php if (!empty($item['image'])): ?>
-                                        <img src="uploads/products/<?= htmlspecialchars($item['image']) ?>" alt="<?= htmlspecialchars($item['name']) ?>" style="width: 40px; height: 50px; object-fit: cover; border-radius: 3px;"
+                                        <img src="<?= SITE_URL ?>/uploads/products/<?= htmlspecialchars($item['image']) ?>" alt="<?= htmlspecialchars($item['name']) ?>" style="width: 40px; height: 50px; object-fit: cover; border-radius: 3px;"
                                              onerror="this.outerHTML='<span style=&quot;font-size:24px; width:40px; display:inline-block; text-align:center;&quot;><?= htmlspecialchars($item['emoji'] ?? '👗') ?></span>';">
                                     <?php endif; ?>
                                     <div>
@@ -582,7 +582,7 @@ function startRazorpayCheckout(form) {
     };
     const snapshotBody = Object.keys(snapshotFields).map(k => encodeURIComponent(k) + '=' + encodeURIComponent(snapshotFields[k])).join('&');
 
-    fetch('actions/razorpay_order.php', {
+    fetch(window.SITE_URL + '/actions/razorpay_order.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: snapshotBody,

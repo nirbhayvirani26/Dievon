@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     let html = '';
                     data.forEach(product => {
                         const priceDisplay = product.formatted_price ? escapeHtml(product.formatted_price) : (typeof formatPriceJS === 'function' ? formatPriceJS(product.price) : '£' + parseFloat(product.price).toFixed(2));
-                        const imgSrc = product.image_url ? product.image_url : (product.image ? 'uploads/products/' + product.image : '');
+                        const imgSrc = product.image_url ? product.image_url : (product.image ? window.SITE_URL + '/uploads/products/' + product.image : '');
                         const imgHtml = imgSrc ? `<img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(product.name)}">` : `<div style="width:80px; height:100px; background:#f3f4f6; display:flex; align-items:center; justify-content:center;">${product.emoji || '✨'}</div>`;
                         
                         html += `

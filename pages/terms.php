@@ -8,7 +8,7 @@ $pageTitle = "Terms & Conditions | Dievon Atelier";
 require_once __DIR__ . '/../includes/header.php';
 ?>
 
-<section class="luxury-hero" style="padding: 100px 0 40px;">
+<section class="luxury-hero has-bg-image" style="--hero-bg-image: url('<?= SITE_URL ?>/uploads/gallery/lookbook_2.png')">
     <div class="container">
         <span class="luxury-hero-eyebrow">Legal &amp; Governance</span>
         <h1>Terms &amp; Conditions</h1>

@@ -227,11 +227,10 @@ if ($action === 'submit_return') {
             }
 
             $uploadDir = __DIR__ . '/../uploads/returns/';
-            if (!file_exists($uploadDir)) {
-                mkdir($uploadDir, 0755, true);
-                // Create .htaccess to prevent PHP execution in uploads directory
-                file_put_contents($uploadDir . '.htaccess', "php_flag engine off\n<FilesMatch \"\.(php|phtml|phar)$\">\nOrder allow,deny\nDeny from all\n</FilesMatch>");
-            }
+            // Creates the dir and writes the script-execution guard. Uses the shared
+            // helper because the previous inline .htaccess used an unguarded `php_flag`,
+            // which is fatal under CGI/FPM and made Apache 500 on every RMA photo.
+            hardenUploadDir($uploadDir);
 
             $fileName = 'rma_' . bin2hex(random_bytes(16)) . '.' . $ext;
             if (move_uploaded_file($file['tmp_name'], $uploadDir . $fileName)) {
@@ -272,18 +271,81 @@ if ($action === 'submit_ticket') {
         jsonResp(false, 'Please fill in both the subject and message fields.');
     }
 
+    // Optional photo of the product issue. Mirrors the RMA upload rules in the
+    // return-request handler above: extension allowlist, explicit executable
+    // blocklist, size cap, MIME check, random filename, and an .htaccess that
+    // turns off PHP execution inside the upload directory.
+    $ticketPhoto = null;
+    if (isset($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
+        $file = $_FILES['photo'];
+        $allowedExts = ['jpg', 'jpeg', 'png', 'webp'];
+        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+
+        $forbiddenExts = ['php', 'phtml', 'phar', 'php3', 'php4', 'php5', 'php7', 'phps', 'js', 'sh', 'exe', 'py', 'cgi', 'pl'];
+        if (in_array($ext, $forbiddenExts) || !in_array($ext, $allowedExts)) {
+            jsonResp(false, 'Invalid file type. Please attach a JPG, PNG or WebP image.');
+        }
+        if ($file['size'] > 5 * 1024 * 1024) {
+            jsonResp(false, 'Photo size must be 5MB or smaller.');
+        }
+        $mimeType = @mime_content_type($file['tmp_name']);
+        $allowedMimes = ['image/jpeg', 'image/png', 'image/webp'];
+        if ($mimeType && !in_array($mimeType, $allowedMimes)) {
+            jsonResp(false, 'File MIME type validation failed.');
+        }
+
+        $uploadDir = __DIR__ . '/../uploads/tickets/';
+        hardenUploadDir($uploadDir);
+
+        $fileName = 'tck_' . bin2hex(random_bytes(16)) . '.' . $ext;
+        if (move_uploaded_file($file['tmp_name'], $uploadDir . $fileName)) {
+            $ticketPhoto = $fileName;
+        }
+    } elseif (isset($_FILES['photo']) && $_FILES['photo']['error'] !== UPLOAD_ERR_NO_FILE) {
+        jsonResp(false, 'The photo could not be uploaded. Please try again.');
+    }
+
     try {
         $ticketCode = 'TCK-' . strtoupper(bin2hex(random_bytes(3)));
-        $stmt = $pdo->prepare("INSERT INTO customer_tickets (ticket_code, customer_id, order_id, subject, message, status) VALUES (:tcode, :cid, :oid, :subj, :msg, 'Open')");
+        $stmt = $pdo->prepare("INSERT INTO customer_tickets (ticket_code, customer_id, order_id, subject, message, attachment, status) VALUES (:tcode, :cid, :oid, :subj, :msg, :att, 'Open')");
         $stmt->execute([
             'tcode' => $ticketCode,
             'cid' => $customerId,
             'oid' => $orderId,
             'subj' => $subject,
-            'msg' => $message
+            'msg' => $message,
+            'att' => $ticketPhoto
         ]);
 
-        jsonResp(true, 'Support Ticket ' . $ticketCode . ' created. An advisor will reply shortly.');
+        // Notify the customer (with their ticket code) and alert an advisor.
+        // Wrapped so a mail/SMTP failure can never lose an already-saved ticket.
+        try {
+            require_once __DIR__ . '/../includes/mailer.php';
+            $cStmt = $pdo->prepare("SELECT name, email FROM customers WHERE id = :id LIMIT 1");
+            $cStmt->execute(['id' => $customerId]);
+            $cust = $cStmt->fetch();
+
+            $orderCode = null;
+            if ($orderId) {
+                $oStmt = $pdo->prepare("SELECT order_code FROM orders WHERE id = :id LIMIT 1");
+                $oStmt->execute(['id' => $orderId]);
+                $orderCode = $oStmt->fetchColumn() ?: null;
+            }
+
+            if ($cust && !empty($cust['email'])) {
+                getEmailService()->sendTicketCreatedEmails([
+                    'ticket_code' => $ticketCode,
+                    'subject'     => $subject,
+                    'message'     => $message,
+                    'attachment'  => $ticketPhoto,
+                    'order_code'  => $orderCode,
+                ], $cust['name'] ?? 'Customer', $cust['email']);
+            }
+        } catch (\Throwable $mailErr) {
+            error_log('Ticket email failed for ' . $ticketCode . ': ' . $mailErr->getMessage());
+        }
+
+        jsonResp(true, 'Support Ticket ' . $ticketCode . ' created. A confirmation email is on its way and an advisor will reply shortly.');
     } catch (PDOException $e) {
         jsonResp(false, 'Error logging support ticket.');
     }

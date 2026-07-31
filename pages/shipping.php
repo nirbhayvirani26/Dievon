@@ -8,7 +8,7 @@ $pageTitle = "Shipping & Delivery Policy | Dievon Atelier";
 require_once __DIR__ . '/../includes/header.php';
 ?>
 
-<section class="luxury-hero" style="padding: 100px 0 40px;">
+<section class="luxury-hero has-bg-image" style="--hero-bg-image: url('<?= SITE_URL ?>/uploads/gallery/lookbook_3.png')">
     <div class="container">
         <span class="luxury-hero-eyebrow">Logistics &amp; Dispatch</span>
         <h1>Shipping &amp; Delivery Policy</h1>

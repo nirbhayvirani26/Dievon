@@ -93,6 +93,11 @@ try {
     }
 } catch (PDOException $e) {}
 
+// This page renders its own richer <div class="admin-page-header"> below
+// (icon, specific title, detailed subtitle, action buttons), so suppress the
+// generic one in includes/header.php — otherwise both draw and the page shows
+// two titles. Same pattern as product_form.php.
+$hideHeaderTitle = true;
 require_once __DIR__ . '/includes/header.php';
 ?>
 
@@ -200,7 +205,7 @@ require_once __DIR__ . '/includes/header.php';
                                             <td style="color: var(--text-muted); font-weight: 600;">#<?= $cat['id'] ?></td>
                                             <td style="font-weight: 600; color: var(--text-primary);"><?= htmlspecialchars($cat['name']) ?></td>
                                             <td style="text-align: right;">
-                                                <a href="categories.php?tab=<?= $activeTab ?>&delete_cat=<?= $cat['id'] ?>" onclick="return confirm('Delete sub-category &quot;<?= addslashes($cat['name']) ?>&quot;?');" class="btn-sm btn-sm-danger" style="padding: 5px 12px; text-decoration: none;">
+                                                <a href="categories.php?tab=<?= $activeTab ?>&delete_cat=<?= $cat['id'] ?>" onclick="return dvConfirmLink(this,'Delete sub-category &quot;<?= addslashes($cat['name']) ?>&quot;?');" class="btn-sm btn-sm-danger" style="padding: 5px 12px; text-decoration: none;">
                                                     <i class="fa-solid fa-trash"></i> Delete
                                                 </a>
                                             </td>
@@ -244,7 +249,7 @@ require_once __DIR__ . '/includes/header.php';
                                     </span>
                                 </td>
                                 <td style="text-align: right;">
-                                    <a href="categories.php?tab=<?= $activeTab ?>&delete_cat=<?= $cat['id'] ?>" onclick="return confirm('Delete main category &quot;<?= addslashes($cat['name']) ?>&quot;?');" class="btn-sm btn-sm-danger" style="padding: 5px 12px; text-decoration: none;">
+                                    <a href="categories.php?tab=<?= $activeTab ?>&delete_cat=<?= $cat['id'] ?>" onclick="return dvConfirmLink(this,'Delete main category &quot;<?= addslashes($cat['name']) ?>&quot;?');" class="btn-sm btn-sm-danger" style="padding: 5px 12px; text-decoration: none;">
                                         <i class="fa-solid fa-trash"></i> Delete
                                     </a>
                                 </td>

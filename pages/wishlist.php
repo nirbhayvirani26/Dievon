@@ -38,7 +38,7 @@ require_once __DIR__ . '/../includes/header.php';
             <p style="color: var(--text-secondary); font-size: 14px; max-width: 400px; margin: 0 auto 30px; line-height: 1.6;">
                 Save your favorite luxury pieces here to revisit and style them later.
             </p>
-            <a href="shop" class="btn-luxury">Shop Collections</a>
+            <a href="<?= SITE_URL ?>/shop" class="btn-luxury">Shop Collections</a>
         </div>
 
     </div>
@@ -74,7 +74,7 @@ require_once __DIR__ . '/../includes/header.php';
             const card = document.createElement('article');
             card.className = 'product-card reveal-on-scroll';
 
-            const imgSrc = p.image ? `uploads/products/${p.image}` : '';
+            const imgSrc = p.image ? `${window.SITE_URL}/uploads/products/${p.image}` : '';
             const imgHtml = imgSrc
                 ? `<img src="${escHtml(imgSrc)}" alt="${escHtml(p.name)}" class="card-img">`
                 : `<div class="card-img-fallback">${escHtml(p.emoji)}</div>`;
@@ -85,14 +85,14 @@ require_once __DIR__ . '/../includes/header.php';
                 </button>
 
                 <div class="card-img-container">
-                    <a href="product.php?id=${p.id}" class="card-img-link">
+                    <a href="<?= SITE_URL ?>/product.php?id=${p.id}" class="card-img-link">
                         ${imgHtml}
                     </a>
                 </div>
                 <div class="product-card-details">
                     <span class="product-card-category">${escHtml(p.category)}</span>
                     <h3 class="product-card-title">
-                        <a href="product.php?id=${p.id}">${escHtml(p.name)}</a>
+                        <a href="<?= SITE_URL ?>/product.php?id=${p.id}">${escHtml(p.name)}</a>
                     </h3>
                     <div class="product-card-price">
                         ${formatPriceJS(p.price)}
@@ -101,7 +101,7 @@ require_once __DIR__ . '/../includes/header.php';
                         <button onclick="addToBagFromWishlist(${p.id}, '${escHtml(p.name)}', '${escHtml(p.emoji)}', '${escHtml(p.price)}')" class="btn-luxury">
                             <i class="fa-solid fa-bag-shopping"></i> Add to Bag
                         </button>
-                        <a href="product.php?id=${p.id}" class="btn-luxury-outline">
+                        <a href="<?= SITE_URL ?>/product.php?id=${p.id}" class="btn-luxury-outline">
                             View Details
                         </a>
                     </div>

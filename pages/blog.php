@@ -47,7 +47,7 @@ require_once __DIR__ . '/../includes/header.php';
                 ?>
                     <article class="reveal-on-scroll" style="background: var(--bg-surface); border: 1px solid var(--border-light); display: flex; flex-direction: column;">
                         <div style="height: 250px; overflow: hidden; position: relative;">
-                            <a href="blog-single?id=<?= $a['id'] ?>">
+                            <a href="<?= SITE_URL ?>/blog-single?id=<?= $a['id'] ?>">
                                 <img src="<?= htmlspecialchars($imgUrl) ?>" alt="<?= htmlspecialchars($a['title']) ?>" style="width: 100%; height: 100%; object-fit: cover; transition: var(--transition-slow);">
                             </a>
                         </div>
@@ -57,13 +57,13 @@ require_once __DIR__ . '/../includes/header.php';
                                 <span style="color: var(--text-muted);"><?= date('F d, Y', strtotime($a['published_date'])) ?></span>
                             </div>
                             <h2 style="font-family: var(--font-heading); font-size: 24px; font-weight: 400; line-height: 1.3; margin-bottom: 15px; min-height: 62px;">
-                                <a href="blog-single?id=<?= $a['id'] ?>" style="color: var(--text-primary);"><?= htmlspecialchars($a['title']) ?></a>
+                                <a href="<?= SITE_URL ?>/blog-single?id=<?= $a['id'] ?>" style="color: var(--text-primary);"><?= htmlspecialchars($a['title']) ?></a>
                             </h2>
                             <p style="color: var(--text-secondary); font-size: 13px; line-height: 1.7; margin-bottom: 25px; flex: 1;">
                                 <?= htmlspecialchars($a['excerpt']) ?>
                             </p>
                             <div>
-                                <a href="blog-single?id=<?= $a['id'] ?>" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; color: var(--text-primary);">
+                                <a href="<?= SITE_URL ?>/blog-single?id=<?= $a['id'] ?>" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; color: var(--text-primary);">
                                     Read Article <i class="fa-solid fa-arrow-right-long" style="margin-left: 5px;"></i>
                                 </a>
                             </div>

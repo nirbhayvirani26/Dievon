@@ -44,13 +44,13 @@ require_once __DIR__ . '/../includes/header.php';
                 </p>
             </div>
             <div>
-                <img src="uploads/gallery/lookbook_2.png" alt="Dievon Atelier Heritage" style="width: 100%; border: 1px solid var(--border-light); box-shadow: var(--shadow-lg);">
+                <img src="<?= SITE_URL ?>/uploads/gallery/lookbook_2.png" alt="Dievon Atelier Heritage" style="width: 100%; border: 1px solid var(--border-light); box-shadow: var(--shadow-lg);">
             </div>
         </div>
 
         <div class="about-narrative-grid reveal-on-scroll">
             <div>
-                <img src="uploads/gallery/lookbook_3.png" alt="Artisan Atelier Studio" style="width: 100%; border: 1px solid var(--border-light); box-shadow: var(--shadow-lg);">
+                <img src="<?= SITE_URL ?>/uploads/gallery/lookbook_3.png" alt="Artisan Atelier Studio" style="width: 100%; border: 1px solid var(--border-light); box-shadow: var(--shadow-lg);">
             </div>
             <div>
                 <span class="editorial-label">Our Craft Standards</span>

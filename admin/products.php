@@ -65,6 +65,11 @@ try {
     $products = $pdo->query("SELECT * FROM products ORDER BY id DESC")->fetchAll();
 } catch (PDOException $e) {}
 
+// This page renders its own richer <div class="admin-page-header"> below
+// (icon, specific title, detailed subtitle, action buttons), so suppress the
+// generic one in includes/header.php — otherwise both draw and the page shows
+// two titles. Same pattern as product_form.php.
+$hideHeaderTitle = true;
 require_once __DIR__ . '/includes/header.php';
 ?>
 
@@ -195,7 +200,7 @@ require_once __DIR__ . '/includes/header.php';
                                 <i class="fa-solid fa-copy"></i>
                             </button>
                         </form>
-                        <form method="POST" action="products.php" style="display:inline;" onsubmit="return confirm('Archive product &quot;<?= addslashes($p['name']) ?>&quot;?');">
+                        <form method="POST" action="products.php" style="display:inline;" onsubmit="return dvConfirmForm(this,'Archive product &quot;<?= addslashes($p['name']) ?>&quot;?');">
                             <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
                             <input type="hidden" name="action" value="delete_product">
                             <input type="hidden" name="product_id" value="<?= $p['id'] ?>">

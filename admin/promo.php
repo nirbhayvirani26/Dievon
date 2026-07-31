@@ -1,5 +1,10 @@
 <?php
 $activeTab = 'promos';
+// This page renders its own richer <div class="admin-page-header"> below
+// (icon, specific title, detailed subtitle, action buttons), so suppress the
+// generic one in includes/header.php — otherwise both draw and the page shows
+// two titles. Same pattern as product_form.php.
+$hideHeaderTitle = true;
 require_once 'includes/header.php';
 
 $promoCodes = [];
@@ -185,8 +190,8 @@ function togglePromo(id) {
         });
 }
 
-function deletePromo(id, code) {
-    if (!confirm(`Delete promo code "${code}"? This cannot be undone.`)) return;
+async function deletePromo(id, code) {
+    if (!await dievonConfirm(`Delete promo code "${code}"? This cannot be undone.`)) return;
 
     const formData = new FormData();
     formData.append('action', 'delete');

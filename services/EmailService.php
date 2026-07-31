@@ -620,4 +620,122 @@ class EmailService {
         $custHtml = $this->wrapLuxuryTemplate("Inquiry Received: {$safeProd}", "Styling Concierge Acknowledgement", $custBody);
         return $this->sendMail($email, $name, "Product Enquiry Confirmation: {$safeProd} — DIEVON Atelier", $custHtml, 'product_enquiry_customer_ack');
     }
+
+    // ============================================================
+    //  8. SUPPORT TICKET EMAILS
+    //     Ticket created (customer ack + admin alert), status changed,
+    //     and advisor reply. Before these existed a customer had no way of
+    //     knowing anyone was working on their ticket — they had to log in
+    //     and watch the status badge.
+    // ============================================================
+
+    /** Customer acknowledgement + admin alert when a new ticket is opened. */
+    public function sendTicketCreatedEmails(array $ticket, string $customerName, string $customerEmail): bool {
+        $code    = htmlspecialchars($ticket['ticket_code'] ?? '');
+        $subject = htmlspecialchars($ticket['subject'] ?? '');
+        $message = nl2br(htmlspecialchars($ticket['message'] ?? ''));
+        $name    = htmlspecialchars($customerName);
+        $orderTxt = !empty($ticket['order_code']) ? htmlspecialchars($ticket['order_code']) : 'Not linked to an order';
+        $hasPhoto = !empty($ticket['attachment']);
+
+        // 1. Admin alert — nobody was being told a ticket had arrived.
+        $adminBody = "
+            <h2 style='font-family: Georgia, serif; font-size: 20px; font-weight: 400; color: #511126; margin-top: 0;'>New Support Ticket</h2>
+            <table width='100%' cellpadding='8' cellspacing='0' style='border-collapse: collapse; margin-bottom: 20px;'>
+                <tr><td style='width:130px; font-weight:700;'>Ticket:</td><td>{$code}</td></tr>
+                <tr><td style='font-weight:700;'>Customer:</td><td>{$name} &lt;" . htmlspecialchars($customerEmail) . "&gt;</td></tr>
+                <tr><td style='font-weight:700;'>Order:</td><td>{$orderTxt}</td></tr>
+                <tr><td style='font-weight:700;'>Subject:</td><td>{$subject}</td></tr>
+                <tr><td style='font-weight:700;'>Photo:</td><td>" . ($hasPhoto ? 'Yes — attached in admin panel' : 'None') . "</td></tr>
+            </table>
+            <div style='background: #FAF8F5; border: 1px solid #EAE4DC; padding: 16px; border-radius: 6px;'>
+                <strong>Message:</strong><br>{$message}
+            </div>";
+        $this->sendMail(
+            $this->adminAddress, 'DIEVON Concierge',
+            "🎫 New Support Ticket {$code}: {$subject}",
+            $this->wrapLuxuryTemplate("New Support Ticket", "Concierge Alert", $adminBody),
+            'ticket_admin_notice'
+        );
+
+        // 2. Customer acknowledgement — gives them the ticket code to quote.
+        $photoLine = $hasPhoto
+            ? "<p style='font-size:13px; color:#6b6b6b;'>We have received the photo you attached and our team will review it.</p>"
+            : '';
+        $custBody = "
+            <h2 style='font-family: Georgia, serif; font-size: 20px; font-weight: 400; color: #511126; margin-top: 0;'>We Have Received Your Ticket</h2>
+            <p>Dear <strong>{$name}</strong>,</p>
+            <p>Thank you for contacting the DIEVON Atelier Concierge. Your ticket has been logged and an advisor will respond within 24 business hours.</p>
+            <div style='background: #FAF8F5; border-left: 3px solid #511126; padding: 14px 18px; margin: 18px 0; font-size: 13px;'>
+                <strong>Ticket Reference:</strong> {$code}<br>
+                <strong>Subject:</strong> {$subject}<br><br>
+                <strong>Your message:</strong><br>{$message}
+            </div>
+            {$photoLine}
+            <p style='font-size:13px; color:#6b6b6b;'>Please quote <strong>{$code}</strong> in any further correspondence. You will be emailed whenever the status changes or an advisor replies.</p>";
+        return $this->sendMail(
+            $customerEmail, $customerName,
+            "Support Ticket {$code} Received — DIEVON Atelier",
+            $this->wrapLuxuryTemplate("Ticket {$code} Received", "Atelier Concierge", $custBody),
+            'ticket_customer_ack'
+        );
+    }
+
+    /** Tell the customer their ticket moved to a new status. */
+    public function sendTicketStatusEmail(array $ticket, string $customerName, string $customerEmail, string $newStatus): bool {
+        $code    = htmlspecialchars($ticket['ticket_code'] ?? '');
+        $subject = htmlspecialchars($ticket['subject'] ?? '');
+        $name    = htmlspecialchars($customerName);
+        $status  = htmlspecialchars($newStatus);
+
+        $blurb = match ($newStatus) {
+            'In Progress' => 'An advisor is now actively working on your ticket.',
+            'Resolved'    => 'We believe your ticket has been resolved. If anything is still outstanding, simply reply to this email.',
+            'Closed'      => 'This ticket has been closed. You are welcome to open a new ticket at any time.',
+            default       => 'Your ticket has been reopened and is awaiting review.',
+        };
+
+        $body = "
+            <h2 style='font-family: Georgia, serif; font-size: 20px; font-weight: 400; color: #511126; margin-top: 0;'>Ticket Update</h2>
+            <p>Dear <strong>{$name}</strong>,</p>
+            <p>The status of your support ticket has changed.</p>
+            <div style='background: #FAF8F5; border-left: 3px solid #511126; padding: 14px 18px; margin: 18px 0; font-size: 13px;'>
+                <strong>Ticket Reference:</strong> {$code}<br>
+                <strong>Subject:</strong> {$subject}<br>
+                <strong>New Status:</strong> {$status}
+            </div>
+            <p>{$blurb}</p>";
+        return $this->sendMail(
+            $customerEmail, $customerName,
+            "Ticket {$code} is now {$status} — DIEVON Atelier",
+            $this->wrapLuxuryTemplate("Ticket {$code}: {$status}", "Atelier Concierge", $body),
+            'ticket_status_update'
+        );
+    }
+
+    /** Send the advisor's written reply to the customer. */
+    public function sendTicketReplyEmail(array $ticket, string $customerName, string $customerEmail, string $reply): bool {
+        $code    = htmlspecialchars($ticket['ticket_code'] ?? '');
+        $subject = htmlspecialchars($ticket['subject'] ?? '');
+        $name    = htmlspecialchars($customerName);
+        $safeReply = nl2br(htmlspecialchars($reply));
+        $original  = nl2br(htmlspecialchars($ticket['message'] ?? ''));
+
+        $body = "
+            <h2 style='font-family: Georgia, serif; font-size: 20px; font-weight: 400; color: #511126; margin-top: 0;'>A Reply From Your Advisor</h2>
+            <p>Dear <strong>{$name}</strong>,</p>
+            <p>An advisor has responded to your support ticket <strong>{$code}</strong>.</p>
+            <div style='background: #FAF8F5; border-left: 3px solid #511126; padding: 14px 18px; margin: 18px 0; font-size: 14px;'>
+                {$safeReply}
+            </div>
+            <div style='border-top: 1px solid #EAE4DC; padding-top: 14px; margin-top: 22px; font-size: 12px; color: #8a8a8a;'>
+                <strong>Your original message ({$subject}):</strong><br>{$original}
+            </div>";
+        return $this->sendMail(
+            $customerEmail, $customerName,
+            "Re: Ticket {$code} — {$subject} — DIEVON Atelier",
+            $this->wrapLuxuryTemplate("Reply to Ticket {$code}", "Atelier Concierge", $body),
+            'ticket_reply'
+        );
+    }
 }

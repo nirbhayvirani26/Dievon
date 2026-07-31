@@ -96,7 +96,7 @@ require_once __DIR__ . '/../includes/header.php';
                 <div style="padding: 16px; background: #e6faf7; color: #2e7d32; border: 1px solid #c3e6cb; border-radius: 6px; font-size: 13px; margin-bottom: 25px;">
                     <i class="fa-solid fa-circle-check"></i> <?= htmlspecialchars($success) ?>
                     <div style="margin-top: 15px;">
-                        <a href="login.php" class="btn-luxury" style="display: block; text-align: center; font-size: 12px; padding: 10px;">Sign In Now</a>
+                        <a href="<?= SITE_URL ?>/login.php" class="btn-luxury" style="display: block; text-align: center; font-size: 12px; padding: 10px;">Sign In Now</a>
                     </div>
                 </div>
             <?php endif; ?>
@@ -119,7 +119,7 @@ require_once __DIR__ . '/../includes/header.php';
                 </form>
             <?php elseif (!$success): ?>
                 <div style="margin-top: 20px;">
-                    <a href="forgot_password.php" class="btn-luxury-outline" style="display: block; text-align: center; font-size: 12px; padding: 10px;">Request New Reset Link</a>
+                    <a href="<?= SITE_URL ?>/forgot_password.php" class="btn-luxury-outline" style="display: block; text-align: center; font-size: 12px; padding: 10px;">Request New Reset Link</a>
                 </div>
             <?php endif; ?>
         </div>

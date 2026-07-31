@@ -138,7 +138,7 @@ require_once __DIR__ . '/../includes/header.php';
 
             <!-- Login Link -->
             <p class="auth-footer-text">
-                Already a member? <a href="login">Sign In here</a>
+                Already a member? <a href="<?= SITE_URL ?>/login">Sign In here</a>
             </p>
 
         </div>

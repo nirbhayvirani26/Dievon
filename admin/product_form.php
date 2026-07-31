@@ -108,6 +108,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $description = trim($_POST['description'] ?? '');
     $price       = (float)($_POST['price']    ?? 0);
     $category    = trim($_POST['category']    ?? '');
+    // The form posts the category NAME. Resolve it to the real id so the product is
+    // relationally linked (products.category_id), not just name-matched. The name is
+    // still written alongside it: several storefront pages read $product['category']
+    // directly, and it is the fallback if a category is ever deleted.
+    $category_id = null;
+    if ($category !== '') {
+        $catLookup = $pdo->prepare("SELECT id FROM categories WHERE LOWER(TRIM(name)) = LOWER(TRIM(:n)) LIMIT 1");
+        $catLookup->execute(['n' => $category]);
+        $category_id = $catLookup->fetchColumn() ?: null;
+    }
     $emoji       = trim($_POST['emoji']       ?? '✨');
     $badge       = trim($_POST['badge']       ?? '');
     $available    = isset($_POST['available'])    ? 1 : 0;
@@ -240,7 +250,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($price <= 0)               $errors[] = 'Price must be greater than 0.';
     if (empty($category))         $errors[] = 'Please select a category.';
 
-    $cost_price = (float)($_POST['cost_price'] ?? 0);
+    // cost_price is no longer posted by this form (see the pricing section below).
+    // It is deliberately NOT written on save so any existing value is preserved
+    // rather than being zeroed out every time a product is edited.
     $mrp_price  = (float)($_POST['mrp_price']  ?? 0);
     $hsn_code   = trim($_POST['hsn_code']   ?? '');
     $gst_rate   = (float)($_POST['gst_rate']   ?? 0);
@@ -250,19 +262,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($productId > 0) {
                 // UPDATE
                 $stmt = $pdo->prepare("UPDATE products SET name=:name, description=:description, price=:price,
-                    category=:category, emoji=:emoji, image=:image, badge=:badge, available=:available, nuts_allergy=:nuts_allergy,
+                    category=:category, category_id=:category_id, emoji=:emoji, image=:image, badge=:badge, available=:available, nuts_allergy=:nuts_allergy,
                     track_stock=:track_stock, stock_qty=:stock_qty, atelier_code=:atelier_code, color_way=:color_way, sourcing=:sourcing, composition=:composition,
                     brand=:brand, color=:color, fabric=:fabric, sleeve=:sleeve, neck=:neck, pattern=:pattern, occasion=:occasion, discount_percentage=:discount_percentage, video_url=:video_url, wash_care=:wash_care, shipping_info=:shipping_info, returns_info=:returns_info,
                     sku=:sku, barcode=:barcode, weight=:weight, dimensions=:dimensions, tags=:tags, seo_url=:seo_url, meta_title=:meta_title, meta_description=:meta_description, related_ids=:related_ids,
-                    cost_price=:cost_price, mrp_price=:mrp_price, hsn_code=:hsn_code, gst_rate=:gst_rate
+                    mrp_price=:mrp_price, hsn_code=:hsn_code, gst_rate=:gst_rate
                     WHERE id=:id");
-                $stmt->execute(compact('name','description','price','category','emoji','badge','available','atelier_code','color_way','sourcing','composition','brand','color','fabric','sleeve','neck','pattern','occasion','discount_percentage','video_url','wash_care','shipping_info','returns_info','sku','barcode','weight','dimensions','tags','seo_url','meta_title','meta_description','related_ids','cost_price','mrp_price','hsn_code','gst_rate') + ['image' => $imageName, 'nuts_allergy' => $nuts_allergy, 'track_stock' => $track_stock, 'stock_qty' => $stock_qty, 'id' => $productId]);
+                $stmt->execute(compact('name','description','price','category','category_id','emoji','badge','available','atelier_code','color_way','sourcing','composition','brand','color','fabric','sleeve','neck','pattern','occasion','discount_percentage','video_url','wash_care','shipping_info','returns_info','sku','barcode','weight','dimensions','tags','seo_url','meta_title','meta_description','related_ids','mrp_price','hsn_code','gst_rate') + ['image' => $imageName, 'nuts_allergy' => $nuts_allergy, 'track_stock' => $track_stock, 'stock_qty' => $stock_qty, 'id' => $productId]);
                 
             } else {
                 // INSERT
-                $stmt = $pdo->prepare("INSERT INTO products (name, description, price, category, emoji, image, badge, available, nuts_allergy, track_stock, stock_qty, atelier_code, color_way, sourcing, composition, brand, color, fabric, sleeve, neck, pattern, occasion, discount_percentage, video_url, wash_care, shipping_info, returns_info, sku, barcode, weight, dimensions, tags, seo_url, meta_title, meta_description, related_ids, cost_price, mrp_price, hsn_code, gst_rate)
-                    VALUES (:name, :description, :price, :category, :emoji, :image, :badge, :available, :nuts_allergy, :track_stock, :stock_qty, :atelier_code, :color_way, :sourcing, :composition, :brand, :color, :fabric, :sleeve, :neck, :pattern, :occasion, :discount_percentage, :video_url, :wash_care, :shipping_info, :returns_info, :sku, :barcode, :weight, :dimensions, :tags, :seo_url, :meta_title, :meta_description, :related_ids, :cost_price, :mrp_price, :hsn_code, :gst_rate)");
-                $stmt->execute(compact('name','description','price','category','emoji','badge','available','atelier_code','color_way','sourcing','composition','brand','color','fabric','sleeve','neck','pattern','occasion','discount_percentage','video_url','wash_care','shipping_info','returns_info','sku','barcode','weight','dimensions','tags','seo_url','meta_title','meta_description','related_ids','cost_price','mrp_price','hsn_code','gst_rate') + ['image' => $imageName, 'nuts_allergy' => $nuts_allergy, 'track_stock' => $track_stock, 'stock_qty' => $stock_qty]);
+                $stmt = $pdo->prepare("INSERT INTO products (name, description, price, category, category_id, emoji, image, badge, available, nuts_allergy, track_stock, stock_qty, atelier_code, color_way, sourcing, composition, brand, color, fabric, sleeve, neck, pattern, occasion, discount_percentage, video_url, wash_care, shipping_info, returns_info, sku, barcode, weight, dimensions, tags, seo_url, meta_title, meta_description, related_ids, mrp_price, hsn_code, gst_rate)
+                    VALUES (:name, :description, :price, :category, :category_id, :emoji, :image, :badge, :available, :nuts_allergy, :track_stock, :stock_qty, :atelier_code, :color_way, :sourcing, :composition, :brand, :color, :fabric, :sleeve, :neck, :pattern, :occasion, :discount_percentage, :video_url, :wash_care, :shipping_info, :returns_info, :sku, :barcode, :weight, :dimensions, :tags, :seo_url, :meta_title, :meta_description, :related_ids, :mrp_price, :hsn_code, :gst_rate)");
+                $stmt->execute(compact('name','description','price','category','category_id','emoji','badge','available','atelier_code','color_way','sourcing','composition','brand','color','fabric','sleeve','neck','pattern','occasion','discount_percentage','video_url','wash_care','shipping_info','returns_info','sku','barcode','weight','dimensions','tags','seo_url','meta_title','meta_description','related_ids','mrp_price','hsn_code','gst_rate') + ['image' => $imageName, 'nuts_allergy' => $nuts_allergy, 'track_stock' => $track_stock, 'stock_qty' => $stock_qty]);
                 $productId = $pdo->lastInsertId();
             }
 
@@ -356,13 +368,12 @@ require_once __DIR__ . '/includes/header.php';
                                     value="<?= htmlspecialchars($product['mrp_price'] ?? '') ?>">
                                 <small class="text-muted">Set higher than Selling Price to put this product on Sale — shows a strikethrough price and "% OFF" badge across the site.</small>
                             </div>
-                            <div class="form-group">
-                                <label class="form-label">Cost Price (₹) <small class="text-muted">(Admin Only)</small></label>
-                                <input type="number" name="cost_price" class="form-control"
-                                    step="0.01" min="0" placeholder="e.g. 450.00"
-                                    value="<?= htmlspecialchars($product['cost_price'] ?? '') ?>">
-                            </div>
                         </div>
+                        <!-- Cost Price was removed from this form: it is internal-only, is not
+                             read anywhere on the storefront, and sat next to Selling Price and
+                             MRP where it was easy to type into the wrong box. The `cost_price`
+                             DB column is intentionally left in place so historic values are
+                             preserved and are not overwritten when a product is saved. -->
 
                         <div class="form-row">
                             <div class="form-group">
@@ -370,12 +381,14 @@ require_once __DIR__ . '/includes/header.php';
                                 <input type="text" name="hsn_code" class="form-control"
                                     placeholder="e.g. 6204.22"
                                     value="<?= htmlspecialchars($product['hsn_code'] ?? '') ?>">
+                                <small class="text-muted">Tax classification code for invoices. Leave blank if unsure.</small>
                             </div>
                             <div class="form-group">
                                 <label class="form-label">GST / VAT Rate (%)</label>
                                 <input type="number" name="gst_rate" class="form-control"
                                     step="0.1" min="0" placeholder="e.g. 12.00"
                                     value="<?= htmlspecialchars($product['gst_rate'] ?? '') ?>">
+                                <small class="text-muted">Percentage only — enter 12, not 12%.</small>
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Category *</label>
@@ -531,26 +544,95 @@ require_once __DIR__ . '/includes/header.php';
                     <div class="glass-panel form-section admin-section-mt">
                         <h3><i class="fa-solid fa-magnifying-glass-chart"></i> SEO, OpenGraph &amp; Google Schema</h3>
                         <p class="admin-section-desc">Optimize how your product ranks on Google Search, WhatsApp, Instagram, and Twitter share previews.</p>
-                        
+
+                        <?php
+                        // Every field here is optional. Left blank, the storefront derives the
+                        // value from the product's own name/category/description/attributes via
+                        // resolveProductSeo() in config/config.php. We show that exact derived
+                        // value as the placeholder so the admin can see what will actually ship.
+                        $autoSeo = resolveProductSeo($product ?? []);
+                        ?>
+                        <div class="seo-auto-note">
+                            <i class="fa-solid fa-wand-magic-sparkles seo-auto-note-icon"></i>
+                            <div>
+                                <strong class="seo-auto-note-title">These are generated automatically</strong>
+                                Leave any field blank and it is built from the product name, category, description and
+                                attributes — the greyed-out text in each box is exactly what will be used.
+                                Fill a field in only when you want to override it.
+                                <button type="button" onclick="fillAutoSeo()" class="seo-auto-fill-btn">
+                                    Copy the generated values in so I can edit them
+                                </button>
+                            </div>
+                        </div>
+
                         <div class="form-row">
                             <div class="form-group">
-                                <label class="form-label">SEO URL Slug</label>
-                                <input type="text" name="seo_url" class="form-control" placeholder="e.g. luxury-silk-kurti-green" value="<?= htmlspecialchars($product['seo_url'] ?? '') ?>">
+                                <label class="form-label">SEO URL Slug <small class="text-muted">(auto)</small></label>
+                                <input type="text" name="seo_url" id="seoUrlField" class="form-control" placeholder="<?= htmlspecialchars($autoSeo['seo_url'] ?: 'e.g. luxury-silk-kurti-green') ?>" value="<?= htmlspecialchars($product['seo_url'] ?? '') ?>">
                             </div>
                             <div class="form-group">
-                                <label class="form-label">Search Tags (comma separated)</label>
-                                <input type="text" name="tags" class="form-control" placeholder="e.g. silk, kurti, summer, wedding, green" value="<?= htmlspecialchars($product['tags'] ?? '') ?>">
+                                <label class="form-label">Search Tags <small class="text-muted">(auto, comma separated)</small></label>
+                                <input type="text" name="tags" id="seoTagsField" class="form-control" placeholder="<?= htmlspecialchars($autoSeo['tags'] ?: 'e.g. silk, kurti, summer, wedding, green') ?>" value="<?= htmlspecialchars($product['tags'] ?? '') ?>">
                             </div>
                         </div>
                         <div class="form-group">
-                            <label class="form-label">Meta Title</label>
-                            <input type="text" name="meta_title" class="form-control" placeholder="e.g. Buy Luxury Green Silk Kurti | Dievon Atelier" value="<?= htmlspecialchars($product['meta_title'] ?? '') ?>">
+                            <label class="form-label">Meta Title <small class="text-muted">(auto — best under 60 characters)</small></label>
+                            <input type="text" name="meta_title" id="seoTitleField" class="form-control" placeholder="<?= htmlspecialchars($autoSeo['meta_title'] ?: 'e.g. Buy Luxury Green Silk Kurti | Dievon Atelier') ?>" value="<?= htmlspecialchars($product['meta_title'] ?? '') ?>" oninput="countSeo(this,'seoTitleCount',60)">
+                            <small class="text-muted"><span id="seoTitleCount"></span></small>
                         </div>
                         <div class="form-group">
-                            <label class="form-label">Meta Description</label>
-                            <textarea name="meta_description" class="form-control" rows="2" placeholder="e.g. Explore Dievon's hand-crafted Mulberry Silk Kurti with metallic embroidery. Free UK delivery and custom fitting."><?= htmlspecialchars($product['meta_description'] ?? '') ?></textarea>
+                            <label class="form-label">Meta Description <small class="text-muted">(auto — best under 155 characters)</small></label>
+                            <textarea name="meta_description" id="seoDescField" class="form-control" rows="2" placeholder="<?= htmlspecialchars($autoSeo['meta_description'] ?: 'e.g. Explore Dievon hand-crafted Mulberry Silk Kurti with metallic embroidery.') ?>" oninput="countSeo(this,'seoDescCount',155)"><?= htmlspecialchars($product['meta_description'] ?? '') ?></textarea>
+                            <small class="text-muted"><span id="seoDescCount"></span></small>
                         </div>
                     </div>
+
+                    <script>
+                    // Pull the server-generated values into the inputs so they can be tweaked
+                    // by hand. Until then the fields stay empty, which is what keeps them
+                    // "automatic" — the storefront regenerates them as the product changes.
+                    const DIEVON_AUTO_SEO = <?= json_encode($autoSeo, JSON_UNESCAPED_UNICODE) ?>;
+                    async function fillAutoSeo() {
+                        // Copying the values in turns them into stored, manual text. From then
+                        // on they no longer follow the product — rename the garment, change its
+                        // fabric or price, and these fields will keep the old wording until
+                        // someone edits them by hand. Worth an explicit confirmation.
+                        const ok = await dievonConfirm(
+                            'Right now these SEO fields are automatic — they rewrite themselves whenever you change the product name, category or description.\n\n' +
+                            'Copying the generated text into the boxes makes them manual. They will stay exactly as written and will stop updating on their own.\n\n' +
+                            'Do you want to take over and edit the SEO yourself?',
+                            { title: 'Switch SEO to manual?', confirmText: 'Yes, let me edit', cancelText: 'Keep it automatic' }
+                        );
+                        if (!ok) return;
+
+                        const map = {
+                            seoUrlField:   DIEVON_AUTO_SEO.seo_url,
+                            seoTagsField:  DIEVON_AUTO_SEO.tags,
+                            seoTitleField: DIEVON_AUTO_SEO.meta_title,
+                            seoDescField:  DIEVON_AUTO_SEO.meta_description
+                        };
+                        Object.entries(map).forEach(([id, val]) => {
+                            const el = document.getElementById(id);
+                            if (el && !el.value.trim()) { el.value = val || ''; el.dispatchEvent(new Event('input')); }
+                        });
+                        dievonAlert('The generated text has been copied into the fields. Edit it as you like — to go back to automatic, simply clear a field and save.', { type: 'success', title: 'Now editable' });
+                    }
+                    function countSeo(el, targetId, limit) {
+                        const out = document.getElementById(targetId);
+                        if (!out) return;
+                        const n = el.value.trim().length;
+                        // Colour comes from the .seo-count-over class, not an inline style.
+                        if (n === 0) { out.textContent = 'Blank — the generated value shown above will be used.'; out.classList.remove('seo-count-over'); return; }
+                        out.textContent = n + ' / ' + limit + ' characters' + (n > limit ? ' — Google may truncate this' : '');
+                        out.classList.toggle('seo-count-over', n > limit);
+                    }
+                    document.addEventListener('DOMContentLoaded', () => {
+                        ['seoTitleField','seoDescField'].forEach(id => {
+                            const el = document.getElementById(id);
+                            if (el) countSeo(el, id === 'seoTitleField' ? 'seoTitleCount' : 'seoDescCount', id === 'seoTitleField' ? 60 : 155);
+                        });
+                    });
+                    </script>
 
                     <!-- Stock Management -->
                     <div class="form-row admin-form-row-mt">
@@ -843,6 +925,22 @@ require_once __DIR__ . '/includes/header.php';
                 <?php endforeach; ?>
             </div>
 
+            <?php if (empty($existingColors)): ?>
+                <!-- Empty state. The thumbnail/gallery upload controls live INSIDE each
+                     colour card, so with no colours added there is no upload button
+                     anywhere — which reads as "the upload option is missing on this
+                     product" unless we say why. -->
+                <div class="colors-empty-state">
+                    <i class="fa-solid fa-palette colors-empty-icon"></i>
+                    <strong class="colors-empty-title">No colours added yet</strong>
+                    <span class="colors-empty-text">
+                        Add a colour below first — each colour then gets its own
+                        <strong>thumbnail upload</strong> and <strong>image gallery</strong>.
+                        That is why no image upload appears on this product yet.
+                    </span>
+                </div>
+            <?php endif; ?>
+
             <div style="display:flex; align-items:center; gap:12px; margin-top:14px; padding:14px 16px; border:2px dashed var(--border-strong); border-radius:var(--radius-sm); background:var(--bg-surface); flex-wrap:wrap;">
                 <input type="text" id="newColorName" placeholder="Colour name (e.g. Green)" class="form-control" style="flex:1; min-width:140px;">
                 <input type="text" id="newColorSku" placeholder="Variant SKU (optional)" class="form-control" style="width:160px;">
@@ -1101,8 +1199,8 @@ function updateVariant(id, name, price, available) {
     }, 600);
 }
 
-function deleteVariant(id, productId) {
-    if (!confirm('Remove this variant? This cannot be undone.')) return;
+async function deleteVariant(id, productId) {
+    if (!await dievonConfirm('Remove this variant? This cannot be undone.')) return;
     fetch('variant_handler.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -1117,8 +1215,8 @@ function deleteVariant(id, productId) {
     });
 }
 
-function deleteAdditionalImage(id) {
-    if (!confirm('Remove this image? This cannot be undone.')) return;
+async function deleteAdditionalImage(id) {
+    if (!await dievonConfirm('Remove this image? This cannot be undone.')) return;
     fetch('image_handler.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -1246,8 +1344,8 @@ function updateColor(id) {
         .catch(() => alert('Network error. Please try again.'));
 }
 
-function deleteColor(id, name) {
-    if (!confirm(`Delete colour "${name}"? This removes its gallery images and size/stock data too. This cannot be undone.`)) return;
+async function deleteColor(id, name) {
+    if (!await dievonConfirm(`Delete colour "${name}"? This removes its gallery images and size/stock data too. This cannot be undone.`)) return;
     const fd = new FormData();
     fd.append('action', 'delete');
     fd.append('id', id);
@@ -1345,8 +1443,8 @@ function uploadColorGallery(colorId, input) {
         .catch(() => alert('Network error. Please try again.'));
 }
 
-function deleteColorImage(imageId, colorId) {
-    if (!confirm('Remove this image? This cannot be undone.')) return;
+async function deleteColorImage(imageId, colorId) {
+    if (!await dievonConfirm('Remove this image? This cannot be undone.')) return;
     const fd = new FormData();
     fd.append('action', 'delete_image');
     fd.append('id', imageId);
@@ -1363,7 +1461,7 @@ function deleteColorImage(imageId, colorId) {
         .catch(() => alert('Network error. Please try again.'));
 }
 
-function toggleColorSize(colorId, code, label, checkbox) {
+async function toggleColorSize(colorId, code, label, checkbox) {
     const stockInput = document.getElementById('cstock-' + colorId + '-' + code);
     const productId  = <?= (int)($product['id'] ?? 0) ?>;
 
@@ -1388,7 +1486,7 @@ function toggleColorSize(colorId, code, label, checkbox) {
     } else {
         const variantId = checkbox.dataset.variantId;
         if (!variantId) { if (stockInput) { stockInput.disabled = true; stockInput.value = ''; } return; }
-        if (!confirm(`Remove size ${label} for this colour? Its stock data will be lost.`)) { checkbox.checked = true; return; }
+        if (!await dievonConfirm(`Remove size ${label} for this colour? Its stock data will be lost.`)) { checkbox.checked = true; return; }
 
         fetch('variant_handler.php', {
             method: 'POST',
@@ -1467,8 +1565,8 @@ function updateGeneralSpec(id) {
         .catch(() => alert('Network error. Please try again.'));
 }
 
-function deleteGeneralSpec(id) {
-    if (!confirm('Delete this specification? This cannot be undone.')) return;
+async function deleteGeneralSpec(id) {
+    if (!await dievonConfirm('Delete this specification? This cannot be undone.')) return;
     const fd = new FormData();
     fd.append('action', 'delete');
     fd.append('id', id);
@@ -1527,8 +1625,8 @@ function updateComponent(id) {
         .catch(() => alert('Network error. Please try again.'));
 }
 
-function deleteComponent(id, name) {
-    if (!confirm(`Delete component "${name}"? This removes all of its specifications too. This cannot be undone.`)) return;
+async function deleteComponent(id, name) {
+    if (!await dievonConfirm(`Delete component "${name}"? This removes all of its specifications too. This cannot be undone.`)) return;
     const fd = new FormData();
     fd.append('action', 'delete_component');
     fd.append('id', id);
@@ -1594,8 +1692,8 @@ function updateComponentSpec(id, componentId) {
         .catch(() => alert('Network error. Please try again.'));
 }
 
-function deleteComponentSpec(id, componentId) {
-    if (!confirm('Delete this specification? This cannot be undone.')) return;
+async function deleteComponentSpec(id, componentId) {
+    if (!await dievonConfirm('Delete this specification? This cannot be undone.')) return;
     const fd = new FormData();
     fd.append('action', 'delete_spec');
     fd.append('id', id);

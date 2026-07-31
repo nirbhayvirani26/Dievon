@@ -57,6 +57,11 @@ try {
     $attributes = $stmt->fetchAll();
 } catch (PDOException $e) {}
 
+// This page renders its own richer <div class="admin-page-header"> below
+// (icon, specific title, detailed subtitle, action buttons), so suppress the
+// generic one in includes/header.php — otherwise both draw and the page shows
+// two titles. Same pattern as product_form.php.
+$hideHeaderTitle = true;
 require_once __DIR__ . '/includes/header.php';
 ?>
 
@@ -129,7 +134,7 @@ require_once __DIR__ . '/includes/header.php';
                                 </td>
                             <?php endif; ?>
                             <td style="text-align: right;">
-                                <a href="attributes.php?type=<?= htmlspecialchars($type) ?>&delete=<?= $a['id'] ?>" onclick="return confirm('Delete this attribute?');" class="btn-sm btn-sm-danger" style="padding: 4px 10px; text-decoration: none;">
+                                <a href="attributes.php?type=<?= htmlspecialchars($type) ?>&delete=<?= $a['id'] ?>" onclick="return dvConfirmLink(this,'Delete this attribute?');" class="btn-sm btn-sm-danger" style="padding: 4px 10px; text-decoration: none;">
                                     <i class="fa-solid fa-trash"></i> Delete
                                 </a>
                             </td>

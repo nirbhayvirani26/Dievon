@@ -20,7 +20,10 @@ $productId  = trim($_GET['product_id']  ?? '') !== '' ? (int)$_GET['product_id']
 // A product id always wins if both were somehow supplied
 if ($productId) { $categoryId = null; }
 
-$categories = $pdo->query("SELECT id, name FROM categories ORDER BY name ASC")->fetchAll();
+// parent_id is needed as well as id/name: the "missing size guide" check below walks up
+// the category tree, because a subcategory with no chart of its own still inherits its
+// parent's on the storefront and must not be reported as missing.
+$categories = $pdo->query("SELECT id, name, parent_id FROM categories ORDER BY name ASC")->fetchAll();
 $products   = $pdo->query("SELECT id, name FROM products WHERE is_deleted = 0 ORDER BY name ASC")->fetchAll();
 
 $sizeLadder = require __DIR__ . '/../config/size_ladder.php';
@@ -49,10 +52,24 @@ if ($categoryId || $productId) {
     }
 }
 
+// The Body tab edits the ONE global table shared by every category, so it is loaded
+// regardless of whether this category has a chart yet — a brand new category shows
+// the shop's body sizing immediately and only needs its garment numbers filled in.
+$globalBody = globalBodySizeRows($pdo);
+if ($globalBody) {
+    $bodyRows = [];
+    foreach ($globalBody as $r) { $bodyRows[$r['size_label']] = $r; }
+}
+
 function sg_val($rows, $label, $field) {
     return isset($rows[$label]) && $rows[$label][$field] !== null ? $rows[$label][$field] : '';
 }
 
+// This page renders its own richer <div class="admin-page-header"> below
+// (icon, specific title, detailed subtitle, action buttons), so suppress the
+// generic one in includes/header.php — otherwise both draw and the page shows
+// two titles. Same pattern as product_form.php.
+$hideHeaderTitle = true;
 require_once 'includes/header.php';
 ?>
 
@@ -86,12 +103,140 @@ require_once 'includes/header.php';
         </div>
     </div>
 
+    <?php
+    // Which categories would currently show NO size guide at all? A category with no
+    // chart of its own still inherits its parent's, so only report the ones that come
+    // up empty after that fallback — those are the ones whose products show no
+    // "Size Guide" button at all on the storefront.
+    $chartCats = array_flip(array_map('intval',
+        $pdo->query("SELECT category_id FROM size_guide_charts WHERE product_id IS NULL")->fetchAll(PDO::FETCH_COLUMN)));
+
+    // Parent map is built once from the categories already in memory rather than
+    // querying inside the loop — with a large category tree the previous per-level
+    // lookup was an N+1 that grew with both category count and nesting depth.
+    $parentOf = [];
+    foreach ($categories as $c) { $parentOf[(int)$c['id']] = (int)($c['parent_id'] ?? 0); }
+
+    $missingGuide = [];
+    foreach ($categories as $c) {
+        $cid = (int)$c['id'];
+        $found = isset($chartCats[$cid]);
+        $seen  = [$cid => true];
+        $pid   = $parentOf[$cid] ?? 0;
+        while (!$found && $pid > 0 && !isset($seen[$pid])) {
+            $seen[$pid] = true;
+            if (isset($chartCats[$pid])) { $found = true; break; }
+            $pid = $parentOf[$pid] ?? 0;
+        }
+        if (!$found) { $missingGuide[] = $c; }
+    }
+    ?>
+    <?php
+    $sgVariants = [
+        'desktop' => ['label' => 'Desktop image', 'hint' => 'Shown on laptops and tablets (wider than 768px).',  'value' => storeSetting($pdo, 'size_guide_illustration')],
+        'mobile'  => ['label' => 'Mobile image',  'hint' => 'Shown on phones (768px and below).',                 'value' => storeSetting($pdo, 'size_guide_illustration_mobile')],
+    ];
+    ?>
+    <?php
+    // The upload handler redirects back with ?img=<status>. Without this the whole
+    // thing was silent: a rejected file type, a too-large file or a failed settings
+    // write all looked identical to "nothing happened".
+    $imgStatus = $_GET['img'] ?? '';
+    $imgMessages = [
+        'saved'   => ['ok',  'Image uploaded and saved. It now appears in the size guide on every product.'],
+        'removed' => ['ok',  'Image removed. The built-in drawing will be used instead.'],
+        'badtype' => ['err', 'That file type is not allowed. Use a JPG, PNG or WebP image.'],
+        'toobig'  => ['err', 'That file is larger than 8MB. Please compress it and try again.'],
+        'failed'  => ['err', 'The file could not be written to uploads/gallery/. Check the folder exists and is writable on the server.'],
+        'none'    => ['err', 'No file was received. Choose a file before pressing upload.'],
+        'dberror' => ['err', 'The image was uploaded but could not be saved to the database — so nothing points at it yet. Check the store_settings table exists.'],
+        'csrf'    => ['err', 'Security token expired. Reload the page and try again.'],
+    ];
+    ?>
+    <?php if (isset($imgMessages[$imgStatus])): ?>
+    <div class="sg-img-status sg-img-status--<?= $imgMessages[$imgStatus][0] ?>">
+        <i class="fa-solid fa-<?= $imgMessages[$imgStatus][0] === 'ok' ? 'circle-check' : 'triangle-exclamation' ?>"></i>
+        <?= htmlspecialchars($imgMessages[$imgStatus][1]) ?>
+    </div>
+    <?php endif; ?>
+
+    <div class="sg-global-image">
+        <div class="sg-global-image-copy">
+            <strong class="sg-global-image-title"><i class="fa-solid fa-image"></i> "How to Measure" picture — one set for the whole shop</strong>
+            Upload once and it appears in the size guide popup on <strong>every product, in every category</strong>.
+            Body measuring is the same whatever the garment, so you do not need a different picture per category.
+            <span class="sg-global-image-note">
+                Upload a separate mobile version if your diagram is wide — the phone then downloads only the mobile file, never both.
+                If you set just one, it is used at every screen size. Leave both empty and the built-in drawing is used instead — nothing breaks.
+                Use your own original image.
+            </span>
+        </div>
+        <div class="sg-global-image-variants">
+            <?php foreach ($sgVariants as $key => $v): ?>
+            <div class="sg-global-image-side">
+                <span class="sg-variant-label"><?= htmlspecialchars($v['label']) ?></span>
+                <?php if ($v['value']): ?>
+                    <img src="<?= SITE_URL ?>/uploads/gallery/<?= htmlspecialchars($v['value']) ?>" alt="Current <?= $key ?> measurement diagram" class="sg-global-image-preview">
+                <?php else: ?>
+                    <div class="sg-global-image-empty">Not set</div>
+                <?php endif; ?>
+                <span class="sg-variant-hint"><?= htmlspecialchars($v['hint']) ?></span>
+                <form method="POST" action="size_guide_handler.php" enctype="multipart/form-data" class="sg-global-image-form">
+                    <input type="hidden" name="action" value="save_global_illustration">
+                    <input type="hidden" name="variant" value="<?= $key ?>">
+                    <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
+                    <input type="file" name="global_illustration" accept="image/jpeg,image/png,image/webp" class="form-control sg-global-image-input" required>
+                    <button type="submit" class="btn-primary sg-global-image-btn">Upload <?= $key ?></button>
+                    <?php if ($v['value']): ?>
+                    <button type="submit" name="remove" value="1" class="sg-global-image-remove" formnovalidate>Remove</button>
+                    <?php endif; ?>
+                </form>
+            </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
+
+    <?php if ($missingGuide): ?>
+    <div class="sg-missing-warning">
+        <i class="fa-solid fa-triangle-exclamation sg-missing-icon"></i>
+        <div>
+            <strong class="sg-missing-title"><?= count($missingGuide) ?> categor<?= count($missingGuide) === 1 ? 'y has' : 'ies have' ?> no size guide</strong>
+            Products in <?= count($missingGuide) === 1 ? 'this category' : 'these categories' ?> show no Size Guide button at all.
+            Pick the category above and apply a starter template to fix it in one click.
+            <div class="sg-missing-list">
+                <?php foreach ($missingGuide as $c): ?>
+                    <a href="size_guide.php?category_id=<?= (int)$c['id'] ?>" class="sg-missing-chip"><?= htmlspecialchars($c['name']) ?></a>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <?php if (!$categoryId && !$productId): ?>
         <div style="text-align:center; padding:50px 20px; color:var(--text-muted);">
             <div style="font-size:44px; margin-bottom:12px; opacity:0.3;"><i class="fa-solid fa-ruler-combined"></i></div>
             <p>Choose a category or a product above to view or edit its size guide.</p>
         </div>
     <?php else: ?>
+
+    <?php $sgPresets = require __DIR__ . '/../config/size_guide_presets.php'; ?>
+    <div class="sg-template-bar">
+        <div class="sg-template-copy">
+            <strong class="sg-template-title"><i class="fa-solid fa-wand-magic-sparkles"></i> Not sure where to start?</strong>
+            Pick the garment type and every box below is filled with standard measurements
+            <em>and</em> the correct "how to measure" wording. Nothing is saved until you press Save,
+            so you can try one and adjust the numbers to your own fit.
+        </div>
+        <div class="sg-template-controls">
+            <select id="sgPresetSelect" class="form-control">
+                <option value="">— Choose a garment type —</option>
+                <?php foreach ($sgPresets as $key => $preset): ?>
+                <option value="<?= htmlspecialchars($key) ?>" title="<?= htmlspecialchars($preset['description']) ?>"><?= htmlspecialchars($preset['label']) ?></option>
+                <?php endforeach; ?>
+            </select>
+            <button type="button" class="btn-primary sg-template-apply" onclick="applySizePreset()">Apply template</button>
+        </div>
+    </div>
 
     <form id="sizeGuideForm">
         <input type="hidden" id="sg_category_id" value="<?= $categoryId ?: '' ?>">
@@ -170,6 +315,26 @@ require_once 'includes/header.php';
 
         <?php foreach (['body' => $bodyRows, 'garment' => $garmentRows] as $type => $rowsData): ?>
         <div id="sgTab-<?= $type ?>" class="sg-tab-panel" style="<?= $type === 'garment' ? 'display:none;' : '' ?> overflow-x:auto;">
+            <?php if ($type === 'body'): ?>
+            <div class="sg-scope-note sg-scope-note--global">
+                <i class="fa-solid fa-globe"></i>
+                <div>
+                    <strong>These body measurements are shared by every category.</strong>
+                    A 34&quot; bust is a size M whether she is buying a kurti or trousers, so this table is stored
+                    once for the whole shop. Editing it here changes it everywhere — which is the point: you only
+                    maintain your sizing in one place.
+                </div>
+            </div>
+            <?php else: ?>
+            <div class="sg-scope-note sg-scope-note--local">
+                <i class="fa-solid fa-tag"></i>
+                <div>
+                    <strong>These garment measurements belong to this category only.</strong>
+                    This is the finished garment (body + ease), so it is genuinely different per style — a kurti hem
+                    is 44–48&quot; while a top is 24–26&quot;, and bottoms carry no bust or shoulder at all.
+                </div>
+            </div>
+            <?php endif; ?>
             <table class="data-table" style="min-width:820px;">
                 <thead>
                     <tr>
@@ -225,10 +390,20 @@ require_once 'includes/header.php';
             </div>
         </div>
 
-        <button type="button" class="btn-primary" style="margin-top:20px; padding:12px 28px;" onclick="saveSizeGuide()">
-            <i class="fa-solid fa-floppy-disk"></i> Save Size Guide
-        </button>
-        <span id="sgSaveStatus" style="margin-left:14px; font-size:13px; color:var(--text-muted);"></span>
+        <div class="sg-save-row">
+            <button type="button" class="btn-primary sg-save-btn" onclick="saveSizeGuide()">
+                <i class="fa-solid fa-floppy-disk"></i> Save Size Guide
+            </button>
+            <button type="button" class="btn-secondary sg-undo-btn" onclick="undoSizeGuide()"
+                    title="Restore the version from before your last save">
+                <i class="fa-solid fa-rotate-left"></i> Undo last save
+            </button>
+            <span id="sgSaveStatus" class="sg-save-status"></span>
+        </div>
+        <p class="sg-save-note">
+            Every save keeps a copy of the previous version, and the numbers are checked for
+            obvious mistakes — you will be told if something looks wrong, but you are never blocked.
+        </p>
     </form>
     <?php endif; ?>
 </div>
@@ -318,8 +493,8 @@ function sgPreviewNewFile(input) {
     updateLengthLine();
 })();
 
-function copyBodyToGarment() {
-    if (!confirm('Copy all Body Measurement numbers into the Garment tab? This overwrites anything already entered on the Garment tab (Length is left for you to fill in separately).')) return;
+async function copyBodyToGarment() {
+    if (!await dievonConfirm('Copy all Body Measurement numbers into the Garment tab? This overwrites anything already entered on the Garment tab (Length is left for you to fill in separately).')) return;
     document.querySelectorAll('.sg-cell[data-type="body"]').forEach(bodyCell => {
         const garmentCell = document.querySelector(`.sg-cell[data-type="garment"][data-label="${bodyCell.dataset.label}"][data-field="${bodyCell.dataset.field}"]`);
         if (garmentCell) garmentCell.value = bodyCell.value;
@@ -373,9 +548,122 @@ function saveSizeGuide() {
         .then(r => r.json())
         .then(data => {
             status.textContent = data.success ? 'Saved.' : (data.message || 'Error saving.');
-            if (data.success) setTimeout(() => location.reload(), 600);
+            if (!data.success) return;
+
+            // Highlight anything that looks like a typo. The data IS saved — this is
+            // a "check this" prompt, never a block — and the previous version was
+            // snapshotted, so Undo is always available.
+            document.querySelectorAll('.sg-cell.sg-cell-suspect').forEach(el => el.classList.remove('sg-cell-suspect'));
+            (data.cells || []).forEach(key => {
+                const [type, size, field] = key.split('|');
+                const el = document.querySelector('.sg-cell[data-type="' + type + '"][data-label="' + size + '"][data-field="' + field + '"]');
+                if (el) el.classList.add('sg-cell-suspect');
+            });
+
+            if (data.warnings && data.warnings.length) {
+                status.textContent = 'Saved — but ' + data.warnings.length + ' value(s) look wrong.';
+                dievonAlert(
+                    'Your changes are saved, but these look like typos:\n\n• ' +
+                    data.warnings.slice(0, 8).join('\n• ') +
+                    (data.warnings.length > 8 ? '\n• …and ' + (data.warnings.length - 8) + ' more' : '') +
+                    '\n\nThe affected boxes are outlined in red. If they are intentional you can ignore this — otherwise fix them, or press Undo to restore the previous version.',
+                    { type: 'warning', title: 'Saved — please double-check' }
+                );
+                return;   // stay on the page so the highlighted cells can be seen
+            }
+            setTimeout(() => location.reload(), 600);
         })
         .catch(() => { status.textContent = 'Network error.'; });
+}
+
+/* ── Undo: restore the version from before the last save ─────────────────── */
+async function undoSizeGuide() {
+    const fd = new FormData();
+    fd.append('action', 'list_snapshots');
+    fd.append('category_id', document.getElementById('sg_category_id').value);
+    fd.append('product_id', document.getElementById('sg_product_id').value);
+    fd.append('csrf_token', window.ADMIN_CSRF_TOKEN || '');
+
+    const list = await fetch('size_guide_handler.php', { method: 'POST', body: fd }).then(r => r.json()).catch(() => null);
+    if (!list || !list.success || !list.snapshots || !list.snapshots.length) {
+        dievonAlert('There is no earlier version saved for this size guide yet. A version is kept automatically every time you save.', { type: 'info', title: 'Nothing to undo' });
+        return;
+    }
+    const latest = list.snapshots[0];
+    const ok = await dievonConfirm(
+        'This will replace everything currently in this size guide with the version saved at ' + latest.created_at + '.\n\n' +
+        'The current version is itself saved first, so you can undo this too.',
+        { title: 'Restore previous version?', confirmText: 'Restore it', cancelText: 'Cancel' }
+    );
+    if (!ok) return;
+
+    const fd2 = new FormData();
+    fd2.append('action', 'restore_snapshot');
+    fd2.append('snapshot_id', latest.id);
+    fd2.append('csrf_token', window.ADMIN_CSRF_TOKEN || '');
+    const res = await fetch('size_guide_handler.php', { method: 'POST', body: fd2 }).then(r => r.json()).catch(() => null);
+    if (res && res.success) {
+        dievonAlert('The previous version has been restored.', { type: 'success', title: 'Restored' });
+        setTimeout(() => location.reload(), 900);
+    } else {
+        dievonAlert((res && res.message) || 'Could not restore that version.', { type: 'error' });
+    }
+}
+
+/* ── Starter templates ────────────────────────────────────────────────
+ * Fills the whole form from a garment-type preset so a new category does not
+ * have to be typed out from scratch (9 sizes x 5 fields x 2 tabs, plus five
+ * how-to-measure explanations). Nothing is persisted here — the admin still
+ * reviews the numbers and presses Save.
+ */
+const SG_PRESETS = <?= json_encode($sgPresets, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+
+async function applySizePreset() {
+    const key = document.getElementById('sgPresetSelect').value;
+    if (!key || !SG_PRESETS[key]) {
+        dievonAlert('Choose a garment type from the list first.', { type: 'warning' });
+        return;
+    }
+    const preset = SG_PRESETS[key];
+
+    // Only warn if there is actually something to lose.
+    const hasData = [...document.querySelectorAll('.sg-cell')].some(el => el.value.trim() !== '' && el.dataset.field !== 'numeric_size')
+                 || ['shoulder','bust','waist','hips','length'].some(f => (document.getElementById('sg_instr_' + f)?.value || '').trim() !== '');
+    if (hasData) {
+        const ok = await dievonConfirm(
+            'Applying the "' + preset.label + '" template will overwrite every measurement and every how-to-measure note currently in this form.\n\n' +
+            'Nothing is saved until you press Save, so you can still undo by leaving this page without saving.',
+            { title: 'Overwrite what is here?', confirmText: 'Overwrite', cancelText: 'Keep mine', danger: true }
+        );
+        if (!ok) return;
+    }
+
+    // 1. how-to-measure text (a blank one is meaningful — it hides that row)
+    ['shoulder','bust','waist','hips','length'].forEach(f => {
+        const el = document.getElementById('sg_instr_' + f);
+        if (el) el.value = preset.instructions[f] || '';
+    });
+
+    // 2. the measurement grid, per tab
+    ['body','garment'].forEach(type => {
+        (preset.rows[type] || []).forEach(row => {
+            ['numeric_size','bust','waist','hips','shoulder','length'].forEach(field => {
+                const cell = document.querySelector(
+                    '.sg-cell[data-type="' + type + '"][data-label="' + row.size_label + '"][data-field="' + field + '"]');
+                if (cell) cell.value = (row[field] !== undefined && row[field] !== null) ? row[field] : '';
+            });
+        });
+    });
+
+    const lowerBodyOnly = !preset.instructions.shoulder && !preset.instructions.bust;
+    dievonAlert(
+        preset.label + ' template applied.\n\n' +
+        (lowerBodyOnly
+          ? 'Shoulder and bust are intentionally left blank for lower-body garments — the storefront will show the legs/waist/hip diagram instead of the full figure.\n\n'
+          : '') +
+        'Review the numbers against your own fit, then press Save.',
+        { type: 'success', title: 'Template applied' }
+    );
 }
 </script>
 

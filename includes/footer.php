@@ -56,34 +56,34 @@
                 </p>
                 <div class="footer-social">
                     <!-- TODO: replace with Dievon's real social profile URLs when available -->
-                    <a href="contact" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
-                    <a href="contact" aria-label="Facebook"><i class="fa-brands fa-facebook"></i></a>
+                    <a href="<?= SITE_URL ?>/contact" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+                    <a href="<?= SITE_URL ?>/contact" aria-label="Facebook"><i class="fa-brands fa-facebook"></i></a>
                     <a href="https://wa.me/<?= defined('SHOP_WHATSAPP') ? SHOP_WHATSAPP : '919876543210' ?>?text=Hello%20Dievon%20Concierge" target="_blank" aria-label="WhatsApp"><i class="fa-brands fa-whatsapp"></i></a>
-                    <a href="contact" aria-label="YouTube"><i class="fa-brands fa-youtube"></i></a>
-                    <a href="contact" aria-label="Tumblr"><i class="fa-brands fa-tumblr"></i></a>
-                    <a href="contact" aria-label="Pinterest"><i class="fa-brands fa-pinterest"></i></a>
+                    <a href="<?= SITE_URL ?>/contact" aria-label="YouTube"><i class="fa-brands fa-youtube"></i></a>
+                    <a href="<?= SITE_URL ?>/contact" aria-label="Tumblr"><i class="fa-brands fa-tumblr"></i></a>
+                    <a href="<?= SITE_URL ?>/contact" aria-label="Pinterest"><i class="fa-brands fa-pinterest"></i></a>
                 </div>
             </div>
             <div class="footer-col">
                 <h4>Collections</h4>
                 <ul>
-                    <li><a href="shop?category=Dresses">Dresses</a></li>
-                    <li><a href="shop?category=Handbags">Handbags</a></li>
-                    <li><a href="shop?category=Shoes">Shoes</a></li>
-                    <li><a href="shop?category=Outerwear">Outerwear</a></li>
-                    <li><a href="shop?category=Jewelry">Accessories</a></li>
+                    <li><a href="<?= SITE_URL ?>/shop?category=Dresses">Dresses</a></li>
+                    <li><a href="<?= SITE_URL ?>/shop?category=Handbags">Handbags</a></li>
+                    <li><a href="<?= SITE_URL ?>/shop?category=Shoes">Shoes</a></li>
+                    <li><a href="<?= SITE_URL ?>/shop?category=Outerwear">Outerwear</a></li>
+                    <li><a href="<?= SITE_URL ?>/shop?category=Jewelry">Accessories</a></li>
                 </ul>
             </div>
             <div class="footer-col">
                 <h4>Customer Service</h4>
                 <ul>
-                    <li><a href="about">Our Story</a></li>
-                    <li><a href="blog">Journal</a></li>
-                    <li><a href="contact">Contact Us</a></li>
-                    <li><a href="shipping">Shipping &amp; Delivery</a></li>
-                    <li><a href="returns">Returns &amp; Refunds</a></li>
-                    <li><a href="privacy">Privacy Policy</a></li>
-                    <li><a href="terms">Terms &amp; Conditions</a></li>
+                    <li><a href="<?= SITE_URL ?>/about">Our Story</a></li>
+                    <li><a href="<?= SITE_URL ?>/blog">Journal</a></li>
+                    <li><a href="<?= SITE_URL ?>/contact">Contact Us</a></li>
+                    <li><a href="<?= SITE_URL ?>/shipping">Shipping &amp; Delivery</a></li>
+                    <li><a href="<?= SITE_URL ?>/returns">Returns &amp; Refunds</a></li>
+                    <li><a href="<?= SITE_URL ?>/privacy">Privacy Policy</a></li>
+                    <li><a href="<?= SITE_URL ?>/terms">Terms &amp; Conditions</a></li>
                 </ul>
             </div>
             <div class="footer-col">
@@ -118,7 +118,7 @@
 
 <!-- ══ Mobile Bottom Navigation Dock ═════════════════════════ -->
 <nav class="mobile-bottom-dock">
-    <a href="home" class="mobile-dock-item <?php echo (!isset($path) || $path == 'home') ? 'active' : ''; ?>">
+    <a href="<?= SITE_URL ?>/home" class="mobile-dock-item <?php echo (!isset($path) || $path == 'home') ? 'active' : ''; ?>">
         <i class="fa-solid fa-house"></i>
         <span>Home</span>
     </a>
@@ -127,12 +127,12 @@
         <span>Search</span>
     </button>
     <?php if (isset($_SESSION['customer_id'])): ?>
-        <a href="account" class="mobile-dock-item <?php echo (isset($path) && $path == 'account') ? 'active' : ''; ?>">
+        <a href="<?= SITE_URL ?>/account" class="mobile-dock-item <?php echo (isset($path) && $path == 'account') ? 'active' : ''; ?>">
             <i class="fa-solid fa-user"></i>
             <span>Account</span>
         </a>
     <?php else: ?>
-        <a href="login" class="mobile-dock-item <?php echo (isset($path) && $path == 'login') ? 'active' : ''; ?>">
+        <a href="<?= SITE_URL ?>/login" class="mobile-dock-item <?php echo (isset($path) && $path == 'login') ? 'active' : ''; ?>">
             <i class="fa-regular fa-user"></i>
             <span>Login</span>
         </a>
@@ -173,7 +173,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 <!-- ══ Scripts ══════════════════════════════════════════════ -->
-<script src="assets/js/search.js" defer></script>
+<!-- Branded dialog. Loaded WITHOUT defer and before the inline handlers below so that
+     window.alert is already overridden by the time any of them can fire. -->
+<script src="<?= SITE_URL ?>/assets/js/dievon-dialog.js?v=<?= filemtime(__DIR__ . '/../assets/js/dievon-dialog.js') ?>"></script>
+<script src="<?= SITE_URL ?>/assets/js/search.js" defer></script>
 <script>
 function submitNewsletterSignup(e, form) {
     e.preventDefault();
@@ -183,7 +186,7 @@ function submitNewsletterSignup(e, form) {
     btn.disabled = true;
 
     const formData = new FormData(form);
-    fetch('actions/newsletter_action.php', { method: 'POST', body: formData })
+    fetch(window.SITE_URL + '/actions/newsletter_action.php', { method: 'POST', body: formData })
         .then(r => r.json())
         .then(data => {
             msg.style.display = 'block';
@@ -321,7 +324,7 @@ function renderCart() {
         const subtotal  = (item.price * item.quantity).toFixed(2);
         const cartKey   = item.cart_key || item.product_id;
         const imgHtml   = item.image
-            ? `<img class="cart-item-img" src="uploads/products/${escHtml(item.image)}" alt="${escHtml(item.name)}">`
+            ? `<img class="cart-item-img" src="${window.SITE_URL}/uploads/products/${escHtml(item.image)}" alt="${escHtml(item.name)}">`
             : `<div class="cart-item-img-placeholder">${escHtml(item.emoji)}</div>`;
         const colorLabel = item.color_name ? escHtml(item.color_name) + (item.variant_name ? ' · ' : '') : '';
         const variantLabel = item.variant_name ? `<span class="cart-variant-label">${colorLabel}${escHtml(item.variant_name)}</span>` : (colorLabel ? `<span class="cart-variant-label">${colorLabel}</span>` : '');

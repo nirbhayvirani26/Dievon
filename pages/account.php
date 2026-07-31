@@ -171,7 +171,7 @@ require_once __DIR__ . '/../includes/header.php';
                     <li><a href="#profile" onclick="showAccountTab('profile', this)" class="acc-tab-btn"><i class="fa-regular fa-user"></i> Profile Details</a></li>
                     <li><a href="#privacy" onclick="showAccountTab('privacy', this)" class="acc-tab-btn"><i class="fa-solid fa-user-shield"></i> Account Privacy</a></li>
                     <li class="signout-item">
-                        <a href="logout.php" class="acc-tab-btn signout-btn"><i class="fa-solid fa-arrow-right-from-bracket"></i> Sign Out</a>
+                        <a href="<?= SITE_URL ?>/logout.php" class="acc-tab-btn signout-btn"><i class="fa-solid fa-arrow-right-from-bracket"></i> Sign Out</a>
                     </li>
                 </ul>
             </div>
@@ -236,7 +236,7 @@ require_once __DIR__ . '/../includes/header.php';
                         <div style="text-align: center; padding: 50px 0; color: var(--text-secondary);">
                             <div style="font-size: 40px; margin-bottom: 15px; color: var(--text-muted);">📦</div>
                             <p style="text-transform: uppercase; font-size: 12px; letter-spacing: 0.05em; font-weight: 600; margin-bottom: 20px;">You haven't placed any orders yet.</p>
-                            <a href="shop" class="btn-luxury" style="font-size: 11px; padding: 10px 24px;">Explore Collections</a>
+                            <a href="<?= SITE_URL ?>/shop" class="btn-luxury" style="font-size: 11px; padding: 10px 24px;">Explore Collections</a>
                         </div>
                     <?php else: ?>
                         <div style="display: flex; flex-direction: column; gap: 20px;">
@@ -276,7 +276,7 @@ require_once __DIR__ . '/../includes/header.php';
 
                                 <!-- Action Buttons Row -->
                                 <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; border-top: 1px solid var(--border-light); padding-top: 12px;">
-                                    <a href="print_invoice.php?code=<?= urlencode($o['order_code']) ?>" target="_blank" class="btn-luxury-outline" style="padding: 6px 14px; font-size: 11px;">
+                                    <a href="<?= SITE_URL ?>/print_invoice.php?code=<?= urlencode($o['order_code']) ?>" target="_blank" class="btn-luxury-outline" style="padding: 6px 14px; font-size: 11px;">
                                         <i class="fa-solid fa-file-pdf"></i> Download GST Invoice
                                     </a>
 
@@ -508,12 +508,29 @@ require_once __DIR__ . '/../includes/header.php';
                     <?php if (!empty($tickets)): ?>
                         <div style="margin-bottom: 25px; display: flex; flex-direction: column; gap: 10px;">
                             <?php foreach ($tickets as $t): ?>
-                            <div style="border: 1px solid var(--border-light); padding: 14px; border-radius: 4px; background: var(--bg-surface-soft); font-size: 13px;">
-                                <div style="display: flex; justify-content: space-between;">
+                            <div class="ticket-item">
+                                <div class="ticket-item-head">
                                     <strong><?= htmlspecialchars($t['ticket_code']) ?> — <?= htmlspecialchars($t['subject']) ?></strong>
-                                    <span style="font-weight: 700; color: var(--color-primary);"><?= htmlspecialchars($t['status']) ?></span>
+                                    <span class="ticket-item-status"><?= htmlspecialchars($t['status']) ?></span>
                                 </div>
-                                <p style="margin: 6px 0 0; color: var(--text-secondary);"><?= htmlspecialchars($t['message']) ?></p>
+                                <p class="ticket-item-msg"><?= htmlspecialchars($t['message']) ?></p>
+                                <?php if (!empty($t['attachment'])): ?>
+                                    <a href="<?= SITE_URL ?>/uploads/tickets/<?= htmlspecialchars($t['attachment']) ?>" target="_blank" rel="noopener">
+                                        <img src="<?= SITE_URL ?>/uploads/tickets/<?= htmlspecialchars($t['attachment']) ?>"
+                                             alt="Photo attached to ticket <?= htmlspecialchars($t['ticket_code']) ?>"
+                                             class="ticket-item-photo">
+                                    </a>
+                                <?php endif; ?>
+                                <?php if (!empty($t['admin_reply'])): ?>
+                                    <div class="ticket-reply">
+                                        <div class="ticket-reply-label">
+                                            Reply From Your Advisor<?php if (!empty($t['replied_at'])): ?>
+                                                · <?= date('j M Y', strtotime($t['replied_at'])) ?>
+                                            <?php endif; ?>
+                                        </div>
+                                        <div class="ticket-reply-body"><?= nl2br(htmlspecialchars($t['admin_reply'])) ?></div>
+                                    </div>
+                                <?php endif; ?>
                             </div>
                             <?php endforeach; ?>
                         </div>
@@ -537,7 +554,15 @@ require_once __DIR__ . '/../includes/header.php';
                             <label style="display: block; font-size: 11px; text-transform: uppercase; margin-bottom: 6px;">Message *</label>
                             <textarea name="message" class="form-luxury-input" rows="4" required placeholder="Describe your inquiry..."></textarea>
                         </div>
-                        <button type="submit" class="btn-luxury" style="padding: 10px 24px; font-size: 12px;">Submit Support Ticket</button>
+                        <div class="ticket-form-group">
+                            <label class="ticket-form-label">Attach a Photo (Optional)</label>
+                            <input type="file" name="photo" accept="image/jpeg,image/png,image/webp" class="form-luxury-input ticket-file-input" onchange="previewTicketPhoto(this)">
+                            <small class="ticket-file-hint">
+                                JPG, PNG or WebP · 5MB maximum. Helpful if you are reporting a fault or damage to a garment.
+                            </small>
+                            <img id="ticketPhotoPreview" alt="Selected photo preview" class="ticket-photo-preview">
+                        </div>
+                        <button type="submit" class="btn-luxury ticket-submit-btn">Submit Support Ticket</button>
                     </form>
                 </div>
 
@@ -575,7 +600,7 @@ require_once __DIR__ . '/../includes/header.php';
                         <div style="border: 1px solid var(--border-light); padding: 20px; border-radius: 6px; background: var(--bg-surface-soft);">
                             <h4 style="margin: 0 0 8px; font-size: 14px;">Download Personal Data Export</h4>
                             <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">Download a complete JSON export of your profile, address book, and order history.</p>
-                            <form action="actions/customer_action.php" method="POST">
+                            <form action="<?= SITE_URL ?>/actions/customer_action.php" method="POST">
                                 <input type="hidden" name="action" value="export_data">
                                 <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
                                 <button type="submit" class="btn-luxury-outline" style="font-size: 11px; padding: 8px 16px;">Download Personal Data (.JSON)</button>
@@ -687,7 +712,7 @@ function renderAccountWishlist() {
             <div style="text-align: center; padding: 40px 0; color: var(--text-secondary);">
                 <div style="font-size: 36px; margin-bottom: 10px;">🖤</div>
                 <p style="text-transform: uppercase; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; margin-bottom: 15px;">Your wishlist is currently empty</p>
-                <a href="shop.php" class="btn-luxury" style="font-size: 11px; padding: 8px 20px;">Explore Collections</a>
+                <a href="<?= SITE_URL ?>/shop.php" class="btn-luxury" style="font-size: 11px; padding: 8px 20px;">Explore Collections</a>
             </div>
         `;
         return;
@@ -695,17 +720,17 @@ function renderAccountWishlist() {
 
     let html = '<div class="acc-wishlist-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px;">';
     items.forEach(p => {
-        const imgSrc = p.image ? `uploads/products/${p.image}` : '';
+        const imgSrc = p.image ? `${window.SITE_URL}/uploads/products/${p.image}` : '';
         const imgHtml = imgSrc 
             ? `<img src="${escHtml(imgSrc)}" alt="${escHtml(p.name)}" style="width: 100%; height: 180px; object-fit: cover; border-radius: 4px;">`
             : `<div style="width: 100%; height: 180px; background: var(--bg-surface-soft); display: flex; align-items: center; justify-content: center; font-size: 40px; border-radius: 4px;">${escHtml(p.emoji)}</div>`;
 
         html += `
-            <div class="acc-wishlist-card" style="border: 1px solid var(--border-light); padding: 14px; border-radius: 6px; background: var(--bg-surface); display: flex; flex-direction: column; position: relative;">
+            <div class="acc-wishlist-card" style="border: 1px solid var(--border-light); padding: 14px; border-radius: 4px; background: var(--bg-surface); display: flex; flex-direction: column; position: relative;">
                 <button onclick="removeAccountWishlist(${p.id})" style="position: absolute; top: 10px; right: 10px; background: transparent; border: none; font-size: 16px; color: var(--color-danger); cursor: pointer;" aria-label="Remove">
                     <i class="fa-solid fa-heart"></i>
                 </button>
-                <a href="product.php?id=${p.id}" style="display: block; margin-bottom: 10px;">
+                <a href="<?= SITE_URL ?>/product.php?id=${p.id}" style="display: block; margin-bottom: 10px;">
                     ${imgHtml}
                 </a>
                 <span style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted);">${escHtml(p.category)}</span>
@@ -713,7 +738,7 @@ function renderAccountWishlist() {
                 <div style="font-size: 12px; font-weight: 700; color: var(--color-secondary); margin-bottom: 12px;">${typeof formatPriceJS === 'function' ? formatPriceJS(p.price) : '£' + p.price}</div>
                 
                 <div style="display: flex; flex-direction: column; gap: 6px; margin-top: auto;">
-                    <a href="product.php?id=${p.id}&select_size=1" class="btn-luxury" style="width: 100%; padding: 8px; font-size: 10px; justify-content: center; text-transform: uppercase;">
+                    <a href="<?= SITE_URL ?>/product.php?id=${p.id}&select_size=1" class="btn-luxury" style="width: 100%; padding: 8px; font-size: 10px; justify-content: center; text-transform: uppercase;">
                         <i class="fa-solid fa-bag-shopping"></i> Add to Bag
                     </a>
                     <button onclick="removeAccountWishlist(${p.id})" class="btn-luxury-outline" style="width: 100%; padding: 6px; font-size: 10px; justify-content: center; text-transform: uppercase; color: var(--color-danger); border-color: var(--color-danger);">
@@ -746,7 +771,7 @@ function submitNewAddress(e) {
     formData.append('action', 'add_address');
     formData.append('csrf_token', csrfToken);
 
-    fetch('actions/customer_action.php', { method: 'POST', body: formData })
+    fetch(window.SITE_URL + '/actions/customer_action.php', { method: 'POST', body: formData })
         .then(r => r.json())
         .then(data => {
             alert(data.message);
@@ -754,14 +779,14 @@ function submitNewAddress(e) {
         });
 }
 
-function deleteAddress(id) {
-    if (!confirm('Are you sure you want to delete this address?')) return;
+async function deleteAddress(id) {
+    if (!await dievonConfirm('Are you sure you want to delete this address?')) return;
     const formData = new FormData();
     formData.append('action', 'delete_address');
     formData.append('address_id', id);
     formData.append('csrf_token', csrfToken);
 
-    fetch('actions/customer_action.php', { method: 'POST', body: formData })
+    fetch(window.SITE_URL + '/actions/customer_action.php', { method: 'POST', body: formData })
         .then(r => r.json())
         .then(data => {
             alert(data.message);
@@ -775,7 +800,7 @@ function setDefaultAddress(id) {
     formData.append('address_id', id);
     formData.append('csrf_token', csrfToken);
 
-    fetch('actions/customer_action.php', { method: 'POST', body: formData })
+    fetch(window.SITE_URL + '/actions/customer_action.php', { method: 'POST', body: formData })
         .then(r => r.json())
         .then(data => {
             alert(data.message);
@@ -783,14 +808,14 @@ function setDefaultAddress(id) {
         });
 }
 
-function requestOrderCancel(code) {
-    if (!confirm('Are you sure you want to request cancellation for order ' + code + '?')) return;
+async function requestOrderCancel(code) {
+    if (!await dievonConfirm('Are you sure you want to request cancellation for order ' + code + '?')) return;
     const formData = new FormData();
     formData.append('action', 'cancel_order');
     formData.append('order_code', code);
     formData.append('csrf_token', csrfToken);
 
-    fetch('actions/customer_action.php', { method: 'POST', body: formData })
+    fetch(window.SITE_URL + '/actions/customer_action.php', { method: 'POST', body: formData })
         .then(r => r.json())
         .then(data => {
             alert(data.message);
@@ -804,12 +829,36 @@ function submitReturnRequest(e) {
     formData.append('action', 'submit_return');
     formData.append('csrf_token', csrfToken);
 
-    fetch('actions/customer_action.php', { method: 'POST', body: formData })
+    fetch(window.SITE_URL + '/actions/customer_action.php', { method: 'POST', body: formData })
         .then(r => r.json())
         .then(data => {
             alert(data.message);
             if (data.success) location.reload();
         });
+}
+
+// Client-side guard mirroring the server rules in actions/customer_action.php,
+// so an oversized or wrong-type file is caught before the upload is attempted.
+function previewTicketPhoto(input) {
+    const preview = document.getElementById('ticketPhotoPreview');
+    const file = input.files && input.files[0];
+    if (!preview) return;
+    // Visibility is driven by the .is-visible class, not an inline style.
+    if (!file) { preview.classList.remove('is-visible'); preview.removeAttribute('src'); return; }
+
+    const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowed.includes(file.type)) {
+        alert('Please attach a JPG, PNG or WebP image.');
+        input.value = ''; preview.classList.remove('is-visible');
+        return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+        alert('Photo size must be 5MB or smaller.');
+        input.value = ''; preview.classList.remove('is-visible');
+        return;
+    }
+    preview.src = URL.createObjectURL(file);
+    preview.classList.add('is-visible');
 }
 
 function submitSupportTicket(e) {
@@ -818,7 +867,7 @@ function submitSupportTicket(e) {
     formData.append('action', 'submit_ticket');
     formData.append('csrf_token', csrfToken);
 
-    fetch('actions/customer_action.php', { method: 'POST', body: formData })
+    fetch(window.SITE_URL + '/actions/customer_action.php', { method: 'POST', body: formData })
         .then(r => r.json())
         .then(data => {
             alert(data.message);
@@ -832,7 +881,7 @@ function reorderPastItems(orderId) {
     formData.append('order_id', orderId);
     formData.append('csrf_token', csrfToken);
 
-    fetch('actions/customer_action.php', { method: 'POST', body: formData })
+    fetch(window.SITE_URL + '/actions/customer_action.php', { method: 'POST', body: formData })
         .then(r => r.json())
         .then(data => {
             alert(data.message);
@@ -840,15 +889,15 @@ function reorderPastItems(orderId) {
         });
 }
 
-function requestAccountDeletion() {
-    if (!confirm('This will submit a request to permanently erase your profile and address records. Continue?')) return;
+async function requestAccountDeletion() {
+    if (!await dievonConfirm('This will submit a request to permanently erase your profile and address records. Continue?')) return;
     const formData = new FormData();
     formData.append('action', 'submit_ticket');
     formData.append('subject', 'Account Deletion Request');
     formData.append('message', 'Customer has requested permanent erasure of their profile and address records under GDPR.');
     formData.append('csrf_token', csrfToken);
 
-    fetch('actions/customer_action.php', { method: 'POST', body: formData })
+    fetch(window.SITE_URL + '/actions/customer_action.php', { method: 'POST', body: formData })
         .then(r => r.json())
         .then(data => {
             if (data.success) {

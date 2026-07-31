@@ -47,7 +47,7 @@ require_once __DIR__ . '/../includes/header.php';
         
         <!-- Back to journal -->
         <div style="margin-bottom: 30px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em;">
-            <a href="blog" style="color: var(--text-muted);"><i class="fa-solid fa-arrow-left" style="margin-right: 5px;"></i> Back to Journal</a>
+            <a href="<?= SITE_URL ?>/blog" style="color: var(--text-muted);"><i class="fa-solid fa-arrow-left" style="margin-right: 5px;"></i> Back to Journal</a>
         </div>
 
         <span class="editorial-label" style="margin-bottom: 12px;">
@@ -81,7 +81,7 @@ require_once __DIR__ . '/../includes/header.php';
                 <button onclick="window.open('https://twitter.com/intent/tweet?url='+encodeURIComponent(window.location.href), '_blank');" style="font-size: 14px; color: var(--text-primary); cursor: pointer; background:none; border:none;"><i class="fa-brands fa-x-twitter"></i></button>
             </div>
             
-            <a href="shop" class="btn-luxury" style="font-size: 11px; padding: 10px 24px;">Shop Collections</a>
+            <a href="<?= SITE_URL ?>/shop" class="btn-luxury" style="font-size: 11px; padding: 10px 24px;">Shop Collections</a>
         </div>
 
     </div>

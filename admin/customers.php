@@ -52,6 +52,11 @@ try {
     $inquiries = $pdo->query("SELECT * FROM inquiries ORDER BY id DESC")->fetchAll();
 } catch (PDOException $e) {}
 
+// This page renders its own richer <div class="admin-page-header"> below
+// (icon, specific title, detailed subtitle, action buttons), so suppress the
+// generic one in includes/header.php — otherwise both draw and the page shows
+// two titles. Same pattern as product_form.php.
+$hideHeaderTitle = true;
 require_once __DIR__ . '/includes/header.php';
 ?>
 
@@ -105,7 +110,7 @@ require_once __DIR__ . '/includes/header.php';
                             <td style="font-size:12px; color:var(--text-muted); max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><?= htmlspecialchars($c['address'] ?? 'N/A') ?></td>
                             <td style="font-size:12px; color:var(--text-muted);"><?= date('d M Y', strtotime($c['created_at'])) ?></td>
                             <td style="text-align:right;">
-                                <a href="customers.php?delete_customer=<?= $c['id'] ?>" onclick="return confirm('Delete this customer account?');" class="btn-sm btn-sm-danger" style="padding:4px 10px; text-decoration:none;">
+                                <a href="customers.php?delete_customer=<?= $c['id'] ?>" onclick="return dvConfirmLink(this,'Delete this customer account?');" class="btn-sm btn-sm-danger" style="padding:4px 10px; text-decoration:none;">
                                     <i class="fa-solid fa-trash"></i> Delete
                                 </a>
                             </td>
@@ -122,7 +127,7 @@ require_once __DIR__ . '/includes/header.php';
     <div style="padding:18px 24px; border-bottom:1px solid var(--border-light); font-weight:700; font-size:15px; color:var(--text-primary); display:flex; justify-content:space-between; align-items:center;">
         <span>📬 Contact Form Inquiries (<?= count($inquiries) ?>)</span>
         <?php if (!empty($inquiries)): ?>
-        <a href="customers.php?delete_inquiry=all" onclick="return confirm('Delete ALL inquiries?');" style="color:#ef4444; font-size:12px; font-weight:700; text-decoration:none;">
+        <a href="customers.php?delete_inquiry=all" onclick="return dvConfirmLink(this,'Delete ALL inquiries?');" style="color:#ef4444; font-size:12px; font-weight:700; text-decoration:none;">
             <i class="fa-solid fa-trash"></i> Clear All
         </a>
         <?php endif; ?>
@@ -138,7 +143,7 @@ require_once __DIR__ . '/includes/header.php';
             <div style="display:flex; flex-direction:column; gap:16px;">
                 <?php foreach ($inquiries as $inq): ?>
                 <div style="background:var(--bg-surface-soft); border-radius:8px; padding:18px 20px; border:1px solid var(--border-light); position:relative;">
-                    <a href="customers.php?delete_inquiry=<?= $inq['id'] ?>" onclick="return confirm('Delete this inquiry?')" style="position:absolute; top:16px; right:16px; color:#ef4444; font-size:13px;" title="Delete">
+                    <a href="customers.php?delete_inquiry=<?= $inq['id'] ?>" onclick="return dvConfirmLink(this,'Delete this inquiry?')" style="position:absolute; top:16px; right:16px; color:#ef4444; font-size:13px;" title="Delete">
                         <i class="fa-solid fa-trash-can"></i>
                     </a>
                     <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
