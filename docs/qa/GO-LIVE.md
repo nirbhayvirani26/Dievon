@@ -1,6 +1,6 @@
 # Dievon — go-live plan
 
-Branch `claude/chat-session-875zz6`, 26 commits, 36 files. Rewritten 15 Aug 2026.
+Branch `claude/chat-session-875zz6`, 28 commits, 36 files. Rewritten 15 Aug 2026.
 
 > **This document replaced an earlier one that described a 4-file release.** That
 > version was written when the branch was 4 commits long and is no longer safe to
@@ -237,6 +237,11 @@ Use one real product that has colours **and** per-size prices.
 18. Tap the sticky bar **before** choosing a size → the same "Please select a
     size" message, and the bag stays empty. Choose a size, and the bar's price
     must move to that size's price. Tap again → added.
+19. The trust copy is now one strip below the button — Free Shipping,
+    Dispatched in 24 Hours, Return/Exchange, COD — instead of three blocks.
+    "Shop with Confidence" is the **last** accordion; open it and check all
+    four lines are there. Only "Assured Quality" was dropped, as
+    "Quality-Checked Before Dispatch" in that panel says the same thing.
 
 ---
 
