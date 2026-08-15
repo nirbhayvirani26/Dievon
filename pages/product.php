@@ -744,11 +744,23 @@ require_once __DIR__ . '/../includes/header.php';
 </script>
 
 <!-- ══ Product Hero ════════════════════════════ -->
+<?php /* Unlike every other page that uses .luxury-hero, this one is not the page's
+         only heading — the garment's real name is an <h1> a hundred pixels below,
+         inside the buy box. So this band is a <p>, not a second <h1>: two <h1>s on
+         one page give a crawler two candidate titles and make a screen reader's
+         heading list read the same product name twice in a row.
+
+         It is also hidden below 992px (.product-hero, style.css). On a phone it was
+         207px of the first 844 — a quarter of the opening screen — spent showing a
+         blurred copy of the photograph that appears sharp immediately underneath,
+         above a breadcrumb that repeats the category and a title that repeats the
+         name. Three statements of the same thing before the shopper reaches a size.
+         On a desktop it costs nothing and stays. */ ?>
 <?php if (!empty($product['image'])): ?>
-<section class="luxury-hero has-bg-image section-mb-sm" style="--hero-bg-image: url('<?= SITE_URL ?>/uploads/products/<?= htmlspecialchars($product['image']) ?>')">
+<section class="luxury-hero has-bg-image product-hero section-mb-sm" style="--hero-bg-image: url('<?= SITE_URL ?>/uploads/products/<?= htmlspecialchars($product['image']) ?>')">
     <div class="container">
         <span class="luxury-hero-eyebrow"><?= htmlspecialchars($product['category']) ?></span>
-        <h1><?= htmlspecialchars($product['name']) ?></h1>
+        <p class="product-hero-name"><?= htmlspecialchars($product['name']) ?></p>
     </div>
 </section>
 <?php endif; ?>
@@ -848,11 +860,19 @@ require_once __DIR__ . '/../includes/header.php';
                     <span><?= htmlspecialchars($product['name']) ?></span>
                 </nav>
 
-                <?php if (empty($product['image'])): ?>
+                <?php /* Always rendered. This used to be `if (empty($product['image']))`,
+                         on the reasoning that a product WITH a photograph already had its
+                         name in the hero band above — so the buy box showed a breadcrumb
+                         and then jumped straight to a price, and the garment's name existed
+                         on the page exactly once, 200px away in a decorative band.
+
+                         That made the hero load-bearing for something it was never meant to
+                         carry. The name belongs here, beside the price, where a shopper
+                         reads it and where the page's single <h1> should be; the band above
+                         is decoration and now says so. */ ?>
                 <h1 class="product-title-heading">
                     <?= htmlspecialchars($product['name']) ?>
                 </h1>
-                <?php endif; ?>
 
                 <?php
                 // The price the page OPENS on, decided here rather than by JavaScript.
@@ -905,9 +925,21 @@ require_once __DIR__ . '/../includes/header.php';
                 </div>
                 <?php endif; ?>
 
-                <div class="product-description-text">
+                <?php /* The full description is always in the page — clamping is visual only,
+                         so a crawler and a screen reader still get every word, and the copy
+                         keeps its place directly under the price where it belongs for
+                         scanning. On a phone it was costing 450px between the price and the
+                         size picker, which pushed Add to Bag past two full screens. The
+                         toggle is added by JS and only when the text actually overflows, so a
+                         one-line description never grows a pointless "Read more". */ ?>
+                <div class="product-description-text" id="productDescriptionText">
                     <?= nl2br(htmlspecialchars($product['description'])) ?>
                 </div>
+                <button type="button" class="desc-read-more" id="descReadMoreBtn"
+                        aria-expanded="false" aria-controls="productDescriptionText" hidden>
+                    <span class="desc-read-more-label">Read more</span>
+                    <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+                </button>
 
                 <?php if (!empty($productColors)): ?>
                 <?php // The SWATCHES need two colours to be a choice; the size ladder below
@@ -2618,6 +2650,59 @@ document.addEventListener('keydown', e => {
         window.addEventListener('load', update);
         // The colour swap rebuilds the tiles; re-measure once it has painted.
         document.addEventListener('dievon:gallery-swapped', update);
+    })();
+
+    /* Clamp a long description on a phone.
+       ────────────────────────────────────────────────────────────────────────
+       Applied here rather than in CSS because it must be conditional on the text
+       ACTUALLY overflowing. A one-line description under a permanent "Read more"
+       that reveals nothing is worse than no toggle at all, and CSS cannot ask
+       whether four lines was enough.
+       The clamp is never the default state: if this script does not run, the
+       shopper reads the whole description. Failing open is the right way round
+       for the copy that sells the garment. */
+    (function initDescriptionClamp() {
+        const text = document.getElementById('productDescriptionText');
+        const btn  = document.getElementById('descReadMoreBtn');
+        if (!text || !btn) { return; }
+
+        const label = btn.querySelector('.desc-read-more-label');
+        const wide  = window.matchMedia('(min-width: 992px)');   // the two-column layout
+
+        function apply() {
+            // Desktop has a pinned gallery beside a scrolling column, so the full
+            // text costs nothing there. Undo any clamp on the way up.
+            if (wide.matches) {
+                text.classList.remove('is-clamped');
+                btn.hidden = true;
+                return;
+            }
+            // Measure against the UNCLAMPED element, then decide.
+            text.classList.remove('is-clamped');
+            const line = parseFloat(getComputedStyle(text).lineHeight) || 25;
+            const overflows = text.scrollHeight > line * 4 + 4;   // 4 lines, 4px slack
+            if (!overflows) { btn.hidden = true; return; }
+
+            btn.hidden = false;
+            if (btn.getAttribute('aria-expanded') !== 'true') {
+                text.classList.add('is-clamped');
+            }
+        }
+
+        btn.addEventListener('click', () => {
+            const open = btn.getAttribute('aria-expanded') === 'true';
+            btn.setAttribute('aria-expanded', open ? 'false' : 'true');
+            text.classList.toggle('is-clamped', open);
+            label.textContent = open ? 'Read more' : 'Read less';
+            // Collapsing from the bottom of a long description would otherwise
+            // leave the shopper looking at whatever the page scrolled to.
+            if (open) { text.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
+        });
+
+        apply();
+        // A rotate changes both the breakpoint and how many lines the text takes.
+        wide.addEventListener('change', apply);
+        window.addEventListener('resize', apply);
     })();
 
     document.addEventListener('DOMContentLoaded', () => {

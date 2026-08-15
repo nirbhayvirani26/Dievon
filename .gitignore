@@ -45,3 +45,7 @@ database/recovery_*/
 database/**/*.sql
 *env.backup*
 *.env.bak
+
+# Python bytecode from the bundled skill search tool
+__pycache__/
+*.pyc

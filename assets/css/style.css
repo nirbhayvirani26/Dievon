@@ -2038,6 +2038,26 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 .luxury-hero h1 { font-size: 48px; font-weight: var(--font-heading-weight); line-height: 1.2; color: var(--text-primary); margin-bottom: 15px; }
 .luxury-hero p { font-size: 16px; max-width: 600px; margin: 0 auto; color: var(--text-secondary); font-family: var(--font-heading); font-style: italic; }
 
+/* ── Product page hero ──────────────────────────────────────────────────────
+   The product page is the one page where this band is NOT the page heading:
+   the garment's real <h1> lives in the buy box below. So its name is a <p>
+   carrying the h1's typography rather than a second <h1> competing with it,
+   and it needs these two lines to escape the italic serif `.luxury-hero p`
+   treatment meant for a subtitle.
+
+   Hidden below 992px, where it was 207px of an 844px screen — a blurred copy
+   of the photograph that appears sharp immediately beneath it, above a
+   breadcrumb repeating the category and a title repeating the name. Removing
+   it takes Add to Bag from 1,531px to 1,312px on a 390px phone. */
+.luxury-hero .product-hero-name {
+    font-family: var(--font-heading); font-style: normal;
+    font-size: 48px; font-weight: var(--font-heading-weight); line-height: 1.2;
+    color: var(--text-primary); max-width: none; margin: 0 auto 15px;
+}
+@media (max-width: 991px) {
+    .luxury-hero.product-hero { display: none; }
+}
+
 /* ── Luxury Hero with background photo (set --hero-bg-image per page) ──
    Usage: <section class="luxury-hero has-bg-image" style="--hero-bg-image:url('...')"> */
 .luxury-hero.has-bg-image {
@@ -2346,6 +2366,43 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 .product-title-heading { font-family: var(--font-heading); font-size: 32px; font-weight: var(--font-heading-weight); text-transform: uppercase; line-height: 1.3; color: var(--text-primary); margin-bottom: 12px; word-break: break-word; }
 .product-price-heading { font-size: 22px; font-weight: 600; color: var(--color-primary); margin-bottom: 20px; }
 .product-description-text { font-size: 14px; line-height: 1.8; color: var(--text-secondary); margin-bottom: 25px; word-break: break-word; }
+
+/* ── Description clamp (phones and tablets only) ────────────────────────────
+   A real Dievon description runs three paragraphs. Rendered in full on a
+   390px screen that is ~450px of body copy sitting between the price and the
+   size picker, and it pushed Add to Bag down to 1,827px — past two entire
+   screens before a shopper can buy. Desktop keeps the full text: there it sits
+   in a column beside a pinned gallery and costs nothing.
+
+   The class is added by JS, and only after measuring that the text really
+   overflows, so a one-line description is left alone. Never applied by default:
+   if the script fails the shopper reads a long description rather than a
+   permanently truncated one. */
+.product-description-text.is-clamped {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 4;
+    line-clamp: 4;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+.desc-read-more {
+    display: inline-flex; align-items: center; gap: 7px;
+    background: none; border: 0; padding: 6px 0;
+    /* 44px of touch target without 44px of visible chrome — the row reads as a
+       text link and still meets the minimum tap size. */
+    min-height: 44px;
+    font-family: inherit; font-size: 12px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--color-accent-ink); cursor: pointer;
+    margin-bottom: 20px;
+}
+.desc-read-more i { font-size: 10px; transition: transform 0.2s ease; }
+.desc-read-more[aria-expanded="true"] i { transform: rotate(180deg); }
+.desc-read-more:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) {
+    .desc-read-more i { transition: none; }
+}
 
 
 /* ═══════════════════════════════════════════════════════════
