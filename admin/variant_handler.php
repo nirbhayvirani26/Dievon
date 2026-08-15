@@ -363,8 +363,33 @@ if ($action === 'update') {
     if ($priceProvided) { $sets[] = 'price=:price';         $params['price']     = $price; }
     if ($stockProvided) { $sets[] = 'stock_qty=:stock_qty'; $params['stock_qty'] = $stockQty; }
 
-    $pdo->prepare('UPDATE product_variants SET ' . implode(', ', $sets) . ' WHERE id=:id AND product_id=:pid')
-        ->execute($params);
+    /* A write that matched no row is not a save.
+       ────────────────────────────────────────────────────────────────────────
+       The statement is scoped `WHERE id = :id AND product_id = :pid`, so a
+       mismatched pair — a size deleted in another tab, a stale page, an id that
+       never existed — updates zero rows. This reported {"success":true}
+       regardless, so the row flashed green and the owner was told their edit had
+       been saved when nothing had been written anywhere. That exact fault is
+       documented a few files away in admin/product_form.php, where saveVariantRow
+       replaced a handler posting product_id=0 and silently changing nothing.
+
+       rowCount() is 0 for "no such row" and also for "the values were already
+       these", so the two are distinguished by re-reading the row: still there
+       means the save was simply redundant and success is honest. */
+    $upd = $pdo->prepare('UPDATE product_variants SET ' . implode(', ', $sets) . ' WHERE id=:id AND product_id=:pid');
+    $upd->execute($params);
+
+    if ($upd->rowCount() === 0) {
+        $still = $pdo->prepare("SELECT id FROM product_variants WHERE id = :id AND product_id = :pid");
+        $still->execute(['id' => $id, 'pid' => $productId]);
+        if (!$still->fetchColumn()) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'That size no longer exists on this product — it may have been removed in another tab. Reload the page.',
+            ]);
+            exit;
+        }
+    }
 
     /* Read from the row rather than the request: saveColorSize() posts no
        color_id, and the colour is what decides whether this price can ever be

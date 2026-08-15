@@ -790,7 +790,20 @@ require_once __DIR__ . '/../includes/header.php';
                 ?>
                 <div class="product-gallery-grid" id="productGalleryGrid">
                     <?php foreach ($initialGallery as $gIndex => $gFile): ?>
-                    <div class="gallery-grid-item" onclick="openProductLightbox('<?= SITE_URL ?>/uploads/products/<?= htmlspecialchars($gFile) ?>')">
+                    <?php /* Operable by keyboard, not only by mouse.
+                             ────────────────────────────────────────────────────
+                             This was a bare <div onclick>: tabindex null, role
+                             null, no key handler — so the enlarged view of the
+                             garment was reachable by pointer alone. On a clothing
+                             shop the photographs ARE the product, and a keyboard
+                             or screen-reader user could not open a single one.
+                             WCAG 2.1.1. role + tabindex + Enter/Space is the
+                             standard retrofit when the element cannot become a
+                             real <button> without restyling the grid. */ ?>
+                    <div class="gallery-grid-item" role="button" tabindex="0"
+                         aria-label="View larger image<?= $gIndex === 0 ? '' : ' ' . ($gIndex + 1) ?>"
+                         onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}"
+                         onclick="openProductLightbox('<?= SITE_URL ?>/uploads/products/<?= htmlspecialchars($gFile) ?>')">
                         <?php if ($gIndex === 0 && !empty($product['badge'])): ?>
                             <span class="badge-luxury badge-product-page"><?= htmlspecialchars($product['badge']) ?></span>
                         <?php endif; ?>
@@ -1632,8 +1645,13 @@ require_once __DIR__ . '/../includes/header.php';
 </div>
 
 <!-- ══ Product Lightbox Zoom Modal ════════════════════════════ -->
-<div id="productLightboxModal" class="product-lightbox-modal" onclick="closeProductLightbox(event)">
-    <button type="button" class="product-lightbox-close" onclick="closeProductLightbox(event)">&times;</button>
+<?php /* Announced as a dialog, and named. It carried no role and no aria-modal,
+         so a screen reader treated the enlarged image as ordinary page content
+         appearing out of nowhere, with the rest of the page still readable
+         behind it. */ ?>
+<div id="productLightboxModal" class="product-lightbox-modal" role="dialog" aria-modal="true"
+     aria-label="Product image viewer" onclick="closeProductLightbox(event)">
+    <button type="button" class="product-lightbox-close" aria-label="Close image viewer" onclick="closeProductLightbox(event)">&times;</button>
     
     <div class="product-lightbox-container-wrapper">
         <!-- Vertical Thumbnails List on Left -->
@@ -1705,6 +1723,15 @@ function openProductLightbox(src) {
         requestAnimationFrame(() => requestAnimationFrame(() => modal.classList.add('is-visible')));
         document.body.style.overflow = 'hidden';
 
+        /* Focus moves in, and is remembered so it can be handed back.
+           Without this a keyboard user who opened the viewer was left with focus
+           still on the thumbnail behind it — Tab walked the page underneath while
+           the image covered the screen, and closing dropped them at the top of
+           the document rather than back at the photograph they were looking at. */
+        window.__lightboxReturnFocus = document.activeElement;
+        const closeBtn = modal.querySelector('.product-lightbox-close');
+        if (closeBtn) { setTimeout(() => closeBtn.focus(), 50); }
+
         const idx = galleryImagesList.indexOf(src);
         if (idx !== -1) currentGalleryIndex = idx;
 
@@ -1763,6 +1790,11 @@ function closeProductLightbox(e) {
         modal.classList.remove('is-visible');
         setTimeout(() => { modal.style.display = 'none'; }, 300);
         document.body.style.overflow = '';
+        // Back to the thumbnail that opened it, not the top of the page.
+        if (window.__lightboxReturnFocus && window.__lightboxReturnFocus.focus) {
+            try { window.__lightboxReturnFocus.focus({ preventScroll: true }); } catch (err) {}
+            window.__lightboxReturnFocus = null;
+        }
         lbResetZoom();
     }
 }
@@ -2250,7 +2282,10 @@ document.addEventListener('keydown', e => {
                     // <picture> with the WebP source, matching how the same
                     // gallery is rendered server-side at line 748.
                     grid.innerHTML = imgsToDisplay.map((im, i) => `
-                        <div class="gallery-grid-item" onclick="openProductLightbox('${im.src}')">
+                        <div class="gallery-grid-item" role="button" tabindex="0"
+                             aria-label="View larger image"
+                             onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}"
+                             onclick="openProductLightbox('${im.src}')">
                             ${i === 0 ? badgeHtml : ''}
                             <picture>
                                 ${im.webp ? `<source srcset="${im.webp}" type="image/webp">` : ''}
