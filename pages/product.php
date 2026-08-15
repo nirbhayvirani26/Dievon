@@ -2703,6 +2703,50 @@ document.addEventListener('keydown', e => {
         document.addEventListener('dievon:gallery-swapped', update);
     })();
 
+    /* Open the first accordion — Product Details — on arrival.
+       ────────────────────────────────────────────────────────────────────────
+       Done from JS rather than by shipping aria-expanded="true" in the markup,
+       because "open" here is an inline max-height measured from scrollHeight.
+       Hardcoding the attribute would leave max-height at 0: a panel that
+       announces itself as expanded to a screen reader while showing nothing,
+       which is worse than either state on its own. Reusing
+       toggleProductAccordion() means the default-open panel is built by exactly
+       the same path as a tapped one — same class, same aria, same icon — so
+       there is no second definition of "open" to drift.
+
+       Waits for `load`, not DOMContentLoaded: the measurement is a fixed pixel
+       height, and taking it before the webfont swaps means the panel is sized
+       for the fallback face and clips its last line once the real font lands.
+
+       Deliberately querySelector on the class rather than naming the panel.
+       Product Details only renders when the product HAS specs or components —
+       for a piece with neither, this opens whichever panel is genuinely first
+       instead of doing nothing. */
+    (function openFirstAccordion() {
+        function openFirst() {
+            const first = document.querySelector('.product-accordion .product-accordion-header');
+            // Respect a shopper who already opened something in the gap between
+            // DOM ready and fonts settling.
+            if (!first || document.querySelector('.product-accordion-header.open')) { return; }
+            toggleProductAccordion(first);
+        }
+        if (document.readyState === 'complete') { openFirst(); }
+        else { window.addEventListener('load', openFirst); }
+
+        // max-height is a fixed pixel value, so a rotate or a font-size change
+        // re-wraps the content and leaves the panel clipped or over-tall.
+        let t;
+        window.addEventListener('resize', () => {
+            clearTimeout(t);
+            t = setTimeout(() => {
+                document.querySelectorAll('.product-accordion-header.open').forEach(h => {
+                    const c = h.nextElementSibling;
+                    if (c) { c.style.maxHeight = c.scrollHeight + 40 + 'px'; }
+                });
+            }, 150);
+        });
+    })();
+
     /* Sticky buy bar — visible only while the real button is not.
        ────────────────────────────────────────────────────────────────────────
        An IntersectionObserver on the in-page Add to Bag, rather than a scroll
