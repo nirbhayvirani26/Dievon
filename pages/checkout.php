@@ -411,7 +411,15 @@ $storeCodMax       = (float)storeSetting($pdo, 'cod_max_order_value', COD_MAX_OR
                                 Create a Dievon account for fast 1-click checkout &amp; order tracking
                             </label>
                             <div id="passwordGroup" style="display: none; margin-top: 12px;">
-                                <input type="password" name="new_password" placeholder="Create Password" class="form-luxury-input chk-input-sm">
+                                <?php // A placeholder is not a label: it is gone the moment the
+                                      // customer types, and a screen reader reaching this field
+                                      // announced only "edit text, blank". The field is also the
+                                      // one place on the site a new password is chosen, so it
+                                      // needs the autocomplete hint that tells a password manager
+                                      // to offer a generated one rather than the saved login. ?>
+                                <label for="new_password" class="chk-field-label">Choose a password</label>
+                                <input type="password" id="new_password" name="new_password" autocomplete="new-password"
+                                       placeholder="At least <?= PASSWORD_MIN_LENGTH ?> characters" class="form-luxury-input chk-input-sm">
                             </div>
                         </div>
                         <?php endif; ?>
@@ -513,8 +521,12 @@ $storeCodMax       = (float)storeSetting($pdo, 'cod_max_order_value', COD_MAX_OR
                             </label>
 
                             <div id="giftMessageWrap" style="display: none; margin-top: 15px;">
-                                <label class="chk-field-label">Personal Handwritten Gift Message</label>
-                                <textarea name="gift_message" rows="3" placeholder="Write your message to the recipient here..." class="form-luxury-input" style="width: 100%; padding: 10px; font-size: 13px; resize: none;"></textarea>
+                                <?php // The label was already on the page and already read correctly
+                                      // to a sighted customer; it just was not attached to anything,
+                                      // so assistive tech announced the box as unnamed and clicking
+                                      // the words did not focus it. `for`/`id` is the whole fix. ?>
+                                <label for="gift_message" class="chk-field-label">Personal Handwritten Gift Message</label>
+                                <textarea id="gift_message" name="gift_message" rows="3" placeholder="Write your message to the recipient here..." class="form-luxury-input" style="width: 100%; padding: 10px; font-size: 13px; resize: none;"></textarea>
                             </div>
                         </div>
 
@@ -586,7 +598,9 @@ $storeCodMax       = (float)storeSetting($pdo, 'cod_max_order_value', COD_MAX_OR
                             </label>
 
                             <div id="billingCustomWrap" style="display: none; margin-top: 12px;">
-                                <input type="text" name="billing_address" placeholder="Company Name / Custom Billing Address" class="form-luxury-input chk-input-sm">
+                                <label for="billing_address" class="chk-field-label">Billing name &amp; address</label>
+                                <input type="text" id="billing_address" name="billing_address" autocomplete="billing street-address"
+                                       placeholder="Company Name / Custom Billing Address" class="form-luxury-input chk-input-sm">
                             </div>
 
                             <label style="display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--text-muted); margin-top: 10px; cursor: pointer;">
@@ -650,8 +664,8 @@ $storeCodMax       = (float)storeSetting($pdo, 'cod_max_order_value', COD_MAX_OR
 
                     <!-- Promo Coupon Box Inside Checkout -->
                     <div style="margin-bottom: 20px; border-top: 1px solid var(--border-light); padding-top: 15px;">
-                        <label style="display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-primary); margin-bottom: 8px;">
-                            <i class="fa-solid fa-ticket"></i> Apply Coupon Code
+                        <label for="checkoutCouponInput" style="display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-primary); margin-bottom: 8px;">
+                            <i class="fa-solid fa-ticket" aria-hidden="true"></i> Apply Coupon Code
                         </label>
                         <div style="display: flex; gap: 8px;">
                             <input type="text" id="checkoutCouponInput" placeholder="COUPON" value="<?= htmlspecialchars($appliedPromo['code'] ?? '') ?>" style="flex: 1; padding: 8px 12px; font-size: 12px; text-transform: uppercase; border: 1px solid var(--border-strong); background: var(--bg-surface-soft);">

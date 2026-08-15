@@ -391,7 +391,28 @@ $searchHint = $searchHintNames
         // server-rendered price beside them reads "AED 80.00".
         const sym = window.DIEVON_CURRENT_SYMBOL || '₹';
         const gap = /\p{L}$/u.test(sym) ? ' ' : '';
-        return sym + gap + (parseFloat(amount) || 0).toFixed(2);
+
+        // The thousands separators matter for the same reason the space does.
+        // formatPrice() runs number_format(), so PHP writes "₹1,500.00"; this
+        // used to stop at toFixed() and write "₹1500.00" — and the two appear
+        // side by side, the drawer against the cart page, the checkout totals
+        // against the order summary that PHP rendered above them.
+        //
+        // Grouped in threes to match number_format(), NOT the Indian lakh
+        // grouping. toLocaleString('en-IN') would give "₹1,50,000.00" against
+        // PHP's "₹150,000.00" and simply move the disagreement. Done by hand
+        // rather than through Intl so the grouping cannot follow the visitor's
+        // system locale — a machine set to German would otherwise render
+        // "1.500,00", which reads as one and a half rupees.
+        const fixed = (parseFloat(amount) || 0).toFixed(2);
+        const neg   = fixed.charAt(0) === '-';
+        const body  = neg ? fixed.slice(1) : fixed;
+        const dot   = body.indexOf('.');
+        const grouped = body.slice(0, dot).replace(/\B(?=(\d{3})+(?!\d))/g, ',') + body.slice(dot);
+
+        // Sign inside the symbol, again because that is where number_format()
+        // leaves it: formatPrice() concatenates "₹" onto "-1,500.00".
+        return sym + gap + (neg ? '-' : '') + grouped;
     }
 
     // Real per-country selling: currentCountryCode() (config.php) reads this
@@ -485,7 +506,15 @@ $searchHint = $searchHintNames
                       // dresses", neither of which the catalogue has ever stocked, and its
                       // mobile twin below listed different clothes again — the same search
                       // box disagreeing with itself about what the shop sells. ?>
-                <input type="text" id="inlineSearchInput" placeholder="<?= htmlspecialchars($searchHint) ?>" readonly>
+                <?php // This box never takes typing: it is a doorway that opens the real
+                      // search overlay, which is why it is readonly. Two consequences had
+                      // been missed. It carried no name, so it was announced as an unnamed
+                      // text field whose placeholder rotates with the hint. And the opener
+                      // lived on the wrapping div's onclick, so a mouse worked and a
+                      // keyboard did not — tab to it, press Enter, nothing happened. ?>
+                <input type="text" id="inlineSearchInput" aria-label="Search products" readonly
+                       placeholder="<?= htmlspecialchars($searchHint) ?>"
+                       onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openSearchOverlay(); }">
                 <button class="header-image-search-btn" type="button">
                     <i class="fa-solid fa-camera"></i> <span class="hide-mobile">Image Search</span>
                 </button>
@@ -1021,7 +1050,8 @@ function toggleMobileCategoryMenu(el) {
     </div>
     <div class="search-container">
         <div class="search-input-wrapper">
-            <input type="text" class="search-input" id="searchInput" placeholder="Search for products, categories..." autocomplete="off">
+            <input type="text" class="search-input" id="searchInput" aria-label="Search for products or categories"
+                   placeholder="Search for products, categories..." autocomplete="off">
             <button class="voice-search-btn" id="voiceSearchBtn" title="Search by Voice">
                 <i class="fa-solid fa-microphone"></i>
             </button>
