@@ -375,12 +375,12 @@ $storeCodMax       = (float)storeSetting($pdo, 'cod_max_order_value', COD_MAX_OR
                         <div class="form-row">
                             <div class="form-luxury-group">
                                 <label class="chk-field-label" for="customer_name">Full Name *</label>
-                                <input type="text" id="customer_name" name="customer_name" class="form-luxury-input" required 
+                                <input type="text" id="customer_name" name="customer_name" autocomplete="name" class="form-luxury-input" required 
                                        value="<?= htmlspecialchars($customer['name'] ?? $_POST['customer_name'] ?? '') ?>" placeholder="Priya Sharma" style="width: 100%; padding: 12px; font-size: 13px;">
                             </div>
                             <div class="form-luxury-group">
                                 <label class="chk-field-label" for="customer_email">Email Address *</label>
-                                <input type="email" id="customer_email" name="customer_email" class="form-luxury-input" required
+                                <input type="email" id="customer_email" name="customer_email" autocomplete="email" class="form-luxury-input" required
                                        value="<?= htmlspecialchars($customer['email'] ?? $_POST['customer_email'] ?? '') ?>" placeholder="jane@example.com" style="width: 100%; padding: 12px; font-size: 13px;">
                             </div>
                         </div>
@@ -388,19 +388,19 @@ $storeCodMax       = (float)storeSetting($pdo, 'cod_max_order_value', COD_MAX_OR
                         <div class="form-row">
                             <div class="form-luxury-group">
                                 <label class="chk-field-label" for="phone">Phone Number *</label>
-                                <input type="tel" id="phone" name="phone" class="form-luxury-input" required
+                                <input type="tel" id="phone" name="phone" autocomplete="tel" class="form-luxury-input" required
                                        value="<?= htmlspecialchars($customer['phone'] ?? $_POST['phone'] ?? '') ?>" placeholder="<?= htmlspecialchars(shopPhone()) ?>" style="width: 100%; padding: 12px; font-size: 13px;">
                             </div>
                             <div class="form-luxury-group">
                                 <label class="chk-field-label" for="delivery_postcode">Postcode / Zip *</label>
-                                <input type="text" id="delivery_postcode" name="delivery_postcode" class="form-luxury-input" required
+                                <input type="text" id="delivery_postcode" name="delivery_postcode" autocomplete="postal-code" class="form-luxury-input" required
                                        value="<?= htmlspecialchars($_POST['delivery_postcode'] ?? '') ?>" placeholder="e.g. 380001" oninput="applyShippingZone()" onchange="applyShippingZone()" style="width: 100%; padding: 12px; font-size: 13px;">
                             </div>
                         </div>
 
                         <div class="form-luxury-group" style="margin-bottom: 20px;">
                             <label class="chk-field-label" for="address">Delivery Street Address *</label>
-                            <textarea id="address" name="address" class="form-luxury-input chk-textarea" rows="3" required placeholder="House/Flat number, Street Name, Town/City"><?= htmlspecialchars($customer['address'] ?? $_POST['address'] ?? '') ?></textarea>
+                            <textarea id="address" name="address" autocomplete="street-address" class="form-luxury-input chk-textarea" rows="3" required placeholder="House/Flat number, Street Name, Town/City"><?= htmlspecialchars($customer['address'] ?? $_POST['address'] ?? '') ?></textarea>
                         </div>
 
                         <!-- Register Account Checkbox (For Guest) -->
