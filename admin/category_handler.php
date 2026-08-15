@@ -43,12 +43,25 @@ if ($action === 'add') {
     $maxOrder = $pdo->query("SELECT COALESCE(MAX(sort_order),0) FROM categories")->fetchColumn();
     $stmt = $pdo->prepare("INSERT INTO categories (name, sort_order) VALUES (:name, :order)");
     if ($stmt->execute(['name' => $name, 'order' => $maxOrder + 1])) {
+        /* The new id is captured ONCE, before anything else writes.
+           ────────────────────────────────────────────────────────────────────
+           lastInsertId() answers for the most recent INSERT on the connection,
+           not for the statement above it — and the size-guide helper on the next
+           line performs its own INSERT. So the id returned to the caller
+           described the size_guide_charts row (or 0 when that insert did not
+           happen), never the category just created. The screen then held a
+           category whose id was wrong, so the very next edit or delete acted on
+           nothing, or on another table's row number.
+           categories.php documents fixing exactly this; the quick-add handler
+           kept the bug. */
+        $newCategoryId = (int)$pdo->lastInsertId();
+
         // The quick-add has no audience field, so the chart is cloned from the
         // women's default — the same template a category with no gender gets.
-        autoCreateSizeGuideChartForCategory($pdo, (int)$pdo->lastInsertId(), 'women');
+        autoCreateSizeGuideChartForCategory($pdo, $newCategoryId, 'women');
         echo json_encode([
             'success' => true,
-            'id' => $pdo->lastInsertId(),
+            'id' => $newCategoryId,
             'name' => $name,
             'sort_order' => $maxOrder + 1
         ]);
