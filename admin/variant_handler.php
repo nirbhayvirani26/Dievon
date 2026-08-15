@@ -61,12 +61,38 @@ $validSizeCodes = array_column($sizeLadder, 'code');
  * MRP later brings it into effect with nothing to re-enter. This only returns
  * the sentence the admin screen shows alongside the save.
  *
+ * A colour's price_override is checked FIRST, because effectiveVariantPrice()
+ * returns it before it ever looks at a size's price — so on a colour that has
+ * one, every per-size price under it is inert, sale or no sale. That is the
+ * older of the two silences and the easier one to walk into now that those
+ * cards have a price box of their own to type into.
+ *
  * Returns null when the price will be charged as typed, which is the normal case.
  */
-function sizePriceClampNotice(PDO $pdo, int $productId, float $enteredPrice): ?string
+function sizePriceClampNotice(PDO $pdo, int $productId, float $enteredPrice, ?int $colorId = null): ?string
 {
     // 0 is not a price, it is "follow the product" — nothing to warn about.
     if ($enteredPrice <= 0 || $productId <= 0) { return null; }
+
+    // Checked in effectiveVariantPrice()'s order: colour override wins outright.
+    if ($colorId !== null && $colorId > 0) {
+        $cs = $pdo->prepare("SELECT color_name, price_override FROM product_colors WHERE id = :cid AND product_id = :pid");
+        $cs->execute(['cid' => $colorId, 'pid' => $productId]);
+        $crow = $cs->fetch(PDO::FETCH_ASSOC);
+        if ($crow && $crow['price_override'] !== null) {
+            return sprintf(
+                'Saved — but this size will still sell at %s, not %s. The colour “%s” has a Price Override '
+                . 'of %s, and a colour override takes precedence over a per-size price, so every size in '
+                . 'this colour sells at that figure. To charge %s for this size alone, clear the colour\'s '
+                . 'Price Override box. Your figure is kept either way and takes effect the moment it is cleared.',
+                formatPrice((float)$crow['price_override']),
+                formatPrice($enteredPrice),
+                (string)$crow['color_name'],
+                formatPrice((float)$crow['price_override']),
+                formatPrice($enteredPrice)
+            );
+        }
+    }
 
     $st = $pdo->prepare("SELECT price, mrp_price FROM products WHERE id = :pid");
     $st->execute(['pid' => $productId]);
@@ -159,7 +185,7 @@ if ($action === 'add') {
         'color_id' => $colorId, 'size_code' => $sizeCode, 'stock_qty' => $stockQty,
     ]);
     $response = ['success' => true, 'id' => $pdo->lastInsertId(), 'name' => $name, 'price' => number_format($price, 2), 'stock_qty' => $stockQty];
-    if ($notice = sizePriceClampNotice($pdo, $productId, $enteredPrice)) { $response['warning'] = $notice; }
+    if ($notice = sizePriceClampNotice($pdo, $productId, $enteredPrice, $colorId)) { $response['warning'] = $notice; }
     echo json_encode($response);
     exit;
 }
@@ -227,8 +253,20 @@ if ($action === 'update') {
 
     $pdo->prepare('UPDATE product_variants SET ' . implode(', ', $sets) . ' WHERE id=:id AND product_id=:pid')
         ->execute($params);
+
+    /* Read from the row rather than the request: saveColorSize() posts no
+       color_id, and the colour is what decides whether this price can ever be
+       charged. Fetched after the write so it describes the row as it now is. */
+    $ownerColor = null;
+    if ($priceProvided && $enteredPrice > 0) {
+        $cq = $pdo->prepare("SELECT color_id FROM product_variants WHERE id = :id AND product_id = :pid");
+        $cq->execute(['id' => $id, 'pid' => $productId]);
+        $cid = $cq->fetchColumn();
+        $ownerColor = ($cid === false || $cid === null) ? null : (int)$cid;
+    }
+
     $response = ['success' => true];
-    if ($notice = sizePriceClampNotice($pdo, $productId, $enteredPrice)) { $response['warning'] = $notice; }
+    if ($notice = sizePriceClampNotice($pdo, $productId, $enteredPrice, $ownerColor)) { $response['warning'] = $notice; }
     echo json_encode($response);
     exit;
 }

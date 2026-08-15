@@ -2542,6 +2542,12 @@ require_once __DIR__ . '/includes/header.php';
                              the title says what the number does. */ ?>
                     <input type="number" id="pprice-<?= $sz['code'] ?>" min="0" step="0.01"
                         class="form-control<?= $eHasOver ? ' size-price-overridden' : '' ?>"
+                        <?php /* The figure this size falls back to, as a number the script can
+                                 compare against. Without it markPriceOverride() can only ask
+                                 "is the box empty?", and typing the product's own price into it
+                                 would light the outline until the next reload disagreed — the
+                                 same screen-says-one-thing fault in miniature. */ ?>
+                        data-base-price="<?= number_format($basePrice, 2, '.', '') ?>"
                         placeholder="<?= htmlspecialchars(formatPrice($basePrice), ENT_QUOTES) ?>"
                         value="<?= $eHasOver ? number_format($ePrice, 2, '.', '') : '' ?>"
                         title="Price for this size only. A number here REPLACES the product's selling price of <?= htmlspecialchars(formatPrice($basePrice), ENT_QUOTES) ?> whenever a shopper picks <?= htmlspecialchars($sz['label'], ENT_QUOTES) ?>. Leave blank to follow the product price."
@@ -2816,20 +2822,55 @@ require_once __DIR__ . '/includes/header.php';
                             <span class="size-copy-status" id="ccopystat-<?= (int)$c['id'] ?>"></span>
                         </div>
                         <?php endif; ?>
+                        <?php
+                        /* What a size under THIS colour follows when it has no price
+                           of its own — the colour's override where one is set, the
+                           product price otherwise. Same ladder effectiveVariantPrice()
+                           walks, so the placeholder in each box below is the figure
+                           that will genuinely be charged if the box is left empty. */
+                        $cHasOverride = $c['price_override'] !== null;
+                        $cBasePrice   = $cHasOverride ? (float)$c['price_override'] : $basePrice;
+                        ?>
                         <p style="font-size:12px; color:var(--text-muted); margin:0 0 10px;">
                             <i class="fa-solid fa-circle-info"></i>
                             Tick a size, set its stock, and rename it if your label differs — the
                             <strong>Shown as</strong> box is exactly what a shopper sees on the size button.
                             The tick keeps its place in the ladder either way, so a size renamed
                             &ldquo;M&rdquo; still sorts where 34/M belongs.
+                            <strong>Price</strong> is per size and <strong>replaces</strong> what that one
+                            size sells at; blank means it follows
+                            <?= $cHasOverride ? "this colour's override" : "the product price" ?>
+                            (<?= htmlspecialchars(formatPrice($cBasePrice), ENT_QUOTES) ?>).
                         </p>
+                        <?php if ($cHasOverride): ?>
+                        <?php /* Said once, here, rather than left for the shopper to find.
+                                 effectiveVariantPrice() returns a colour's price_override
+                                 BEFORE it ever looks at a size's own price, so while this
+                                 override is set every price box below is inert. The boxes
+                                 stay editable — clearing the override later brings them
+                                 into effect, and being able to enter them in advance is
+                                 worth more than disabling them — but nothing about a
+                                 typed-in number would otherwise say it was being ignored,
+                                 which is the exact complaint this whole screen exists to
+                                 answer. Saving one repeats this on the save itself. */ ?>
+                        <p class="size-price-warning">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                            This colour has a <strong>Price Override</strong> of
+                            <?= htmlspecialchars(formatPrice((float)$c['price_override']), ENT_QUOTES) ?>,
+                            and a colour override beats a per-size price — so every size here sells at that
+                            figure and the price boxes below have no effect until the override is cleared.
+                        </p>
+                        <?php endif; ?>
                         <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(230px,1fr)); gap:10px;">
                             <?php foreach ($sizeLadder as $sz):
                                 $existing = $sizesByCode[$sz['code']] ?? null;
+                                // Mirrors the plain-size card: a stored price that differs
+                                // from what the size would otherwise follow is an override,
+                                // and is drawn as one.
+                                $cePrice   = $existing ? (float)$existing['price'] : 0.0;
+                                $ceHasOver = $existing && $cePrice > 0 && abs($cePrice - $cBasePrice) > 0.005;
                             ?>
-                            <?php /* --compact: these cards carry no price override, so two
-                                      tracks rather than three. */ ?>
-                            <div class="size-stock-row size-stock-row--compact">
+                            <div class="size-stock-row">
                                 <label>
                                     <input type="checkbox" id="csize-<?= $c['id'] ?>-<?= $sz['code'] ?>" <?= $existing ? 'checked' : '' ?>
                                         data-variant-id="<?= $existing['id'] ?? '' ?>"
@@ -2855,6 +2896,41 @@ require_once __DIR__ . '/includes/header.php';
                                     value="<?= ($existing && $existing['stock_qty'] !== null) ? (int)$existing['stock_qty'] : '' ?>"
                                     <?= $existing ? '' : 'disabled' ?>
                                     onchange="updateColorSizeStock(<?= $c['id'] ?>, '<?= $sz['code'] ?>', this)">
+                                <?php /* The per-size price, which this panel never had.
+                                         ────────────────────────────────────────────────
+                                         Sizes under a colour ARE priced individually by
+                                         the shop — actions/cart_action.php resolves them
+                                         through effectiveVariantPrice() like every other
+                                         surface — but there was no box here to set one,
+                                         so the only way a colour size ever acquired a
+                                         price was by duplicating a product that already
+                                         had one. The figure was chargeable and invisible
+                                         at both ends: nothing here to type it into, and
+                                         nothing on the product page to display it.
+
+                                         Same markup as the plain-size card so the two
+                                         panels stay one control with two placements, and
+                                         so .size-stock-row's second track has an occupant
+                                         on this card as it does on that one. */ ?>
+                                <input type="number" min="0" step="0.01" id="cprice-<?= $c['id'] ?>-<?= $sz['code'] ?>"
+                                    class="form-control<?= $ceHasOver ? ' size-price-overridden' : '' ?><?= $cHasOverride ? ' size-price-inert' : '' ?>"
+                                    data-base-price="<?= number_format($cBasePrice, 2, '.', '') ?>"
+                                    placeholder="<?= htmlspecialchars(formatPrice($cBasePrice), ENT_QUOTES) ?>"
+                                    value="<?= $ceHasOver ? number_format($cePrice, 2, '.', '') : '' ?>"
+                                    title="<?= $cHasOverride
+                                        ? 'This colour has a Price Override of ' . htmlspecialchars(formatPrice($cBasePrice), ENT_QUOTES) . ', which takes precedence — a price typed here has no effect until that override is cleared.'
+                                        : 'Price for this size in this colour only. A number here REPLACES the product\'s selling price of ' . htmlspecialchars(formatPrice($cBasePrice), ENT_QUOTES) . ' whenever a shopper picks ' . htmlspecialchars($sz['label'], ENT_QUOTES) . ' in ' . htmlspecialchars($c['color_name'], ENT_QUOTES) . '. Leave blank to follow it.' ?>"
+                                    <?php /* The label has to carry the same caveat the title does.
+                                             Announcing "replaces the product price when set" on a
+                                             box that a colour override has made inert tells a
+                                             screen-reader user the opposite of what will happen —
+                                             and they have no tinting or dashed border to read it
+                                             back from. */ ?>
+                                    aria-label="Price for size <?= htmlspecialchars($sz['label'], ENT_QUOTES) ?> in <?= htmlspecialchars($c['color_name'], ENT_QUOTES) ?><?= $cHasOverride
+                                        ? ' — inactive: this colour&rsquo;s Price Override takes precedence'
+                                        : ' — replaces the product price when set' ?>"
+                                    <?= $existing ? '' : 'disabled' ?>
+                                    onchange="updateColorSizePrice(<?= $c['id'] ?>, '<?= $sz['code'] ?>', this)">
                             </div>
                             <?php endforeach; ?>
                         </div>
@@ -3168,7 +3244,15 @@ function savePlainSize(code) {
         body: body.toString(),
     })
     .then(r => r.json())
-    .then(data => { if (!data.success) alert(data.message || 'Could not save this size.'); })
+    .then(data => {
+        if (!data.success) { alert(data.message || 'Could not save this size.'); return; }
+        // This panel owns a price box too, and was the one saver that reported
+        // neither the outline nor the clamp — so a price typed into the ladder
+        // saved in complete silence, which is the fault being fixed everywhere
+        // else on this screen.
+        markPriceOverride(priceEl);
+        showSizePriceNotice(data.warning);
+    })
     .catch(() => alert('Network error. Please try again.'));
 }
 
@@ -3253,6 +3337,24 @@ function showSizePriceNotice(message) {
     } else {
         alert(message);
     }
+}
+
+/* Keep the "this size has its own price" outline honest after a save.
+   ────────────────────────────────────────────────────────────────────────────
+   The server decides it as "stored price differs from what the size would
+   otherwise follow" ($eHasOver / $ceHasOver), so the box a shopkeeper is
+   looking at has to be judged the same way — otherwise typing the product's own
+   price lights the outline now and loses it on the next reload, and the screen
+   contradicts itself over a number nobody changed. data-base-price carries the
+   fallback figure so both sides can apply one rule. */
+function markPriceOverride(priceEl) {
+    if (!priceEl) { return; }
+    const typed = priceEl.value.trim();
+    const base  = parseFloat(priceEl.dataset.basePrice || '0');
+    const isOverride = typed !== ''
+        && parseFloat(typed) > 0
+        && !(base > 0 && Math.abs(parseFloat(typed) - base) < 0.005);
+    priceEl.classList.toggle('size-price-overridden', isOverride);
 }
 
 let updateTimer = {};
@@ -3702,6 +3804,7 @@ async function deleteColorImage(imageId, colorId) {
 async function toggleColorSize(colorId, code, label, checkbox) {
     const stockInput = document.getElementById('cstock-' + colorId + '-' + code);
     const labelInput = document.getElementById('clabel-' + colorId + '-' + code);
+    const priceInput = document.getElementById('cprice-' + colorId + '-' + code);
     const productId  = <?= (int)($product['id'] ?? 0) ?>;
 
     if (checkbox.checked) {
@@ -3722,6 +3825,9 @@ async function toggleColorSize(colorId, code, label, checkbox) {
                 // The rename box opens with the size ticked; it starts on the ladder
                 // label, which is what was just saved as the variant's name.
                 if (labelInput) { labelInput.disabled = false; labelInput.value = label; }
+                // Blank, not zero: the row was added with no price of its own, and an
+                // empty box is how this panel says "follows the price above".
+                if (priceInput) { priceInput.disabled = false; priceInput.value = ''; priceInput.classList.remove('size-price-overridden'); }
                 if (stockInput) { stockInput.disabled = false; stockInput.value = '0'; stockInput.focus(); }
             })
             .catch(() => { alert('Network error. Please try again.'); checkbox.checked = false; });
@@ -3730,9 +3836,16 @@ async function toggleColorSize(colorId, code, label, checkbox) {
         if (!variantId) {
             if (stockInput) { stockInput.disabled = true; stockInput.value = ''; }
             if (labelInput) { labelInput.disabled = true; labelInput.value = ''; }
+            if (priceInput) { priceInput.disabled = true; priceInput.value = ''; priceInput.classList.remove('size-price-overridden'); }
             return;
         }
-        if (!await dievonConfirm(`Remove size ${label} for this colour? Its stock data will be lost.`)) { checkbox.checked = true; return; }
+        // Names the price too when there is one to lose — removing the size drops
+        // the row, and with it a figure that is not written down anywhere else.
+        const losingPrice = priceInput && priceInput.value.trim() !== '';
+        const removeAsk = losingPrice
+            ? `Remove size ${label} for this colour? Its stock and its ${priceInput.value.trim()} price will be lost.`
+            : `Remove size ${label} for this colour? Its stock data will be lost.`;
+        if (!await dievonConfirm(removeAsk)) { checkbox.checked = true; return; }
 
         fetch('variant_handler.php', {
             method: 'POST',
@@ -3745,23 +3858,26 @@ async function toggleColorSize(colorId, code, label, checkbox) {
             checkbox.dataset.variantId = '';
             if (stockInput) { stockInput.disabled = true; stockInput.value = ''; }
             if (labelInput) { labelInput.disabled = true; labelInput.value = ''; }
+            if (priceInput) { priceInput.disabled = true; priceInput.value = ''; priceInput.classList.remove('size-price-overridden'); }
         })
         .catch(() => { alert('Network error. Please try again.'); checkbox.checked = true; });
     }
 }
 
-// Saves one colour size — its label and its stock always travel together.
+// Saves one colour size — its label, stock and price always travel together.
 //
 // The name has to be sent on every update because variant_handler.php rewrites
-// name, available and stock in a single statement; omitting the label while
-// saving stock would blank it. It used to read the label off the checkbox
+// name, available, stock and price in a single statement; omitting the label
+// while saving stock would blank it. It used to read the label off the checkbox
 // caption, which is the LADDER text — so any rename was silently overwritten by
 // "34/M" the next time the stock box was touched.
 //
-// price is deliberately NOT sent. These cards have no price box, and posting a
-// hard-coded 0 told the handler "follow the product price" — so saving a stock
-// figure quietly overwrote whatever price the size carried. The handler now
-// leaves the column alone when the field is absent; see $priceProvided there.
+// price is sent on every save for the same reason, now that these cards own a
+// price box. It was previously a hard-coded 0 — "follow the product price" —
+// which meant saving a stock figure silently flattened whatever price the size
+// carried. Sending the box's real contents makes that impossible: what is on
+// screen is what is stored. A blank box still resolves to 0 server-side, which
+// is the deliberate way to say "follow the price above".
 function saveColorSize(colorId, code) {
     const checkbox  = document.getElementById('csize-' + colorId + '-' + code);
     const variantId = checkbox ? checkbox.dataset.variantId : '';
@@ -3769,6 +3885,7 @@ function saveColorSize(colorId, code) {
 
     const labelEl = document.getElementById('clabel-' + colorId + '-' + code);
     const stockEl = document.getElementById('cstock-' + colorId + '-' + code);
+    const priceEl = document.getElementById('cprice-' + colorId + '-' + code);
     // Falls back to the ladder caption when the box is left empty, so a size can
     // never end up nameless on the storefront.
     const label = (labelEl && labelEl.value.trim() !== '')
@@ -3782,16 +3899,28 @@ function saveColorSize(colorId, code) {
     fd.append('name', label);
     fd.append('available', '1');
     fd.append('stock_qty', stockEl ? stockEl.value : '');
+    fd.append('price', (priceEl && priceEl.value.trim() !== '') ? priceEl.value.trim() : '0');
     fd.append('csrf_token', window.ADMIN_CSRF_TOKEN || '');
 
     return fetch('variant_handler.php', { method: 'POST', body: fd })
         .then(r => r.json())
-        .then(data => { if (!data.success) alert(data.message || 'Error saving this size.'); return data; })
+        .then(data => {
+            if (!data.success) { alert(data.message || 'Error saving this size.'); return data; }
+            // The outline has to follow the number it describes, or a size that has
+            // just been given its own price goes on looking like one that follows
+            // the price above until the page is reloaded.
+            markPriceOverride(priceEl);
+            // Same notice the plain-size rows show: the row saved, but the shop may
+            // not charge this figure. See sizePriceClampNotice() in variant_handler.php.
+            showSizePriceNotice(data.warning);
+            return data;
+        })
         .catch(() => alert('Network error. Please try again.'));
 }
 
 function updateColorSizeStock(colorId, code) { saveColorSize(colorId, code); }
 function updateColorSizeLabel(colorId, code) { saveColorSize(colorId, code); }
+function updateColorSizePrice(colorId, code) { saveColorSize(colorId, code); }
 
 /**
  * Copy the ticked sizes and their stock from one colour onto another.
@@ -3897,6 +4026,10 @@ async function copyColorSizes(targetColorId, btn, forcedSource) {
     const srcBox   = code => document.getElementById(fromPlain ? 'psize-'  + code : 'csize-'  + sourceColorId + '-' + code);
     const srcStock = code => document.getElementById(fromPlain ? 'pstock-' + code : 'cstock-' + sourceColorId + '-' + code);
     const srcLabel = code => document.getElementById(fromPlain ? 'plabel-' + code : 'clabel-' + sourceColorId + '-' + code);
+    // Both panels own a price box now, so a copy can carry the price with the
+    // size instead of landing it on the product price and saying nothing. A
+    // source size with a blank box copies as blank, which is still "follow".
+    const srcPrice = code => document.getElementById(fromPlain ? 'pprice-' + code : 'cprice-' + sourceColorId + '-' + code);
 
     const jobs = [];
     ladder.forEach(code => {
@@ -3908,6 +4041,7 @@ async function copyColorSizes(targetColorId, btn, forcedSource) {
             code,
             stock: (srcStock(code) || {}).value || '0',
             label: (srcLabel(code) || {}).value || '',
+            price: ((srcPrice(code) || {}).value || '').trim(),
             box: dst
         });
     });
@@ -4021,6 +4155,9 @@ async function copyColorSizes(targetColorId, btn, forcedSource) {
         fd.append('size_code', job.code);
         fd.append('name', label);
         fd.append('stock_qty', job.stock);
+        // Blank copies as 0, which the handler reads as "follow the product
+        // price" — the same thing an empty box means on either panel.
+        fd.append('price', job.price !== '' ? job.price : '0');
         fd.append('csrf_token', window.ADMIN_CSRF_TOKEN || '');
 
         /* A size that fails is NAMED, never quietly dropped.
@@ -4043,8 +4180,10 @@ async function copyColorSizes(targetColorId, btn, forcedSource) {
             job.box.dataset.variantId = data.id;
             const lab = document.getElementById('clabel-' + targetColorId + '-' + job.code);
             const stk = document.getElementById('cstock-' + targetColorId + '-' + job.code);
+            const prc = document.getElementById('cprice-' + targetColorId + '-' + job.code);
             if (lab) { lab.disabled = false; lab.value = label; }
             if (stk) { stk.disabled = false; stk.value = job.stock; }
+            if (prc) { prc.disabled = false; prc.value = job.price; markPriceOverride(prc); }
             added++;
         } catch (e) {
             // One failure must not abandon the rest — but it must be reported.

@@ -3033,9 +3033,12 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
     font-size: 12px;
 }
 
-/* The per-colour cards have no price box, so their Stock sits in the left
-   track and the right stays empty — deliberately, so a colour card and a plain
-   card put their Stock field in the same place. */
+/* A colour card and a plain card are now the same four controls in the same
+   four places: the tick and the "Shown as" box each take a full row, then Stock
+   and Price share the two tracks beneath. The colour cards used to stop at
+   Stock and leave the right track empty — deliberately, because per-size prices
+   could not be set there — so nothing about this rule needs to change now that
+   they can be. */
 
 /* Copy-sizes control on each colour block. */
 .size-copy-row {
@@ -3161,6 +3164,24 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 }
 .size-stock-row .form-control.size-price-overridden:focus {
     border-color: var(--color-secondary);
+}
+
+/* A price box that cannot bite.
+   ────────────────────────────────────────────────────────────────────────
+   effectiveVariantPrice() returns a colour's price_override before it looks
+   at a size's own price, so while that override is set every per-size box in
+   the colour is inert. The box stays enabled — the number is worth entering
+   ahead of clearing the override, and it is stored either way — but drawn as
+   the dormant setting it is, so it does not read as a figure being charged.
+   The panel says why in words above, and saving one repeats it; this is the
+   at-a-glance half of the same statement. */
+.size-stock-row .form-control.size-price-inert {
+    opacity: 0.55;
+    border-style: dashed;
+}
+.size-stock-row .form-control.size-price-inert:focus {
+    opacity: 1;
+    border-style: solid;
 }
 
 .size-price-warning {
