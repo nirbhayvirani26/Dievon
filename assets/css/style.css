@@ -2911,8 +2911,8 @@ body.admin-wrapper .product-form-grid {
 .delivery-estimate-row i { color: var(--color-primary); }
 
 /* ── Shop with Confidence ───────────────────────────────────────────── */
-.shop-confidence-box { margin: 0 0 30px; }
-.shop-confidence-title { font-size: 11px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 12px; }
+/* .shop-confidence-box / -title went with the always-open box; the list now
+   lives inside a product accordion, which supplies its own heading and frame. */
 .shop-confidence-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; }
 .shop-confidence-list li { font-size: 12px; color: var(--text-secondary); display: flex; align-items: center; gap: 8px; }
 .shop-confidence-list i { color: var(--color-primary); width: 14px; text-align: center; }
@@ -3251,10 +3251,10 @@ body.admin-wrapper .product-form-grid {
 .size-select-header-row .variant-select-label { margin: 0; }
 .variant-select-label { font-size: 11px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.08em; color: var(--text-muted); display: block; margin-bottom: 8px; }
 
-.product-trust-badges { display: flex; gap: 15px; margin: 15px 0 20px; flex-wrap: wrap; }
-.trust-badge-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); background: var(--bg-surface-soft); padding: 6px 12px; border-radius: 4px; border: 1px solid var(--border-light); }
-.trust-badge-item i { color: var(--color-primary); }
-.trust-badge-item.trust-badge-return i { color: #10b981; }
+/* .product-trust-badges / .trust-badge-item removed with the strip they styled.
+   Both its claims — dispatch and the return window — now appear once each in
+   .product-benefits-row, which is where every other delivery promise already
+   was. Nothing else in the shop referenced these classes. */
 
 .product-section-header-row { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid var(--border-strong); padding-bottom: 15px; margin-bottom: 40px; flex-wrap: wrap; gap: 20px; }
 .product-section-header-row h2 { font-family: var(--font-heading); font-size: 28px; font-weight: var(--font-heading-weight); text-transform: uppercase; margin: 0; }

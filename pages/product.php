@@ -1144,15 +1144,17 @@ require_once __DIR__ . '/../includes/header.php';
                       // works — validateSizeSelection() only demands a choice when a size
                       // grid is actually on the page. ?>
 
-                <!-- Express Delivery & Return Guarantee Badges -->
-                <div class="product-trust-badges">
-                    <div class="trust-badge-item">
-                        <i class="fa-solid fa-truck-fast"></i> <strong>Dispatched in 24 Hours</strong>
-                    </div>
-                    <div class="trust-badge-item trust-badge-return">
-                        <i class="fa-solid fa-rotate-left"></i> <strong>14-Day Return Eligible</strong>
-                    </div>
-                </div>
+                <?php /* The "Dispatched in 24 Hours / 14-Day Return Eligible" strip used to
+                         sit here, between the size ladder and the quantity stepper — 83px of
+                         reassurance interrupting the one place on the page where a shopper is
+                         mid-decision, on a phone where Add to Bag was already two screens
+                         down. Both claims were also printed again, word for word, 150px below
+                         the button in .product-benefits-row.
+
+                         They now appear once, in that strip, where every other delivery and
+                         returns promise already lives. Nothing was dropped; the return window
+                         there reads RETURN_WINDOW_DAYS rather than a hardcoded 14, so it can
+                         no longer disagree with the returns page. */ ?>
 
                 <!-- In-Bag Status Banner (Visible if item is in cart) -->
                 <div id="inBagStatusBanner" class="in-bag-status-banner" style="display: none;">
@@ -1243,6 +1245,17 @@ require_once __DIR__ . '/../includes/header.php';
                 $benefitCod     = function_exists('codAllowedInCurrentCountry')
                                 ? codAllowedInCurrentCountry() : true;
                 ?>
+                <?php /* The page's one trust strip. It used to be one of three, carrying ten
+                         claims between them of which four were the same claim twice: this row
+                         said "14-Day Easy Return/Exchange" while the strip above the button
+                         said "14-Day Return Eligible", and it said "Assured Quality" while
+                         Shop with Confidence said "Quality-Checked Before Dispatch". Repeating
+                         a promise does not make it more believable; it makes the page longer.
+
+                         "Assured Quality" is the one line that is gone rather than moved. Of
+                         the ten it was the only one that promises nothing checkable —
+                         "Quality-Checked Before Dispatch", now in the accordion below, says
+                         the same thing and says who does it and when. */ ?>
                 <div class="product-benefits-row">
                     <div class="benefit-item">
                         <i class="fa-solid fa-truck-fast"></i>
@@ -1251,12 +1264,12 @@ require_once __DIR__ . '/../includes/header.php';
                             : 'On all orders' ?></small></span>
                     </div>
                     <div class="benefit-item">
-                        <i class="fa-solid fa-rotate-left"></i>
-                        <span><?= (int)RETURN_WINDOW_DAYS ?>-Day Easy<br>Return/Exchange</span>
+                        <i class="fa-solid fa-box-open"></i>
+                        <span>Dispatched<br>in 24 Hours</span>
                     </div>
                     <div class="benefit-item">
-                        <i class="fa-solid fa-shield-halved"></i>
-                        <span>Assured<br>Quality</span>
+                        <i class="fa-solid fa-rotate-left"></i>
+                        <span><?= (int)RETURN_WINDOW_DAYS ?>-Day Easy<br>Return/Exchange</span>
                     </div>
                     <?php if ($benefitCod): ?>
                     <div class="benefit-item">
@@ -1326,21 +1339,12 @@ require_once __DIR__ . '/../includes/header.php';
                     <div id="deliveryStatus" class="delivery-status-msg"></div>
                 </div>
 
-                <!-- Shop with Confidence -->
-                <div class="shop-confidence-box">
-                    <!-- h2: this is a top-level section of the product page, sitting
-                         directly under the product's <h1>. As an h4 it left two levels
-                         missing from the outline. .shop-confidence-title carries every
-                         visible property, so this is a semantics-only change. -->
-                    <h2 class="shop-confidence-title">Shop with Confidence</h2>
-                    <ul class="shop-confidence-list">
-                        <li><i class="fa-solid fa-lock"></i> Secure Checkout &amp; Data Privacy</li>
-                        <li><i class="fa-solid fa-user-tie"></i> Styled by Our In-House Team</li>
-                        <li><i class="fa-solid fa-magnifying-glass"></i> Quality-Checked Before Dispatch</li>
-                        <li><i class="fa-solid fa-headset"></i> Dedicated Post-Purchase Support</li>
-                    </ul>
-                </div>
-
+                <?php /* "Shop with Confidence" moved into the accordion stack below, all four
+                         lines intact. It was 134px of always-open list standing between the
+                         delivery checker and the product's own detail panels, and none of what
+                         it says changes a purchase decision the way a delivery date or a return
+                         window does — it is brand assurance, which is exactly what a collapsed
+                         panel is for. Collapsed it costs 54px instead of 134. */ ?>
 
                 <!-- Product Detail Accordions -->
                 <div class="product-accordions">
@@ -1534,6 +1538,25 @@ require_once __DIR__ . '/../includes/header.php';
                         </div>
                     </div>
                     <?php endif; ?>
+
+                    <?php /* Last in the stack on purpose. Every panel above it is about THIS
+                             garment — its details, its fabric, its measurements. This one is
+                             about the shop, and it is the same on every product page, so it
+                             follows rather than leads. It was an always-open 134px box between
+                             the delivery checker and these panels; collapsed it costs 54. */ ?>
+                    <div class="product-accordion">
+                        <button type="button" class="product-accordion-header" aria-expanded="false" onclick="toggleProductAccordion(this)">
+                            Shop with Confidence <i class="fa-solid fa-plus toggle-icon" aria-hidden="true"></i>
+                        </button>
+                        <div class="product-accordion-content">
+                            <ul class="shop-confidence-list">
+                                <li><i class="fa-solid fa-lock" aria-hidden="true"></i> Secure Checkout &amp; Data Privacy</li>
+                                <li><i class="fa-solid fa-user-tie" aria-hidden="true"></i> Styled by Our In-House Team</li>
+                                <li><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> Quality-Checked Before Dispatch</li>
+                                <li><i class="fa-solid fa-headset" aria-hidden="true"></i> Dedicated Post-Purchase Support</li>
+                            </ul>
+                        </div>
+                    </div>
 
                 </div>
 
