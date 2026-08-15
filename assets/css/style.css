@@ -2058,6 +2058,55 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
     .luxury-hero.product-hero { display: none; }
 }
 
+/* ── Sticky buy bar, product page, phones and tablets ───────────────────────
+   Shown only while the real Add to Bag button is off screen, so a shopper
+   never sees two identical buttons at once. `hidden` is on the element in the
+   markup and JS clears it, which means a browser that never runs the script
+   shows nothing rather than a bar the page cannot control.
+
+   It REPLACES .mobile-bottom-dock here rather than stacking above it — see
+   .has-pdp-buy-bar below. The class goes on <body> from JS, so a failed script
+   leaves the dock exactly where it was. */
+.pdp-buy-bar {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 9400;
+    display: flex; align-items: center; gap: 14px;
+    padding: 10px 16px;
+    /* The home-indicator strip on a modern iPhone sits inside the viewport, so
+       without this the button's lower third is under it and taps land nowhere. */
+    padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    background: var(--bg-surface);
+    border-top: 1px solid var(--border-strong);
+    box-shadow: 0 -4px 18px rgba(20, 10, 14, 0.10);
+    transform: translateY(101%);
+    transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.pdp-buy-bar.is-visible { transform: translateY(0); }
+/* The compare tray also pins to the bottom and outranks this one. When it is
+   up, sit above it instead of underneath. */
+.pdp-buy-bar.is-above-compare { bottom: 78px; }
+.pdp-buy-bar-price { display: flex; flex-direction: column; line-height: 1.2; }
+.pdp-buy-bar-price-label {
+    font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--text-muted); font-weight: 600;
+}
+.pdp-buy-bar-price-amount { font-size: 17px; font-weight: 700; color: var(--color-primary); }
+.pdp-buy-bar-btn {
+    flex: 1; min-height: 48px; padding: 13px 18px;
+    font-size: 12px; letter-spacing: 0.1em; white-space: nowrap;
+}
+/* The swap. Scoped to the viewports where the dock exists at all. */
+@media (max-width: 991px) {
+    body.has-pdp-buy-bar .mobile-bottom-dock { display: none; }
+}
+@media (min-width: 992px) {
+    /* Desktop keeps the buy box in a column beside a pinned gallery — the real
+       button is a short scroll away and a fixed bar would be noise. */
+    .pdp-buy-bar { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .pdp-buy-bar { transition: none; }
+}
+
 /* ── Luxury Hero with background photo (set --hero-bg-image per page) ──
    Usage: <section class="luxury-hero has-bg-image" style="--hero-bg-image:url('...')"> */
 .luxury-hero.has-bg-image {

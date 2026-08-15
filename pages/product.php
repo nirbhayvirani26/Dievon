@@ -2088,7 +2088,35 @@ document.addEventListener('keydown', e => {
     </div>
 </section>
 
+<?php /* ══ Sticky buy bar (phones and tablets) ═══════════════════════════════
+         Even after 400px of repetition came off the top, Add to Bag lands at
+         1,420px on a 390px phone — the gallery and the size ladder are simply
+         that tall, and shrinking a fashion photograph to raise a button is the
+         wrong trade. So the button follows instead.
 
+         It replaces the bottom dock rather than stacking on it: two fixed bars
+         would take 121px of an 844px screen, and on a product page the primary
+         action is to buy, not to navigate — Home, Search and Login are all still
+         in the header. The swap is done in JS (see initPdpBuyBar), so if the
+         script never runs the shopper keeps the dock and loses nothing.
+
+         Deliberately OUTSIDE every .reveal-on-scroll section: those animate with
+         a transform, and a transformed ancestor makes position:fixed resolve
+         against the ancestor instead of the viewport, which would strand this at
+         a fixed point in the page.
+
+         The button calls the same handleAddToCartClick() as the real one, so
+         size validation, stock checks, the toast and the drawer are identical —
+         there is no second add-to-cart path to keep in step. */ ?>
+<div class="pdp-buy-bar" id="pdpBuyBar" hidden>
+    <div class="pdp-buy-bar-price">
+        <span class="pdp-buy-bar-price-label">Total</span>
+        <span class="pdp-buy-bar-price-amount" id="pdpBuyBarPrice"><?= formatPrice($openPrice ?? $product['price']) ?></span>
+    </div>
+    <button type="button" class="btn-luxury pdp-buy-bar-btn" onclick="handleAddToCartClick()">
+        <i class="fa-solid fa-bag-shopping" aria-hidden="true"></i> Add to Bag
+    </button>
+</div>
 
 <script>
     // Selected variant info
@@ -2652,6 +2680,55 @@ document.addEventListener('keydown', e => {
         document.addEventListener('dievon:gallery-swapped', update);
     })();
 
+    /* Sticky buy bar — visible only while the real button is not.
+       ────────────────────────────────────────────────────────────────────────
+       An IntersectionObserver on the in-page Add to Bag, rather than a scroll
+       listener comparing offsets: the page has a colour swap and a description
+       toggle that both change the button's position, and offsets cached on load
+       would be wrong after either. */
+    (function initPdpBuyBar() {
+        const bar    = document.getElementById('pdpBuyBar');
+        const anchor = document.querySelector('.product-action-buttons-group');
+        if (!bar || !anchor || !('IntersectionObserver' in window)) { return; }
+
+        const narrow = window.matchMedia('(max-width: 991px)');
+
+        // Hiding the dock is this script's job, so a browser that never gets
+        // here keeps its navigation instead of losing both bars.
+        function claimDock() {
+            document.body.classList.toggle('has-pdp-buy-bar', narrow.matches);
+            if (!narrow.matches) { bar.hidden = true; bar.classList.remove('is-visible'); }
+            else { bar.hidden = false; }
+        }
+
+        new IntersectionObserver(([entry]) => {
+            bar.classList.toggle('is-visible', narrow.matches && !entry.isIntersecting);
+        }, { rootMargin: '0px 0px -12px 0px' }).observe(anchor);
+
+        // The compare tray pins to the same edge and outranks this bar. Watch its
+        // class rather than polling — it is toggled from a click, not a scroll.
+        //
+        // Deferred to DOMContentLoaded because #compareBar is printed by
+        // includes/footer.php, which runs AFTER this script. Looking it up here
+        // returned null, the observer was never attached, and the tray covered
+        // the buy bar completely — 69px of overlap, measured.
+        function watchCompareTray() {
+            const cmp = document.getElementById('compareBar');
+            if (!cmp) { return; }
+            const sync = () => bar.classList.toggle('is-above-compare', cmp.classList.contains('is-visible'));
+            new MutationObserver(sync).observe(cmp, { attributes: true, attributeFilter: ['class'] });
+            sync();
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', watchCompareTray);
+        } else {
+            watchCompareTray();
+        }
+
+        claimDock();
+        narrow.addEventListener('change', claimDock);
+    })();
+
     /* Clamp a long description on a phone.
        ────────────────────────────────────────────────────────────────────────
        Applied here rather than in CSS because it must be conditional on the text
@@ -2756,6 +2833,12 @@ document.addEventListener('keydown', e => {
         const offEl = document.getElementById('priceOffBadge');
 
         if (curEl) curEl.textContent = fmt(selectedVariantPrice);
+        // The sticky bar quotes the same figure through the same resolver, so a
+        // size change moves both at once. Written here rather than mirrored from
+        // the heading afterwards — reading one element's text to fill another is
+        // how the two drift apart the first time either is reformatted.
+        const stickyEl = document.getElementById('pdpBuyBarPrice');
+        if (stickyEl) stickyEl.textContent = fmt(selectedVariantPrice);
 
         const hasDiscount = selectedVariantMrp > selectedVariantPrice;
         if (mrpEl) {
