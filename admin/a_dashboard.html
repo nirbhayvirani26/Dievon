@@ -1,0 +1,797 @@
+
+Warning: Undefined array key "quantity" in /Applications/MAMP/htdocs/DievonOrders/admin/includes/header.php on line 245
+
+Warning: Undefined array key "quantity" in /Applications/MAMP/htdocs/DievonOrders/admin/includes/header.php on line 245
+
+Warning: Undefined array key "quantity" in /Applications/MAMP/htdocs/DievonOrders/admin/includes/header.php on line 245
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Admin Dashboard – Dievon</title>
+            <link rel="icon" type="image/png" href="http://localhost:8888/DievonOrders/assets/images/logo/favicon_1785598968_c1c530.png?v=1785694092" media="(prefers-color-scheme: light)">
+    <link rel="icon" type="image/png" href="http://localhost:8888/DievonOrders/assets/images/logo/favicondark_1785598968_84f1f2.png?v=1785694092" media="(prefers-color-scheme: dark)">
+        <!-- Versioned with filemtime, not time(): a cache-buster that changes on every
+         request defeats browser caching and re-downloads the CSS on each page view. -->
+    <link rel="stylesheet" href="http://localhost:8888/DievonOrders/assets/css/style.css?v=1786315671">
+    <link rel="stylesheet" href="http://localhost:8888/DievonOrders/admin/assets/css/style.css?v=1786231916">
+    <link rel="stylesheet" href="http://localhost:8888/DievonOrders/assets/css/responsive.css?v=1786232206">
+    <link rel="stylesheet" href="http://localhost:8888/DievonOrders/assets/fontawesome/css/all.min.css">
+    <script>
+        window.ADMIN_CSRF_TOKEN = '3c7cb148e81c058ee44c422f0b0a6580ffab58261c30cbb95e5e6529c52b703d';
+    </script>
+</head>
+
+<body class="admin-wrapper">
+
+<!-- ══ Global Top Header Bar (0,0 Fixed) ════════════════════════════════════ -->
+<header class="admin-global-topbar">
+    <div style="display: flex; align-items: center; gap: 12px;">
+        <button type="button" class="admin-mobile-toggle" onclick="toggleAdminSidebar()" style="display: none; background: none; border: none; color: #ffffff; font-size: 18px; cursor: pointer; padding: 4px;">
+            <i class="fa-solid fa-bars"></i>
+        </button>
+        <a href="../home.php" class="admin-brand-logo">
+            <span class="logo-emoji">✨</span> Dievon <small>ATELIER ADMIN</small>
+        </a>
+    </div>
+
+    <div class="admin-topbar-actions">
+        <a href="../home.php" target="_blank" class="topbar-btn-shop">
+            <i class="fa-solid fa-globe"></i> View Live Shop ↗
+        </a>
+        <div class="admin-user-pill">
+            <i class="fa-solid fa-user-shield"></i> qa-render        </div>
+        <a href="logout.php" class="topbar-btn-logout">
+            Sign Out
+        </a>
+    </div>
+</header>
+
+<!-- Mobile Sidebar Backdrop Overlay -->
+<div class="mobile-drawer-backdrop" id="adminSidebarBackdrop" onclick="toggleAdminSidebar(false)"></div>
+
+<script>
+function toggleAdminSidebar(force) {
+    const sidebar = document.querySelector('.admin-sidebar');
+    const backdrop = document.getElementById('adminSidebarBackdrop');
+    if (!sidebar) return;
+    
+    if (typeof force === 'boolean') {
+        if (force) {
+            sidebar.classList.add('open');
+            if (backdrop) backdrop.classList.add('active');
+        } else {
+            sidebar.classList.remove('open');
+            if (backdrop) backdrop.classList.remove('active');
+        }
+    } else {
+        sidebar.classList.toggle('open');
+        if (backdrop) backdrop.classList.toggle('active');
+    }
+}
+
+// Auto scroll-into-view & preserve sidebar scroll position across page reloads
+document.addEventListener('DOMContentLoaded', function() {
+    const sidebar = document.querySelector('.admin-sidebar');
+    if (!sidebar) return;
+
+    const savedScroll = localStorage.getItem('adminSidebarScroll');
+    if (savedScroll !== null) {
+        sidebar.scrollTop = parseInt(savedScroll, 10);
+    }
+
+    const activeItem = sidebar.querySelector('a.active');
+    if (activeItem) {
+        setTimeout(function() {
+            activeItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }, 100);
+    }
+
+    sidebar.addEventListener('scroll', function() {
+        localStorage.setItem('adminSidebarScroll', sidebar.scrollTop);
+    });
+});
+</script>
+
+<div class="admin-body-layout">
+
+    <!-- ══ Left Fixed Sidebar (Streamlined & Clean) ════════════════════════ -->
+        <aside class="admin-sidebar">
+        <nav class="admin-sidebar-nav">
+                        <div class="sidebar-group-title">Overview</div>
+                        <a href="dashboard.php" class=""><i class="fa-solid fa-chart-line"></i> Dashboard Analytics</a>
+                                    <div class="sidebar-group-title">Catalog &amp; Inventory</div>
+                        <a href="products.php" class=""><i class="fa-solid fa-shirt"></i> Products &amp; Garments</a>
+                        <a href="categories.php" class=""><i class="fa-solid fa-folder-tree"></i> Categories &amp; Subcategories</a>
+                        <a href="attributes.php?type=colors" class=""><i class="fa-solid fa-palette"></i> Colours</a>
+                        <a href="brands.php" class=""><i class="fa-solid fa-tag"></i> Brands</a>
+                        <a href="settings.php?tab=stock" class=""><i class="fa-solid fa-boxes-stacked"></i> Inventory &amp; Stock</a>
+                        <a href="size_guide.php" class=""><i class="fa-solid fa-ruler"></i> Size Guide</a>
+                                    <div class="sidebar-group-title">Sales &amp; Clients</div>
+                        <a href="orders.php" class=""><i class="fa-solid fa-clipboard-list"></i> Orders &amp; Invoices</a>
+                        <a href="customers.php" class=""><i class="fa-solid fa-users"></i> Customers &amp; Inquiries</a>
+                        <a href="promo.php" class=""><i class="fa-solid fa-ticket"></i> Discount Coupons</a>
+                        <a href="reviews.php" class=""><i class="fa-solid fa-star"></i> Customer Reviews</a>
+                        <a href="returns.php" class=""><i class="fa-solid fa-rotate-left"></i> RMA Returns</a>
+                        <a href="support_tickets.php" class=""><i class="fa-solid fa-headset"></i> Support Tickets</a>
+                                    <div class="sidebar-group-title">Content &amp; Settings</div>
+                        <a href="banners.php" class=""><i class="fa-solid fa-sliders"></i> Banner Slider Manager</a>
+                        <a href="blog.php" class=""><i class="fa-solid fa-newspaper"></i> Blog Journal Manager</a>
+                        <a href="seo.php" class=""><i class="fa-solid fa-magnifying-glass"></i> SEO &amp; Social Previews</a>
+                        <a href="newsletter.php" class=""><i class="fa-solid fa-envelope"></i> Newsletter Subscribers</a>
+                        <a href="media.php" class=""><i class="fa-solid fa-images"></i> Media Library</a>
+                        <a href="lookbook.php" class=""><i class="fa-solid fa-book-open"></i> Lookbook Images</a>
+                        <a href="settings.php?tab=settings" class=""><i class="fa-solid fa-gear"></i> Store Settings</a>
+                        <a href="admin_users.php" class=""><i class="fa-solid fa-users-gear"></i> Staff Accounts</a>
+                        <a href="roles.php" class=""><i class="fa-solid fa-user-shield"></i> Roles &amp; Permissions</a>
+                        <a href="countries.php" class=""><i class="fa-solid fa-earth-asia"></i> Countries We Sell To</a>
+                        <a href="email_logs.php" class=""><i class="fa-solid fa-envelope-open-text"></i> Email Log</a>
+                        <a href="logs.php" class=""><i class="fa-solid fa-clipboard-list"></i> Audit Logs</a>
+                        <a href="backup.php" class=""><i class="fa-solid fa-database"></i> Database Backup</a>
+                                </nav>
+    </aside>
+
+    <!-- ══ Main Content Area ════════════════════════════════════════ -->
+    <div class="admin-main">
+        <main class="admin-content">
+
+        <!-- Alerts -->
+                                                
+                <!-- Page Header -->
+        <div class="admin-page-header admin-page-header-flex">
+            <div>
+                <h1 class="admin-page-title">
+                    Revenue & Reports                </h1>
+                <p class="admin-page-subtitle">
+                    Sales reports, payment breakdowns and product charts                </p>
+            </div>
+                    </div>
+        
+                <!-- Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Total Orders</div>
+                <div class="stat-value">119</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Pending Orders</div>
+                <div class="stat-value text-warning">83</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Total Revenue</div>
+                                <div class="stat-value text-success">₹15,994.00</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Total Products</div>
+                <div class="stat-value">34</div>
+            </div>
+        </div>
+        
+        <!-- ═══════════════════ ORDERS TAB ═══════════════════ -->
+                <div class="glass-panel" style="padding:16px 20px; margin-bottom:24px; border-left:4px solid #ef4444; background:#fef2f2;">
+            <div style="font-weight:700; color:#b91c1c; margin-bottom:6px;">⚠️ 303 emails failed to send</div>
+            <div style="font-size:13px; color:#7f1d1d; margin-bottom:8px;">
+                Order confirmations, status updates and review requests are failing — check the SMTP settings in <code>.env</code> (MAIL_*) and the server error log.
+            </div>
+                        <table style="width:100%; font-size:12px; border-collapse:collapse;">
+                <thead>
+                    <tr style="text-align:left; color:#b91c1c;">
+                        <th style="padding:4px 8px;">When</th>
+                        <th style="padding:4px 8px;">Type</th>
+                        <th style="padding:4px 8px;">Recipient</th>
+                        <th style="padding:4px 8px;">Error</th>
+                    </tr>
+                </thead>
+                <tbody>
+                                        <tr style="border-top:1px solid #fecaca; color:#7f1d1d;">
+                        <td style="padding:4px 8px; white-space:nowrap;">10 Aug 00:29</td>
+                        <td style="padding:4px 8px;">ticket_reply</td>
+                        <td style="padding:4px 8px;">qa.priya@qa.dievon.invalid</td>
+                        <td style="padding:4px 8px; max-width:320px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="PHPMailer library not found">PHPMailer library not found</td>
+                    </tr>
+                                        <tr style="border-top:1px solid #fecaca; color:#7f1d1d;">
+                        <td style="padding:4px 8px; white-space:nowrap;">10 Aug 00:29</td>
+                        <td style="padding:4px 8px;">ticket_status_update</td>
+                        <td style="padding:4px 8px;">qa.priya@qa.dievon.invalid</td>
+                        <td style="padding:4px 8px; max-width:320px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="PHPMailer library not found">PHPMailer library not found</td>
+                    </tr>
+                                        <tr style="border-top:1px solid #fecaca; color:#7f1d1d;">
+                        <td style="padding:4px 8px; white-space:nowrap;">10 Aug 00:29</td>
+                        <td style="padding:4px 8px;">ticket_reply</td>
+                        <td style="padding:4px 8px;">qa.priya@qa.dievon.invalid</td>
+                        <td style="padding:4px 8px; max-width:320px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="PHPMailer library not found">PHPMailer library not found</td>
+                    </tr>
+                                        <tr style="border-top:1px solid #fecaca; color:#7f1d1d;">
+                        <td style="padding:4px 8px; white-space:nowrap;">10 Aug 00:29</td>
+                        <td style="padding:4px 8px;">ticket_status_update</td>
+                        <td style="padding:4px 8px;">qa.priya@qa.dievon.invalid</td>
+                        <td style="padding:4px 8px; max-width:320px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="PHPMailer library not found">PHPMailer library not found</td>
+                    </tr>
+                                        <tr style="border-top:1px solid #fecaca; color:#7f1d1d;">
+                        <td style="padding:4px 8px; white-space:nowrap;">10 Aug 00:29</td>
+                        <td style="padding:4px 8px;">ticket_status_update</td>
+                        <td style="padding:4px 8px;">qa.priya@qa.dievon.invalid</td>
+                        <td style="padding:4px 8px; max-width:320px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="PHPMailer library not found">PHPMailer library not found</td>
+                    </tr>
+                                    </tbody>
+            </table>
+                    </div>
+                
+                <!-- Summary Cards -->
+        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:28px;">
+            <div class="stat-card glass-panel" style="border-left:4px solid var(--color-primary);">
+                <div class="stat-card-icon">💷</div>
+                <div class="stat-label">Total Revenue</div>
+                <div class="stat-value" style="font-size:22px; color:var(--color-primary);">₹10,996.00</div>
+            </div>
+            <div class="stat-card glass-panel" style="border-left:4px solid #10b981;">
+                <div class="stat-card-icon">💳</div>
+                <div class="stat-label">Online (Card)</div>
+                <div class="stat-value" style="font-size:22px; color:#10b981;">₹2,499.00</div>
+            </div>
+            <div class="stat-card glass-panel" style="border-left:4px solid #f59e0b;">
+                <div class="stat-card-icon">💵</div>
+                <div class="stat-label">Cash</div>
+                <div class="stat-value" style="font-size:22px; color:#f59e0b;">₹8,497.00</div>
+            </div>
+            <div class="stat-card glass-panel" style="border-left:4px solid #ef4444;">
+                <div class="stat-card-icon">⏳</div>
+                <div class="stat-label">Unpaid (79 orders)</div>
+                <div class="stat-value" style="font-size:22px; color:#ef4444;">₹288,000.81</div>
+            </div>
+        </div>
+
+        <!-- Date Filters + Download -->
+        <div class="glass-panel" style="padding:20px 24px; margin-bottom:24px;">
+            <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                <span style="font-size:13px; font-weight:700; color:var(--text-secondary); white-space:nowrap;"><i class="fa-solid fa-calendar"></i> Filter:</span>
+                                <a href="?tab=revenue&rev_from=2026-08-09&rev_to=2026-08-09"
+                   class="btn-sm btn-sm-outline">Today</a>
+                                <a href="?tab=revenue&rev_from=2026-08-03&rev_to=2026-08-09"
+                   class="btn-sm btn-sm-outline">This Week</a>
+                                <a href="?tab=revenue&rev_from=2026-08-01&rev_to=2026-08-09"
+                   class="btn-sm btn-primary">This Month</a>
+                                <a href="?tab=revenue&rev_from=2026-07-01&rev_to=2026-07-31"
+                   class="btn-sm btn-sm-outline">Last Month</a>
+                                <a href="?tab=revenue&rev_from=2026-01-01&rev_to=2026-08-09"
+                   class="btn-sm btn-sm-outline">This Year</a>
+                
+                <form method="GET" action="dashboard.php" style="display:flex; align-items:center; gap:8px; margin-left:auto; flex-wrap:wrap;">
+                    <input type="hidden" name="tab" value="revenue">
+                    <input type="date" name="rev_from" value="2026-08-01" class="form-control" style="height:36px; font-size:13px; width:150px;">
+                    <span style="color:var(--text-muted); font-size:13px;">to</span>
+                    <input type="date" name="rev_to"   value="2026-08-09"   class="form-control" style="height:36px; font-size:13px; width:150px;">
+                    <button type="submit" class="btn-primary" style="height:36px; padding:0 16px; font-size:13px;"><i class="fa-solid fa-filter"></i> Apply</button>
+                </form>
+
+                <a href="revenue_report.php?from=2026-08-01&to=2026-08-09" class="btn-sm btn-sm-outline" style="white-space:nowrap;">
+                    <i class="fa-solid fa-download"></i> Download CSV
+                </a>
+                <a href="gst_report.php?from=2026-08-01&to=2026-08-09" class="btn-sm btn-sm-outline" style="white-space:nowrap;">
+                    <i class="fa-solid fa-receipt"></i> GST Summary
+                </a>
+            </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-bottom:24px;">
+            <!-- Category Revenue Table -->
+            <div class="glass-panel" style="padding:24px;">
+                <h3 style="font-size:15px; font-weight:700; margin:0 0 16px; display:flex; align-items:center; gap:8px;">
+                    <i class="fa-solid fa-tags" style="color:var(--color-primary);"></i> Revenue by Category
+                    <span style="font-size:11px; color:var(--text-muted); font-weight:400;">01 Aug – 09 Aug 2026</span>
+                </h3>
+                                <div class="table-wrapper">
+                    <table style="width:100%; border-collapse:collapse; font-size:13px; min-width: 600px;">
+                    <thead>
+                        <tr style="border-bottom:2px solid var(--border-light);">
+                            <th style="padding:6px 0; text-align:left; font-size:11px; text-transform:uppercase; color:var(--text-muted);">Category</th>
+                            <th style="padding:6px 0; text-align:right; font-size:11px; text-transform:uppercase; color:var(--text-muted);">Revenue</th>
+                            <th style="padding:6px 0; text-align:right; font-size:11px; text-transform:uppercase; color:var(--text-muted);">Qty Sold</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                                            <tr style="border-bottom:1px solid var(--border-light);">
+                            <td style="padding:9px 0;">
+                                <div style="font-weight:600;">QA TEST Menswear</div>
+                                <div style="height:4px; background:rgba(var(--color-primary-rgb),0.15); border-radius:2px; margin-top:4px; width:100%;">
+                                    <div style="height:4px; background:var(--color-primary); border-radius:2px; width:100%;"></div>
+                                </div>
+                            </td>
+                            <td style="padding:9px 0; text-align:right; font-weight:700; color:var(--color-primary);">₹22,692.00</td>
+                            <td style="padding:9px 0; text-align:right; color:var(--text-secondary);">8</td>
+                        </tr>
+                                        </tbody>
+                </table>
+                </div>
+                            </div>
+
+            <!-- Charts column -->
+            <div style="display:flex; flex-direction:column; gap:20px;">
+                <!-- Chart 1: All-time -->
+                <div class="glass-panel" style="padding:20px;">
+                    <h3 style="font-size:14px; font-weight:700; margin:0 0 12px; display:flex; align-items:center; gap:8px;">
+                        <i class="fa-solid fa-chart-bar" style="color:#8b5cf6;"></i> All-time Top Products (by qty sold)
+                    </h3>
+                                        <canvas id="chartAllTime" height="180"></canvas>
+                                    </div>
+                <!-- Chart 2: This month -->
+                <div class="glass-panel" style="padding:20px;">
+                    <h3 style="font-size:14px; font-weight:700; margin:0 0 12px; display:flex; align-items:center; gap:8px;">
+                        <i class="fa-solid fa-chart-bar" style="color:#10b981;"></i> This Month's Products (by qty sold)
+                    </h3>
+                                        <canvas id="chartThisMonth" height="180"></canvas>
+                                    </div>
+            </div>
+        </div>
+
+        <!-- ══ COD ORDERS & HANDLING FEE REPORT ══════════════════ -->
+                <div class="glass-panel" style="padding:24px; margin-top:24px;">
+            <h3 style="font-size:15px; font-weight:700; margin:0 0 16px; display:flex; align-items:center; gap:8px;">
+                <i class="fa-solid fa-money-bill-wave" style="color:#f59e0b;"></i> COD Orders &amp; Handling Fees
+                <span style="font-size:11px; color:var(--text-muted); font-weight:400;">01 Aug – 09 Aug 2026</span>
+            </h3>
+
+            <!-- Summary chips -->
+            <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:20px;">
+                <div style="background:var(--bg-main); border:1px solid var(--border-light); border-radius:8px; padding:14px 16px;">
+                    <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-muted); font-weight:700;">COD Orders</div>
+                    <div style="font-size:24px; font-weight:800; color:var(--color-primary); margin-top:4px;">33</div>
+                </div>
+                <div style="background:var(--bg-main); border:1px solid var(--border-light); border-radius:8px; padding:14px 16px;">
+                    <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-muted); font-weight:700;">COD Order Value</div>
+                    <div style="font-size:24px; font-weight:800; color:var(--color-primary); margin-top:4px;">₹78,298.50</div>
+                </div>
+                <div style="background:var(--bg-main); border:1px solid var(--border-light); border-radius:8px; padding:14px 16px;">
+                    <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-muted); font-weight:700;">Handling Fees Collected</div>
+                    <div style="font-size:24px; font-weight:800; color:#f59e0b; margin-top:4px;">₹980.00</div>
+                </div>
+                <div style="background:var(--bg-main); border:1px solid var(--border-light); border-radius:8px; padding:14px 16px;">
+                    <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-muted); font-weight:700;">Awaiting Courier Remittance</div>
+                    <div style="font-size:24px; font-weight:800; color:#ef4444; margin-top:4px;">₹17,090.30</div>
+                </div>
+            </div>
+
+            
+            <!-- Monthly breakdown -->
+            <div class="table-wrapper">
+                <table style="width:100%; border-collapse:collapse; font-size:13px; min-width:480px;">
+                    <thead>
+                        <tr style="border-bottom:2px solid var(--border-light);">
+                            <th style="padding:6px 0; text-align:left; font-size:11px; text-transform:uppercase; color:var(--text-muted);">Month</th>
+                            <th style="padding:6px 0; text-align:right; font-size:11px; text-transform:uppercase; color:var(--text-muted);">Orders</th>
+                            <th style="padding:6px 0; text-align:right; font-size:11px; text-transform:uppercase; color:var(--text-muted);">Order Value</th>
+                            <th style="padding:6px 0; text-align:right; font-size:11px; text-transform:uppercase; color:var(--text-muted);">Fees</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                                            <tr style="border-bottom:1px solid var(--border-light);">
+                            <td style="padding:9px 0; font-weight:600;">August 2026</td>
+                            <td style="padding:9px 0; text-align:right; color:var(--text-secondary);">33</td>
+                            <td style="padding:9px 0; text-align:right; color:var(--text-secondary);">₹78,298.50</td>
+                            <td style="padding:9px 0; text-align:right; font-weight:700; color:#f59e0b;">₹980.00</td>
+                        </tr>
+                                        </tbody>
+                </table>
+            </div>
+
+            <p style="font-size:11px; color:var(--text-muted); margin:0 0 6px;">
+                <i class="fa-solid fa-circle-info"></i>
+                Includes COD orders not yet marked cash-received &mdash; the handling fee is owed at delivery, so it is counted whether or not the admin has recorded the cash.
+            </p>
+
+            <!-- Per-order list (most recent first, newest 30 shown) -->
+            <details style="margin-top:12px;">
+                <summary style="cursor:pointer; font-size:12px; font-weight:700; color:var(--color-secondary); text-transform:uppercase; letter-spacing:0.06em; user-select:none;">
+                    <i class="fa-solid fa-list"></i> View individual COD orders (latest 30 of 33)                </summary>
+                <div class="table-wrapper" style="margin-top:12px;">
+                    <table style="width:100%; border-collapse:collapse; font-size:13px; min-width:680px;">
+                        <thead>
+                            <tr style="border-bottom:2px solid var(--border-light);">
+                                <th style="padding:6px 0; text-align:left; font-size:11px; text-transform:uppercase; color:var(--text-muted);">Date</th>
+                                <th style="padding:6px 0; text-align:left; font-size:11px; text-transform:uppercase; color:var(--text-muted);">Order</th>
+                                <th style="padding:6px 0; text-align:left; font-size:11px; text-transform:uppercase; color:var(--text-muted);">Customer</th>
+                                <th style="padding:6px 0; text-align:left; font-size:11px; text-transform:uppercase; color:var(--text-muted);">Email</th>
+                                <th style="padding:6px 0; text-align:right; font-size:11px; text-transform:uppercase; color:var(--text-muted);">Total</th>
+                                <th style="padding:6px 0; text-align:right; font-size:11px; text-transform:uppercase; color:var(--text-muted);">Fee</th>
+                                <th style="padding:6px 0; text-align:right; font-size:11px; text-transform:uppercase; color:var(--text-muted);">Remittance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                                                    <tr style="border-bottom:1px solid var(--border-light);">
+                                <td style="padding:8px 0; color:var(--text-secondary); white-space:nowrap;">09 Aug 2026</td>
+                                <td style="padding:8px 0; font-weight:700; font-family:var(--font-heading); letter-spacing:0.5px; color:var(--color-primary);">CB-92088226</td>
+                                <td style="padding:8px 0;">QA Edge P22Race 2</td>
+                                <td style="padding:8px 0; color:var(--text-secondary); word-break:break-all;">qa.p22r2@qa.dievon.invalid</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:600;">₹1,047.00</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:700; color:#f59e0b;">₹49.00</td>
+                                <td style="padding:8px 0; text-align:right; white-space:nowrap;">
+                                                                            <span style="font-size:11px; font-weight:700; color:#ef4444;">⏳ Awaiting</span>
+                                                                    </td>
+                            </tr>
+                                                    <tr style="border-bottom:1px solid var(--border-light);">
+                                <td style="padding:8px 0; color:var(--text-secondary); white-space:nowrap;">09 Aug 2026</td>
+                                <td style="padding:8px 0; font-weight:700; font-family:var(--font-heading); letter-spacing:0.5px; color:var(--color-primary);">CB-83427144</td>
+                                <td style="padding:8px 0;">QA Edge P22Race 1</td>
+                                <td style="padding:8px 0; color:var(--text-secondary); word-break:break-all;">qa.p22r1@qa.dievon.invalid</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:600;">₹1,047.00</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:700; color:#f59e0b;">₹49.00</td>
+                                <td style="padding:8px 0; text-align:right; white-space:nowrap;">
+                                                                            <span style="font-size:11px; font-weight:700; color:#ef4444;">⏳ Awaiting</span>
+                                                                    </td>
+                            </tr>
+                                                    <tr style="border-bottom:1px solid var(--border-light);">
+                                <td style="padding:8px 0; color:var(--text-secondary); white-space:nowrap;">09 Aug 2026</td>
+                                <td style="padding:8px 0; font-weight:700; font-family:var(--font-heading); letter-spacing:0.5px; color:var(--color-primary);">CB-70078751</td>
+                                <td style="padding:8px 0;">QA Edge LastUnit 1</td>
+                                <td style="padding:8px 0; color:var(--text-secondary); word-break:break-all;">qa.last1@qa.dievon.invalid</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:600;">₹1,747.00</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:700; color:#f59e0b;">₹49.00</td>
+                                <td style="padding:8px 0; text-align:right; white-space:nowrap;">
+                                                                            <span style="font-size:11px; font-weight:700; color:#ef4444;">⏳ Awaiting</span>
+                                                                    </td>
+                            </tr>
+                                                    <tr style="border-bottom:1px solid var(--border-light);">
+                                <td style="padding:8px 0; color:var(--text-secondary); white-space:nowrap;">09 Aug 2026</td>
+                                <td style="padding:8px 0; font-weight:700; font-family:var(--font-heading); letter-spacing:0.5px; color:var(--color-primary);">CB-49897771</td>
+                                <td style="padding:8px 0;">QA Edge LastUnit 2</td>
+                                <td style="padding:8px 0; color:var(--text-secondary); word-break:break-all;">qa.last2@qa.dievon.invalid</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:600;">₹1,747.00</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:700; color:#f59e0b;">₹49.00</td>
+                                <td style="padding:8px 0; text-align:right; white-space:nowrap;">
+                                                                            <span style="font-size:11px; font-weight:700; color:#ef4444;">⏳ Awaiting</span>
+                                                                    </td>
+                            </tr>
+                                                    <tr style="border-bottom:1px solid var(--border-light);">
+                                <td style="padding:8px 0; color:var(--text-secondary); white-space:nowrap;">09 Aug 2026</td>
+                                <td style="padding:8px 0; font-weight:700; font-family:var(--font-heading); letter-spacing:0.5px; color:var(--color-primary);">CB-17968860</td>
+                                <td style="padding:8px 0;">QA Edge DoubleSubmit</td>
+                                <td style="padding:8px 0; color:var(--text-secondary); word-break:break-all;">qa.dbl@qa.dievon.invalid</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:600;">₹2,047.00</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:700; color:#f59e0b;">₹49.00</td>
+                                <td style="padding:8px 0; text-align:right; white-space:nowrap;">
+                                                                            <span style="font-size:11px; font-weight:700; color:#ef4444;">⏳ Awaiting</span>
+                                                                    </td>
+                            </tr>
+                                                    <tr style="border-bottom:1px solid var(--border-light);">
+                                <td style="padding:8px 0; color:var(--text-secondary); white-space:nowrap;">09 Aug 2026</td>
+                                <td style="padding:8px 0; font-weight:700; font-family:var(--font-heading); letter-spacing:0.5px; color:var(--color-primary);">CB-33340925</td>
+                                <td style="padding:8px 0;">QA Edge Baseline</td>
+                                <td style="padding:8px 0; color:var(--text-secondary); word-break:break-all;">qa.edge1@qa.dievon.invalid</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:600;">₹2,047.00</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:700; color:#f59e0b;">₹49.00</td>
+                                <td style="padding:8px 0; text-align:right; white-space:nowrap;">
+                                                                            <span style="font-size:11px; font-weight:700; color:#ef4444;">⏳ Awaiting</span>
+                                                                    </td>
+                            </tr>
+                                                    <tr style="border-bottom:1px solid var(--border-light);">
+                                <td style="padding:8px 0; color:var(--text-secondary); white-space:nowrap;">09 Aug 2026</td>
+                                <td style="padding:8px 0; font-weight:700; font-family:var(--font-heading); letter-spacing:0.5px; color:var(--color-primary);">CB-24156765</td>
+                                <td style="padding:8px 0;">QA TEST 😀</td>
+                                <td style="padding:8px 0; color:var(--text-secondary); word-break:break-all;">qa.checkout@qa.dievon.invalid</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:600;">₹1,648.00</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:700; color:#f59e0b;">₹49.00</td>
+                                <td style="padding:8px 0; text-align:right; white-space:nowrap;">
+                                                                            <span style="font-size:11px; font-weight:700; color:#ef4444;">⏳ Awaiting</span>
+                                                                    </td>
+                            </tr>
+                                                    <tr style="border-bottom:1px solid var(--border-light);">
+                                <td style="padding:8px 0; color:var(--text-secondary); white-space:nowrap;">09 Aug 2026</td>
+                                <td style="padding:8px 0; font-weight:700; font-family:var(--font-heading); letter-spacing:0.5px; color:var(--color-primary);">CB-93214711</td>
+                                <td style="padding:8px 0;">QA TEST Buyer</td>
+                                <td style="padding:8px 0; color:var(--text-secondary); word-break:break-all;">qa.checkout@qa.dievon.invalid</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:600;">₹1,648.00</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:700; color:#f59e0b;">₹49.00</td>
+                                <td style="padding:8px 0; text-align:right; white-space:nowrap;">
+                                                                            <span style="font-size:11px; font-weight:700; color:#ef4444;">⏳ Awaiting</span>
+                                                                    </td>
+                            </tr>
+                                                    <tr style="border-bottom:1px solid var(--border-light);">
+                                <td style="padding:8px 0; color:var(--text-secondary); white-space:nowrap;">09 Aug 2026</td>
+                                <td style="padding:8px 0; font-weight:700; font-family:var(--font-heading); letter-spacing:0.5px; color:var(--color-primary);">CB-11542476</td>
+                                <td style="padding:8px 0;">QA TEST Buyer</td>
+                                <td style="padding:8px 0; color:var(--text-secondary); word-break:break-all;">qa.checkout@qa.dievon.invalid</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:600;">₹1,648.00</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:700; color:#f59e0b;">₹49.00</td>
+                                <td style="padding:8px 0; text-align:right; white-space:nowrap;">
+                                                                            <span style="font-size:11px; font-weight:700; color:#ef4444;">⏳ Awaiting</span>
+                                                                    </td>
+                            </tr>
+                                                    <tr style="border-bottom:1px solid var(--border-light);">
+                                <td style="padding:8px 0; color:var(--text-secondary); white-space:nowrap;">09 Aug 2026</td>
+                                <td style="padding:8px 0; font-weight:700; font-family:var(--font-heading); letter-spacing:0.5px; color:var(--color-primary);">CB-85469020</td>
+                                <td style="padding:8px 0;">QA TEST O&#039;B &quot;X&quot; \</td>
+                                <td style="padding:8px 0; color:var(--text-secondary); word-break:break-all;">qa.checkout@qa.dievon.invalid</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:600;">₹1,648.00</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:700; color:#f59e0b;">₹49.00</td>
+                                <td style="padding:8px 0; text-align:right; white-space:nowrap;">
+                                                                            <span style="font-size:11px; font-weight:700; color:#ef4444;">⏳ Awaiting</span>
+                                                                    </td>
+                            </tr>
+                                                    <tr style="border-bottom:1px solid var(--border-light);">
+                                <td style="padding:8px 0; color:var(--text-secondary); white-space:nowrap;">09 Aug 2026</td>
+                                <td style="padding:8px 0; font-weight:700; font-family:var(--font-heading); letter-spacing:0.5px; color:var(--color-primary);">CB-71935070</td>
+                                <td style="padding:8px 0;">QA TEST COD Cap Boundary</td>
+                                <td style="padding:8px 0; color:var(--text-secondary); word-break:break-all;">qa.codcap@qa.dievon.invalid</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:600;">₹5,046.00</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:700; color:#f59e0b;">₹49.00</td>
+                                <td style="padding:8px 0; text-align:right; white-space:nowrap;">
+                                                                            <span style="font-size:11px; font-weight:700; color:#ef4444;">⏳ Awaiting</span>
+                                                                    </td>
+                            </tr>
+                                                    <tr style="border-bottom:1px solid var(--border-light);">
+                                <td style="padding:8px 0; color:var(--text-secondary); white-space:nowrap;">09 Aug 2026</td>
+                                <td style="padding:8px 0; font-weight:700; font-family:var(--font-heading); letter-spacing:0.5px; color:var(--color-primary);">ORD-QAREPRO-1</td>
+                                <td style="padding:8px 0;">QA Delete Repro</td>
+                                <td style="padding:8px 0; color:var(--text-secondary); word-break:break-all;">qa.deleterepro@qa.dievon.invalid</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:600;">₹100.00</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:700; color:#f59e0b;">₹0.00</td>
+                                <td style="padding:8px 0; text-align:right; white-space:nowrap;">
+                                                                            <span style="font-size:11px; font-weight:700; color:#ef4444;">⏳ Awaiting</span>
+                                                                    </td>
+                            </tr>
+                                                    <tr style="border-bottom:1px solid var(--border-light);">
+                                <td style="padding:8px 0; color:var(--text-secondary); white-space:nowrap;">09 Aug 2026</td>
+                                <td style="padding:8px 0; font-weight:700; font-family:var(--font-heading); letter-spacing:0.5px; color:var(--color-primary);">ORD-QAROLE-1</td>
+                                <td style="padding:8px 0;">QA Role Probe Target A</td>
+                                <td style="padding:8px 0; color:var(--text-secondary); word-break:break-all;">qa.roleprobe.order@qa.dievon.invalid</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:600;">₹999.00</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:700; color:#f59e0b;">₹0.00</td>
+                                <td style="padding:8px 0; text-align:right; white-space:nowrap;">
+                                                                            <span style="font-size:11px; font-weight:700; color:#ef4444;">⏳ Awaiting</span>
+                                                                    </td>
+                            </tr>
+                                                    <tr style="border-bottom:1px solid var(--border-light);">
+                                <td style="padding:8px 0; color:var(--text-secondary); white-space:nowrap;">09 Aug 2026</td>
+                                <td style="padding:8px 0; font-weight:700; font-family:var(--font-heading); letter-spacing:0.5px; color:var(--color-primary);">ORD-QAROLE-2</td>
+                                <td style="padding:8px 0;">QA Role Probe Target B</td>
+                                <td style="padding:8px 0; color:var(--text-secondary); word-break:break-all;">qa.roleprobe.order@qa.dievon.invalid</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:600;">₹999.00</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:700; color:#f59e0b;">₹0.00</td>
+                                <td style="padding:8px 0; text-align:right; white-space:nowrap;">
+                                                                            <span style="font-size:11px; font-weight:700; color:#ef4444;">⏳ Awaiting</span>
+                                                                    </td>
+                            </tr>
+                                                    <tr style="border-bottom:1px solid var(--border-light);">
+                                <td style="padding:8px 0; color:var(--text-secondary); white-space:nowrap;">09 Aug 2026</td>
+                                <td style="padding:8px 0; font-weight:700; font-family:var(--font-heading); letter-spacing:0.5px; color:var(--color-primary);">CB-91572327</td>
+                                <td style="padding:8px 0;">QA &lt;b&gt;Rahul&lt;/b&gt; D&#039;Souza</td>
+                                <td style="padding:8px 0; color:var(--text-secondary); word-break:break-all;">qa.invoice.f@qa.dievon.invalid</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:600;">₹2,047.00</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:700; color:#f59e0b;">₹49.00</td>
+                                <td style="padding:8px 0; text-align:right; white-space:nowrap;">
+                                                                            <span style="font-size:11px; font-weight:700; color:#ef4444;">⏳ Awaiting</span>
+                                                                    </td>
+                            </tr>
+                                                    <tr style="border-bottom:1px solid var(--border-light);">
+                                <td style="padding:8px 0; color:var(--text-secondary); white-space:nowrap;">09 Aug 2026</td>
+                                <td style="padding:8px 0; font-weight:700; font-family:var(--font-heading); letter-spacing:0.5px; color:var(--color-primary);">CB-36421013</td>
+                                <td style="padding:8px 0;">QA Priya D&#039;Souza-O&#039;Brien</td>
+                                <td style="padding:8px 0; color:var(--text-secondary); word-break:break-all;">qa.invoice.a@qa.dievon.invalid</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:600;">₹2,047.00</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:700; color:#f59e0b;">₹49.00</td>
+                                <td style="padding:8px 0; text-align:right; white-space:nowrap;">
+                                                                            <span style="font-size:11px; font-weight:700; color:#ef4444;">⏳ Awaiting</span>
+                                                                    </td>
+                            </tr>
+                                                    <tr style="border-bottom:1px solid var(--border-light);">
+                                <td style="padding:8px 0; color:var(--text-secondary); white-space:nowrap;">09 Aug 2026</td>
+                                <td style="padding:8px 0; font-weight:700; font-family:var(--font-heading); letter-spacing:0.5px; color:var(--color-primary);">CB-QARET08</td>
+                                <td style="padding:8px 0;">QA TEST Arjun Rao RET8 exchange</td>
+                                <td style="padding:8px 0; color:var(--text-secondary); word-break:break-all;">qa.arjun@qa.dievon.invalid</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:600;">₹2,999.00</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:700; color:#f59e0b;">₹0.00</td>
+                                <td style="padding:8px 0; text-align:right; white-space:nowrap;">
+                                                                            <span style="font-size:11px; font-weight:700; color:#ef4444;">⏳ Awaiting</span>
+                                                                    </td>
+                            </tr>
+                                                    <tr style="border-bottom:1px solid var(--border-light);">
+                                <td style="padding:8px 0; color:var(--text-secondary); white-space:nowrap;">09 Aug 2026</td>
+                                <td style="padding:8px 0; font-weight:700; font-family:var(--font-heading); letter-spacing:0.5px; color:var(--color-primary);">CB-25323026</td>
+                                <td style="padding:8px 0;">QA Cart Forced Promo Ignored</td>
+                                <td style="padding:8px 0; color:var(--text-secondary); word-break:break-all;">qa.order15@qa.dievon.invalid</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:600;">₹1,347.00</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:700; color:#f59e0b;">₹49.00</td>
+                                <td style="padding:8px 0; text-align:right; white-space:nowrap;">
+                                                                            <span style="font-size:11px; font-weight:700; color:#ef4444;">⏳ Awaiting</span>
+                                                                    </td>
+                            </tr>
+                                                    <tr style="border-bottom:1px solid var(--border-light);">
+                                <td style="padding:8px 0; color:var(--text-secondary); white-space:nowrap;">09 Aug 2026</td>
+                                <td style="padding:8px 0; font-weight:700; font-family:var(--font-heading); letter-spacing:0.5px; color:var(--color-primary);">CB-27899520</td>
+                                <td style="padding:8px 0;">QA Cart Colour Sizes COD</td>
+                                <td style="padding:8px 0; color:var(--text-secondary); word-break:break-all;">qa.order14@qa.dievon.invalid</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:600;">₹2,682.30</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:700; color:#f59e0b;">₹49.00</td>
+                                <td style="padding:8px 0; text-align:right; white-space:nowrap;">
+                                                                            <span style="font-size:11px; font-weight:700; color:#ef4444;">⏳ Awaiting</span>
+                                                                    </td>
+                            </tr>
+                                                    <tr style="border-bottom:1px solid var(--border-light);">
+                                <td style="padding:8px 0; color:var(--text-secondary); white-space:nowrap;">09 Aug 2026</td>
+                                <td style="padding:8px 0; font-weight:700; font-family:var(--font-heading); letter-spacing:0.5px; color:var(--color-primary);">CB-44131837</td>
+                                <td style="padding:8px 0;">QA TEST Arjun Rao colourways</td>
+                                <td style="padding:8px 0; color:var(--text-secondary); word-break:break-all;">qa.arjun@qa.dievon.invalid</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:600;">₹2,426.45</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:700; color:#f59e0b;">₹49.00</td>
+                                <td style="padding:8px 0; text-align:right; white-space:nowrap;">
+                                                                            <span style="font-size:11px; font-weight:700; color:#ef4444;">⏳ Awaiting</span>
+                                                                    </td>
+                            </tr>
+                                                    <tr style="border-bottom:1px solid var(--border-light);">
+                                <td style="padding:8px 0; color:var(--text-secondary); white-space:nowrap;">09 Aug 2026</td>
+                                <td style="padding:8px 0; font-weight:700; font-family:var(--font-heading); letter-spacing:0.5px; color:var(--color-primary);">CB-45076772</td>
+                                <td style="padding:8px 0;">QA TEST Priya Menon coupon15</td>
+                                <td style="padding:8px 0; color:var(--text-secondary); word-break:break-all;">qa.priya@qa.dievon.invalid</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:600;">₹3,701.45</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:700; color:#f59e0b;">₹49.00</td>
+                                <td style="padding:8px 0; text-align:right; white-space:nowrap;">
+                                                                            <span style="font-size:11px; font-weight:700; color:#ef4444;">⏳ Awaiting</span>
+                                                                    </td>
+                            </tr>
+                                                    <tr style="border-bottom:1px solid var(--border-light);">
+                                <td style="padding:8px 0; color:var(--text-secondary); white-space:nowrap;">09 Aug 2026</td>
+                                <td style="padding:8px 0; font-weight:700; font-family:var(--font-heading); letter-spacing:0.5px; color:var(--color-primary);">CB-54863014</td>
+                                <td style="padding:8px 0;">QA Cart Single COD</td>
+                                <td style="padding:8px 0; color:var(--text-secondary); word-break:break-all;">qa.order2@qa.dievon.invalid</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:600;">₹1,347.00</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:700; color:#f59e0b;">₹49.00</td>
+                                <td style="padding:8px 0; text-align:right; white-space:nowrap;">
+                                                                            <span style="font-size:11px; font-weight:700; color:#ef4444;">⏳ Awaiting</span>
+                                                                    </td>
+                            </tr>
+                                                    <tr style="border-bottom:1px solid var(--border-light);">
+                                <td style="padding:8px 0; color:var(--text-secondary); white-space:nowrap;">09 Aug 2026</td>
+                                <td style="padding:8px 0; font-weight:700; font-family:var(--font-heading); letter-spacing:0.5px; color:var(--color-primary);">CB-QA000001</td>
+                                <td style="padding:8px 0;">QA TEST Priya Menon</td>
+                                <td style="padding:8px 0; color:var(--text-secondary); word-break:break-all;">qa.priya@qa.dievon.invalid</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:600;">₹2,499.00</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:700; color:#f59e0b;">₹0.00</td>
+                                <td style="padding:8px 0; text-align:right; white-space:nowrap;">
+                                                                            <span style="font-size:11px; font-weight:700; color:#ef4444;">⏳ Awaiting</span>
+                                                                    </td>
+                            </tr>
+                                                    <tr style="border-bottom:1px solid var(--border-light);">
+                                <td style="padding:8px 0; color:var(--text-secondary); white-space:nowrap;">09 Aug 2026</td>
+                                <td style="padding:8px 0; font-weight:700; font-family:var(--font-heading); letter-spacing:0.5px; color:var(--color-primary);">CB-QA000002</td>
+                                <td style="padding:8px 0;">QA TEST Priya Menon</td>
+                                <td style="padding:8px 0; color:var(--text-secondary); word-break:break-all;">qa.priya@qa.dievon.invalid</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:600;">₹2,499.00</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:700; color:#f59e0b;">₹0.00</td>
+                                <td style="padding:8px 0; text-align:right; white-space:nowrap;">
+                                                                            <span style="font-size:11px; font-weight:700; color:#ef4444;">⏳ Awaiting</span>
+                                                                    </td>
+                            </tr>
+                                                    <tr style="border-bottom:1px solid var(--border-light);">
+                                <td style="padding:8px 0; color:var(--text-secondary); white-space:nowrap;">09 Aug 2026</td>
+                                <td style="padding:8px 0; font-weight:700; font-family:var(--font-heading); letter-spacing:0.5px; color:var(--color-primary);">CB-QA000004</td>
+                                <td style="padding:8px 0;">QA TEST Arjun Rao</td>
+                                <td style="padding:8px 0; color:var(--text-secondary); word-break:break-all;">qa.arjun@qa.dievon.invalid</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:600;">₹2,999.00</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:700; color:#f59e0b;">₹0.00</td>
+                                <td style="padding:8px 0; text-align:right; white-space:nowrap;">
+                                                                            <span style="font-size:11px; font-weight:700; color:#ef4444;">⏳ Awaiting</span>
+                                                                    </td>
+                            </tr>
+                                                    <tr style="border-bottom:1px solid var(--border-light);">
+                                <td style="padding:8px 0; color:var(--text-secondary); white-space:nowrap;">09 Aug 2026</td>
+                                <td style="padding:8px 0; font-weight:700; font-family:var(--font-heading); letter-spacing:0.5px; color:var(--color-primary);">CB-QA000005</td>
+                                <td style="padding:8px 0;">QA TEST Arjun Rao</td>
+                                <td style="padding:8px 0; color:var(--text-secondary); word-break:break-all;">qa.arjun@qa.dievon.invalid</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:600;">₹2,999.00</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:700; color:#f59e0b;">₹0.00</td>
+                                <td style="padding:8px 0; text-align:right; white-space:nowrap;">
+                                                                            <span style="font-size:11px; font-weight:700; color:#ef4444;">⏳ Awaiting</span>
+                                                                    </td>
+                            </tr>
+                                                    <tr style="border-bottom:1px solid var(--border-light);">
+                                <td style="padding:8px 0; color:var(--text-secondary); white-space:nowrap;">09 Aug 2026</td>
+                                <td style="padding:8px 0; font-weight:700; font-family:var(--font-heading); letter-spacing:0.5px; color:var(--color-primary);">CB-QA000007</td>
+                                <td style="padding:8px 0;">QA TEST Priya Menon</td>
+                                <td style="padding:8px 0; color:var(--text-secondary); word-break:break-all;">qa.priya@qa.dievon.invalid</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:600;">₹5,998.00</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:700; color:#f59e0b;">₹0.00</td>
+                                <td style="padding:8px 0; text-align:right; white-space:nowrap;">
+                                                                            <span style="font-size:11px; font-weight:700; color:#ef4444;">⏳ Awaiting</span>
+                                                                    </td>
+                            </tr>
+                                                    <tr style="border-bottom:1px solid var(--border-light);">
+                                <td style="padding:8px 0; color:var(--text-secondary); white-space:nowrap;">09 Aug 2026</td>
+                                <td style="padding:8px 0; font-weight:700; font-family:var(--font-heading); letter-spacing:0.5px; color:var(--color-primary);">CB-QA000011</td>
+                                <td style="padding:8px 0;">QA TEST Priya Menon</td>
+                                <td style="padding:8px 0; color:var(--text-secondary); word-break:break-all;">qa.priya@qa.dievon.invalid</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:600;">₹3,199.00</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:700; color:#f59e0b;">₹0.00</td>
+                                <td style="padding:8px 0; text-align:right; white-space:nowrap;">
+                                                                            <span style="font-size:11px; font-weight:700; color:#ef4444;">⏳ Awaiting</span>
+                                                                    </td>
+                            </tr>
+                                                    <tr style="border-bottom:1px solid var(--border-light);">
+                                <td style="padding:8px 0; color:var(--text-secondary); white-space:nowrap;">09 Aug 2026</td>
+                                <td style="padding:8px 0; font-weight:700; font-family:var(--font-heading); letter-spacing:0.5px; color:var(--color-primary);">CB-QA000012</td>
+                                <td style="padding:8px 0;">QA TEST Arjun Rao</td>
+                                <td style="padding:8px 0; color:var(--text-secondary); word-break:break-all;">qa.arjun@qa.dievon.invalid</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:600;">₹2,499.00</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:700; color:#f59e0b;">₹0.00</td>
+                                <td style="padding:8px 0; text-align:right; white-space:nowrap;">
+                                                                            <span style="font-size:11px; font-weight:700; color:#ef4444;">⏳ Awaiting</span>
+                                                                    </td>
+                            </tr>
+                                                    <tr style="border-bottom:1px solid var(--border-light);">
+                                <td style="padding:8px 0; color:var(--text-secondary); white-space:nowrap;">07 Aug 2026</td>
+                                <td style="padding:8px 0; font-weight:700; font-family:var(--font-heading); letter-spacing:0.5px; color:var(--color-primary);">CB-QARET01</td>
+                                <td style="padding:8px 0;">QA TEST Priya Menon RET1</td>
+                                <td style="padding:8px 0; color:var(--text-secondary); word-break:break-all;">qa.priya@qa.dievon.invalid</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:600;">₹5,246.30</td>
+                                <td style="padding:8px 0; text-align:right; font-weight:700; color:#f59e0b;">₹49.00</td>
+                                <td style="padding:8px 0; text-align:right; white-space:nowrap;">
+                                                                            <span style="font-size:11px; font-weight:700; color:#ef4444;">⏳ Awaiting</span>
+                                                                    </td>
+                            </tr>
+                                                </tbody>
+                    </table>
+                </div>
+            </details>
+                    </div>
+
+        <!-- ═══════════════════ GALLERY TAB ══════════════════ -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const isDark = document.documentElement.dataset.theme !== 'light';
+    const textColor = isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)';
+    const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)';
+
+    Chart.defaults.color = textColor;
+    Chart.defaults.font.family = "'Inter', sans-serif";
+    Chart.defaults.font.size   = 12;
+
+    function buildChart(canvasId, labels, values, bgColor) {
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) return;
+        new Chart(canvas, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Qty Sold',
+                    data: values,
+                    backgroundColor: bgColor,
+                    borderRadius: 6,
+                    borderSkipped: false,
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { color: gridColor }, ticks: { precision: 0 } },
+                    y: { grid: { display: false } }
+                }
+            }
+        });
+    }
+
+    // Chart 1: All-time
+    const atLabels = ["QA TEST Mens Festive Kurta","QA TEST Mens Chino Trousers","QA TEST Minimal Piece"];
+    const atValues = [6,4,2];
+    buildChart('chartAllTime', atLabels, atValues, 'rgba(139,92,246,0.7)');
+
+    // Chart 2: This month
+    const tmLabels = ["QA TEST Mens Festive Kurta","QA TEST Mens Chino Trousers","QA TEST Minimal Piece"];
+    const tmValues = [5,3,2];
+    buildChart('chartThisMonth', tmLabels, tmValues, 'rgba(16,185,129,0.7)');
+});
+</script>
+
+    </main>
+</div>
+</div>
+<!-- Branded dialog (shares the storefront stylesheet, which admin already loads). -->
+<script src="http://localhost:8888/DievonOrders/assets/js/dievon-dialog.js?v=1785450739"></script>
+<script src="assets/js/admin.js"></script>
+</body>
+</html>

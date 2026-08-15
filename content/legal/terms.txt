@@ -1,0 +1,81 @@
+# This file is the source text for a policy page. It is plain text, not HTML.
+#   "## " starts a section    "- " starts a bullet    anything else is a paragraph
+#   {{TOKENS}} are filled in from Admin - Store Settings. A token with no value
+#   prints a visible gap on the page rather than being quietly dropped.
+# Lines starting with # are comments and are not published.
+#
+# KEPT SHORT ON PURPOSE. Seventeen sections were cut to nine by saying each thing
+# once. Nothing a customer needs to know has gone: how an order is formed,
+# delivery, returns, liability, jurisdiction and the grievance route are all here.
+
+These are the terms you agree to when you order from Dievon. Please read them before you buy.
+
+## Who you are buying from
+
+- Trading name: Dievon
+- Registered name: {{LEGAL_NAME}}
+- Address: {{ADDRESS}}
+- GSTIN: {{GSTIN}}
+- CIN: {{CIN}}
+- Email: {{EMAIL}}
+- Phone: {{PHONE}}
+
+You need to be 18 or older to order, and the details you give us must be accurate - we deliver to the address you type.
+
+## Prices and payment
+
+All prices are in Indian Rupees and include GST. Delivery is {{DELIVERY_FEE}} on orders below {{FREE_OVER}}, and free at or above it.
+
+You can pay by card, UPI or netbanking through Razorpay, or by Cash on Delivery within India. We never see or store your card details.
+
+We check prices carefully, but if something is listed at an obviously wrong price we will contact you before dispatching and you can confirm at the correct price or cancel for a full refund.
+
+## How an order is formed
+
+Placing an order is an offer to buy, not a completed sale. The contract begins when we email you to confirm dispatch.
+
+We may decline an order - if the piece has sold out, if we cannot verify the payment, or if we cannot deliver to the address. If we do, and you have paid, you get a full refund.
+
+## Delivery
+
+Orders placed before 2:00 PM IST are dispatched the same business day. Delivery across India takes 3 to 5 business days.
+
+Once the courier has delivered to your address, responsibility for the goods passes to you. If nobody is there, the courier will normally try again or leave a card; if the parcel comes back to us undelivered we will contact you to arrange a redelivery, which may carry another delivery charge.
+
+## Cancelling, returning and refunding
+
+You can cancel free of charge any time before we dispatch - email {{EMAIL}} or use your account.
+
+After delivery you have {{RETURN_DAYS}} days to return a piece. It must be unworn and unwashed, with tags attached and in its original packaging.
+
+We cannot take back anything altered or made to your measurements, anything worn or damaged after delivery, or anything without its tags.
+
+Once we have inspected the return, your refund goes to the way you paid within 3 to 5 business days. Contact us before sending anything back so we can tell you where to send it and how return postage is handled.
+
+## Your account and what you post
+
+Keep your password to yourself and your details up to date. Tell us straight away if you think someone else has got into your account.
+
+You can only review a piece you have actually bought. You keep ownership of anything you write; you give us permission to publish it on the site and to remove it if it is abusive, dishonest or not about the product.
+
+Everything else on this site - photographs, garment designs, text and the Dievon name - belongs to us. Please do not copy it for commercial use, scrape the site, or try to break into it.
+
+## Our responsibility to you
+
+We are responsible for loss you suffer as a foreseeable result of us breaking these terms or failing to use reasonable care.
+
+We are not responsible for business losses - this shop sells for personal use - or for delays caused by things genuinely outside our control, such as extreme weather, strikes, courier network failure or a government restriction. If one of those happens we will contact you and you can cancel for a refund.
+
+Nothing in these terms removes or limits your rights under the Consumer Protection Act, 2019, or any liability that cannot lawfully be excluded.
+
+## If something goes wrong
+
+Our Grievance Officer is {{GRIEVANCE}} - {{EMAIL}}, {{PHONE}}.
+
+As the Consumer Protection (E-Commerce) Rules, 2020 require, we acknowledge a complaint within 48 hours and resolve it within one month. If you are not satisfied, you can call the National Consumer Helpline on 1915 or approach your local consumer commission.
+
+## Governing law and changes
+
+These terms are governed by the laws of India, and the courts at {{JURISDICTION_CITY}} have jurisdiction over any dispute.
+
+We may update these terms; the date at the top of this page shows when they last changed. The terms that apply to your order are the ones published when you placed it.

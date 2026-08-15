@@ -1,0 +1,494 @@
+
+Notice: session_start(): Ignoring session_start() because a session is already active (started from /private/tmp/claude-501/-Applications-MAMP-htdocs-DievonOrders/dd744f57-fe3a-46c2-bcd9-965961a4bb0a/scratchpad/render_admin.php on line 4) in /Applications/MAMP/htdocs/DievonOrders/admin/returns.php on line 2
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Admin Dashboard – Dievon</title>
+            <link rel="icon" type="image/png" href="http://localhost:8888/DievonOrders/assets/images/logo/favicon_1785598968_c1c530.png?v=1785694092" media="(prefers-color-scheme: light)">
+    <link rel="icon" type="image/png" href="http://localhost:8888/DievonOrders/assets/images/logo/favicondark_1785598968_84f1f2.png?v=1785694092" media="(prefers-color-scheme: dark)">
+        <!-- Versioned with filemtime, not time(): a cache-buster that changes on every
+         request defeats browser caching and re-downloads the CSS on each page view. -->
+    <link rel="stylesheet" href="http://localhost:8888/DievonOrders/assets/css/style.css?v=1786315671">
+    <link rel="stylesheet" href="http://localhost:8888/DievonOrders/admin/assets/css/style.css?v=1786231916">
+    <link rel="stylesheet" href="http://localhost:8888/DievonOrders/assets/css/responsive.css?v=1786232206">
+    <link rel="stylesheet" href="http://localhost:8888/DievonOrders/assets/fontawesome/css/all.min.css">
+    <script>
+        window.ADMIN_CSRF_TOKEN = '2d7e362984d5b56e52fc12cac13fa242779346f776070b9708674a1a2ff6e044';
+    </script>
+</head>
+
+<body class="admin-wrapper">
+
+<!-- ══ Global Top Header Bar (0,0 Fixed) ════════════════════════════════════ -->
+<header class="admin-global-topbar">
+    <div style="display: flex; align-items: center; gap: 12px;">
+        <button type="button" class="admin-mobile-toggle" onclick="toggleAdminSidebar()" style="display: none; background: none; border: none; color: #ffffff; font-size: 18px; cursor: pointer; padding: 4px;">
+            <i class="fa-solid fa-bars"></i>
+        </button>
+        <a href="../home.php" class="admin-brand-logo">
+            <span class="logo-emoji">✨</span> Dievon <small>ATELIER ADMIN</small>
+        </a>
+    </div>
+
+    <div class="admin-topbar-actions">
+        <a href="../home.php" target="_blank" class="topbar-btn-shop">
+            <i class="fa-solid fa-globe"></i> View Live Shop ↗
+        </a>
+        <div class="admin-user-pill">
+            <i class="fa-solid fa-user-shield"></i> qa-render        </div>
+        <a href="logout.php" class="topbar-btn-logout">
+            Sign Out
+        </a>
+    </div>
+</header>
+
+<!-- Mobile Sidebar Backdrop Overlay -->
+<div class="mobile-drawer-backdrop" id="adminSidebarBackdrop" onclick="toggleAdminSidebar(false)"></div>
+
+<script>
+function toggleAdminSidebar(force) {
+    const sidebar = document.querySelector('.admin-sidebar');
+    const backdrop = document.getElementById('adminSidebarBackdrop');
+    if (!sidebar) return;
+    
+    if (typeof force === 'boolean') {
+        if (force) {
+            sidebar.classList.add('open');
+            if (backdrop) backdrop.classList.add('active');
+        } else {
+            sidebar.classList.remove('open');
+            if (backdrop) backdrop.classList.remove('active');
+        }
+    } else {
+        sidebar.classList.toggle('open');
+        if (backdrop) backdrop.classList.toggle('active');
+    }
+}
+
+// Auto scroll-into-view & preserve sidebar scroll position across page reloads
+document.addEventListener('DOMContentLoaded', function() {
+    const sidebar = document.querySelector('.admin-sidebar');
+    if (!sidebar) return;
+
+    const savedScroll = localStorage.getItem('adminSidebarScroll');
+    if (savedScroll !== null) {
+        sidebar.scrollTop = parseInt(savedScroll, 10);
+    }
+
+    const activeItem = sidebar.querySelector('a.active');
+    if (activeItem) {
+        setTimeout(function() {
+            activeItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }, 100);
+    }
+
+    sidebar.addEventListener('scroll', function() {
+        localStorage.setItem('adminSidebarScroll', sidebar.scrollTop);
+    });
+});
+</script>
+
+<div class="admin-body-layout">
+
+    <!-- ══ Left Fixed Sidebar (Streamlined & Clean) ════════════════════════ -->
+        <aside class="admin-sidebar">
+        <nav class="admin-sidebar-nav">
+                        <div class="sidebar-group-title">Overview</div>
+                        <a href="dashboard.php" class=""><i class="fa-solid fa-chart-line"></i> Dashboard Analytics</a>
+                                    <div class="sidebar-group-title">Catalog &amp; Inventory</div>
+                        <a href="products.php" class=""><i class="fa-solid fa-shirt"></i> Products &amp; Garments</a>
+                        <a href="categories.php" class=""><i class="fa-solid fa-folder-tree"></i> Categories &amp; Subcategories</a>
+                        <a href="attributes.php?type=colors" class=""><i class="fa-solid fa-palette"></i> Colours</a>
+                        <a href="brands.php" class=""><i class="fa-solid fa-tag"></i> Brands</a>
+                        <a href="settings.php?tab=stock" class=""><i class="fa-solid fa-boxes-stacked"></i> Inventory &amp; Stock</a>
+                        <a href="size_guide.php" class=""><i class="fa-solid fa-ruler"></i> Size Guide</a>
+                                    <div class="sidebar-group-title">Sales &amp; Clients</div>
+                        <a href="orders.php" class=""><i class="fa-solid fa-clipboard-list"></i> Orders &amp; Invoices</a>
+                        <a href="customers.php" class=""><i class="fa-solid fa-users"></i> Customers &amp; Inquiries</a>
+                        <a href="promo.php" class=""><i class="fa-solid fa-ticket"></i> Discount Coupons</a>
+                        <a href="reviews.php" class=""><i class="fa-solid fa-star"></i> Customer Reviews</a>
+                        <a href="returns.php" class="active"><i class="fa-solid fa-rotate-left"></i> RMA Returns</a>
+                        <a href="support_tickets.php" class=""><i class="fa-solid fa-headset"></i> Support Tickets</a>
+                                    <div class="sidebar-group-title">Content &amp; Settings</div>
+                        <a href="banners.php" class=""><i class="fa-solid fa-sliders"></i> Banner Slider Manager</a>
+                        <a href="blog.php" class=""><i class="fa-solid fa-newspaper"></i> Blog Journal Manager</a>
+                        <a href="seo.php" class=""><i class="fa-solid fa-magnifying-glass"></i> SEO &amp; Social Previews</a>
+                        <a href="newsletter.php" class=""><i class="fa-solid fa-envelope"></i> Newsletter Subscribers</a>
+                        <a href="media.php" class=""><i class="fa-solid fa-images"></i> Media Library</a>
+                        <a href="lookbook.php" class=""><i class="fa-solid fa-book-open"></i> Lookbook Images</a>
+                        <a href="settings.php?tab=settings" class=""><i class="fa-solid fa-gear"></i> Store Settings</a>
+                        <a href="admin_users.php" class=""><i class="fa-solid fa-users-gear"></i> Staff Accounts</a>
+                        <a href="roles.php" class=""><i class="fa-solid fa-user-shield"></i> Roles &amp; Permissions</a>
+                        <a href="countries.php" class=""><i class="fa-solid fa-earth-asia"></i> Countries We Sell To</a>
+                        <a href="email_logs.php" class=""><i class="fa-solid fa-envelope-open-text"></i> Email Log</a>
+                        <a href="logs.php" class=""><i class="fa-solid fa-clipboard-list"></i> Audit Logs</a>
+                        <a href="backup.php" class=""><i class="fa-solid fa-database"></i> Database Backup</a>
+                                </nav>
+    </aside>
+
+    <!-- ══ Main Content Area ════════════════════════════════════════ -->
+    <div class="admin-main">
+        <main class="admin-content">
+
+        <!-- Alerts -->
+                                                
+                <!-- Page Header -->
+        <div class="admin-page-header admin-page-header-flex">
+            <div>
+                <h1 class="admin-page-title">
+                    RMA Returns & Exchanges                </h1>
+                <p class="admin-page-subtitle">
+                    Review and process customer return &amp; exchange requests                </p>
+            </div>
+                    </div>
+        
+        
+        <!-- ═══════════════════ ORDERS TAB ═══════════════════ -->
+
+<div class="admin-header">
+    <h1><i class="fa-solid fa-rotate-left"></i> RMA Returns &amp; Size Exchanges</h1>
+    <p>Review customer return requests, inspect uploaded photos, and update RMA status lifecycle.</p>
+</div>
+
+
+<div class="card" style="background: var(--bg-surface); padding: 25px; border-radius: 6px; border: 1px solid var(--border-light);">
+            <div class="table-responsive">
+            <table class="table" style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                <thead>
+                    <tr style="border-bottom: 2px solid var(--border-strong); text-align: left;">
+                        <th style="padding: 10px;">RMA Code</th>
+                        <th style="padding: 10px;">Order Code</th>
+                        <th style="padding: 10px;">Customer</th>
+                        <th style="padding: 10px;">Type</th>
+                        <th style="padding: 10px;">Reason</th>
+                        <th style="padding: 10px;">Exch. Size</th>
+                        <th style="padding: 10px;">Photo</th>
+                        <th style="padding: 10px;">Status</th>
+                        <th style="padding: 10px;">Refund</th>
+                        <th style="padding: 10px;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                                            <tr style="border-bottom: 1px solid var(--border-light);">
+                            <td style="padding: 12px 10px; font-weight: 700; color: var(--color-primary);">RMA-B0CEE4</td>
+                                                        <td style="padding: 12px 10px;">
+                                                                    CB-80691491                                                            </td>
+                            <td style="padding: 12px 10px;">
+                                                                    <strong>QA TEST Priya Menon</strong><br>
+                                    <span style="font-size: 11px; color: var(--text-muted);">qa.priya@qa.dievon.invalid</span>
+                                                            </td>
+                            <td style="padding: 12px 10px; font-weight: 600;">RETURN</td>
+                            <td style="padding: 12px 10px;">QA edge same-session double click 1</td>
+                            <td style="padding: 12px 10px;">N/A</td>
+                            <td style="padding: 12px 10px;">
+                                                                    <span style="color: var(--text-muted);">None</span>
+                                                            </td>
+                            <td style="padding: 12px 10px;">
+                                <span style="font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 3px; background: #fff8e1; color: #b7791f;">
+                                    Pending                                </span>
+                            </td>
+                                                        <td style="padding: 12px 10px; white-space: nowrap;">
+                                                                    <span style="font-size:11px; color: var(--text-muted);">—</span>
+                                                            </td>
+                            <td style="padding: 12px 10px;">
+                                <form action="returns.php" method="POST" style="display: flex; gap: 6px;">
+                                    <input type="hidden" name="csrf_token" value="2d7e362984d5b56e52fc12cac13fa242779346f776070b9708674a1a2ff6e044">
+                                    <input type="hidden" name="return_id" value="22">
+                                    <select name="status" style="font-size: 11px; padding: 4px;">
+                                        <option value="Pending" selected>Pending</option>
+                                        <option value="Approved" >Approved</option>
+                                        <option value="Rejected" >Rejected</option>
+                                        <option value="Pickup Scheduled" >Pickup Scheduled</option>
+                                        <option value="Quality Check" >Quality Check</option>
+                                        <option value="Completed" >Completed</option>
+                                    </select>
+                                    <button type="submit" name="update_status" class="btn btn-sm btn-primary" style="font-size: 10px; padding: 4px 8px;">Save</button>
+                                </form>
+                            </td>
+                        </tr>
+                                            <tr style="border-bottom: 1px solid var(--border-light);">
+                            <td style="padding: 12px 10px; font-weight: 700; color: var(--color-primary);">RMA-189504</td>
+                                                        <td style="padding: 12px 10px;">
+                                                                    CB-36497284                                                            </td>
+                            <td style="padding: 12px 10px;">
+                                                                    <strong>QA TEST Priya Menon</strong><br>
+                                    <span style="font-size: 11px; color: var(--text-muted);">qa.priya@qa.dievon.invalid</span>
+                                                            </td>
+                            <td style="padding: 12px 10px; font-weight: 600;">RETURN</td>
+                            <td style="padding: 12px 10px;">QA TEST race c</td>
+                            <td style="padding: 12px 10px;">N/A</td>
+                            <td style="padding: 12px 10px;">
+                                                                    <span style="color: var(--text-muted);">None</span>
+                                                            </td>
+                            <td style="padding: 12px 10px;">
+                                <span style="font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 3px; background: #fff8e1; color: #b7791f;">
+                                    Pending                                </span>
+                            </td>
+                                                        <td style="padding: 12px 10px; white-space: nowrap;">
+                                                                    <span style="font-size:11px; color: var(--text-muted);">—</span>
+                                                            </td>
+                            <td style="padding: 12px 10px;">
+                                <form action="returns.php" method="POST" style="display: flex; gap: 6px;">
+                                    <input type="hidden" name="csrf_token" value="2d7e362984d5b56e52fc12cac13fa242779346f776070b9708674a1a2ff6e044">
+                                    <input type="hidden" name="return_id" value="13">
+                                    <select name="status" style="font-size: 11px; padding: 4px;">
+                                        <option value="Pending" selected>Pending</option>
+                                        <option value="Approved" >Approved</option>
+                                        <option value="Rejected" >Rejected</option>
+                                        <option value="Pickup Scheduled" >Pickup Scheduled</option>
+                                        <option value="Quality Check" >Quality Check</option>
+                                        <option value="Completed" >Completed</option>
+                                    </select>
+                                    <button type="submit" name="update_status" class="btn btn-sm btn-primary" style="font-size: 10px; padding: 4px 8px;">Save</button>
+                                </form>
+                            </td>
+                        </tr>
+                                            <tr style="border-bottom: 1px solid var(--border-light);">
+                            <td style="padding: 12px 10px; font-weight: 700; color: var(--color-primary);">QA-RMA-STOCK-01</td>
+                                                        <td style="padding: 12px 10px;">
+                                                                    CB-94810016                                                            </td>
+                            <td style="padding: 12px 10px;">
+                                                                    <strong>QA TEST Priya Menon</strong><br>
+                                    <span style="font-size: 11px; color: var(--text-muted);">qa.priya@qa.dievon.invalid</span>
+                                                            </td>
+                            <td style="padding: 12px 10px; font-weight: 600;">RETURN</td>
+                            <td style="padding: 12px 10px;">QA TEST stock restore check</td>
+                            <td style="padding: 12px 10px;">N/A</td>
+                            <td style="padding: 12px 10px;">
+                                                                    <span style="color: var(--text-muted);">None</span>
+                                                            </td>
+                            <td style="padding: 12px 10px;">
+                                <span style="font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 3px; background: #fff8e1; color: #b7791f;">
+                                    Completed                                </span>
+                            </td>
+                                                        <td style="padding: 12px 10px; white-space: nowrap;">
+                                                                    <span style="font-size:11px; font-weight:700; color: var(--color-danger);">
+                                        <i class="fa-solid fa-triangle-exclamation"></i> Not refunded
+                                    </span><br>
+                                    <a href="orders.php#order-115" style="font-size:10.5px;">Refund ₹1,997.00 &rarr;</a>
+                                                            </td>
+                            <td style="padding: 12px 10px;">
+                                <form action="returns.php" method="POST" style="display: flex; gap: 6px;">
+                                    <input type="hidden" name="csrf_token" value="2d7e362984d5b56e52fc12cac13fa242779346f776070b9708674a1a2ff6e044">
+                                    <input type="hidden" name="return_id" value="6">
+                                    <select name="status" style="font-size: 11px; padding: 4px;">
+                                        <option value="Pending" >Pending</option>
+                                        <option value="Approved" >Approved</option>
+                                        <option value="Rejected" >Rejected</option>
+                                        <option value="Pickup Scheduled" >Pickup Scheduled</option>
+                                        <option value="Quality Check" >Quality Check</option>
+                                        <option value="Completed" selected>Completed</option>
+                                    </select>
+                                    <button type="submit" name="update_status" class="btn btn-sm btn-primary" style="font-size: 10px; padding: 4px 8px;">Save</button>
+                                </form>
+                            </td>
+                        </tr>
+                                            <tr style="border-bottom: 1px solid var(--border-light);">
+                            <td style="padding: 12px 10px; font-weight: 700; color: var(--color-primary);">RMA-584023</td>
+                                                        <td style="padding: 12px 10px;">
+                                                                    CB-QARET08                                                            </td>
+                            <td style="padding: 12px 10px;">
+                                                                    <strong>QA TEST Arjun Rao</strong><br>
+                                    <span style="font-size: 11px; color: var(--text-muted);">qa.arjun@qa.dievon.invalid</span>
+                                                            </td>
+                            <td style="padding: 12px 10px; font-weight: 600;">EXCHANGE</td>
+                            <td style="padding: 12px 10px;">Sizing Issue</td>
+                            <td style="padding: 12px 10px;">XL</td>
+                            <td style="padding: 12px 10px;">
+                                                                    <span style="color: var(--text-muted);">None</span>
+                                                            </td>
+                            <td style="padding: 12px 10px;">
+                                <span style="font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 3px; background: #fff8e1; color: #b7791f;">
+                                    Completed                                </span>
+                            </td>
+                                                        <td style="padding: 12px 10px; white-space: nowrap;">
+                                                                    <span style="font-size:11px; color: var(--text-muted);">—</span>
+                                                            </td>
+                            <td style="padding: 12px 10px;">
+                                <form action="returns.php" method="POST" style="display: flex; gap: 6px;">
+                                    <input type="hidden" name="csrf_token" value="2d7e362984d5b56e52fc12cac13fa242779346f776070b9708674a1a2ff6e044">
+                                    <input type="hidden" name="return_id" value="5">
+                                    <select name="status" style="font-size: 11px; padding: 4px;">
+                                        <option value="Pending" >Pending</option>
+                                        <option value="Approved" >Approved</option>
+                                        <option value="Rejected" >Rejected</option>
+                                        <option value="Pickup Scheduled" >Pickup Scheduled</option>
+                                        <option value="Quality Check" >Quality Check</option>
+                                        <option value="Completed" selected>Completed</option>
+                                    </select>
+                                    <button type="submit" name="update_status" class="btn btn-sm btn-primary" style="font-size: 10px; padding: 4px 8px;">Save</button>
+                                </form>
+                            </td>
+                        </tr>
+                                            <tr style="border-bottom: 1px solid var(--border-light);">
+                            <td style="padding: 12px 10px; font-weight: 700; color: var(--color-primary);">RMA-65EC6E</td>
+                                                        <td style="padding: 12px 10px;">
+                                                                    CB-QARET01                                                            </td>
+                            <td style="padding: 12px 10px;">
+                                                                    <strong>QA TEST Priya Menon</strong><br>
+                                    <span style="font-size: 11px; color: var(--text-muted);">qa.priya@qa.dievon.invalid</span>
+                                                            </td>
+                            <td style="padding: 12px 10px; font-weight: 600;">RETURN</td>
+                            <td style="padding: 12px 10px;">Sizing Issue</td>
+                            <td style="padding: 12px 10px;">N/A</td>
+                            <td style="padding: 12px 10px;">
+                                                                    <span style="color: var(--text-muted);">None</span>
+                                                            </td>
+                            <td style="padding: 12px 10px;">
+                                <span style="font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 3px; background: #fff8e1; color: #b7791f;">
+                                    Approved                                </span>
+                            </td>
+                                                        <td style="padding: 12px 10px; white-space: nowrap;">
+                                                                    <span style="font-size:11px; font-weight:700; color: var(--color-success);">
+                                        <i class="fa-solid fa-check"></i> ₹5,246.30 refunded
+                                    </span>
+                                                            </td>
+                            <td style="padding: 12px 10px;">
+                                <form action="returns.php" method="POST" style="display: flex; gap: 6px;">
+                                    <input type="hidden" name="csrf_token" value="2d7e362984d5b56e52fc12cac13fa242779346f776070b9708674a1a2ff6e044">
+                                    <input type="hidden" name="return_id" value="4">
+                                    <select name="status" style="font-size: 11px; padding: 4px;">
+                                        <option value="Pending" >Pending</option>
+                                        <option value="Approved" selected>Approved</option>
+                                        <option value="Rejected" >Rejected</option>
+                                        <option value="Pickup Scheduled" >Pickup Scheduled</option>
+                                        <option value="Quality Check" >Quality Check</option>
+                                        <option value="Completed" >Completed</option>
+                                    </select>
+                                    <button type="submit" name="update_status" class="btn btn-sm btn-primary" style="font-size: 10px; padding: 4px 8px;">Save</button>
+                                </form>
+                            </td>
+                        </tr>
+                                            <tr style="border-bottom: 1px solid var(--border-light);">
+                            <td style="padding: 12px 10px; font-weight: 700; color: var(--color-primary);">RMA-59A7E6</td>
+                                                        <td style="padding: 12px 10px;">
+                                                                    CB-QARET07                                                            </td>
+                            <td style="padding: 12px 10px;">
+                                                                    <strong>QA TEST Arjun Rao</strong><br>
+                                    <span style="font-size: 11px; color: var(--text-muted);">qa.arjun@qa.dievon.invalid</span>
+                                                            </td>
+                            <td style="padding: 12px 10px; font-weight: 600;">RETURN</td>
+                            <td style="padding: 12px 10px;">Defective or Damaged</td>
+                            <td style="padding: 12px 10px;">N/A</td>
+                            <td style="padding: 12px 10px;">
+                                                                    <span style="color: var(--text-muted);">None</span>
+                                                            </td>
+                            <td style="padding: 12px 10px;">
+                                <span style="font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 3px; background: #fff8e1; color: #b7791f;">
+                                    Completed                                </span>
+                            </td>
+                                                        <td style="padding: 12px 10px; white-space: nowrap;">
+                                                                    <span style="font-size:11px; font-weight:700; color: var(--color-success);">
+                                        <i class="fa-solid fa-check"></i> ₹2,598.00 refunded
+                                    </span>
+                                                            </td>
+                            <td style="padding: 12px 10px;">
+                                <form action="returns.php" method="POST" style="display: flex; gap: 6px;">
+                                    <input type="hidden" name="csrf_token" value="2d7e362984d5b56e52fc12cac13fa242779346f776070b9708674a1a2ff6e044">
+                                    <input type="hidden" name="return_id" value="3">
+                                    <select name="status" style="font-size: 11px; padding: 4px;">
+                                        <option value="Pending" >Pending</option>
+                                        <option value="Approved" >Approved</option>
+                                        <option value="Rejected" >Rejected</option>
+                                        <option value="Pickup Scheduled" >Pickup Scheduled</option>
+                                        <option value="Quality Check" >Quality Check</option>
+                                        <option value="Completed" selected>Completed</option>
+                                    </select>
+                                    <button type="submit" name="update_status" class="btn btn-sm btn-primary" style="font-size: 10px; padding: 4px 8px;">Save</button>
+                                </form>
+                            </td>
+                        </tr>
+                                            <tr style="border-bottom: 1px solid var(--border-light);">
+                            <td style="padding: 12px 10px; font-weight: 700; color: var(--color-primary);">RMA-83BD2E</td>
+                                                        <td style="padding: 12px 10px;">
+                                                                    CB-QARET01                                                            </td>
+                            <td style="padding: 12px 10px;">
+                                                                    <strong>QA TEST Priya Menon</strong><br>
+                                    <span style="font-size: 11px; color: var(--text-muted);">qa.priya@qa.dievon.invalid</span>
+                                                            </td>
+                            <td style="padding: 12px 10px; font-weight: 600;">RETURN</td>
+                            <td style="padding: 12px 10px;">Sizing Issue</td>
+                            <td style="padding: 12px 10px;">N/A</td>
+                            <td style="padding: 12px 10px;">
+                                                                    <span style="color: var(--text-muted);">None</span>
+                                                            </td>
+                            <td style="padding: 12px 10px;">
+                                <span style="font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 3px; background: #fff8e1; color: #b7791f;">
+                                    Rejected                                </span>
+                            </td>
+                                                        <td style="padding: 12px 10px; white-space: nowrap;">
+                                                                    <span style="font-size:11px; font-weight:700; color: var(--color-success);">
+                                        <i class="fa-solid fa-check"></i> ₹5,246.30 refunded
+                                    </span>
+                                                            </td>
+                            <td style="padding: 12px 10px;">
+                                <form action="returns.php" method="POST" style="display: flex; gap: 6px;">
+                                    <input type="hidden" name="csrf_token" value="2d7e362984d5b56e52fc12cac13fa242779346f776070b9708674a1a2ff6e044">
+                                    <input type="hidden" name="return_id" value="2">
+                                    <select name="status" style="font-size: 11px; padding: 4px;">
+                                        <option value="Pending" >Pending</option>
+                                        <option value="Approved" >Approved</option>
+                                        <option value="Rejected" selected>Rejected</option>
+                                        <option value="Pickup Scheduled" >Pickup Scheduled</option>
+                                        <option value="Quality Check" >Quality Check</option>
+                                        <option value="Completed" >Completed</option>
+                                    </select>
+                                    <button type="submit" name="update_status" class="btn btn-sm btn-primary" style="font-size: 10px; padding: 4px 8px;">Save</button>
+                                </form>
+                            </td>
+                        </tr>
+                                            <tr style="border-bottom: 1px solid var(--border-light);">
+                            <td style="padding: 12px 10px; font-weight: 700; color: var(--color-primary);">RMA-AE8E12</td>
+                                                        <td style="padding: 12px 10px;">
+                                                                    CB-QARET06                                                            </td>
+                            <td style="padding: 12px 10px;">
+                                                                    <strong>QA TEST Arjun Rao</strong><br>
+                                    <span style="font-size: 11px; color: var(--text-muted);">qa.arjun@qa.dievon.invalid</span>
+                                                            </td>
+                            <td style="padding: 12px 10px; font-weight: 600;">RETURN</td>
+                            <td style="padding: 12px 10px;">Sizing Issue</td>
+                            <td style="padding: 12px 10px;">N/A</td>
+                            <td style="padding: 12px 10px;">
+                                                                    <span style="color: var(--text-muted);">None</span>
+                                                            </td>
+                            <td style="padding: 12px 10px;">
+                                <span style="font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 3px; background: #fff8e1; color: #b7791f;">
+                                    Completed                                </span>
+                            </td>
+                                                        <td style="padding: 12px 10px; white-space: nowrap;">
+                                                                    <span style="font-size:11px; font-weight:700; color: var(--color-secondary);">
+                                        ₹500.00 of ₹2,499.00                                    </span><br>
+                                    <a href="orders.php#order-108" style="font-size:10.5px;">₹1,999.00 still owed &rarr;</a>
+                                                            </td>
+                            <td style="padding: 12px 10px;">
+                                <form action="returns.php" method="POST" style="display: flex; gap: 6px;">
+                                    <input type="hidden" name="csrf_token" value="2d7e362984d5b56e52fc12cac13fa242779346f776070b9708674a1a2ff6e044">
+                                    <input type="hidden" name="return_id" value="1">
+                                    <select name="status" style="font-size: 11px; padding: 4px;">
+                                        <option value="Pending" >Pending</option>
+                                        <option value="Approved" >Approved</option>
+                                        <option value="Rejected" >Rejected</option>
+                                        <option value="Pickup Scheduled" >Pickup Scheduled</option>
+                                        <option value="Quality Check" >Quality Check</option>
+                                        <option value="Completed" selected>Completed</option>
+                                    </select>
+                                    <button type="submit" name="update_status" class="btn btn-sm btn-primary" style="font-size: 10px; padding: 4px 8px;">Save</button>
+                                </form>
+                            </td>
+                        </tr>
+                                    </tbody>
+            </table>
+        </div>
+    </div>
+
+    </main>
+</div>
+</div>
+<!-- Branded dialog (shares the storefront stylesheet, which admin already loads). -->
+<script src="http://localhost:8888/DievonOrders/assets/js/dievon-dialog.js?v=1785450739"></script>
+<script src="assets/js/admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,1912 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Admin Dashboard – Dievon</title>
+            <link rel="icon" type="image/png" href="http://localhost:8888/DievonOrders/assets/images/logo/favicon_1785598968_c1c530.png?v=1785694092" media="(prefers-color-scheme: light)">
+    <link rel="icon" type="image/png" href="http://localhost:8888/DievonOrders/assets/images/logo/favicondark_1785598968_84f1f2.png?v=1785694092" media="(prefers-color-scheme: dark)">
+        <!-- Versioned with filemtime, not time(): a cache-buster that changes on every
+         request defeats browser caching and re-downloads the CSS on each page view. -->
+    <link rel="stylesheet" href="http://localhost:8888/DievonOrders/assets/css/style.css?v=1786315671">
+    <link rel="stylesheet" href="http://localhost:8888/DievonOrders/admin/assets/css/style.css?v=1786231916">
+    <link rel="stylesheet" href="http://localhost:8888/DievonOrders/assets/css/responsive.css?v=1786232206">
+    <link rel="stylesheet" href="http://localhost:8888/DievonOrders/assets/fontawesome/css/all.min.css">
+    <script>
+        window.ADMIN_CSRF_TOKEN = '8aef243787977076f6d7147cd39aa1a5da648038e70017ca24ba6acfdc508bea';
+    </script>
+</head>
+
+<body class="admin-wrapper">
+
+<!-- ══ Global Top Header Bar (0,0 Fixed) ════════════════════════════════════ -->
+<header class="admin-global-topbar">
+    <div style="display: flex; align-items: center; gap: 12px;">
+        <button type="button" class="admin-mobile-toggle" onclick="toggleAdminSidebar()" style="display: none; background: none; border: none; color: #ffffff; font-size: 18px; cursor: pointer; padding: 4px;">
+            <i class="fa-solid fa-bars"></i>
+        </button>
+        <a href="../home.php" class="admin-brand-logo">
+            <span class="logo-emoji">✨</span> Dievon <small>ATELIER ADMIN</small>
+        </a>
+    </div>
+
+    <div class="admin-topbar-actions">
+        <a href="../home.php" target="_blank" class="topbar-btn-shop">
+            <i class="fa-solid fa-globe"></i> View Live Shop ↗
+        </a>
+        <div class="admin-user-pill">
+            <i class="fa-solid fa-user-shield"></i> qa-render        </div>
+        <a href="logout.php" class="topbar-btn-logout">
+            Sign Out
+        </a>
+    </div>
+</header>
+
+<!-- Mobile Sidebar Backdrop Overlay -->
+<div class="mobile-drawer-backdrop" id="adminSidebarBackdrop" onclick="toggleAdminSidebar(false)"></div>
+
+<script>
+function toggleAdminSidebar(force) {
+    const sidebar = document.querySelector('.admin-sidebar');
+    const backdrop = document.getElementById('adminSidebarBackdrop');
+    if (!sidebar) return;
+    
+    if (typeof force === 'boolean') {
+        if (force) {
+            sidebar.classList.add('open');
+            if (backdrop) backdrop.classList.add('active');
+        } else {
+            sidebar.classList.remove('open');
+            if (backdrop) backdrop.classList.remove('active');
+        }
+    } else {
+        sidebar.classList.toggle('open');
+        if (backdrop) backdrop.classList.toggle('active');
+    }
+}
+
+// Auto scroll-into-view & preserve sidebar scroll position across page reloads
+document.addEventListener('DOMContentLoaded', function() {
+    const sidebar = document.querySelector('.admin-sidebar');
+    if (!sidebar) return;
+
+    const savedScroll = localStorage.getItem('adminSidebarScroll');
+    if (savedScroll !== null) {
+        sidebar.scrollTop = parseInt(savedScroll, 10);
+    }
+
+    const activeItem = sidebar.querySelector('a.active');
+    if (activeItem) {
+        setTimeout(function() {
+            activeItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }, 100);
+    }
+
+    sidebar.addEventListener('scroll', function() {
+        localStorage.setItem('adminSidebarScroll', sidebar.scrollTop);
+    });
+});
+</script>
+
+<div class="admin-body-layout">
+
+    <!-- ══ Left Fixed Sidebar (Streamlined & Clean) ════════════════════════ -->
+        <aside class="admin-sidebar">
+        <nav class="admin-sidebar-nav">
+                        <div class="sidebar-group-title">Overview</div>
+                        <a href="dashboard.php" class=""><i class="fa-solid fa-chart-line"></i> Dashboard Analytics</a>
+                                    <div class="sidebar-group-title">Catalog &amp; Inventory</div>
+                        <a href="products.php" class=""><i class="fa-solid fa-shirt"></i> Products &amp; Garments</a>
+                        <a href="categories.php" class=""><i class="fa-solid fa-folder-tree"></i> Categories &amp; Subcategories</a>
+                        <a href="attributes.php?type=colors" class=""><i class="fa-solid fa-palette"></i> Colours</a>
+                        <a href="brands.php" class=""><i class="fa-solid fa-tag"></i> Brands</a>
+                        <a href="settings.php?tab=stock" class="active"><i class="fa-solid fa-boxes-stacked"></i> Inventory &amp; Stock</a>
+                        <a href="size_guide.php" class=""><i class="fa-solid fa-ruler"></i> Size Guide</a>
+                                    <div class="sidebar-group-title">Sales &amp; Clients</div>
+                        <a href="orders.php" class=""><i class="fa-solid fa-clipboard-list"></i> Orders &amp; Invoices</a>
+                        <a href="customers.php" class=""><i class="fa-solid fa-users"></i> Customers &amp; Inquiries</a>
+                        <a href="promo.php" class=""><i class="fa-solid fa-ticket"></i> Discount Coupons</a>
+                        <a href="reviews.php" class=""><i class="fa-solid fa-star"></i> Customer Reviews</a>
+                        <a href="returns.php" class=""><i class="fa-solid fa-rotate-left"></i> RMA Returns</a>
+                        <a href="support_tickets.php" class=""><i class="fa-solid fa-headset"></i> Support Tickets</a>
+                                    <div class="sidebar-group-title">Content &amp; Settings</div>
+                        <a href="banners.php" class=""><i class="fa-solid fa-sliders"></i> Banner Slider Manager</a>
+                        <a href="blog.php" class=""><i class="fa-solid fa-newspaper"></i> Blog Journal Manager</a>
+                        <a href="seo.php" class=""><i class="fa-solid fa-magnifying-glass"></i> SEO &amp; Social Previews</a>
+                        <a href="newsletter.php" class=""><i class="fa-solid fa-envelope"></i> Newsletter Subscribers</a>
+                        <a href="media.php" class=""><i class="fa-solid fa-images"></i> Media Library</a>
+                        <a href="lookbook.php" class=""><i class="fa-solid fa-book-open"></i> Lookbook Images</a>
+                        <a href="settings.php?tab=settings" class=""><i class="fa-solid fa-gear"></i> Store Settings</a>
+                        <a href="admin_users.php" class=""><i class="fa-solid fa-users-gear"></i> Staff Accounts</a>
+                        <a href="roles.php" class=""><i class="fa-solid fa-user-shield"></i> Roles &amp; Permissions</a>
+                        <a href="countries.php" class=""><i class="fa-solid fa-earth-asia"></i> Countries We Sell To</a>
+                        <a href="email_logs.php" class=""><i class="fa-solid fa-envelope-open-text"></i> Email Log</a>
+                        <a href="logs.php" class=""><i class="fa-solid fa-clipboard-list"></i> Audit Logs</a>
+                        <a href="backup.php" class=""><i class="fa-solid fa-database"></i> Database Backup</a>
+                                </nav>
+    </aside>
+
+    <!-- ══ Main Content Area ════════════════════════════════════════ -->
+    <div class="admin-main">
+        <main class="admin-content">
+
+        <!-- Alerts -->
+                                                
+                <!-- Page Header -->
+        <div class="admin-page-header admin-page-header-flex">
+            <div>
+                <h1 class="admin-page-title">
+                    Stock Management                </h1>
+                <p class="admin-page-subtitle">
+                    Track in-stock, damage, and offline sold quantities per product                </p>
+            </div>
+                    </div>
+        
+        
+        <!-- ═══════════════════ ORDERS TAB ═══════════════════ -->
+        
+        <div class="glass-panel" style="padding:24px; overflow:hidden;">
+
+                        <!-- ══ STOCK MANAGEMENT TAB ══ -->
+                                    <div class="stock-summary">
+                                <div class="stock-stat" style="--stock-accent: var(--color-primary);">
+                    <div class="stock-stat-value">665</div>
+                    <div class="stock-stat-label">Grand Total</div>
+                </div>
+                                <div class="stock-stat" style="--stock-accent: var(--color-success);">
+                    <div class="stock-stat-value">583</div>
+                    <div class="stock-stat-label">In Stock</div>
+                </div>
+                                <div class="stock-stat" style="--stock-accent: var(--color-danger);">
+                    <div class="stock-stat-value">9</div>
+                    <div class="stock-stat-label">Damage</div>
+                </div>
+                                <div class="stock-stat" style="--stock-accent: var(--color-secondary);">
+                    <div class="stock-stat-value">21</div>
+                    <div class="stock-stat-label">Sold Offline</div>
+                </div>
+                                <div class="stock-stat" style="--stock-accent: var(--color-accent);">
+                    <div class="stock-stat-value">95</div>
+                    <div class="stock-stat-label">Sold Online</div>
+                </div>
+                            </div>
+
+            
+            <!-- Setup warning -->
+            
+            <!-- Info note -->
+            <div style="background:rgba(139,92,246,0.08); border:1px solid rgba(139,92,246,0.2); border-radius:var(--radius-sm); padding:12px 16px; margin-bottom:20px; font-size:13px; color:var(--text-secondary); display:flex; align-items:flex-start; gap:10px;">
+                <i class="fa-solid fa-circle-info" style="color:#8b5cf6; margin-top:2px; flex-shrink:0;"></i>
+                <span><strong>Click ‘Edit Stock’ to add new stock, damage, or offline sales.</strong> Grand Total, In Stock, Damage and Sold columns are all read-only — updated when you save via the Edit button. Sold Online auto-counts when an order is marked Delivered.</span>
+            </div>
+
+            <div class="table-wrapper">
+                <table class="data-table" id="stockTable">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th class="stock-th stock-hide-xs">Tracked</th>
+                            <th class="stock-th stock-hide-xs">Grand Total<span class="stock-th-note">auto-cumulative</span></th>
+                            <th class="stock-th">In Stock<span class="stock-th-note">auto-calculated</span></th>
+                            <th class="stock-th stock-hide-sm">Damage<span class="stock-th-note">cumulative</span></th>
+                            <th class="stock-th stock-hide-sm">Sold Offline<span class="stock-th-note">cumulative</span></th>
+                            <th class="stock-th stock-hide-sm">Sold Online<span class="stock-th-note">auto on Delivered</span></th>
+                            <th class="stock-th">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                                                <tr id="stock-row-3">
+                            <!-- Product -->
+                            <td>
+                                <div class="stock-product">
+                                                                        <div class="stock-thumb">
+                                                                                <img src="../uploads/products/adara_brocade_suit_1785962869.jpg"
+                                             alt="" loading="lazy">
+                                                                            </div>
+                                    <div class="stock-product-text">
+                                        <div class="stock-product-name" title="Adara Brocade 3-Piece Suit">Adara Brocade 3-Piece Suit</div>
+                                        <div class="stock-product-cat">3 Piece Suits</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <!-- Tracked -->
+                            <td class="stock-cell stock-hide-xs">
+                                                                <span class="stock-badge stock-badge-on">Tracked</span>
+                                                            </td>
+                            <!-- Grand Total (read-only) -->
+                            <td class="stock-cell stock-hide-xs">
+                                <span id="val-total_stock-3" class="stock-num">25</span>
+                            </td>
+                            <!-- In Stock (auto, read-only) — the one figure worth emphasising -->
+                            <td class="stock-cell">
+                                                                <span id="val-in_stock-3" class="stock-num stock-num-lead stock-num-good">40</span>
+                                                            </td>
+                            <!-- Damage (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-damage_stock-3" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Offline (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_offline-3" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Online (auto, read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_online-3" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Actions -->
+                            <td class="stock-cell">
+                                                                <div class="admin-actions" style="justify-content:center;">
+                                                                        <button class="admin-action-btn is-primary" onclick="openStockEdit(3, 'Adara Brocade 3-Piece Suit', 25, 0, 0)" title="Edit stock" aria-label="Edit stock for Adara Brocade 3-Piece Suit">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </button>
+                                                                        <a href="product_form.php?id=3" class="admin-action-btn" title="Edit product" aria-label="Edit product Adara Brocade 3-Piece Suit">
+                                        <i class="fa-solid fa-gear"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                                                <tr id="stock-row-1">
+                            <!-- Product -->
+                            <td>
+                                <div class="stock-product">
+                                                                        <div class="stock-thumb">
+                                                                                <img src="../uploads/products/dievon_silk_dress.png"
+                                             alt="" loading="lazy">
+                                                                            </div>
+                                    <div class="stock-product-text">
+                                        <div class="stock-product-name" title="Aurelia Silk Kurti">Aurelia Silk Kurti</div>
+                                        <div class="stock-product-cat">Kurtis</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <!-- Tracked -->
+                            <td class="stock-cell stock-hide-xs">
+                                                                <span class="stock-badge stock-badge-off">&#8734; Unlimited</span>
+                                                            </td>
+                            <!-- Grand Total (read-only) -->
+                            <td class="stock-cell stock-hide-xs">
+                                <span id="val-total_stock-1" class="stock-num">50</span>
+                            </td>
+                            <!-- In Stock (auto, read-only) — the one figure worth emphasising -->
+                            <td class="stock-cell">
+                                                                <span class="stock-num stock-num-zero">—</span>
+                                                            </td>
+                            <!-- Damage (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-damage_stock-1" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Offline (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_offline-1" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Online (auto, read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_online-1" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Actions -->
+                            <td class="stock-cell">
+                                                                <div class="admin-actions" style="justify-content:center;">
+                                                                        <a href="product_form.php?id=1" class="admin-action-btn" title="Edit product" aria-label="Edit product Aurelia Silk Kurti">
+                                        <i class="fa-solid fa-gear"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                                                <tr id="stock-row-9">
+                            <!-- Product -->
+                            <td>
+                                <div class="stock-product">
+                                                                        <div class="stock-thumb">
+                                                                                <img src="../uploads/products/elena_cowl_neck_satin_top_1785962967.jpg"
+                                             alt="" loading="lazy">
+                                                                            </div>
+                                    <div class="stock-product-text">
+                                        <div class="stock-product-name" title="Elena Cowl-Neck Satin Top">Elena Cowl-Neck Satin Top</div>
+                                        <div class="stock-product-cat">Women&#039;s Tops</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <!-- Tracked -->
+                            <td class="stock-cell stock-hide-xs">
+                                                                <span class="stock-badge stock-badge-on">Tracked</span>
+                                                            </td>
+                            <!-- Grand Total (read-only) -->
+                            <td class="stock-cell stock-hide-xs">
+                                <span id="val-total_stock-9" class="stock-num">45</span>
+                            </td>
+                            <!-- In Stock (auto, read-only) — the one figure worth emphasising -->
+                            <td class="stock-cell">
+                                                                <span id="val-in_stock-9" class="stock-num stock-num-lead stock-num-good">45</span>
+                                                            </td>
+                            <!-- Damage (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-damage_stock-9" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Offline (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_offline-9" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Online (auto, read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_online-9" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Actions -->
+                            <td class="stock-cell">
+                                                                <div class="admin-actions" style="justify-content:center;">
+                                                                        <button class="admin-action-btn is-primary" onclick="openStockEdit(9, 'Elena Cowl-Neck Satin Top', 45, 0, 0)" title="Edit stock" aria-label="Edit stock for Elena Cowl-Neck Satin Top">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </button>
+                                                                        <a href="product_form.php?id=9" class="admin-action-btn" title="Edit product" aria-label="Edit product Elena Cowl-Neck Satin Top">
+                                        <i class="fa-solid fa-gear"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                                                <tr id="stock-row-10">
+                            <!-- Product -->
+                            <td>
+                                <div class="stock-product">
+                                                                        <div class="stock-thumb">
+                                                                                <img src="../uploads/products/linen_wrap_top_1784414741898.jpg"
+                                             alt="" loading="lazy">
+                                                                            </div>
+                                    <div class="stock-product-text">
+                                        <div class="stock-product-name" title="Freya Linen Wrap Top">Freya Linen Wrap Top</div>
+                                        <div class="stock-product-cat">Women&#039;s Tops</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <!-- Tracked -->
+                            <td class="stock-cell stock-hide-xs">
+                                                                <span class="stock-badge stock-badge-on">Tracked</span>
+                                                            </td>
+                            <!-- Grand Total (read-only) -->
+                            <td class="stock-cell stock-hide-xs">
+                                <span id="val-total_stock-10" class="stock-num">30</span>
+                            </td>
+                            <!-- In Stock (auto, read-only) — the one figure worth emphasising -->
+                            <td class="stock-cell">
+                                                                <span id="val-in_stock-10" class="stock-num stock-num-lead stock-num-good">30</span>
+                                                            </td>
+                            <!-- Damage (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-damage_stock-10" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Offline (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_offline-10" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Online (auto, read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_online-10" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Actions -->
+                            <td class="stock-cell">
+                                                                <div class="admin-actions" style="justify-content:center;">
+                                                                        <button class="admin-action-btn is-primary" onclick="openStockEdit(10, 'Freya Linen Wrap Top', 30, 0, 0)" title="Edit stock" aria-label="Edit stock for Freya Linen Wrap Top">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </button>
+                                                                        <a href="product_form.php?id=10" class="admin-action-btn" title="Edit product" aria-label="Edit product Freya Linen Wrap Top">
+                                        <i class="fa-solid fa-gear"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                                                <tr id="stock-row-12">
+                            <!-- Product -->
+                            <td>
+                                <div class="stock-product">
+                                                                        <div class="stock-thumb">
+                                                                                <img src="../uploads/products/crepe_pants_1784414756343.jpg"
+                                             alt="" loading="lazy">
+                                                                            </div>
+                                    <div class="stock-product-text">
+                                        <div class="stock-product-name" title="Iris Straight Crepe Pants">Iris Straight Crepe Pants</div>
+                                        <div class="stock-product-cat">Bottoms</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <!-- Tracked -->
+                            <td class="stock-cell stock-hide-xs">
+                                                                <span class="stock-badge stock-badge-on">Tracked</span>
+                                                            </td>
+                            <!-- Grand Total (read-only) -->
+                            <td class="stock-cell stock-hide-xs">
+                                <span id="val-total_stock-12" class="stock-num">35</span>
+                            </td>
+                            <!-- In Stock (auto, read-only) — the one figure worth emphasising -->
+                            <td class="stock-cell">
+                                                                <span id="val-in_stock-12" class="stock-num stock-num-lead stock-num-good">35</span>
+                                                            </td>
+                            <!-- Damage (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-damage_stock-12" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Offline (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_offline-12" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Online (auto, read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_online-12" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Actions -->
+                            <td class="stock-cell">
+                                                                <div class="admin-actions" style="justify-content:center;">
+                                                                        <button class="admin-action-btn is-primary" onclick="openStockEdit(12, 'Iris Straight Crepe Pants', 35, 0, 0)" title="Edit stock" aria-label="Edit stock for Iris Straight Crepe Pants">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </button>
+                                                                        <a href="product_form.php?id=12" class="admin-action-btn" title="Edit product" aria-label="Edit product Iris Straight Crepe Pants">
+                                        <i class="fa-solid fa-gear"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                                                <tr id="stock-row-8">
+                            <!-- Product -->
+                            <td>
+                                <div class="stock-product">
+                                                                        <div class="stock-thumb">
+                                                                                <img src="../uploads/products/georgette_short_kurti_1784414734051.jpg"
+                                             alt="" loading="lazy">
+                                                                            </div>
+                                    <div class="stock-product-text">
+                                        <div class="stock-product-name" title="Kiara Georgette Short Kurti">Kiara Georgette Short Kurti</div>
+                                        <div class="stock-product-cat">Short Kurtis</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <!-- Tracked -->
+                            <td class="stock-cell stock-hide-xs">
+                                                                <span class="stock-badge stock-badge-on">Tracked</span>
+                                                            </td>
+                            <!-- Grand Total (read-only) -->
+                            <td class="stock-cell stock-hide-xs">
+                                <span id="val-total_stock-8" class="stock-num">40</span>
+                            </td>
+                            <!-- In Stock (auto, read-only) — the one figure worth emphasising -->
+                            <td class="stock-cell">
+                                                                <span id="val-in_stock-8" class="stock-num stock-num-lead stock-num-good">40</span>
+                                                            </td>
+                            <!-- Damage (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-damage_stock-8" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Offline (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_offline-8" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Online (auto, read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_online-8" class="stock-num">1</span>
+                            </td>
+                            <!-- Actions -->
+                            <td class="stock-cell">
+                                                                <div class="admin-actions" style="justify-content:center;">
+                                                                        <button class="admin-action-btn is-primary" onclick="openStockEdit(8, 'Kiara Georgette Short Kurti', 40, 0, 0)" title="Edit stock" aria-label="Edit stock for Kiara Georgette Short Kurti">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </button>
+                                                                        <a href="product_form.php?id=8" class="admin-action-btn" title="Edit product" aria-label="Edit product Kiara Georgette Short Kurti">
+                                        <i class="fa-solid fa-gear"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                                                <tr id="stock-row-5">
+                            <!-- Product -->
+                            <td>
+                                <div class="stock-product">
+                                                                        <div class="stock-thumb">
+                                                                                <img src="../uploads/products/luna_satin_coord_1785962869.jpg"
+                                             alt="" loading="lazy">
+                                                                            </div>
+                                    <div class="stock-product-text">
+                                        <div class="stock-product-name" title="Luna Satin Coord Set">Luna Satin Coord Set</div>
+                                        <div class="stock-product-cat">Coord Sets</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <!-- Tracked -->
+                            <td class="stock-cell stock-hide-xs">
+                                                                <span class="stock-badge stock-badge-on">Tracked</span>
+                                                            </td>
+                            <!-- Grand Total (read-only) -->
+                            <td class="stock-cell stock-hide-xs">
+                                <span id="val-total_stock-5" class="stock-num">30</span>
+                            </td>
+                            <!-- In Stock (auto, read-only) — the one figure worth emphasising -->
+                            <td class="stock-cell">
+                                                                <span id="val-in_stock-5" class="stock-num stock-num-lead stock-num-good">30</span>
+                                                            </td>
+                            <!-- Damage (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-damage_stock-5" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Offline (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_offline-5" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Online (auto, read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_online-5" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Actions -->
+                            <td class="stock-cell">
+                                                                <div class="admin-actions" style="justify-content:center;">
+                                                                        <button class="admin-action-btn is-primary" onclick="openStockEdit(5, 'Luna Satin Coord Set', 30, 0, 0)" title="Edit stock" aria-label="Edit stock for Luna Satin Coord Set">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </button>
+                                                                        <a href="product_form.php?id=5" class="admin-action-btn" title="Edit product" aria-label="Edit product Luna Satin Coord Set">
+                                        <i class="fa-solid fa-gear"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                                                <tr id="stock-row-4">
+                            <!-- Product -->
+                            <td>
+                                <div class="stock-product">
+                                                                        <div class="stock-thumb">
+                                                                                <img src="../uploads/products/silk_3_piece_1784414705496.jpg"
+                                             alt="" loading="lazy">
+                                                                            </div>
+                                    <div class="stock-product-text">
+                                        <div class="stock-product-name" title="Meera Silk 3-Piece Suit">Meera Silk 3-Piece Suit</div>
+                                        <div class="stock-product-cat">3 Piece Suits</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <!-- Tracked -->
+                            <td class="stock-cell stock-hide-xs">
+                                                                <span class="stock-badge stock-badge-on">Tracked</span>
+                                                            </td>
+                            <!-- Grand Total (read-only) -->
+                            <td class="stock-cell stock-hide-xs">
+                                <span id="val-total_stock-4" class="stock-num">20</span>
+                            </td>
+                            <!-- In Stock (auto, read-only) — the one figure worth emphasising -->
+                            <td class="stock-cell">
+                                                                <span id="val-in_stock-4" class="stock-num stock-num-lead stock-num-good">40</span>
+                                                            </td>
+                            <!-- Damage (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-damage_stock-4" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Offline (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_offline-4" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Online (auto, read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_online-4" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Actions -->
+                            <td class="stock-cell">
+                                                                <div class="admin-actions" style="justify-content:center;">
+                                                                        <button class="admin-action-btn is-primary" onclick="openStockEdit(4, 'Meera Silk 3-Piece Suit', 20, 0, 0)" title="Edit stock" aria-label="Edit stock for Meera Silk 3-Piece Suit">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </button>
+                                                                        <a href="product_form.php?id=4" class="admin-action-btn" title="Edit product" aria-label="Edit product Meera Silk 3-Piece Suit">
+                                        <i class="fa-solid fa-gear"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                                                <tr id="stock-row-28">
+                            <!-- Product -->
+                            <td>
+                                <div class="stock-product">
+                                                                        <div class="stock-thumb">
+                                                                                <span class="stock-thumb-fallback">🧪</span>
+                                                                            </div>
+                                    <div class="stock-product-text">
+                                        <div class="stock-product-name" title="QA TEST Admin Sweep Product">QA TEST Admin Sweep Product</div>
+                                        <div class="stock-product-cat">QA TEST Womenswear</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <!-- Tracked -->
+                            <td class="stock-cell stock-hide-xs">
+                                                                <span class="stock-badge stock-badge-on">Tracked</span>
+                                                            </td>
+                            <!-- Grand Total (read-only) -->
+                            <td class="stock-cell stock-hide-xs">
+                                <span id="val-total_stock-28" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- In Stock (auto, read-only) — the one figure worth emphasising -->
+                            <td class="stock-cell">
+                                                                <span id="val-in_stock-28" class="stock-num stock-num-lead stock-num-bad">0</span>
+                                                            </td>
+                            <!-- Damage (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-damage_stock-28" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Offline (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_offline-28" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Online (auto, read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_online-28" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Actions -->
+                            <td class="stock-cell">
+                                                                <div class="admin-actions" style="justify-content:center;">
+                                                                        <button class="admin-action-btn is-primary" onclick="openStockEdit(28, 'QA TEST Admin Sweep Product', 0, 0, 0)" title="Edit stock" aria-label="Edit stock for QA TEST Admin Sweep Product">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </button>
+                                                                        <a href="product_form.php?id=28" class="admin-action-btn" title="Edit product" aria-label="Edit product QA TEST Admin Sweep Product">
+                                        <i class="fa-solid fa-gear"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                                                <tr id="stock-row-32">
+                            <!-- Product -->
+                            <td>
+                                <div class="stock-product">
+                                                                        <div class="stock-thumb">
+                                                                                <span class="stock-thumb-fallback">✨</span>
+                                                                            </div>
+                                    <div class="stock-product-text">
+                                        <div class="stock-product-name" title="QA TEST Admin Sweep Product 2">QA TEST Admin Sweep Product 2</div>
+                                        <div class="stock-product-cat">QA TEST Cat Sweep</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <!-- Tracked -->
+                            <td class="stock-cell stock-hide-xs">
+                                                                <span class="stock-badge stock-badge-off">&#8734; Unlimited</span>
+                                                            </td>
+                            <!-- Grand Total (read-only) -->
+                            <td class="stock-cell stock-hide-xs">
+                                <span id="val-total_stock-32" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- In Stock (auto, read-only) — the one figure worth emphasising -->
+                            <td class="stock-cell">
+                                                                <span class="stock-num stock-num-zero">—</span>
+                                                            </td>
+                            <!-- Damage (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-damage_stock-32" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Offline (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_offline-32" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Online (auto, read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_online-32" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Actions -->
+                            <td class="stock-cell">
+                                                                <div class="admin-actions" style="justify-content:center;">
+                                                                        <a href="product_form.php?id=32" class="admin-action-btn" title="Edit product" aria-label="Edit product QA TEST Admin Sweep Product 2">
+                                        <i class="fa-solid fa-gear"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                                                <tr id="stock-row-18">
+                            <!-- Product -->
+                            <td>
+                                <div class="stock-product">
+                                                                        <div class="stock-thumb">
+                                                                                <img src="../uploads/products/qa-anaya-kurti.jpg"
+                                             alt="" loading="lazy">
+                                                                            </div>
+                                    <div class="stock-product-text">
+                                        <div class="stock-product-name" title="QA TEST Anaya Chikankari Kurti">QA TEST Anaya Chikankari Kurti</div>
+                                        <div class="stock-product-cat">QA TEST Womenswear</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <!-- Tracked -->
+                            <td class="stock-cell stock-hide-xs">
+                                                                <span class="stock-badge stock-badge-on">Tracked</span>
+                                                            </td>
+                            <!-- Grand Total (read-only) -->
+                            <td class="stock-cell stock-hide-xs">
+                                <span id="val-total_stock-18" class="stock-num">40</span>
+                            </td>
+                            <!-- In Stock (auto, read-only) — the one figure worth emphasising -->
+                            <td class="stock-cell">
+                                                                <span id="val-in_stock-18" class="stock-num stock-num-lead stock-num-good">26</span>
+                                                            </td>
+                            <!-- Damage (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-damage_stock-18" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Offline (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_offline-18" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Online (auto, read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_online-18" class="stock-num">18</span>
+                            </td>
+                            <!-- Actions -->
+                            <td class="stock-cell">
+                                                                <div class="admin-actions" style="justify-content:center;">
+                                                                        <button class="admin-action-btn is-primary" onclick="openStockEdit(18, 'QA TEST Anaya Chikankari Kurti', 40, 0, 0)" title="Edit stock" aria-label="Edit stock for QA TEST Anaya Chikankari Kurti">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </button>
+                                                                        <a href="product_form.php?id=18" class="admin-action-btn" title="Edit product" aria-label="Edit product QA TEST Anaya Chikankari Kurti">
+                                        <i class="fa-solid fa-gear"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                                                <tr id="stock-row-41">
+                            <!-- Product -->
+                            <td>
+                                <div class="stock-product">
+                                                                        <div class="stock-thumb">
+                                                                                <span class="stock-thumb-fallback">✨</span>
+                                                                            </div>
+                                    <div class="stock-product-text">
+                                        <div class="stock-product-name" title="QA TEST Anaya Chikankari Kurti">QA TEST Anaya Chikankari Kurti</div>
+                                        <div class="stock-product-cat">QA TEST Womenswear</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <!-- Tracked -->
+                            <td class="stock-cell stock-hide-xs">
+                                                                <span class="stock-badge stock-badge-off">&#8734; Unlimited</span>
+                                                            </td>
+                            <!-- Grand Total (read-only) -->
+                            <td class="stock-cell stock-hide-xs">
+                                <span id="val-total_stock-41" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- In Stock (auto, read-only) — the one figure worth emphasising -->
+                            <td class="stock-cell">
+                                                                <span class="stock-num stock-num-zero">—</span>
+                                                            </td>
+                            <!-- Damage (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-damage_stock-41" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Offline (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_offline-41" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Online (auto, read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_online-41" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Actions -->
+                            <td class="stock-cell">
+                                                                <div class="admin-actions" style="justify-content:center;">
+                                                                        <a href="product_form.php?id=41" class="admin-action-btn" title="Edit product" aria-label="Edit product QA TEST Anaya Chikankari Kurti">
+                                        <i class="fa-solid fa-gear"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                                                <tr id="stock-row-33">
+                            <!-- Product -->
+                            <td>
+                                <div class="stock-product">
+                                                                        <div class="stock-thumb">
+                                                                                <span class="stock-thumb-fallback">QA</span>
+                                                                            </div>
+                                    <div class="stock-product-text">
+                                        <div class="stock-product-name" title="QA TEST FORMVAL Base">QA TEST FORMVAL Base</div>
+                                        <div class="stock-product-cat">QA TEST Womenswear</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <!-- Tracked -->
+                            <td class="stock-cell stock-hide-xs">
+                                                                <span class="stock-badge stock-badge-on">Tracked</span>
+                                                            </td>
+                            <!-- Grand Total (read-only) -->
+                            <td class="stock-cell stock-hide-xs">
+                                <span id="val-total_stock-33" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- In Stock (auto, read-only) — the one figure worth emphasising -->
+                            <td class="stock-cell">
+                                                                <span id="val-in_stock-33" class="stock-num stock-num-lead stock-num-bad">0</span>
+                                                            </td>
+                            <!-- Damage (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-damage_stock-33" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Offline (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_offline-33" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Online (auto, read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_online-33" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Actions -->
+                            <td class="stock-cell">
+                                                                <div class="admin-actions" style="justify-content:center;">
+                                                                        <button class="admin-action-btn is-primary" onclick="openStockEdit(33, 'QA TEST FORMVAL Base', 0, 0, 0)" title="Edit stock" aria-label="Edit stock for QA TEST FORMVAL Base">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </button>
+                                                                        <a href="product_form.php?id=33" class="admin-action-btn" title="Edit product" aria-label="Edit product QA TEST FORMVAL Base">
+                                        <i class="fa-solid fa-gear"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                                                <tr id="stock-row-34">
+                            <!-- Product -->
+                            <td>
+                                <div class="stock-product">
+                                                                        <div class="stock-thumb">
+                                                                                <span class="stock-thumb-fallback">QA</span>
+                                                                            </div>
+                                    <div class="stock-product-text">
+                                        <div class="stock-product-name" title="QA TEST FORMVAL Base">QA TEST FORMVAL Base</div>
+                                        <div class="stock-product-cat">QA TEST Womenswear</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <!-- Tracked -->
+                            <td class="stock-cell stock-hide-xs">
+                                                                <span class="stock-badge stock-badge-on">Tracked</span>
+                                                            </td>
+                            <!-- Grand Total (read-only) -->
+                            <td class="stock-cell stock-hide-xs">
+                                <span id="val-total_stock-34" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- In Stock (auto, read-only) — the one figure worth emphasising -->
+                            <td class="stock-cell">
+                                                                <span id="val-in_stock-34" class="stock-num stock-num-lead stock-num-bad">0</span>
+                                                            </td>
+                            <!-- Damage (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-damage_stock-34" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Offline (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_offline-34" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Online (auto, read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_online-34" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Actions -->
+                            <td class="stock-cell">
+                                                                <div class="admin-actions" style="justify-content:center;">
+                                                                        <button class="admin-action-btn is-primary" onclick="openStockEdit(34, 'QA TEST FORMVAL Base', 0, 0, 0)" title="Edit stock" aria-label="Edit stock for QA TEST FORMVAL Base">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </button>
+                                                                        <a href="product_form.php?id=34" class="admin-action-btn" title="Edit product" aria-label="Edit product QA TEST FORMVAL Base">
+                                        <i class="fa-solid fa-gear"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                                                <tr id="stock-row-35">
+                            <!-- Product -->
+                            <td>
+                                <div class="stock-product">
+                                                                        <div class="stock-thumb">
+                                                                                <span class="stock-thumb-fallback">QA</span>
+                                                                            </div>
+                                    <div class="stock-product-text">
+                                        <div class="stock-product-name" title="QA TEST FORMVAL Base">QA TEST FORMVAL Base</div>
+                                        <div class="stock-product-cat">QA TEST Womenswear</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <!-- Tracked -->
+                            <td class="stock-cell stock-hide-xs">
+                                                                <span class="stock-badge stock-badge-off">&#8734; Unlimited</span>
+                                                            </td>
+                            <!-- Grand Total (read-only) -->
+                            <td class="stock-cell stock-hide-xs">
+                                <span id="val-total_stock-35" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- In Stock (auto, read-only) — the one figure worth emphasising -->
+                            <td class="stock-cell">
+                                                                <span class="stock-num stock-num-zero">—</span>
+                                                            </td>
+                            <!-- Damage (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-damage_stock-35" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Offline (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_offline-35" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Online (auto, read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_online-35" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Actions -->
+                            <td class="stock-cell">
+                                                                <div class="admin-actions" style="justify-content:center;">
+                                                                        <a href="product_form.php?id=35" class="admin-action-btn" title="Edit product" aria-label="Edit product QA TEST FORMVAL Base">
+                                        <i class="fa-solid fa-gear"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                                                <tr id="stock-row-37">
+                            <!-- Product -->
+                            <td>
+                                <div class="stock-product">
+                                                                        <div class="stock-thumb">
+                                                                                <span class="stock-thumb-fallback">✨</span>
+                                                                            </div>
+                                    <div class="stock-product-text">
+                                        <div class="stock-product-name" title="QA TEST FV Product">QA TEST FV Product</div>
+                                        <div class="stock-product-cat">QA TEST Womenswear</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <!-- Tracked -->
+                            <td class="stock-cell stock-hide-xs">
+                                                                <span class="stock-badge stock-badge-on">Tracked</span>
+                                                            </td>
+                            <!-- Grand Total (read-only) -->
+                            <td class="stock-cell stock-hide-xs">
+                                <span id="val-total_stock-37" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- In Stock (auto, read-only) — the one figure worth emphasising -->
+                            <td class="stock-cell">
+                                                                <span id="val-in_stock-37" class="stock-num stock-num-lead stock-num-bad">0</span>
+                                                            </td>
+                            <!-- Damage (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-damage_stock-37" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Offline (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_offline-37" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Online (auto, read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_online-37" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Actions -->
+                            <td class="stock-cell">
+                                                                <div class="admin-actions" style="justify-content:center;">
+                                                                        <button class="admin-action-btn is-primary" onclick="openStockEdit(37, 'QA TEST FV Product', 0, 0, 0)" title="Edit stock" aria-label="Edit stock for QA TEST FV Product">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </button>
+                                                                        <a href="product_form.php?id=37" class="admin-action-btn" title="Edit product" aria-label="Edit product QA TEST FV Product">
+                                        <i class="fa-solid fa-gear"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                                                <tr id="stock-row-38">
+                            <!-- Product -->
+                            <td>
+                                <div class="stock-product">
+                                                                        <div class="stock-thumb">
+                                                                                <span class="stock-thumb-fallback">✨</span>
+                                                                            </div>
+                                    <div class="stock-product-text">
+                                        <div class="stock-product-name" title="QA TEST FV Product">QA TEST FV Product</div>
+                                        <div class="stock-product-cat">QA TEST Womenswear</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <!-- Tracked -->
+                            <td class="stock-cell stock-hide-xs">
+                                                                <span class="stock-badge stock-badge-on">Tracked</span>
+                                                            </td>
+                            <!-- Grand Total (read-only) -->
+                            <td class="stock-cell stock-hide-xs">
+                                <span id="val-total_stock-38" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- In Stock (auto, read-only) — the one figure worth emphasising -->
+                            <td class="stock-cell">
+                                                                <span id="val-in_stock-38" class="stock-num stock-num-lead stock-num-bad">0</span>
+                                                            </td>
+                            <!-- Damage (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-damage_stock-38" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Offline (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_offline-38" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Online (auto, read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_online-38" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Actions -->
+                            <td class="stock-cell">
+                                                                <div class="admin-actions" style="justify-content:center;">
+                                                                        <button class="admin-action-btn is-primary" onclick="openStockEdit(38, 'QA TEST FV Product', 0, 0, 0)" title="Edit stock" aria-label="Edit stock for QA TEST FV Product">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </button>
+                                                                        <a href="product_form.php?id=38" class="admin-action-btn" title="Edit product" aria-label="Edit product QA TEST FV Product">
+                                        <i class="fa-solid fa-gear"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                                                <tr id="stock-row-25">
+                            <!-- Product -->
+                            <td>
+                                <div class="stock-product">
+                                                                        <div class="stock-thumb">
+                                                                                <img src="../uploads/products/qa-mens-chino.jpg"
+                                             alt="" loading="lazy">
+                                                                            </div>
+                                    <div class="stock-product-text">
+                                        <div class="stock-product-name" title="QA TEST Mens Chino Trousers">QA TEST Mens Chino Trousers</div>
+                                        <div class="stock-product-cat">QA TEST Menswear</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <!-- Tracked -->
+                            <td class="stock-cell stock-hide-xs">
+                                                                <span class="stock-badge stock-badge-on">Tracked</span>
+                                                            </td>
+                            <!-- Grand Total (read-only) -->
+                            <td class="stock-cell stock-hide-xs">
+                                <span id="val-total_stock-25" class="stock-num">22</span>
+                            </td>
+                            <!-- In Stock (auto, read-only) — the one figure worth emphasising -->
+                            <td class="stock-cell">
+                                                                <span id="val-in_stock-25" class="stock-num stock-num-lead stock-num-good">5</span>
+                                                            </td>
+                            <!-- Damage (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-damage_stock-25" class="stock-num stock-num-bad">4</span>
+                            </td>
+                            <!-- Sold Offline (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_offline-25" class="stock-num">3</span>
+                            </td>
+                            <!-- Sold Online (auto, read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_online-25" class="stock-num">10</span>
+                            </td>
+                            <!-- Actions -->
+                            <td class="stock-cell">
+                                                                <div class="admin-actions" style="justify-content:center;">
+                                                                        <button class="admin-action-btn is-primary" onclick="openStockEdit(25, 'QA TEST Mens Chino Trousers', 22, 4, 3)" title="Edit stock" aria-label="Edit stock for QA TEST Mens Chino Trousers">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </button>
+                                                                        <a href="product_form.php?id=25" class="admin-action-btn" title="Edit product" aria-label="Edit product QA TEST Mens Chino Trousers">
+                                        <i class="fa-solid fa-gear"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                                                <tr id="stock-row-26">
+                            <!-- Product -->
+                            <td>
+                                <div class="stock-product">
+                                                                        <div class="stock-thumb">
+                                                                                <img src="../uploads/products/qa-mens-kurta.jpg"
+                                             alt="" loading="lazy">
+                                                                            </div>
+                                    <div class="stock-product-text">
+                                        <div class="stock-product-name" title="QA TEST Mens Festive Kurta">QA TEST Mens Festive Kurta</div>
+                                        <div class="stock-product-cat">QA TEST Menswear</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <!-- Tracked -->
+                            <td class="stock-cell stock-hide-xs">
+                                                                <span class="stock-badge stock-badge-on">Tracked</span>
+                                                            </td>
+                            <!-- Grand Total (read-only) -->
+                            <td class="stock-cell stock-hide-xs">
+                                <span id="val-total_stock-26" class="stock-num">21</span>
+                            </td>
+                            <!-- In Stock (auto, read-only) — the one figure worth emphasising -->
+                            <td class="stock-cell">
+                                                                <span id="val-in_stock-26" class="stock-num stock-num-lead stock-num-bad">0</span>
+                                                            </td>
+                            <!-- Damage (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-damage_stock-26" class="stock-num stock-num-bad">3</span>
+                            </td>
+                            <!-- Sold Offline (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_offline-26" class="stock-num">18</span>
+                            </td>
+                            <!-- Sold Online (auto, read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_online-26" class="stock-num">3</span>
+                            </td>
+                            <!-- Actions -->
+                            <td class="stock-cell">
+                                                                <div class="admin-actions" style="justify-content:center;">
+                                                                        <button class="admin-action-btn is-primary" onclick="openStockEdit(26, 'QA TEST Mens Festive Kurta', 21, 3, 18)" title="Edit stock" aria-label="Edit stock for QA TEST Mens Festive Kurta">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </button>
+                                                                        <a href="product_form.php?id=26" class="admin-action-btn" title="Edit product" aria-label="Edit product QA TEST Mens Festive Kurta">
+                                        <i class="fa-solid fa-gear"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                                                <tr id="stock-row-24">
+                            <!-- Product -->
+                            <td>
+                                <div class="stock-product">
+                                                                        <div class="stock-thumb">
+                                                                                <img src="../uploads/products/qa-colour-indigo.jpg"
+                                             alt="" loading="lazy">
+                                                                            </div>
+                                    <div class="stock-product-text">
+                                        <div class="stock-product-name" title="QA TEST Mens Oxford Shirt">QA TEST Mens Oxford Shirt</div>
+                                        <div class="stock-product-cat">QA TEST Menswear</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <!-- Tracked -->
+                            <td class="stock-cell stock-hide-xs">
+                                                                <span class="stock-badge stock-badge-on">Tracked</span>
+                                                            </td>
+                            <!-- Grand Total (read-only) -->
+                            <td class="stock-cell stock-hide-xs">
+                                <span id="val-total_stock-24" class="stock-num">36</span>
+                            </td>
+                            <!-- In Stock (auto, read-only) — the one figure worth emphasising -->
+                            <td class="stock-cell">
+                                                                <span id="val-in_stock-24" class="stock-num stock-num-lead stock-num-good">35</span>
+                                                            </td>
+                            <!-- Damage (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-damage_stock-24" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Offline (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_offline-24" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Online (auto, read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_online-24" class="stock-num">1</span>
+                            </td>
+                            <!-- Actions -->
+                            <td class="stock-cell">
+                                                                <div class="admin-actions" style="justify-content:center;">
+                                                                        <button class="admin-action-btn is-primary" onclick="openStockEdit(24, 'QA TEST Mens Oxford Shirt', 36, 0, 0)" title="Edit stock" aria-label="Edit stock for QA TEST Mens Oxford Shirt">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </button>
+                                                                        <a href="product_form.php?id=24" class="admin-action-btn" title="Edit product" aria-label="Edit product QA TEST Mens Oxford Shirt">
+                                        <i class="fa-solid fa-gear"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                                                <tr id="stock-row-27">
+                            <!-- Product -->
+                            <td>
+                                <div class="stock-product">
+                                                                        <div class="stock-thumb">
+                                                                                <span class="stock-thumb-fallback">?</span>
+                                                                            </div>
+                                    <div class="stock-product-text">
+                                        <div class="stock-product-name" title="QA TEST Minimal Piece">QA TEST Minimal Piece</div>
+                                        <div class="stock-product-cat">—</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <!-- Tracked -->
+                            <td class="stock-cell stock-hide-xs">
+                                                                <span class="stock-badge stock-badge-off">&#8734; Unlimited</span>
+                                                            </td>
+                            <!-- Grand Total (read-only) -->
+                            <td class="stock-cell stock-hide-xs">
+                                <span id="val-total_stock-27" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- In Stock (auto, read-only) — the one figure worth emphasising -->
+                            <td class="stock-cell">
+                                                                <span class="stock-num stock-num-zero">—</span>
+                                                            </td>
+                            <!-- Damage (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-damage_stock-27" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Offline (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_offline-27" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Online (auto, read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_online-27" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Actions -->
+                            <td class="stock-cell">
+                                                                <div class="admin-actions" style="justify-content:center;">
+                                                                        <a href="product_form.php?id=27" class="admin-action-btn" title="Edit product" aria-label="Edit product QA TEST Minimal Piece">
+                                        <i class="fa-solid fa-gear"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                                                <tr id="stock-row-36">
+                            <!-- Product -->
+                            <td>
+                                <div class="stock-product">
+                                                                        <div class="stock-thumb">
+                                                                                <span class="stock-thumb-fallback">QA</span>
+                                                                            </div>
+                                    <div class="stock-product-text">
+                                        <div class="stock-product-name" title="QA TEST O&#039;Brien &quot;Silk&quot; 🎉 &lt;b&gt;">QA TEST O&#039;Brien &quot;Silk&quot; 🎉 &lt;b&gt;</div>
+                                        <div class="stock-product-cat">QA TEST Womenswear</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <!-- Tracked -->
+                            <td class="stock-cell stock-hide-xs">
+                                                                <span class="stock-badge stock-badge-off">&#8734; Unlimited</span>
+                                                            </td>
+                            <!-- Grand Total (read-only) -->
+                            <td class="stock-cell stock-hide-xs">
+                                <span id="val-total_stock-36" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- In Stock (auto, read-only) — the one figure worth emphasising -->
+                            <td class="stock-cell">
+                                                                <span class="stock-num stock-num-zero">—</span>
+                                                            </td>
+                            <!-- Damage (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-damage_stock-36" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Offline (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_offline-36" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Online (auto, read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_online-36" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Actions -->
+                            <td class="stock-cell">
+                                                                <div class="admin-actions" style="justify-content:center;">
+                                                                        <a href="product_form.php?id=36" class="admin-action-btn" title="Edit product" aria-label="Edit product QA TEST O&#039;Brien &quot;Silk&quot; 🎉 &lt;b&gt;">
+                                        <i class="fa-solid fa-gear"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                                                <tr id="stock-row-39">
+                            <!-- Product -->
+                            <td>
+                                <div class="stock-product">
+                                                                        <div class="stock-thumb">
+                                                                                <span class="stock-thumb-fallback">✨</span>
+                                                                            </div>
+                                    <div class="stock-product-text">
+                                        <div class="stock-product-name" title="QA TEST O&#039;Neill &quot;Le Grand&quot;">QA TEST O&#039;Neill &quot;Le Grand&quot;</div>
+                                        <div class="stock-product-cat">QA TEST Womenswear</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <!-- Tracked -->
+                            <td class="stock-cell stock-hide-xs">
+                                                                <span class="stock-badge stock-badge-off">&#8734; Unlimited</span>
+                                                            </td>
+                            <!-- Grand Total (read-only) -->
+                            <td class="stock-cell stock-hide-xs">
+                                <span id="val-total_stock-39" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- In Stock (auto, read-only) — the one figure worth emphasising -->
+                            <td class="stock-cell">
+                                                                <span class="stock-num stock-num-zero">—</span>
+                                                            </td>
+                            <!-- Damage (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-damage_stock-39" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Offline (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_offline-39" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Online (auto, read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_online-39" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Actions -->
+                            <td class="stock-cell">
+                                                                <div class="admin-actions" style="justify-content:center;">
+                                                                        <a href="product_form.php?id=39" class="admin-action-btn" title="Edit product" aria-label="Edit product QA TEST O&#039;Neill &quot;Le Grand&quot;">
+                                        <i class="fa-solid fa-gear"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                                                <tr id="stock-row-23">
+                            <!-- Product -->
+                            <td>
+                                <div class="stock-product">
+                                                                        <div class="stock-thumb">
+                                                                                <img src="../uploads/products/qa-colour-black.jpg"
+                                             alt="" loading="lazy">
+                                                                            </div>
+                                    <div class="stock-product-text">
+                                        <div class="stock-product-name" title="QA TEST Palazzo Trousers">QA TEST Palazzo Trousers</div>
+                                        <div class="stock-product-cat">QA TEST Womenswear</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <!-- Tracked -->
+                            <td class="stock-cell stock-hide-xs">
+                                                                <span class="stock-badge stock-badge-on">Tracked</span>
+                                                            </td>
+                            <!-- Grand Total (read-only) -->
+                            <td class="stock-cell stock-hide-xs">
+                                <span id="val-total_stock-23" class="stock-num">30</span>
+                            </td>
+                            <!-- In Stock (auto, read-only) — the one figure worth emphasising -->
+                            <td class="stock-cell">
+                                                                <span id="val-in_stock-23" class="stock-num stock-num-lead stock-num-good">23</span>
+                                                            </td>
+                            <!-- Damage (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-damage_stock-23" class="stock-num stock-num-bad">2</span>
+                            </td>
+                            <!-- Sold Offline (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_offline-23" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Online (auto, read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_online-23" class="stock-num">10</span>
+                            </td>
+                            <!-- Actions -->
+                            <td class="stock-cell">
+                                                                <div class="admin-actions" style="justify-content:center;">
+                                                                        <button class="admin-action-btn is-primary" onclick="openStockEdit(23, 'QA TEST Palazzo Trousers', 30, 2, 0)" title="Edit stock" aria-label="Edit stock for QA TEST Palazzo Trousers">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </button>
+                                                                        <a href="product_form.php?id=23" class="admin-action-btn" title="Edit product" aria-label="Edit product QA TEST Palazzo Trousers">
+                                        <i class="fa-solid fa-gear"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                                                <tr id="stock-row-21">
+                            <!-- Product -->
+                            <td>
+                                <div class="stock-product">
+                                                                        <div class="stock-thumb">
+                                                                                <img src="../uploads/products/qa-ribbed-top.jpg"
+                                             alt="" loading="lazy">
+                                                                            </div>
+                                    <div class="stock-product-text">
+                                        <div class="stock-product-name" title="QA TEST Ribbed Knit Top">QA TEST Ribbed Knit Top</div>
+                                        <div class="stock-product-cat">QA TEST Womenswear</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <!-- Tracked -->
+                            <td class="stock-cell stock-hide-xs">
+                                                                <span class="stock-badge stock-badge-on">Tracked</span>
+                                                            </td>
+                            <!-- Grand Total (read-only) -->
+                            <td class="stock-cell stock-hide-xs">
+                                <span id="val-total_stock-21" class="stock-num">6</span>
+                            </td>
+                            <!-- In Stock (auto, read-only) — the one figure worth emphasising -->
+                            <td class="stock-cell">
+                                                                <span id="val-in_stock-21" class="stock-num stock-num-lead stock-num-bad">0</span>
+                                                            </td>
+                            <!-- Damage (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-damage_stock-21" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Offline (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_offline-21" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Online (auto, read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_online-21" class="stock-num">10</span>
+                            </td>
+                            <!-- Actions -->
+                            <td class="stock-cell">
+                                                                <div class="admin-actions" style="justify-content:center;">
+                                                                        <button class="admin-action-btn is-primary" onclick="openStockEdit(21, 'QA TEST Ribbed Knit Top', 6, 0, 0)" title="Edit stock" aria-label="Edit stock for QA TEST Ribbed Knit Top">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </button>
+                                                                        <a href="product_form.php?id=21" class="admin-action-btn" title="Edit product" aria-label="Edit product QA TEST Ribbed Knit Top">
+                                        <i class="fa-solid fa-gear"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                                                <tr id="stock-row-19">
+                            <!-- Product -->
+                            <td>
+                                <div class="stock-product">
+                                                                        <div class="stock-thumb">
+                                                                                <img src="../uploads/products/qa-kurta-set.jpg"
+                                             alt="" loading="lazy">
+                                                                            </div>
+                                    <div class="stock-product-text">
+                                        <div class="stock-product-name" title="QA TEST Rihaan Festive Kurta Set">QA TEST Rihaan Festive Kurta Set</div>
+                                        <div class="stock-product-cat">QA TEST Womenswear</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <!-- Tracked -->
+                            <td class="stock-cell stock-hide-xs">
+                                                                <span class="stock-badge stock-badge-on">Tracked</span>
+                                                            </td>
+                            <!-- Grand Total (read-only) -->
+                            <td class="stock-cell stock-hide-xs">
+                                <span id="val-total_stock-19" class="stock-num">18</span>
+                            </td>
+                            <!-- In Stock (auto, read-only) — the one figure worth emphasising -->
+                            <td class="stock-cell">
+                                                                <span id="val-in_stock-19" class="stock-num stock-num-lead stock-num-good">12</span>
+                                                            </td>
+                            <!-- Damage (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-damage_stock-19" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Offline (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_offline-19" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Online (auto, read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_online-19" class="stock-num">5</span>
+                            </td>
+                            <!-- Actions -->
+                            <td class="stock-cell">
+                                                                <div class="admin-actions" style="justify-content:center;">
+                                                                        <button class="admin-action-btn is-primary" onclick="openStockEdit(19, 'QA TEST Rihaan Festive Kurta Set', 18, 0, 0)" title="Edit stock" aria-label="Edit stock for QA TEST Rihaan Festive Kurta Set">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </button>
+                                                                        <a href="product_form.php?id=19" class="admin-action-btn" title="Edit product" aria-label="Edit product QA TEST Rihaan Festive Kurta Set">
+                                        <i class="fa-solid fa-gear"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                                                <tr id="stock-row-29">
+                            <!-- Product -->
+                            <td>
+                                <div class="stock-product">
+                                                                        <div class="stock-thumb">
+                                                                                <span class="stock-thumb-fallback">?</span>
+                                                                            </div>
+                                    <div class="stock-product-text">
+                                        <div class="stock-product-name" title="QA TEST ROLE PROBE PRODUCT">QA TEST ROLE PROBE PRODUCT</div>
+                                        <div class="stock-product-cat">Uncategorised</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <!-- Tracked -->
+                            <td class="stock-cell stock-hide-xs">
+                                                                <span class="stock-badge stock-badge-off">&#8734; Unlimited</span>
+                                                            </td>
+                            <!-- Grand Total (read-only) -->
+                            <td class="stock-cell stock-hide-xs">
+                                <span id="val-total_stock-29" class="stock-num">5</span>
+                            </td>
+                            <!-- In Stock (auto, read-only) — the one figure worth emphasising -->
+                            <td class="stock-cell">
+                                                                <span class="stock-num stock-num-zero">—</span>
+                                                            </td>
+                            <!-- Damage (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-damage_stock-29" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Offline (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_offline-29" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Online (auto, read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_online-29" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Actions -->
+                            <td class="stock-cell">
+                                                                <div class="admin-actions" style="justify-content:center;">
+                                                                        <a href="product_form.php?id=29" class="admin-action-btn" title="Edit product" aria-label="Edit product QA TEST ROLE PROBE PRODUCT">
+                                        <i class="fa-solid fa-gear"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                                                <tr id="stock-row-20">
+                            <!-- Product -->
+                            <td>
+                                <div class="stock-product">
+                                                                        <div class="stock-thumb">
+                                                                                <img src="../uploads/products/qa-coord-set.jpg"
+                                             alt="" loading="lazy">
+                                                                            </div>
+                                    <div class="stock-product-text">
+                                        <div class="stock-product-name" title="QA TEST Sunday Co-ord Set">QA TEST Sunday Co-ord Set</div>
+                                        <div class="stock-product-cat">QA TEST Womenswear</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <!-- Tracked -->
+                            <td class="stock-cell stock-hide-xs">
+                                                                <span class="stock-badge stock-badge-on">Tracked</span>
+                                                            </td>
+                            <!-- Grand Total (read-only) -->
+                            <td class="stock-cell stock-hide-xs">
+                                <span id="val-total_stock-20" class="stock-num">12</span>
+                            </td>
+                            <!-- In Stock (auto, read-only) — the one figure worth emphasising -->
+                            <td class="stock-cell">
+                                                                <span id="val-in_stock-20" class="stock-num stock-num-lead stock-num-good">9</span>
+                                                            </td>
+                            <!-- Damage (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-damage_stock-20" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Offline (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_offline-20" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Online (auto, read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_online-20" class="stock-num">3</span>
+                            </td>
+                            <!-- Actions -->
+                            <td class="stock-cell">
+                                                                <div class="admin-actions" style="justify-content:center;">
+                                                                        <button class="admin-action-btn is-primary" onclick="openStockEdit(20, 'QA TEST Sunday Co-ord Set', 12, 0, 0)" title="Edit stock" aria-label="Edit stock for QA TEST Sunday Co-ord Set">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </button>
+                                                                        <a href="product_form.php?id=20" class="admin-action-btn" title="Edit product" aria-label="Edit product QA TEST Sunday Co-ord Set">
+                                        <i class="fa-solid fa-gear"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                                                <tr id="stock-row-22">
+                            <!-- Product -->
+                            <td>
+                                <div class="stock-product">
+                                                                        <div class="stock-thumb">
+                                                                                <img src="../uploads/products/qa-scarf.jpg"
+                                             alt="" loading="lazy">
+                                                                            </div>
+                                    <div class="stock-product-text">
+                                        <div class="stock-product-name" title="QA TEST Woven Stole">QA TEST Woven Stole</div>
+                                        <div class="stock-product-cat">QA TEST Accessories</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <!-- Tracked -->
+                            <td class="stock-cell stock-hide-xs">
+                                                                <span class="stock-badge stock-badge-on">Tracked</span>
+                                                            </td>
+                            <!-- Grand Total (read-only) -->
+                            <td class="stock-cell stock-hide-xs">
+                                <span id="val-total_stock-22" class="stock-num">25</span>
+                            </td>
+                            <!-- In Stock (auto, read-only) — the one figure worth emphasising -->
+                            <td class="stock-cell">
+                                                                <span id="val-in_stock-22" class="stock-num stock-num-lead stock-num-bad">0</span>
+                                                            </td>
+                            <!-- Damage (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-damage_stock-22" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Offline (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_offline-22" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Online (auto, read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_online-22" class="stock-num">26</span>
+                            </td>
+                            <!-- Actions -->
+                            <td class="stock-cell">
+                                                                <div class="admin-actions" style="justify-content:center;">
+                                                                        <button class="admin-action-btn is-primary" onclick="openStockEdit(22, 'QA TEST Woven Stole', 25, 0, 0)" title="Edit stock" aria-label="Edit stock for QA TEST Woven Stole">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </button>
+                                                                        <a href="product_form.php?id=22" class="admin-action-btn" title="Edit product" aria-label="Edit product QA TEST Woven Stole">
+                                        <i class="fa-solid fa-gear"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                                                <tr id="stock-row-40">
+                            <!-- Product -->
+                            <td>
+                                <div class="stock-product">
+                                                                        <div class="stock-thumb">
+                                                                                <span class="stock-thumb-fallback">✨</span>
+                                                                            </div>
+                                    <div class="stock-product-text">
+                                        <div class="stock-product-name" title="QA TEST 😀 Emoji Piece">QA TEST 😀 Emoji Piece</div>
+                                        <div class="stock-product-cat">QA TEST Womenswear</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <!-- Tracked -->
+                            <td class="stock-cell stock-hide-xs">
+                                                                <span class="stock-badge stock-badge-off">&#8734; Unlimited</span>
+                                                            </td>
+                            <!-- Grand Total (read-only) -->
+                            <td class="stock-cell stock-hide-xs">
+                                <span id="val-total_stock-40" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- In Stock (auto, read-only) — the one figure worth emphasising -->
+                            <td class="stock-cell">
+                                                                <span class="stock-num stock-num-zero">—</span>
+                                                            </td>
+                            <!-- Damage (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-damage_stock-40" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Offline (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_offline-40" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Online (auto, read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_online-40" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Actions -->
+                            <td class="stock-cell">
+                                                                <div class="admin-actions" style="justify-content:center;">
+                                                                        <a href="product_form.php?id=40" class="admin-action-btn" title="Edit product" aria-label="Edit product QA TEST 😀 Emoji Piece">
+                                        <i class="fa-solid fa-gear"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                                                <tr id="stock-row-7">
+                            <!-- Product -->
+                            <td>
+                                <div class="stock-product">
+                                                                        <div class="stock-thumb">
+                                                                                <img src="../uploads/products/cotton_short_kurti_1784414719998.jpg"
+                                             alt="" loading="lazy">
+                                                                            </div>
+                                    <div class="stock-product-text">
+                                        <div class="stock-product-name" title="Raya Cotton Short Kurti">Raya Cotton Short Kurti</div>
+                                        <div class="stock-product-cat">Short Kurtis</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <!-- Tracked -->
+                            <td class="stock-cell stock-hide-xs">
+                                                                <span class="stock-badge stock-badge-on">Tracked</span>
+                                                            </td>
+                            <!-- Grand Total (read-only) -->
+                            <td class="stock-cell stock-hide-xs">
+                                <span id="val-total_stock-7" class="stock-num">60</span>
+                            </td>
+                            <!-- In Stock (auto, read-only) — the one figure worth emphasising -->
+                            <td class="stock-cell">
+                                                                <span id="val-in_stock-7" class="stock-num stock-num-lead stock-num-good">60</span>
+                                                            </td>
+                            <!-- Damage (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-damage_stock-7" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Offline (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_offline-7" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Online (auto, read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_online-7" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Actions -->
+                            <td class="stock-cell">
+                                                                <div class="admin-actions" style="justify-content:center;">
+                                                                        <button class="admin-action-btn is-primary" onclick="openStockEdit(7, 'Raya Cotton Short Kurti', 60, 0, 0)" title="Edit stock" aria-label="Edit stock for Raya Cotton Short Kurti">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </button>
+                                                                        <a href="product_form.php?id=7" class="admin-action-btn" title="Edit product" aria-label="Edit product Raya Cotton Short Kurti">
+                                        <i class="fa-solid fa-gear"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                                                <tr id="stock-row-11">
+                            <!-- Product -->
+                            <td>
+                                <div class="stock-product">
+                                                                        <div class="stock-thumb">
+                                                                                <img src="../uploads/products/silk_trousers_1784414749191.jpg"
+                                             alt="" loading="lazy">
+                                                                            </div>
+                                    <div class="stock-product-text">
+                                        <div class="stock-product-name" title="Sienna Wide-Leg Silk Trousers">Sienna Wide-Leg Silk Trousers</div>
+                                        <div class="stock-product-cat">Bottoms</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <!-- Tracked -->
+                            <td class="stock-cell stock-hide-xs">
+                                                                <span class="stock-badge stock-badge-on">Tracked</span>
+                                                            </td>
+                            <!-- Grand Total (read-only) -->
+                            <td class="stock-cell stock-hide-xs">
+                                <span id="val-total_stock-11" class="stock-num">40</span>
+                            </td>
+                            <!-- In Stock (auto, read-only) — the one figure worth emphasising -->
+                            <td class="stock-cell">
+                                                                <span id="val-in_stock-11" class="stock-num stock-num-lead stock-num-good">39</span>
+                                                            </td>
+                            <!-- Damage (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-damage_stock-11" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Offline (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_offline-11" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Online (auto, read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_online-11" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Actions -->
+                            <td class="stock-cell">
+                                                                <div class="admin-actions" style="justify-content:center;">
+                                                                        <button class="admin-action-btn is-primary" onclick="openStockEdit(11, 'Sienna Wide-Leg Silk Trousers', 40, 0, 0)" title="Edit stock" aria-label="Edit stock for Sienna Wide-Leg Silk Trousers">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </button>
+                                                                        <a href="product_form.php?id=11" class="admin-action-btn" title="Edit product" aria-label="Edit product Sienna Wide-Leg Silk Trousers">
+                                        <i class="fa-solid fa-gear"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                                                <tr id="stock-row-6">
+                            <!-- Product -->
+                            <td>
+                                <div class="stock-product">
+                                                                        <div class="stock-thumb">
+                                                                                <img src="../uploads/products/linen_coord_1784414712638.jpg"
+                                             alt="" loading="lazy">
+                                                                            </div>
+                                    <div class="stock-product-text">
+                                        <div class="stock-product-name" title="Soraya Linen Coord Set">Soraya Linen Coord Set</div>
+                                        <div class="stock-product-cat">Coord Sets</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <!-- Tracked -->
+                            <td class="stock-cell stock-hide-xs">
+                                                                <span class="stock-badge stock-badge-on">Tracked</span>
+                                                            </td>
+                            <!-- Grand Total (read-only) -->
+                            <td class="stock-cell stock-hide-xs">
+                                <span id="val-total_stock-6" class="stock-num">35</span>
+                            </td>
+                            <!-- In Stock (auto, read-only) — the one figure worth emphasising -->
+                            <td class="stock-cell">
+                                                                <span id="val-in_stock-6" class="stock-num stock-num-lead stock-num-good">33</span>
+                                                            </td>
+                            <!-- Damage (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-damage_stock-6" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Offline (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_offline-6" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Online (auto, read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_online-6" class="stock-num">1</span>
+                            </td>
+                            <!-- Actions -->
+                            <td class="stock-cell">
+                                                                <div class="admin-actions" style="justify-content:center;">
+                                                                        <button class="admin-action-btn is-primary" onclick="openStockEdit(6, 'Soraya Linen Coord Set', 35, 0, 0)" title="Edit stock" aria-label="Edit stock for Soraya Linen Coord Set">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </button>
+                                                                        <a href="product_form.php?id=6" class="admin-action-btn" title="Edit product" aria-label="Edit product Soraya Linen Coord Set">
+                                        <i class="fa-solid fa-gear"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                                                <tr id="stock-row-2">
+                            <!-- Product -->
+                            <td>
+                                <div class="stock-product">
+                                                                        <div class="stock-thumb">
+                                                                                <img src="../uploads/products/georgette_kurti_1784414698877.jpg"
+                                             alt="" loading="lazy">
+                                                                            </div>
+                                    <div class="stock-product-text">
+                                        <div class="stock-product-name" title="Zariah Georgette Kurti">Zariah Georgette Kurti</div>
+                                        <div class="stock-product-cat">Kurtis</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <!-- Tracked -->
+                            <td class="stock-cell stock-hide-xs">
+                                                                <span class="stock-badge stock-badge-on">Tracked</span>
+                                                            </td>
+                            <!-- Grand Total (read-only) -->
+                            <td class="stock-cell stock-hide-xs">
+                                <span id="val-total_stock-2" class="stock-num">40</span>
+                            </td>
+                            <!-- In Stock (auto, read-only) — the one figure worth emphasising -->
+                            <td class="stock-cell">
+                                                                <span id="val-in_stock-2" class="stock-num stock-num-lead stock-num-good">26</span>
+                                                            </td>
+                            <!-- Damage (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-damage_stock-2" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Offline (read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_offline-2" class="stock-num stock-num-zero">0</span>
+                            </td>
+                            <!-- Sold Online (auto, read-only) -->
+                            <td class="stock-cell stock-hide-sm">
+                                <span id="val-sold_online-2" class="stock-num">7</span>
+                            </td>
+                            <!-- Actions -->
+                            <td class="stock-cell">
+                                                                <div class="admin-actions" style="justify-content:center;">
+                                                                        <button class="admin-action-btn is-primary" onclick="openStockEdit(2, 'Zariah Georgette Kurti', 40, 0, 0)" title="Edit stock" aria-label="Edit stock for Zariah Georgette Kurti">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </button>
+                                                                        <a href="product_form.php?id=2" class="admin-action-btn" title="Edit product" aria-label="Edit product Zariah Georgette Kurti">
+                                        <i class="fa-solid fa-gear"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                                            </tbody>
+                </table>
+            </div>
+                                </div>
+
+        <!-- Stock Edit Modal (incremental) -->
+        <div id="stockEditModal" style="display:none; position:fixed; inset:0; z-index:9000; background:rgba(0,0,0,0.6); align-items:center; justify-content:center;">
+            <div style="background:var(--bg-surface); border-radius:var(--radius-lg); padding:32px 36px; min-width:340px; max-width:420px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.4); position:relative;">
+                <button onclick="closeStockEdit()" style="position:absolute; top:14px; right:16px; background:none; border:none; font-size:20px; color:var(--text-muted); cursor:pointer;">&#x2715;</button>
+                <h3 id="stockEditTitle" style="margin:0 0 6px; font-size:17px;">Edit Stock</h3>
+                <p id="stockEditSubtitle" style="font-size:12px; color:var(--text-muted); margin:0 0 22px;">All values are additive — enter 0 to skip a field.</p>
+
+                <div class="form-group" style="margin-bottom:16px;">
+                    <label class="form-label" style="color:#8b5cf6;">📦 Add New Stock</label>
+                    <input type="number" id="stockAddQty" class="form-control" min="0" value="0"
+                           style="font-size:16px; font-weight:700; text-align:center;"
+                           placeholder="e.g. 50">
+                    <small style="font-size:11px; color:var(--text-muted); margin-top:4px; display:block;">Adds to Grand Total &rarr; increases In Stock</small>
+                </div>
+
+                <div class="form-group" style="margin-bottom:16px;">
+                    <label class="form-label" style="color:#ef4444;">⚠️ Add Damage Qty</label>
+                    <input type="number" id="stockDamageQty" class="form-control" min="0" value="0"
+                           style="font-size:16px; font-weight:700; text-align:center;"
+                           placeholder="e.g. 5">
+                    <small style="font-size:11px; color:var(--text-muted); margin-top:4px; display:block;">Adds to Damage &rarr; reduces In Stock</small>
+                </div>
+
+                <div class="form-group" style="margin-bottom:20px;">
+                    <label class="form-label" style="color:#f59e0b;">🏪 Add Sold Offline Qty</label>
+                    <input type="number" id="stockOfflineQty" class="form-control" min="0" value="0"
+                           style="font-size:16px; font-weight:700; text-align:center;"
+                           placeholder="e.g. 10">
+                    <small style="font-size:11px; color:var(--text-muted); margin-top:4px; display:block;">Adds to Sold Offline &rarr; reduces In Stock</small>
+                </div>
+
+                <div id="stockEditMsg" style="font-size:13px; margin-bottom:12px; min-height:18px;"></div>
+                <div style="display:flex; gap:12px;">
+                    <button class="btn-primary" onclick="saveStockEdit()" style="flex:1;"><i class="fa-solid fa-check"></i> Save</button>
+                    <button class="btn-secondary" onclick="closeStockEdit()" style="flex:1;">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════════════════ REVENUE TAB ═══════════════════ -->
+
+    </main>
+</div>
+</div>
+<!-- Branded dialog (shares the storefront stylesheet, which admin already loads). -->
+<script src="http://localhost:8888/DievonOrders/assets/js/dievon-dialog.js?v=1785450739"></script>
+<script src="assets/js/admin.js"></script>
+</body>
+</html>

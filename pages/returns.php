@@ -1,0 +1,59 @@
+<?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+require_once __DIR__ . '/../config/config.php';
+
+$pageTitle = "Returns & Refunds Policy | Dievon";
+// Its own description. These pages all fell back to the shop-wide default,
+// so ten indexable URLs described themselves with one identical sentence.
+$metaDescription = "How to return or exchange a Dievon garment: the window, the condition we need it in, how refunds are issued and how long they take.";
+require_once __DIR__ . '/../includes/header.php';
+?>
+
+<?php // Slot 4 — the shared policy-page photograph. ?>
+<section class="luxury-hero has-bg-image" style="--hero-bg-image: url('<?= lookbookUrl(4) ?>')">
+    <div class="container">
+        <span class="luxury-hero-eyebrow">Assurance &amp; Guarantees</span>
+        <h1>Returns &amp; Refunds Policy</h1>
+        <?php /* Reads RETURN_WINDOW_DAYS like every other page that states this
+                 number — pages/terms.php, pages/product.php and pages/account.php
+                 all already did. This page was the only one with the figure typed
+                 in by hand, in three places, which made it the one page that would
+                 keep quoting the old window after the policy changed. It is also
+                 the page a customer opens to argue with, and the account screen
+                 enforces the real constant when deciding if a return is still
+                 allowed — so the drift would have shown up as the shop refusing a
+                 return its own policy page appeared to promise. */ ?>
+        <p><?= (int)RETURN_WINDOW_DAYS ?>-day luxury return guarantee, exchanges, and full refund processing.</p>
+    </div>
+</section>
+
+<section class="section-space">
+    <?php /* Uses the .legal-* classes that pages/privacy.php and pages/terms.php
+             already use. Every declaration here was previously an inline style
+             repeating those same values by hand — so the four legal pages could
+             drift apart, and none of them could be restyled or made responsive
+             without editing markup. The rendered result is identical. */ ?>
+    <div class="container legal-container">
+        <div class="reveal-on-scroll legal-panel">
+            <?php /* Named for what this section actually covers, not for the page.
+                     It read "<?= (int)RETURN_WINDOW_DAYS ?>-Day Return Policy" directly beneath the
+                     page title "Returns & Refunds Policy", so the first thing a reader
+                     met was the same words twice and it looked like the page had two
+                     titles. Every other legal page already avoids this: Shipping opens
+                     with "Shipping Timelines & Dispatch", Terms and Privacy with "The
+                     short version" — the heading tells you what is in the section. */ ?>
+            <h2 class="legal-heading">1. Your <?= (int)RETURN_WINDOW_DAYS ?>-Day Return Window</h2>
+            <p class="legal-text">We want you to be completely delighted with your purchase. You may return unworn, unaltered garments in original luxury packaging with all tags attached within <?= (int)RETURN_WINDOW_DAYS ?> days of delivery.</p>
+
+            <h2 class="legal-heading">2. How to Request a Return</h2>
+            <p class="legal-text">To initiate a return, visit your customer account dashboard or email <a href="mailto:<?= htmlspecialchars(shopContactEmail($pdo ?? null)) ?>" class="legal-link"><?= htmlspecialchars(shopContactEmail($pdo ?? null)) ?></a> with your order number &mdash; it looks like <strong><?= htmlspecialchars(orderCodeExample()) ?></strong> and is on your confirmation email and your invoice. We will reply with the return address and confirm how the item should be sent back.</p>
+
+            <h2 class="legal-heading">3. Refund Processing</h2>
+            <p class="legal-text-last">Once your returned garment passes boutique inspection, your refund will be processed back to your original payment method within 3–5 business days.</p>
+        </div>
+    </div>
+</section>
+
+<?php require_once __DIR__ . '/../includes/footer.php'; ?>

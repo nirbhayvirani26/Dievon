@@ -1,0 +1,104 @@
+# This file is the source text for a policy page. It is plain text, not HTML.
+#   "## " starts a section    "- " starts a bullet    anything else is a paragraph
+#   {{TOKENS}} are filled in from Admin - Store Settings. A token with no value
+#   prints a visible gap on the page rather than being quietly dropped.
+# Lines starting with # are comments and are not published.
+#
+# KEPT DELIBERATELY SHORT. This is a small India-based shop, and a notice nobody
+# reads protects nobody. Every element the Digital Personal Data Protection Act,
+# 2023, the IT Act rules and the Consumer Protection (E-Commerce) Rules, 2020
+# require is still here - identity, grounds, sharing, retention, rights, the
+# grievance route - just said once, plainly, instead of three times over.
+
+This notice explains what we collect when you shop with Dievon, why we hold it, and what you can ask us to do about it. It is written to India's Digital Personal Data Protection Act, 2023 and the Information Technology Act, 2000.
+
+## Who we are
+
+Dievon sells women's Indian ethnic clothing to customers in India. We decide what personal data is collected here and what happens to it, which under the DPDP Act makes us the Data Fiduciary and you the Data Principal.
+
+- Trading name: Dievon
+- Registered name: {{LEGAL_NAME}}
+- Address: {{ADDRESS}}
+- GSTIN: {{GSTIN}}
+- CIN: {{CIN}}
+- Email: {{EMAIL}}
+- Phone: {{PHONE}}
+
+This notice covers this website only, not sites we link to such as our payment gateway or a courier's tracking page.
+
+## What we collect
+
+- What you give us: your name, email, phone, delivery addresses, what you ordered, and anything you write in a review or a support message. Your password is stored only as a hash, so nobody here can read it.
+- What the site records by itself: a session cookie that keeps your bag and your sign-in working, your IP address in the server log, and your browser type. We use these to run the site, fix faults and spot fraud.
+- What we never collect: your card number. Razorpay handles the payment and tells us only whether it succeeded. There is no Google Analytics, no Meta Pixel and no advertising cookie here, and we never buy data about you from anyone.
+
+## Why we are allowed to hold it
+
+- To take, pack, invoice and deliver your order, and to email you about it - because you gave us these details for exactly that purpose. The DPDP Act calls this a certain legitimate use.
+- To keep your account and to publish your review - with your consent, which you can withdraw whenever you like.
+- To keep the site and your account secure and to prevent fraud - a legitimate use, and part of our duty to protect what we hold.
+- To keep order, invoice and tax records - because the law requires it. Closing your account does not remove these.
+- Marketing email - only ever with your consent. We do not send any at present.
+
+## Who we share it with
+
+- Razorpay, our payment gateway, so that you can pay.
+- Our courier partners ({{COURIERS}}), who receive the recipient's name, address and phone so the parcel can arrive.
+- Our email and hosting providers, who carry order emails and run the site.
+- Tax authorities, professional advisers or the police, where the law requires it.
+
+We do not sell your data, and we do not share it with advertisers.
+
+Some of these providers may process data outside India. Where that happens we remain responsible for it, and use only providers who commit to protecting it.
+
+## How long we keep it
+
+- Order and invoice records - 8 years from the end of the financial year. Indian tax and GST law requires this, so we cannot delete them earlier even if you close your account.
+- Account details - while your account is open. Close it, or ask us to delete it, and we remove or anonymise it within 30 days, apart from the order records above.
+- Support messages - 3 years from when the ticket is closed, covering the return window and any dispute that follows.
+- Reviews - while the product is listed. Ask, and we will take it down or remove your name from it.
+- Server and security logs - 12 months.
+- Records of consent you gave - 3 years after you withdraw it, so we can show what you agreed to.
+
+## Your rights
+
+You can ask us to:
+
+- tell you what we hold about you and what we do with it
+- correct or complete anything that is wrong
+- delete what we hold, apart from records the law makes us keep
+- name someone to exercise these rights if you die or cannot act for yourself
+- stop using anything you gave consent for - though withdrawing consent does not undo what we did before you withdrew it
+
+You can do two of these yourself, straight away, under Your Data & Privacy in your account: download everything we hold about you, and delete your account. Deleting is immediate and cannot be undone - your profile, addresses and support messages go, your reviews stay on the product under "Dievon Customer", and your invoices are kept as described above with your name and contact details stripped out. You cannot delete while an order is still on its way, because we need your address to deliver it.
+
+For anything else, email {{EMAIL}} and we will reply within 30 days. We may ask you to confirm who you are first, so that nobody else can ask on your behalf.
+
+## If something goes wrong
+
+Our Grievance Officer is {{GRIEVANCE}} - {{EMAIL}}, {{PHONE}}.
+
+As the Consumer Protection (E-Commerce) Rules, 2020 require, we acknowledge a complaint within 48 hours and resolve it within one month.
+
+If you are still not satisfied, you can take a data complaint to the Data Protection Board of India, or a consumer complaint to the National Consumer Helpline on 1915 or your local consumer commission.
+
+## Cookies
+
+We set two things, and both are strictly necessary, so we do not ask permission for them:
+
+- PHPSESSID - keeps your shopping bag and your sign-in working. It expires when you close your browser.
+- A security token inside that session, which stops someone else submitting a form in your name.
+
+Your browser also keeps your wishlist and compare list on your own device. Those never reach us.
+
+There is no analytics or advertising cookie on this site today. If we ever add one, it will not load until you have agreed to it, and you will be able to change your mind afterwards.
+
+You can clear cookies in your browser settings, but blocking the session cookie will stop the shopping bag and sign-in from working.
+
+## Children
+
+This shop is meant for adults. We do not knowingly collect data about anyone under 18, and the DPDP Act requires a parent's consent before a child's data is processed. If you believe a child has given us data, email {{EMAIL}} and we will delete it.
+
+## Changes
+
+If we change this notice we update the date at the top of this page. If a change materially affects how we use your data, we will tell you by email or on the site before it takes effect.

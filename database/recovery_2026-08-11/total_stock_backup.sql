@@ -1,0 +1,14 @@
+-- total_stock before reconciliation 2026-08-10 21:21
+UPDATE products SET total_stock=50 WHERE id=1;
+UPDATE products SET total_stock=40 WHERE id=2;
+UPDATE products SET total_stock=135 WHERE id=3;
+UPDATE products SET total_stock=20 WHERE id=4;
+UPDATE products SET total_stock=30 WHERE id=5;
+UPDATE products SET total_stock=35 WHERE id=6;
+UPDATE products SET total_stock=60 WHERE id=7;
+UPDATE products SET total_stock=40 WHERE id=8;
+UPDATE products SET total_stock=45 WHERE id=9;
+UPDATE products SET total_stock=30 WHERE id=10;
+UPDATE products SET total_stock=40 WHERE id=11;
+UPDATE products SET total_stock=35 WHERE id=12;
+UPDATE products SET total_stock=0 WHERE id=43;

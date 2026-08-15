@@ -1,0 +1,38 @@
+# Local environment secrets — contains real DB / SMTP / payment credentials.
+# Never commit, and never include .env in a zip/backup you share.
+.env
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Editor
+.idea/
+.vscode/
+*.swp
+
+# Logs
+*.log
+
+# ── Never commit ───────────────────────────────────────────────────────────
+# Live data. Once committed it stays in git history even if deleted later, so
+# a private repo does not make this safe — it makes it merely contained.
+dievon_live_database_dump.sql
+*.sql.gz
+*.zip
+
+# Recovery scripts. These reset the admin password / rebuild the database and
+# must not sit in a repo anyone can clone.
+reset_admin_password.php
+admin/setup_database.php
+
+# 51 MB of product photography. The FTP deploy already excludes this folder;
+# keeping it out of git too means clones stay fast and images stay the one
+# thing that lives only on the server.
+uploads/
+
+# Generated database backups. Same reasoning as the live dump: real order and
+# customer rows, and git history keeps them forever. The .htaccess that blocks
+# web access to the folder is kept so a fresh clone still has the guard.
+database/backups/*.sql
+database/backups/*.sql.gz

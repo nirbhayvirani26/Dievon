@@ -1,0 +1,1749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Admin Dashboard – Dievon</title>
+            <link rel="icon" type="image/png" href="http://localhost:8888/DievonOrders/assets/images/logo/favicon_1785598968_c1c530.png?v=1785694092" media="(prefers-color-scheme: light)">
+    <link rel="icon" type="image/png" href="http://localhost:8888/DievonOrders/assets/images/logo/favicondark_1785598968_84f1f2.png?v=1785694092" media="(prefers-color-scheme: dark)">
+        <!-- Versioned with filemtime, not time(): a cache-buster that changes on every
+         request defeats browser caching and re-downloads the CSS on each page view. -->
+    <link rel="stylesheet" href="http://localhost:8888/DievonOrders/assets/css/style.css?v=1786315671">
+    <link rel="stylesheet" href="http://localhost:8888/DievonOrders/admin/assets/css/style.css?v=1786231916">
+    <link rel="stylesheet" href="http://localhost:8888/DievonOrders/assets/css/responsive.css?v=1786232206">
+    <link rel="stylesheet" href="http://localhost:8888/DievonOrders/assets/fontawesome/css/all.min.css">
+    <script>
+        window.ADMIN_CSRF_TOKEN = '121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862';
+    </script>
+</head>
+
+<body class="admin-wrapper">
+
+<!-- ══ Global Top Header Bar (0,0 Fixed) ════════════════════════════════════ -->
+<header class="admin-global-topbar">
+    <div style="display: flex; align-items: center; gap: 12px;">
+        <button type="button" class="admin-mobile-toggle" onclick="toggleAdminSidebar()" style="display: none; background: none; border: none; color: #ffffff; font-size: 18px; cursor: pointer; padding: 4px;">
+            <i class="fa-solid fa-bars"></i>
+        </button>
+        <a href="../home.php" class="admin-brand-logo">
+            <span class="logo-emoji">✨</span> Dievon <small>ATELIER ADMIN</small>
+        </a>
+    </div>
+
+    <div class="admin-topbar-actions">
+        <a href="../home.php" target="_blank" class="topbar-btn-shop">
+            <i class="fa-solid fa-globe"></i> View Live Shop ↗
+        </a>
+        <div class="admin-user-pill">
+            <i class="fa-solid fa-user-shield"></i> qa-render        </div>
+        <a href="logout.php" class="topbar-btn-logout">
+            Sign Out
+        </a>
+    </div>
+</header>
+
+<!-- Mobile Sidebar Backdrop Overlay -->
+<div class="mobile-drawer-backdrop" id="adminSidebarBackdrop" onclick="toggleAdminSidebar(false)"></div>
+
+<script>
+function toggleAdminSidebar(force) {
+    const sidebar = document.querySelector('.admin-sidebar');
+    const backdrop = document.getElementById('adminSidebarBackdrop');
+    if (!sidebar) return;
+    
+    if (typeof force === 'boolean') {
+        if (force) {
+            sidebar.classList.add('open');
+            if (backdrop) backdrop.classList.add('active');
+        } else {
+            sidebar.classList.remove('open');
+            if (backdrop) backdrop.classList.remove('active');
+        }
+    } else {
+        sidebar.classList.toggle('open');
+        if (backdrop) backdrop.classList.toggle('active');
+    }
+}
+
+// Auto scroll-into-view & preserve sidebar scroll position across page reloads
+document.addEventListener('DOMContentLoaded', function() {
+    const sidebar = document.querySelector('.admin-sidebar');
+    if (!sidebar) return;
+
+    const savedScroll = localStorage.getItem('adminSidebarScroll');
+    if (savedScroll !== null) {
+        sidebar.scrollTop = parseInt(savedScroll, 10);
+    }
+
+    const activeItem = sidebar.querySelector('a.active');
+    if (activeItem) {
+        setTimeout(function() {
+            activeItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }, 100);
+    }
+
+    sidebar.addEventListener('scroll', function() {
+        localStorage.setItem('adminSidebarScroll', sidebar.scrollTop);
+    });
+});
+</script>
+
+<div class="admin-body-layout">
+
+    <!-- ══ Left Fixed Sidebar (Streamlined & Clean) ════════════════════════ -->
+        <aside class="admin-sidebar">
+        <nav class="admin-sidebar-nav">
+                        <div class="sidebar-group-title">Overview</div>
+                        <a href="dashboard.php" class=""><i class="fa-solid fa-chart-line"></i> Dashboard Analytics</a>
+                                    <div class="sidebar-group-title">Catalog &amp; Inventory</div>
+                        <a href="products.php" class="active"><i class="fa-solid fa-shirt"></i> Products &amp; Garments</a>
+                        <a href="categories.php" class=""><i class="fa-solid fa-folder-tree"></i> Categories &amp; Subcategories</a>
+                        <a href="attributes.php?type=colors" class=""><i class="fa-solid fa-palette"></i> Colours</a>
+                        <a href="brands.php" class=""><i class="fa-solid fa-tag"></i> Brands</a>
+                        <a href="settings.php?tab=stock" class=""><i class="fa-solid fa-boxes-stacked"></i> Inventory &amp; Stock</a>
+                        <a href="size_guide.php" class=""><i class="fa-solid fa-ruler"></i> Size Guide</a>
+                                    <div class="sidebar-group-title">Sales &amp; Clients</div>
+                        <a href="orders.php" class=""><i class="fa-solid fa-clipboard-list"></i> Orders &amp; Invoices</a>
+                        <a href="customers.php" class=""><i class="fa-solid fa-users"></i> Customers &amp; Inquiries</a>
+                        <a href="promo.php" class=""><i class="fa-solid fa-ticket"></i> Discount Coupons</a>
+                        <a href="reviews.php" class=""><i class="fa-solid fa-star"></i> Customer Reviews</a>
+                        <a href="returns.php" class=""><i class="fa-solid fa-rotate-left"></i> RMA Returns</a>
+                        <a href="support_tickets.php" class=""><i class="fa-solid fa-headset"></i> Support Tickets</a>
+                                    <div class="sidebar-group-title">Content &amp; Settings</div>
+                        <a href="banners.php" class=""><i class="fa-solid fa-sliders"></i> Banner Slider Manager</a>
+                        <a href="blog.php" class=""><i class="fa-solid fa-newspaper"></i> Blog Journal Manager</a>
+                        <a href="seo.php" class=""><i class="fa-solid fa-magnifying-glass"></i> SEO &amp; Social Previews</a>
+                        <a href="newsletter.php" class=""><i class="fa-solid fa-envelope"></i> Newsletter Subscribers</a>
+                        <a href="media.php" class=""><i class="fa-solid fa-images"></i> Media Library</a>
+                        <a href="lookbook.php" class=""><i class="fa-solid fa-book-open"></i> Lookbook Images</a>
+                        <a href="settings.php?tab=settings" class=""><i class="fa-solid fa-gear"></i> Store Settings</a>
+                        <a href="admin_users.php" class=""><i class="fa-solid fa-users-gear"></i> Staff Accounts</a>
+                        <a href="roles.php" class=""><i class="fa-solid fa-user-shield"></i> Roles &amp; Permissions</a>
+                        <a href="countries.php" class=""><i class="fa-solid fa-earth-asia"></i> Countries We Sell To</a>
+                        <a href="email_logs.php" class=""><i class="fa-solid fa-envelope-open-text"></i> Email Log</a>
+                        <a href="logs.php" class=""><i class="fa-solid fa-clipboard-list"></i> Audit Logs</a>
+                        <a href="backup.php" class=""><i class="fa-solid fa-database"></i> Database Backup</a>
+                                </nav>
+    </aside>
+
+    <!-- ══ Main Content Area ════════════════════════════════════════ -->
+    <div class="admin-main">
+        <main class="admin-content">
+
+        <!-- Alerts -->
+                
+        
+        
+        <!-- ═══════════════════ ORDERS TAB ═══════════════════ -->
+
+
+<div class="admin-page-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+    <div>
+        <h1 class="admin-page-title">👗 Product Management</h1>
+        <p class="admin-page-subtitle">Manage garments, prices, stock quantities, variants, and gallery images.</p>
+    </div>
+    <a href="product_form.php" class="btn-primary" style="padding: 10px 20px; font-size: 14px;">
+        <i class="fa-solid fa-plus"></i> Add New Product
+    </a>
+</div>
+
+<div style="margin-bottom:20px; padding:12px 16px; background:var(--bg-surface-soft); border:1px solid var(--border-light);
+            border-left:3px solid var(--color-secondary); border-radius:8px; font-size:13px; line-height:1.6; color:var(--text-secondary);">
+    <i class="fa-solid fa-ruler-combined" style="color:var(--color-secondary);"></i>
+    1 product size    has no ladder code yet, so it sorts    in the order it was typed and the shop's size filter cannot group
+    it with the same size on other products —
+    <a href="backfill_size_codes.php" style="font-weight:700;">review and fill them in</a>. Nothing is deleted or renamed.
+</div>
+
+<div class="prod-view-tabs">
+            <a href="products.php?view=active"
+           class="btn-sm prod-view-tab btn-sm-primary">Active (34)</a>
+            <a href="products.php?view=published"
+           class="btn-sm prod-view-tab btn-sm-outline">Published (22)</a>
+            <a href="products.php?view=draft"
+           class="btn-sm prod-view-tab btn-sm-outline">Draft (12)</a>
+            <a href="products.php?view=archived"
+           class="btn-sm prod-view-tab btn-sm-outline">Archived (3)</a>
+            <a href="products.php?view=all"
+           class="btn-sm prod-view-tab btn-sm-outline">All (37)</a>
+    
+        <span class="prod-tab-divider"></span>
+            <a href="products.php?view=women"
+           class="btn-sm prod-view-tab btn-sm-outline">Woman (28)</a>
+            <a href="products.php?view=men"
+           class="btn-sm prod-view-tab btn-sm-outline">Man (5)</a>
+    
+    </div>
+
+
+
+<div class="glass-panel" style="padding:24px; overflow:hidden;">
+        
+    <!-- Filter & Sort Bar -->
+    <div style="display:flex; align-items:center; gap:16px; margin-bottom:20px; flex-wrap:wrap; background:var(--bg-surface-soft); padding:14px; border-radius:var(--radius-sm); border:1px solid var(--border-light);">
+        <div style="display:flex; align-items:center; gap:8px;">
+            <label for="prodFilterCategory" style="font-size:12px; font-weight:700; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.5px;">Category:</label>
+            <select id="prodFilterCategory" class="form-control" style="font-size:13px; padding:6px 12px; height:auto; width:auto; min-width:160px;" onchange="filterAndSortProducts()">
+                <option value="all">🔍 All Categories</option>
+                                <option value=""></option>
+                                <option value="3 Piece Suits">3 Piece Suits</option>
+                                <option value="Bottoms">Bottoms</option>
+                                <option value="Coord Sets">Coord Sets</option>
+                                <option value="Kurtis">Kurtis</option>
+                                <option value="QA TEST Accessories">QA TEST Accessories</option>
+                                <option value="QA TEST Cat Sweep">QA TEST Cat Sweep</option>
+                                <option value="QA TEST Menswear">QA TEST Menswear</option>
+                                <option value="QA TEST Womenswear">QA TEST Womenswear</option>
+                                <option value="Short Kurtis">Short Kurtis</option>
+                                <option value="Uncategorised">Uncategorised</option>
+                                <option value="Women&#039;s Tops">Women&#039;s Tops</option>
+                            </select>
+        </div>
+        
+        <div style="display:flex; align-items:center; gap:8px;">
+            <label for="prodSort" style="font-size:12px; font-weight:700; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.5px;">Sort By:</label>
+            <select id="prodSort" class="form-control" style="font-size:13px; padding:6px 12px; height:auto; width:auto; min-width:160px;" onchange="filterAndSortProducts()">
+                <option value="default">Default (Newest)</option>
+                <option value="name_asc">Name (A-Z)</option>
+                <option value="name_desc">Name (Z-A)</option>
+                <option value="price_asc">Price (Low to High)</option>
+                <option value="price_desc">Price (High to Low)</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="table-wrapper">
+        <table class="data-table prod-table" id="productsTable">
+            <thead>
+                <tr>
+                    <th style="width:70px;">Image</th>
+                    <th>Product Name &amp; Details</th>
+                    <th>Category</th>
+                    <th>Price</th>
+                    <th>Stock Status</th>
+                    <th style="width:180px; text-align:right;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                                <tr data-category="QA TEST Womenswear" data-name="qa test anaya chikankari kurti" data-price="1999.00">
+                    <td>
+                                                    <div style="width:55px; height:65px; background:var(--bg-surface-soft); border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:20px;">✨</div>
+                                            </td>
+                    <td>
+                        <strong style="font-size:15px; color:var(--text-primary); display:block;">QA TEST Anaya Chikankari Kurti</strong>
+                                                                                                        <span class="prod-badge prod-badge--draft">Draft</span>
+                                                <span style="font-size:12px; color:var(--text-muted);">SKU: <code>DV-QATESTAN</code></span>
+                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; background:var(--bg-surface-soft); padding:4px 8px; border-radius:4px; color:var(--color-primary);">QA TEST Womenswear</span>
+                                                <span class="prod-audience prod-audience--women" title="Audience comes from the collection this product is in">
+                            Woman                        </span>
+                    </td>
+                    <td>
+                        <strong style="font-size:14px; color:var(--text-primary);">₹1,999.00</strong>
+                    </td>
+                    <td>
+                                                                            <span style="font-size:11px; color:var(--text-muted);">∞ Available</span>
+                                            </td>
+                    <td style="text-align:right;">
+                                                <div class="prod-actions">
+                            <a href="product_form.php?id=41" class="prod-action-btn is-primary" title="Edit product" aria-label="Edit QA TEST Anaya Chikankari Kurti">
+                                <i class="fa-solid fa-pen"></i>
+                            </a>
+                            <form method="POST" action="products.php">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="duplicate_product">
+                                <input type="hidden" name="product_id" value="41">
+                                <button type="submit" class="prod-action-btn" title="Duplicate product" aria-label="Duplicate QA TEST Anaya Chikankari Kurti">
+                                    <i class="fa-solid fa-copy"></i>
+                                </button>
+                            </form>
+                                                        <form method="POST" action="products.php?view=active" onsubmit="return dvConfirmForm(this,'Archive product &quot;QA TEST Anaya Chikankari Kurti&quot;?');">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="delete_product">
+                                <input type="hidden" name="product_id" value="41">
+                                <button type="submit" class="prod-action-btn is-danger" title="Archive product" aria-label="Archive QA TEST Anaya Chikankari Kurti">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </form>
+                                                    </div>
+                    </td>
+                </tr>
+                                <tr data-category="QA TEST Womenswear" data-name="qa test 😀 emoji piece" data-price="1999.00">
+                    <td>
+                                                    <div style="width:55px; height:65px; background:var(--bg-surface-soft); border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:20px;">✨</div>
+                                            </td>
+                    <td>
+                        <strong style="font-size:15px; color:var(--text-primary); display:block;">QA TEST 😀 Emoji Piece</strong>
+                                                                                                        <span class="prod-badge prod-badge--draft">Draft</span>
+                                                <span style="font-size:12px; color:var(--text-muted);">SKU: <code>DV-QATESTEM</code></span>
+                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; background:var(--bg-surface-soft); padding:4px 8px; border-radius:4px; color:var(--color-primary);">QA TEST Womenswear</span>
+                                                <span class="prod-audience prod-audience--women" title="Audience comes from the collection this product is in">
+                            Woman                        </span>
+                    </td>
+                    <td>
+                        <strong style="font-size:14px; color:var(--text-primary);">₹1,999.00</strong>
+                    </td>
+                    <td>
+                                                                            <span style="font-size:11px; color:var(--text-muted);">∞ Available</span>
+                                            </td>
+                    <td style="text-align:right;">
+                                                <div class="prod-actions">
+                            <a href="product_form.php?id=40" class="prod-action-btn is-primary" title="Edit product" aria-label="Edit QA TEST 😀 Emoji Piece">
+                                <i class="fa-solid fa-pen"></i>
+                            </a>
+                            <form method="POST" action="products.php">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="duplicate_product">
+                                <input type="hidden" name="product_id" value="40">
+                                <button type="submit" class="prod-action-btn" title="Duplicate product" aria-label="Duplicate QA TEST 😀 Emoji Piece">
+                                    <i class="fa-solid fa-copy"></i>
+                                </button>
+                            </form>
+                                                        <form method="POST" action="products.php?view=active" onsubmit="return dvConfirmForm(this,'Archive product &quot;QA TEST 😀 Emoji Piece&quot;?');">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="delete_product">
+                                <input type="hidden" name="product_id" value="40">
+                                <button type="submit" class="prod-action-btn is-danger" title="Archive product" aria-label="Archive QA TEST 😀 Emoji Piece">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </form>
+                                                    </div>
+                    </td>
+                </tr>
+                                <tr data-category="QA TEST Womenswear" data-name="qa test o&#039;neill &quot;le grand&quot;" data-price="1999.00">
+                    <td>
+                                                    <div style="width:55px; height:65px; background:var(--bg-surface-soft); border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:20px;">✨</div>
+                                            </td>
+                    <td>
+                        <strong style="font-size:15px; color:var(--text-primary); display:block;">QA TEST O&#039;Neill &quot;Le Grand&quot;</strong>
+                                                                                                        <span class="prod-badge prod-badge--draft">Draft</span>
+                                                <span style="font-size:12px; color:var(--text-muted);">SKU: <code>DV-QATESTON</code></span>
+                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; background:var(--bg-surface-soft); padding:4px 8px; border-radius:4px; color:var(--color-primary);">QA TEST Womenswear</span>
+                                                <span class="prod-audience prod-audience--women" title="Audience comes from the collection this product is in">
+                            Woman                        </span>
+                    </td>
+                    <td>
+                        <strong style="font-size:14px; color:var(--text-primary);">₹1,999.00</strong>
+                    </td>
+                    <td>
+                                                                            <span style="font-size:11px; color:var(--text-muted);">∞ Available</span>
+                                            </td>
+                    <td style="text-align:right;">
+                                                <div class="prod-actions">
+                            <a href="product_form.php?id=39" class="prod-action-btn is-primary" title="Edit product" aria-label="Edit QA TEST O&#039;Neill &quot;Le Grand&quot;">
+                                <i class="fa-solid fa-pen"></i>
+                            </a>
+                            <form method="POST" action="products.php">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="duplicate_product">
+                                <input type="hidden" name="product_id" value="39">
+                                <button type="submit" class="prod-action-btn" title="Duplicate product" aria-label="Duplicate QA TEST O&#039;Neill &quot;Le Grand&quot;">
+                                    <i class="fa-solid fa-copy"></i>
+                                </button>
+                            </form>
+                                                        <form method="POST" action="products.php?view=active" onsubmit="return dvConfirmForm(this,'Archive product &quot;QA TEST O\'Neill \"Le Grand\"&quot;?');">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="delete_product">
+                                <input type="hidden" name="product_id" value="39">
+                                <button type="submit" class="prod-action-btn is-danger" title="Archive product" aria-label="Archive QA TEST O&#039;Neill &quot;Le Grand&quot;">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </form>
+                                                    </div>
+                    </td>
+                </tr>
+                                <tr data-category="QA TEST Womenswear" data-name="qa test fv product" data-price="1999.00">
+                    <td>
+                                                    <div style="width:55px; height:65px; background:var(--bg-surface-soft); border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:20px;">✨</div>
+                                            </td>
+                    <td>
+                        <strong style="font-size:15px; color:var(--text-primary); display:block;">QA TEST FV Product</strong>
+                                                                                                        <span class="prod-badge prod-badge--draft">Draft</span>
+                                                <span style="font-size:12px; color:var(--text-muted);">SKU: <code>DV-QATESTFV-1</code></span>
+                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; background:var(--bg-surface-soft); padding:4px 8px; border-radius:4px; color:var(--color-primary);">QA TEST Womenswear</span>
+                                                <span class="prod-audience prod-audience--women" title="Audience comes from the collection this product is in">
+                            Woman                        </span>
+                    </td>
+                    <td>
+                        <strong style="font-size:14px; color:var(--text-primary);">₹1,999.00</strong>
+                    </td>
+                    <td>
+                                                                                                            <span class="badge-luxury" style="background:#fef2f2; color:#ef4444;">🔴 Out of Stock</span>
+                                                                        </td>
+                    <td style="text-align:right;">
+                                                <div class="prod-actions">
+                            <a href="product_form.php?id=38" class="prod-action-btn is-primary" title="Edit product" aria-label="Edit QA TEST FV Product">
+                                <i class="fa-solid fa-pen"></i>
+                            </a>
+                            <form method="POST" action="products.php">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="duplicate_product">
+                                <input type="hidden" name="product_id" value="38">
+                                <button type="submit" class="prod-action-btn" title="Duplicate product" aria-label="Duplicate QA TEST FV Product">
+                                    <i class="fa-solid fa-copy"></i>
+                                </button>
+                            </form>
+                                                        <form method="POST" action="products.php?view=active" onsubmit="return dvConfirmForm(this,'Archive product &quot;QA TEST FV Product&quot;?');">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="delete_product">
+                                <input type="hidden" name="product_id" value="38">
+                                <button type="submit" class="prod-action-btn is-danger" title="Archive product" aria-label="Archive QA TEST FV Product">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </form>
+                                                    </div>
+                    </td>
+                </tr>
+                                <tr data-category="QA TEST Womenswear" data-name="qa test fv product" data-price="1999.00">
+                    <td>
+                                                    <div style="width:55px; height:65px; background:var(--bg-surface-soft); border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:20px;">✨</div>
+                                            </td>
+                    <td>
+                        <strong style="font-size:15px; color:var(--text-primary); display:block;">QA TEST FV Product</strong>
+                                                                                                        <span class="prod-badge prod-badge--draft">Draft</span>
+                                                <span style="font-size:12px; color:var(--text-muted);">SKU: <code>DV-QATESTFV</code></span>
+                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; background:var(--bg-surface-soft); padding:4px 8px; border-radius:4px; color:var(--color-primary);">QA TEST Womenswear</span>
+                                                <span class="prod-audience prod-audience--women" title="Audience comes from the collection this product is in">
+                            Woman                        </span>
+                    </td>
+                    <td>
+                        <strong style="font-size:14px; color:var(--text-primary);">₹1,999.00</strong>
+                    </td>
+                    <td>
+                                                                                                            <span class="badge-luxury" style="background:#fef2f2; color:#ef4444;">🔴 Out of Stock</span>
+                                                                        </td>
+                    <td style="text-align:right;">
+                                                <div class="prod-actions">
+                            <a href="product_form.php?id=37" class="prod-action-btn is-primary" title="Edit product" aria-label="Edit QA TEST FV Product">
+                                <i class="fa-solid fa-pen"></i>
+                            </a>
+                            <form method="POST" action="products.php">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="duplicate_product">
+                                <input type="hidden" name="product_id" value="37">
+                                <button type="submit" class="prod-action-btn" title="Duplicate product" aria-label="Duplicate QA TEST FV Product">
+                                    <i class="fa-solid fa-copy"></i>
+                                </button>
+                            </form>
+                                                        <form method="POST" action="products.php?view=active" onsubmit="return dvConfirmForm(this,'Archive product &quot;QA TEST FV Product&quot;?');">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="delete_product">
+                                <input type="hidden" name="product_id" value="37">
+                                <button type="submit" class="prod-action-btn is-danger" title="Archive product" aria-label="Archive QA TEST FV Product">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </form>
+                                                    </div>
+                    </td>
+                </tr>
+                                <tr data-category="QA TEST Womenswear" data-name="qa test o&#039;brien &quot;silk&quot; 🎉 &lt;b&gt;" data-price="999.00">
+                    <td>
+                                                    <div style="width:55px; height:65px; background:var(--bg-surface-soft); border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:20px;">QA</div>
+                                            </td>
+                    <td>
+                        <strong style="font-size:15px; color:var(--text-primary); display:block;">QA TEST O&#039;Brien &quot;Silk&quot; 🎉 &lt;b&gt;</strong>
+                                                                                                        <span class="prod-badge prod-badge--draft">Draft</span>
+                                                <span style="font-size:12px; color:var(--text-muted);">SKU: <code>QA&#039;&quot;-666</code></span>
+                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; background:var(--bg-surface-soft); padding:4px 8px; border-radius:4px; color:var(--color-primary);">QA TEST Womenswear</span>
+                                                <span class="prod-audience prod-audience--women" title="Audience comes from the collection this product is in">
+                            Woman                        </span>
+                    </td>
+                    <td>
+                        <strong style="font-size:14px; color:var(--text-primary);">₹999.00</strong>
+                    </td>
+                    <td>
+                                                                            <span style="font-size:11px; color:var(--text-muted);">∞ Available</span>
+                                            </td>
+                    <td style="text-align:right;">
+                                                <div class="prod-actions">
+                            <a href="product_form.php?id=36" class="prod-action-btn is-primary" title="Edit product" aria-label="Edit QA TEST O&#039;Brien &quot;Silk&quot; 🎉 &lt;b&gt;">
+                                <i class="fa-solid fa-pen"></i>
+                            </a>
+                            <form method="POST" action="products.php">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="duplicate_product">
+                                <input type="hidden" name="product_id" value="36">
+                                <button type="submit" class="prod-action-btn" title="Duplicate product" aria-label="Duplicate QA TEST O&#039;Brien &quot;Silk&quot; 🎉 &lt;b&gt;">
+                                    <i class="fa-solid fa-copy"></i>
+                                </button>
+                            </form>
+                                                        <form method="POST" action="products.php?view=active" onsubmit="return dvConfirmForm(this,'Archive product &quot;QA TEST O\'Brien \"Silk\" 🎉 <b>&quot;?');">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="delete_product">
+                                <input type="hidden" name="product_id" value="36">
+                                <button type="submit" class="prod-action-btn is-danger" title="Archive product" aria-label="Archive QA TEST O&#039;Brien &quot;Silk&quot; 🎉 &lt;b&gt;">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </form>
+                                                    </div>
+                    </td>
+                </tr>
+                                <tr data-category="QA TEST Womenswear" data-name="qa test formval base" data-price="999.00">
+                    <td>
+                                                    <div style="width:55px; height:65px; background:var(--bg-surface-soft); border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:20px;">QA</div>
+                                            </td>
+                    <td>
+                        <strong style="font-size:15px; color:var(--text-primary); display:block;">QA TEST FORMVAL Base</strong>
+                                                                                                        <span class="prod-badge prod-badge--draft">Draft</span>
+                                                <span style="font-size:12px; color:var(--text-muted);">SKU: <code>DV-QATESTFO-2</code></span>
+                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; background:var(--bg-surface-soft); padding:4px 8px; border-radius:4px; color:var(--color-primary);">QA TEST Womenswear</span>
+                                                <span class="prod-audience prod-audience--women" title="Audience comes from the collection this product is in">
+                            Woman                        </span>
+                    </td>
+                    <td>
+                        <strong style="font-size:14px; color:var(--text-primary);">₹999.00</strong>
+                    </td>
+                    <td>
+                                                                            <span style="font-size:11px; color:var(--text-muted);">∞ Available</span>
+                                            </td>
+                    <td style="text-align:right;">
+                                                <div class="prod-actions">
+                            <a href="product_form.php?id=35" class="prod-action-btn is-primary" title="Edit product" aria-label="Edit QA TEST FORMVAL Base">
+                                <i class="fa-solid fa-pen"></i>
+                            </a>
+                            <form method="POST" action="products.php">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="duplicate_product">
+                                <input type="hidden" name="product_id" value="35">
+                                <button type="submit" class="prod-action-btn" title="Duplicate product" aria-label="Duplicate QA TEST FORMVAL Base">
+                                    <i class="fa-solid fa-copy"></i>
+                                </button>
+                            </form>
+                                                        <form method="POST" action="products.php?view=active" onsubmit="return dvConfirmForm(this,'Archive product &quot;QA TEST FORMVAL Base&quot;?');">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="delete_product">
+                                <input type="hidden" name="product_id" value="35">
+                                <button type="submit" class="prod-action-btn is-danger" title="Archive product" aria-label="Archive QA TEST FORMVAL Base">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </form>
+                                                    </div>
+                    </td>
+                </tr>
+                                <tr data-category="QA TEST Womenswear" data-name="qa test formval base" data-price="999.00">
+                    <td>
+                                                    <div style="width:55px; height:65px; background:var(--bg-surface-soft); border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:20px;">QA</div>
+                                            </td>
+                    <td>
+                        <strong style="font-size:15px; color:var(--text-primary); display:block;">QA TEST FORMVAL Base</strong>
+                                                                                                        <span class="prod-badge prod-badge--draft">Draft</span>
+                                                <span style="font-size:12px; color:var(--text-muted);">SKU: <code>DV-QATESTFO-1</code></span>
+                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; background:var(--bg-surface-soft); padding:4px 8px; border-radius:4px; color:var(--color-primary);">QA TEST Womenswear</span>
+                                                <span class="prod-audience prod-audience--women" title="Audience comes from the collection this product is in">
+                            Woman                        </span>
+                    </td>
+                    <td>
+                        <strong style="font-size:14px; color:var(--text-primary);">₹999.00</strong>
+                    </td>
+                    <td>
+                                                                                                            <span class="badge-luxury" style="background:#fef2f2; color:#ef4444;">🔴 Out of Stock</span>
+                                                                        </td>
+                    <td style="text-align:right;">
+                                                <div class="prod-actions">
+                            <a href="product_form.php?id=34" class="prod-action-btn is-primary" title="Edit product" aria-label="Edit QA TEST FORMVAL Base">
+                                <i class="fa-solid fa-pen"></i>
+                            </a>
+                            <form method="POST" action="products.php">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="duplicate_product">
+                                <input type="hidden" name="product_id" value="34">
+                                <button type="submit" class="prod-action-btn" title="Duplicate product" aria-label="Duplicate QA TEST FORMVAL Base">
+                                    <i class="fa-solid fa-copy"></i>
+                                </button>
+                            </form>
+                                                        <form method="POST" action="products.php?view=active" onsubmit="return dvConfirmForm(this,'Archive product &quot;QA TEST FORMVAL Base&quot;?');">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="delete_product">
+                                <input type="hidden" name="product_id" value="34">
+                                <button type="submit" class="prod-action-btn is-danger" title="Archive product" aria-label="Archive QA TEST FORMVAL Base">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </form>
+                                                    </div>
+                    </td>
+                </tr>
+                                <tr data-category="QA TEST Womenswear" data-name="qa test formval base" data-price="999.00">
+                    <td>
+                                                    <div style="width:55px; height:65px; background:var(--bg-surface-soft); border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:20px;">QA</div>
+                                            </td>
+                    <td>
+                        <strong style="font-size:15px; color:var(--text-primary); display:block;">QA TEST FORMVAL Base</strong>
+                                                                                                        <span class="prod-badge prod-badge--draft">Draft</span>
+                                                <span style="font-size:12px; color:var(--text-muted);">SKU: <code>DV-QATESTFO</code></span>
+                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; background:var(--bg-surface-soft); padding:4px 8px; border-radius:4px; color:var(--color-primary);">QA TEST Womenswear</span>
+                                                <span class="prod-audience prod-audience--women" title="Audience comes from the collection this product is in">
+                            Woman                        </span>
+                    </td>
+                    <td>
+                        <strong style="font-size:14px; color:var(--text-primary);">₹999.00</strong>
+                    </td>
+                    <td>
+                                                                                                            <span class="badge-luxury" style="background:#fef2f2; color:#ef4444;">🔴 Out of Stock</span>
+                                                                        </td>
+                    <td style="text-align:right;">
+                                                <div class="prod-actions">
+                            <a href="product_form.php?id=33" class="prod-action-btn is-primary" title="Edit product" aria-label="Edit QA TEST FORMVAL Base">
+                                <i class="fa-solid fa-pen"></i>
+                            </a>
+                            <form method="POST" action="products.php">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="duplicate_product">
+                                <input type="hidden" name="product_id" value="33">
+                                <button type="submit" class="prod-action-btn" title="Duplicate product" aria-label="Duplicate QA TEST FORMVAL Base">
+                                    <i class="fa-solid fa-copy"></i>
+                                </button>
+                            </form>
+                                                        <form method="POST" action="products.php?view=active" onsubmit="return dvConfirmForm(this,'Archive product &quot;QA TEST FORMVAL Base&quot;?');">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="delete_product">
+                                <input type="hidden" name="product_id" value="33">
+                                <button type="submit" class="prod-action-btn is-danger" title="Archive product" aria-label="Archive QA TEST FORMVAL Base">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </form>
+                                                    </div>
+                    </td>
+                </tr>
+                                <tr data-category="QA TEST Cat Sweep" data-name="qa test admin sweep product 2" data-price="1499.00">
+                    <td>
+                                                    <div style="width:55px; height:65px; background:var(--bg-surface-soft); border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:20px;">✨</div>
+                                            </td>
+                    <td>
+                        <strong style="font-size:15px; color:var(--text-primary); display:block;">QA TEST Admin Sweep Product 2</strong>
+                                                                                                        <span class="prod-badge prod-badge--draft">Draft</span>
+                                                <span style="font-size:12px; color:var(--text-muted);">SKU: <code>QA-TEST-SWEEP-2</code></span>
+                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; background:var(--bg-surface-soft); padding:4px 8px; border-radius:4px; color:var(--color-primary);">QA TEST Cat Sweep</span>
+                                                <span class="prod-audience prod-audience--men" title="Audience comes from the collection this product is in">
+                            Man                        </span>
+                    </td>
+                    <td>
+                        <strong style="font-size:14px; color:var(--text-primary);">₹1,499.00</strong>
+                    </td>
+                    <td>
+                                                                            <span style="font-size:11px; color:var(--text-muted);">∞ Available</span>
+                                            </td>
+                    <td style="text-align:right;">
+                                                <div class="prod-actions">
+                            <a href="product_form.php?id=32" class="prod-action-btn is-primary" title="Edit product" aria-label="Edit QA TEST Admin Sweep Product 2">
+                                <i class="fa-solid fa-pen"></i>
+                            </a>
+                            <form method="POST" action="products.php">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="duplicate_product">
+                                <input type="hidden" name="product_id" value="32">
+                                <button type="submit" class="prod-action-btn" title="Duplicate product" aria-label="Duplicate QA TEST Admin Sweep Product 2">
+                                    <i class="fa-solid fa-copy"></i>
+                                </button>
+                            </form>
+                                                        <form method="POST" action="products.php?view=active" onsubmit="return dvConfirmForm(this,'Archive product &quot;QA TEST Admin Sweep Product 2&quot;?');">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="delete_product">
+                                <input type="hidden" name="product_id" value="32">
+                                <button type="submit" class="prod-action-btn is-danger" title="Archive product" aria-label="Archive QA TEST Admin Sweep Product 2">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </form>
+                                                    </div>
+                    </td>
+                </tr>
+                                <tr data-category="Uncategorised" data-name="qa test role probe product" data-price="999.00">
+                    <td>
+                                                    <div style="width:55px; height:65px; background:var(--bg-surface-soft); border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:20px;">?</div>
+                                            </td>
+                    <td>
+                        <strong style="font-size:15px; color:var(--text-primary); display:block;">QA TEST ROLE PROBE PRODUCT</strong>
+                                                                        <span style="font-size:12px; color:var(--text-muted);">SKU: <code>DV-29</code></span>
+                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; background:var(--bg-surface-soft); padding:4px 8px; border-radius:4px; color:var(--color-primary);">Uncategorised</span>
+                                                <span class="prod-audience prod-audience--women" title="Audience comes from the collection this product is in">
+                            Woman                        </span>
+                    </td>
+                    <td>
+                        <strong style="font-size:14px; color:var(--text-primary);">₹999.00</strong>
+                    </td>
+                    <td>
+                                                                            <span style="font-size:11px; color:var(--text-muted);">∞ Available</span>
+                                            </td>
+                    <td style="text-align:right;">
+                                                <div class="prod-actions">
+                            <a href="product_form.php?id=29" class="prod-action-btn is-primary" title="Edit product" aria-label="Edit QA TEST ROLE PROBE PRODUCT">
+                                <i class="fa-solid fa-pen"></i>
+                            </a>
+                            <form method="POST" action="products.php">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="duplicate_product">
+                                <input type="hidden" name="product_id" value="29">
+                                <button type="submit" class="prod-action-btn" title="Duplicate product" aria-label="Duplicate QA TEST ROLE PROBE PRODUCT">
+                                    <i class="fa-solid fa-copy"></i>
+                                </button>
+                            </form>
+                                                        <form method="POST" action="products.php?view=active" onsubmit="return dvConfirmForm(this,'Archive product &quot;QA TEST ROLE PROBE PRODUCT&quot;?');">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="delete_product">
+                                <input type="hidden" name="product_id" value="29">
+                                <button type="submit" class="prod-action-btn is-danger" title="Archive product" aria-label="Archive QA TEST ROLE PROBE PRODUCT">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </form>
+                                                    </div>
+                    </td>
+                </tr>
+                                <tr data-category="QA TEST Womenswear" data-name="qa test admin sweep product" data-price="1999.00">
+                    <td>
+                                                    <div style="width:55px; height:65px; background:var(--bg-surface-soft); border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:20px;">🧪</div>
+                                            </td>
+                    <td>
+                        <strong style="font-size:15px; color:var(--text-primary); display:block;">QA TEST Admin Sweep Product</strong>
+                                                                                                        <span class="prod-badge prod-badge--draft">Draft</span>
+                                                <span style="font-size:12px; color:var(--text-muted);">SKU: <code>DV-28</code></span>
+                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; background:var(--bg-surface-soft); padding:4px 8px; border-radius:4px; color:var(--color-primary);">QA TEST Womenswear</span>
+                                                <span class="prod-audience prod-audience--women" title="Audience comes from the collection this product is in">
+                            Woman                        </span>
+                    </td>
+                    <td>
+                        <strong style="font-size:14px; color:var(--text-primary);">₹1,999.00</strong>
+                    </td>
+                    <td>
+                                                                                                            <span class="badge-luxury" style="background:#fef2f2; color:#ef4444;">🔴 Out of Stock</span>
+                                                                        </td>
+                    <td style="text-align:right;">
+                                                <div class="prod-actions">
+                            <a href="product_form.php?id=28" class="prod-action-btn is-primary" title="Edit product" aria-label="Edit QA TEST Admin Sweep Product">
+                                <i class="fa-solid fa-pen"></i>
+                            </a>
+                            <form method="POST" action="products.php">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="duplicate_product">
+                                <input type="hidden" name="product_id" value="28">
+                                <button type="submit" class="prod-action-btn" title="Duplicate product" aria-label="Duplicate QA TEST Admin Sweep Product">
+                                    <i class="fa-solid fa-copy"></i>
+                                </button>
+                            </form>
+                                                        <form method="POST" action="products.php?view=active" onsubmit="return dvConfirmForm(this,'Archive product &quot;QA TEST Admin Sweep Product&quot;?');">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="delete_product">
+                                <input type="hidden" name="product_id" value="28">
+                                <button type="submit" class="prod-action-btn is-danger" title="Archive product" aria-label="Archive QA TEST Admin Sweep Product">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </form>
+                                                    </div>
+                    </td>
+                </tr>
+                                <tr data-category="" data-name="qa test minimal piece" data-price="999.00">
+                    <td>
+                                                    <div style="width:55px; height:65px; background:var(--bg-surface-soft); border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:20px;">?</div>
+                                            </td>
+                    <td>
+                        <strong style="font-size:15px; color:var(--text-primary); display:block;">QA TEST Minimal Piece</strong>
+                                                                        <span style="font-size:12px; color:var(--text-muted);">SKU: <code>DV-27</code></span>
+                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; background:var(--bg-surface-soft); padding:4px 8px; border-radius:4px; color:var(--color-primary);"></span>
+                                                <span class="prod-audience prod-audience--women" title="Audience comes from the collection this product is in">
+                            Woman                        </span>
+                    </td>
+                    <td>
+                        <strong style="font-size:14px; color:var(--text-primary);">₹999.00</strong>
+                    </td>
+                    <td>
+                                                                            <span style="font-size:11px; color:var(--text-muted);">∞ Available</span>
+                                            </td>
+                    <td style="text-align:right;">
+                                                <div class="prod-actions">
+                            <a href="product_form.php?id=27" class="prod-action-btn is-primary" title="Edit product" aria-label="Edit QA TEST Minimal Piece">
+                                <i class="fa-solid fa-pen"></i>
+                            </a>
+                            <form method="POST" action="products.php">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="duplicate_product">
+                                <input type="hidden" name="product_id" value="27">
+                                <button type="submit" class="prod-action-btn" title="Duplicate product" aria-label="Duplicate QA TEST Minimal Piece">
+                                    <i class="fa-solid fa-copy"></i>
+                                </button>
+                            </form>
+                                                        <form method="POST" action="products.php?view=active" onsubmit="return dvConfirmForm(this,'Archive product &quot;QA TEST Minimal Piece&quot;?');">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="delete_product">
+                                <input type="hidden" name="product_id" value="27">
+                                <button type="submit" class="prod-action-btn is-danger" title="Archive product" aria-label="Archive QA TEST Minimal Piece">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </form>
+                                                    </div>
+                    </td>
+                </tr>
+                                <tr data-category="QA TEST Menswear" data-name="qa test mens festive kurta" data-price="2999.00">
+                    <td>
+                                                    <img src="../uploads/products/qa-mens-kurta.jpg" style="width:55px; height:65px; object-fit:cover; border-radius:4px; border:1px solid var(--border-light);">
+                                            </td>
+                    <td>
+                        <strong style="font-size:15px; color:var(--text-primary); display:block;">QA TEST Mens Festive Kurta</strong>
+                                                                        <span style="font-size:12px; color:var(--text-muted);">SKU: <code>QA-MKU-009</code></span>
+                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; background:var(--bg-surface-soft); padding:4px 8px; border-radius:4px; color:var(--color-primary);">QA TEST Menswear</span>
+                                                <span class="prod-audience prod-audience--men" title="Audience comes from the collection this product is in">
+                            Man                        </span>
+                    </td>
+                    <td>
+                        <strong style="font-size:14px; color:var(--text-primary);">₹2,999.00</strong>
+                    </td>
+                    <td>
+                                                                                                            <span class="badge-luxury" style="background:#fef2f2; color:#ef4444;">🔴 Out of Stock</span>
+                                                                        </td>
+                    <td style="text-align:right;">
+                                                <div class="prod-actions">
+                            <a href="product_form.php?id=26" class="prod-action-btn is-primary" title="Edit product" aria-label="Edit QA TEST Mens Festive Kurta">
+                                <i class="fa-solid fa-pen"></i>
+                            </a>
+                            <form method="POST" action="products.php">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="duplicate_product">
+                                <input type="hidden" name="product_id" value="26">
+                                <button type="submit" class="prod-action-btn" title="Duplicate product" aria-label="Duplicate QA TEST Mens Festive Kurta">
+                                    <i class="fa-solid fa-copy"></i>
+                                </button>
+                            </form>
+                                                        <form method="POST" action="products.php?view=active" onsubmit="return dvConfirmForm(this,'Archive product &quot;QA TEST Mens Festive Kurta&quot;?');">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="delete_product">
+                                <input type="hidden" name="product_id" value="26">
+                                <button type="submit" class="prod-action-btn is-danger" title="Archive product" aria-label="Archive QA TEST Mens Festive Kurta">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </form>
+                                                    </div>
+                    </td>
+                </tr>
+                                <tr data-category="QA TEST Menswear" data-name="qa test mens chino trousers" data-price="2499.00">
+                    <td>
+                                                    <img src="../uploads/products/qa-mens-chino.jpg" style="width:55px; height:65px; object-fit:cover; border-radius:4px; border:1px solid var(--border-light);">
+                                            </td>
+                    <td>
+                        <strong style="font-size:15px; color:var(--text-primary); display:block;">QA TEST Mens Chino Trousers</strong>
+                                                                        <span style="font-size:12px; color:var(--text-muted);">SKU: <code>QA-MTR-008</code></span>
+                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; background:var(--bg-surface-soft); padding:4px 8px; border-radius:4px; color:var(--color-primary);">QA TEST Menswear</span>
+                                                <span class="prod-audience prod-audience--men" title="Audience comes from the collection this product is in">
+                            Man                        </span>
+                    </td>
+                    <td>
+                        <strong style="font-size:14px; color:var(--text-primary);">₹2,499.00</strong>
+                    </td>
+                    <td>
+                                                                                                            <span class="badge-luxury" style="background:#fffbeb; color:#f59e0b;">⚠️ Low Stock (5)</span>
+                                                                        </td>
+                    <td style="text-align:right;">
+                                                <div class="prod-actions">
+                            <a href="product_form.php?id=25" class="prod-action-btn is-primary" title="Edit product" aria-label="Edit QA TEST Mens Chino Trousers">
+                                <i class="fa-solid fa-pen"></i>
+                            </a>
+                            <form method="POST" action="products.php">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="duplicate_product">
+                                <input type="hidden" name="product_id" value="25">
+                                <button type="submit" class="prod-action-btn" title="Duplicate product" aria-label="Duplicate QA TEST Mens Chino Trousers">
+                                    <i class="fa-solid fa-copy"></i>
+                                </button>
+                            </form>
+                                                        <form method="POST" action="products.php?view=active" onsubmit="return dvConfirmForm(this,'Archive product &quot;QA TEST Mens Chino Trousers&quot;?');">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="delete_product">
+                                <input type="hidden" name="product_id" value="25">
+                                <button type="submit" class="prod-action-btn is-danger" title="Archive product" aria-label="Archive QA TEST Mens Chino Trousers">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </form>
+                                                    </div>
+                    </td>
+                </tr>
+                                <tr data-category="QA TEST Menswear" data-name="qa test mens oxford shirt" data-price="2199.00">
+                    <td>
+                                                    <img src="../uploads/products/qa-colour-indigo.jpg" style="width:55px; height:65px; object-fit:cover; border-radius:4px; border:1px solid var(--border-light);">
+                                            </td>
+                    <td>
+                        <strong style="font-size:15px; color:var(--text-primary); display:block;">QA TEST Mens Oxford Shirt</strong>
+                                                                        <span style="font-size:12px; color:var(--text-muted);">SKU: <code>QA-MSH-007</code></span>
+                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; background:var(--bg-surface-soft); padding:4px 8px; border-radius:4px; color:var(--color-primary);">QA TEST Menswear</span>
+                                                <span class="prod-audience prod-audience--men" title="Audience comes from the collection this product is in">
+                            Man                        </span>
+                    </td>
+                    <td>
+                        <strong style="font-size:14px; color:var(--text-primary);">₹2,199.00</strong>
+                    </td>
+                    <td>
+                                                                                                            <span class="badge-luxury" style="background:#ecfdf5; color:#10b981;">🟢 In Stock (35)</span>
+                                                                        </td>
+                    <td style="text-align:right;">
+                                                <div class="prod-actions">
+                            <a href="product_form.php?id=24" class="prod-action-btn is-primary" title="Edit product" aria-label="Edit QA TEST Mens Oxford Shirt">
+                                <i class="fa-solid fa-pen"></i>
+                            </a>
+                            <form method="POST" action="products.php">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="duplicate_product">
+                                <input type="hidden" name="product_id" value="24">
+                                <button type="submit" class="prod-action-btn" title="Duplicate product" aria-label="Duplicate QA TEST Mens Oxford Shirt">
+                                    <i class="fa-solid fa-copy"></i>
+                                </button>
+                            </form>
+                                                        <form method="POST" action="products.php?view=active" onsubmit="return dvConfirmForm(this,'Archive product &quot;QA TEST Mens Oxford Shirt&quot;?');">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="delete_product">
+                                <input type="hidden" name="product_id" value="24">
+                                <button type="submit" class="prod-action-btn is-danger" title="Archive product" aria-label="Archive QA TEST Mens Oxford Shirt">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </form>
+                                                    </div>
+                    </td>
+                </tr>
+                                <tr data-category="QA TEST Womenswear" data-name="qa test palazzo trousers" data-price="1499.00">
+                    <td>
+                                                    <img src="../uploads/products/qa-colour-black.jpg" style="width:55px; height:65px; object-fit:cover; border-radius:4px; border:1px solid var(--border-light);">
+                                            </td>
+                    <td>
+                        <strong style="font-size:15px; color:var(--text-primary); display:block;">QA TEST Palazzo Trousers</strong>
+                                                                        <span style="font-size:12px; color:var(--text-muted);">SKU: <code>QA-BOT-006</code></span>
+                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; background:var(--bg-surface-soft); padding:4px 8px; border-radius:4px; color:var(--color-primary);">QA TEST Womenswear</span>
+                                                <span class="prod-audience prod-audience--women" title="Audience comes from the collection this product is in">
+                            Woman                        </span>
+                    </td>
+                    <td>
+                        <strong style="font-size:14px; color:var(--text-primary);">₹1,499.00</strong>
+                    </td>
+                    <td>
+                                                                                                            <span class="badge-luxury" style="background:#ecfdf5; color:#10b981;">🟢 In Stock (23)</span>
+                                                                        </td>
+                    <td style="text-align:right;">
+                                                <div class="prod-actions">
+                            <a href="product_form.php?id=23" class="prod-action-btn is-primary" title="Edit product" aria-label="Edit QA TEST Palazzo Trousers">
+                                <i class="fa-solid fa-pen"></i>
+                            </a>
+                            <form method="POST" action="products.php">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="duplicate_product">
+                                <input type="hidden" name="product_id" value="23">
+                                <button type="submit" class="prod-action-btn" title="Duplicate product" aria-label="Duplicate QA TEST Palazzo Trousers">
+                                    <i class="fa-solid fa-copy"></i>
+                                </button>
+                            </form>
+                                                        <form method="POST" action="products.php?view=active" onsubmit="return dvConfirmForm(this,'Archive product &quot;QA TEST Palazzo Trousers&quot;?');">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="delete_product">
+                                <input type="hidden" name="product_id" value="23">
+                                <button type="submit" class="prod-action-btn is-danger" title="Archive product" aria-label="Archive QA TEST Palazzo Trousers">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </form>
+                                                    </div>
+                    </td>
+                </tr>
+                                <tr data-category="QA TEST Accessories" data-name="qa test woven stole" data-price="899.00">
+                    <td>
+                                                    <img src="../uploads/products/qa-scarf.jpg" style="width:55px; height:65px; object-fit:cover; border-radius:4px; border:1px solid var(--border-light);">
+                                            </td>
+                    <td>
+                        <strong style="font-size:15px; color:var(--text-primary); display:block;">QA TEST Woven Stole</strong>
+                                                                        <span style="font-size:12px; color:var(--text-muted);">SKU: <code>QA-ACC-005</code></span>
+                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; background:var(--bg-surface-soft); padding:4px 8px; border-radius:4px; color:var(--color-primary);">QA TEST Accessories</span>
+                                                <span class="prod-audience prod-audience--unisex" title="Audience comes from the collection this product is in">
+                            Unisex                        </span>
+                    </td>
+                    <td>
+                        <strong style="font-size:14px; color:var(--text-primary);">₹899.00</strong>
+                    </td>
+                    <td>
+                                                                                                            <span class="badge-luxury" style="background:#fef2f2; color:#ef4444;">🔴 Out of Stock</span>
+                                                                        </td>
+                    <td style="text-align:right;">
+                                                <div class="prod-actions">
+                            <a href="product_form.php?id=22" class="prod-action-btn is-primary" title="Edit product" aria-label="Edit QA TEST Woven Stole">
+                                <i class="fa-solid fa-pen"></i>
+                            </a>
+                            <form method="POST" action="products.php">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="duplicate_product">
+                                <input type="hidden" name="product_id" value="22">
+                                <button type="submit" class="prod-action-btn" title="Duplicate product" aria-label="Duplicate QA TEST Woven Stole">
+                                    <i class="fa-solid fa-copy"></i>
+                                </button>
+                            </form>
+                                                        <form method="POST" action="products.php?view=active" onsubmit="return dvConfirmForm(this,'Archive product &quot;QA TEST Woven Stole&quot;?');">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="delete_product">
+                                <input type="hidden" name="product_id" value="22">
+                                <button type="submit" class="prod-action-btn is-danger" title="Archive product" aria-label="Archive QA TEST Woven Stole">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </form>
+                                                    </div>
+                    </td>
+                </tr>
+                                <tr data-category="QA TEST Womenswear" data-name="qa test ribbed knit top" data-price="1199.00">
+                    <td>
+                                                    <img src="../uploads/products/qa-ribbed-top.jpg" style="width:55px; height:65px; object-fit:cover; border-radius:4px; border:1px solid var(--border-light);">
+                                            </td>
+                    <td>
+                        <strong style="font-size:15px; color:var(--text-primary); display:block;">QA TEST Ribbed Knit Top</strong>
+                                                                        <span style="font-size:12px; color:var(--text-muted);">SKU: <code>QA-TOP-004</code></span>
+                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; background:var(--bg-surface-soft); padding:4px 8px; border-radius:4px; color:var(--color-primary);">QA TEST Womenswear</span>
+                                                <span class="prod-audience prod-audience--women" title="Audience comes from the collection this product is in">
+                            Woman                        </span>
+                    </td>
+                    <td>
+                        <strong style="font-size:14px; color:var(--text-primary);">₹1,199.00</strong>
+                    </td>
+                    <td>
+                                                                                                            <span class="badge-luxury" style="background:#fef2f2; color:#ef4444;">🔴 Out of Stock</span>
+                                                                        </td>
+                    <td style="text-align:right;">
+                                                <div class="prod-actions">
+                            <a href="product_form.php?id=21" class="prod-action-btn is-primary" title="Edit product" aria-label="Edit QA TEST Ribbed Knit Top">
+                                <i class="fa-solid fa-pen"></i>
+                            </a>
+                            <form method="POST" action="products.php">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="duplicate_product">
+                                <input type="hidden" name="product_id" value="21">
+                                <button type="submit" class="prod-action-btn" title="Duplicate product" aria-label="Duplicate QA TEST Ribbed Knit Top">
+                                    <i class="fa-solid fa-copy"></i>
+                                </button>
+                            </form>
+                                                        <form method="POST" action="products.php?view=active" onsubmit="return dvConfirmForm(this,'Archive product &quot;QA TEST Ribbed Knit Top&quot;?');">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="delete_product">
+                                <input type="hidden" name="product_id" value="21">
+                                <button type="submit" class="prod-action-btn is-danger" title="Archive product" aria-label="Archive QA TEST Ribbed Knit Top">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </form>
+                                                    </div>
+                    </td>
+                </tr>
+                                <tr data-category="QA TEST Womenswear" data-name="qa test sunday co-ord set" data-price="2599.00">
+                    <td>
+                                                    <img src="../uploads/products/qa-coord-set.jpg" style="width:55px; height:65px; object-fit:cover; border-radius:4px; border:1px solid var(--border-light);">
+                                            </td>
+                    <td>
+                        <strong style="font-size:15px; color:var(--text-primary); display:block;">QA TEST Sunday Co-ord Set</strong>
+                                                                        <span style="font-size:12px; color:var(--text-muted);">SKU: <code>QA-COR-003</code></span>
+                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; background:var(--bg-surface-soft); padding:4px 8px; border-radius:4px; color:var(--color-primary);">QA TEST Womenswear</span>
+                                                <span class="prod-audience prod-audience--women" title="Audience comes from the collection this product is in">
+                            Woman                        </span>
+                    </td>
+                    <td>
+                        <strong style="font-size:14px; color:var(--text-primary);">₹2,599.00</strong>
+                    </td>
+                    <td>
+                                                                                                            <span class="badge-luxury" style="background:#ecfdf5; color:#10b981;">🟢 In Stock (9)</span>
+                                                                        </td>
+                    <td style="text-align:right;">
+                                                <div class="prod-actions">
+                            <a href="product_form.php?id=20" class="prod-action-btn is-primary" title="Edit product" aria-label="Edit QA TEST Sunday Co-ord Set">
+                                <i class="fa-solid fa-pen"></i>
+                            </a>
+                            <form method="POST" action="products.php">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="duplicate_product">
+                                <input type="hidden" name="product_id" value="20">
+                                <button type="submit" class="prod-action-btn" title="Duplicate product" aria-label="Duplicate QA TEST Sunday Co-ord Set">
+                                    <i class="fa-solid fa-copy"></i>
+                                </button>
+                            </form>
+                                                        <form method="POST" action="products.php?view=active" onsubmit="return dvConfirmForm(this,'Archive product &quot;QA TEST Sunday Co-ord Set&quot;?');">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="delete_product">
+                                <input type="hidden" name="product_id" value="20">
+                                <button type="submit" class="prod-action-btn is-danger" title="Archive product" aria-label="Archive QA TEST Sunday Co-ord Set">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </form>
+                                                    </div>
+                    </td>
+                </tr>
+                                <tr data-category="QA TEST Womenswear" data-name="qa test rihaan festive kurta set" data-price="3499.00">
+                    <td>
+                                                    <img src="../uploads/products/qa-kurta-set.jpg" style="width:55px; height:65px; object-fit:cover; border-radius:4px; border:1px solid var(--border-light);">
+                                            </td>
+                    <td>
+                        <strong style="font-size:15px; color:var(--text-primary); display:block;">QA TEST Rihaan Festive Kurta Set</strong>
+                                                                        <span style="font-size:12px; color:var(--text-muted);">SKU: <code>QA-SET-002</code></span>
+                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; background:var(--bg-surface-soft); padding:4px 8px; border-radius:4px; color:var(--color-primary);">QA TEST Womenswear</span>
+                                                <span class="prod-audience prod-audience--women" title="Audience comes from the collection this product is in">
+                            Woman                        </span>
+                    </td>
+                    <td>
+                        <strong style="font-size:14px; color:var(--text-primary);">₹3,499.00</strong>
+                    </td>
+                    <td>
+                                                                                                            <span class="badge-luxury" style="background:#ecfdf5; color:#10b981;">🟢 In Stock (12)</span>
+                                                                        </td>
+                    <td style="text-align:right;">
+                                                <div class="prod-actions">
+                            <a href="product_form.php?id=19" class="prod-action-btn is-primary" title="Edit product" aria-label="Edit QA TEST Rihaan Festive Kurta Set">
+                                <i class="fa-solid fa-pen"></i>
+                            </a>
+                            <form method="POST" action="products.php">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="duplicate_product">
+                                <input type="hidden" name="product_id" value="19">
+                                <button type="submit" class="prod-action-btn" title="Duplicate product" aria-label="Duplicate QA TEST Rihaan Festive Kurta Set">
+                                    <i class="fa-solid fa-copy"></i>
+                                </button>
+                            </form>
+                                                        <form method="POST" action="products.php?view=active" onsubmit="return dvConfirmForm(this,'Archive product &quot;QA TEST Rihaan Festive Kurta Set&quot;?');">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="delete_product">
+                                <input type="hidden" name="product_id" value="19">
+                                <button type="submit" class="prod-action-btn is-danger" title="Archive product" aria-label="Archive QA TEST Rihaan Festive Kurta Set">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </form>
+                                                    </div>
+                    </td>
+                </tr>
+                                <tr data-category="QA TEST Womenswear" data-name="qa test anaya chikankari kurti" data-price="1899.00">
+                    <td>
+                                                    <img src="../uploads/products/qa-anaya-kurti.jpg" style="width:55px; height:65px; object-fit:cover; border-radius:4px; border:1px solid var(--border-light);">
+                                            </td>
+                    <td>
+                        <strong style="font-size:15px; color:var(--text-primary); display:block;">QA TEST Anaya Chikankari Kurti</strong>
+                                                                        <span style="font-size:12px; color:var(--text-muted);">SKU: <code>QA-KUR-001</code></span>
+                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; background:var(--bg-surface-soft); padding:4px 8px; border-radius:4px; color:var(--color-primary);">QA TEST Womenswear</span>
+                                                <span class="prod-audience prod-audience--women" title="Audience comes from the collection this product is in">
+                            Woman                        </span>
+                    </td>
+                    <td>
+                        <strong style="font-size:14px; color:var(--text-primary);">₹1,899.00</strong>
+                    </td>
+                    <td>
+                                                                                                            <span class="badge-luxury" style="background:#ecfdf5; color:#10b981;">🟢 In Stock (26)</span>
+                                                                        </td>
+                    <td style="text-align:right;">
+                                                <div class="prod-actions">
+                            <a href="product_form.php?id=18" class="prod-action-btn is-primary" title="Edit product" aria-label="Edit QA TEST Anaya Chikankari Kurti">
+                                <i class="fa-solid fa-pen"></i>
+                            </a>
+                            <form method="POST" action="products.php">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="duplicate_product">
+                                <input type="hidden" name="product_id" value="18">
+                                <button type="submit" class="prod-action-btn" title="Duplicate product" aria-label="Duplicate QA TEST Anaya Chikankari Kurti">
+                                    <i class="fa-solid fa-copy"></i>
+                                </button>
+                            </form>
+                                                        <form method="POST" action="products.php?view=active" onsubmit="return dvConfirmForm(this,'Archive product &quot;QA TEST Anaya Chikankari Kurti&quot;?');">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="delete_product">
+                                <input type="hidden" name="product_id" value="18">
+                                <button type="submit" class="prod-action-btn is-danger" title="Archive product" aria-label="Archive QA TEST Anaya Chikankari Kurti">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </form>
+                                                    </div>
+                    </td>
+                </tr>
+                                <tr data-category="Bottoms" data-name="iris straight crepe pants" data-price="140.00">
+                    <td>
+                                                    <img src="../uploads/products/crepe_pants_1784414756343.jpg" style="width:55px; height:65px; object-fit:cover; border-radius:4px; border:1px solid var(--border-light);">
+                                            </td>
+                    <td>
+                        <strong style="font-size:15px; color:var(--text-primary); display:block;">Iris Straight Crepe Pants</strong>
+                                                                        <span style="font-size:12px; color:var(--text-muted);">SKU: <code>DV-IRISSTRA</code></span>
+                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; background:var(--bg-surface-soft); padding:4px 8px; border-radius:4px; color:var(--color-primary);">Bottoms</span>
+                                                <span class="prod-audience prod-audience--women" title="Audience comes from the collection this product is in">
+                            Woman                        </span>
+                    </td>
+                    <td>
+                        <strong style="font-size:14px; color:var(--text-primary);">₹140.00</strong>
+                    </td>
+                    <td>
+                                                                                                            <span class="badge-luxury" style="background:#ecfdf5; color:#10b981;" title="Size-level stock not tracked — treated as unlimited">🟢 In Stock</span>
+                                                                        </td>
+                    <td style="text-align:right;">
+                                                <div class="prod-actions">
+                            <a href="product_form.php?id=12" class="prod-action-btn is-primary" title="Edit product" aria-label="Edit Iris Straight Crepe Pants">
+                                <i class="fa-solid fa-pen"></i>
+                            </a>
+                            <form method="POST" action="products.php">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="duplicate_product">
+                                <input type="hidden" name="product_id" value="12">
+                                <button type="submit" class="prod-action-btn" title="Duplicate product" aria-label="Duplicate Iris Straight Crepe Pants">
+                                    <i class="fa-solid fa-copy"></i>
+                                </button>
+                            </form>
+                                                        <form method="POST" action="products.php?view=active" onsubmit="return dvConfirmForm(this,'Archive product &quot;Iris Straight Crepe Pants&quot;?');">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="delete_product">
+                                <input type="hidden" name="product_id" value="12">
+                                <button type="submit" class="prod-action-btn is-danger" title="Archive product" aria-label="Archive Iris Straight Crepe Pants">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </form>
+                                                    </div>
+                    </td>
+                </tr>
+                                <tr data-category="Bottoms" data-name="sienna wide-leg silk trousers" data-price="160.00">
+                    <td>
+                                                    <img src="../uploads/products/silk_trousers_1784414749191.jpg" style="width:55px; height:65px; object-fit:cover; border-radius:4px; border:1px solid var(--border-light);">
+                                            </td>
+                    <td>
+                        <strong style="font-size:15px; color:var(--text-primary); display:block;">Sienna Wide-Leg Silk Trousers</strong>
+                                                                        <span style="font-size:12px; color:var(--text-muted);">SKU: <code>DV-SIENNAWI</code></span>
+                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; background:var(--bg-surface-soft); padding:4px 8px; border-radius:4px; color:var(--color-primary);">Bottoms</span>
+                                                <span class="prod-audience prod-audience--women" title="Audience comes from the collection this product is in">
+                            Woman                        </span>
+                    </td>
+                    <td>
+                        <strong style="font-size:14px; color:var(--text-primary);">₹160.00</strong>
+                    </td>
+                    <td>
+                                                                                                            <span class="badge-luxury" style="background:#ecfdf5; color:#10b981;">🟢 In Stock (39)</span>
+                                                                        </td>
+                    <td style="text-align:right;">
+                                                <div class="prod-actions">
+                            <a href="product_form.php?id=11" class="prod-action-btn is-primary" title="Edit product" aria-label="Edit Sienna Wide-Leg Silk Trousers">
+                                <i class="fa-solid fa-pen"></i>
+                            </a>
+                            <form method="POST" action="products.php">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="duplicate_product">
+                                <input type="hidden" name="product_id" value="11">
+                                <button type="submit" class="prod-action-btn" title="Duplicate product" aria-label="Duplicate Sienna Wide-Leg Silk Trousers">
+                                    <i class="fa-solid fa-copy"></i>
+                                </button>
+                            </form>
+                                                        <form method="POST" action="products.php?view=active" onsubmit="return dvConfirmForm(this,'Archive product &quot;Sienna Wide-Leg Silk Trousers&quot;?');">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="delete_product">
+                                <input type="hidden" name="product_id" value="11">
+                                <button type="submit" class="prod-action-btn is-danger" title="Archive product" aria-label="Archive Sienna Wide-Leg Silk Trousers">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </form>
+                                                    </div>
+                    </td>
+                </tr>
+                                <tr data-category="Women&#039;s Tops" data-name="freya linen wrap top" data-price="125.00">
+                    <td>
+                                                    <img src="../uploads/products/linen_wrap_top_1784414741898.jpg" style="width:55px; height:65px; object-fit:cover; border-radius:4px; border:1px solid var(--border-light);">
+                                            </td>
+                    <td>
+                        <strong style="font-size:15px; color:var(--text-primary); display:block;">Freya Linen Wrap Top</strong>
+                                                                        <span style="font-size:12px; color:var(--text-muted);">SKU: <code>DV-10</code></span>
+                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; background:var(--bg-surface-soft); padding:4px 8px; border-radius:4px; color:var(--color-primary);">Women&#039;s Tops</span>
+                                                <span class="prod-audience prod-audience--women" title="Audience comes from the collection this product is in">
+                            Woman                        </span>
+                    </td>
+                    <td>
+                        <strong style="font-size:14px; color:var(--text-primary);">₹125.00</strong>
+                    </td>
+                    <td>
+                                                                                                            <span class="badge-luxury" style="background:#ecfdf5; color:#10b981;">🟢 In Stock (30)</span>
+                                                                        </td>
+                    <td style="text-align:right;">
+                                                <div class="prod-actions">
+                            <a href="product_form.php?id=10" class="prod-action-btn is-primary" title="Edit product" aria-label="Edit Freya Linen Wrap Top">
+                                <i class="fa-solid fa-pen"></i>
+                            </a>
+                            <form method="POST" action="products.php">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="duplicate_product">
+                                <input type="hidden" name="product_id" value="10">
+                                <button type="submit" class="prod-action-btn" title="Duplicate product" aria-label="Duplicate Freya Linen Wrap Top">
+                                    <i class="fa-solid fa-copy"></i>
+                                </button>
+                            </form>
+                                                        <form method="POST" action="products.php?view=active" onsubmit="return dvConfirmForm(this,'Archive product &quot;Freya Linen Wrap Top&quot;?');">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="delete_product">
+                                <input type="hidden" name="product_id" value="10">
+                                <button type="submit" class="prod-action-btn is-danger" title="Archive product" aria-label="Archive Freya Linen Wrap Top">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </form>
+                                                    </div>
+                    </td>
+                </tr>
+                                <tr data-category="Women&#039;s Tops" data-name="elena cowl-neck satin top" data-price="110.00">
+                    <td>
+                                                    <img src="../uploads/products/elena_cowl_neck_satin_top_1785962967.jpg" style="width:55px; height:65px; object-fit:cover; border-radius:4px; border:1px solid var(--border-light);">
+                                            </td>
+                    <td>
+                        <strong style="font-size:15px; color:var(--text-primary); display:block;">Elena Cowl-Neck Satin Top</strong>
+                                                                        <span style="font-size:12px; color:var(--text-muted);">SKU: <code>DV-9</code></span>
+                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; background:var(--bg-surface-soft); padding:4px 8px; border-radius:4px; color:var(--color-primary);">Women&#039;s Tops</span>
+                                                <span class="prod-audience prod-audience--women" title="Audience comes from the collection this product is in">
+                            Woman                        </span>
+                    </td>
+                    <td>
+                        <strong style="font-size:14px; color:var(--text-primary);">₹110.00</strong>
+                    </td>
+                    <td>
+                                                                                                            <span class="badge-luxury" style="background:#ecfdf5; color:#10b981;">🟢 In Stock (45)</span>
+                                                                        </td>
+                    <td style="text-align:right;">
+                                                <div class="prod-actions">
+                            <a href="product_form.php?id=9" class="prod-action-btn is-primary" title="Edit product" aria-label="Edit Elena Cowl-Neck Satin Top">
+                                <i class="fa-solid fa-pen"></i>
+                            </a>
+                            <form method="POST" action="products.php">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="duplicate_product">
+                                <input type="hidden" name="product_id" value="9">
+                                <button type="submit" class="prod-action-btn" title="Duplicate product" aria-label="Duplicate Elena Cowl-Neck Satin Top">
+                                    <i class="fa-solid fa-copy"></i>
+                                </button>
+                            </form>
+                                                        <form method="POST" action="products.php?view=active" onsubmit="return dvConfirmForm(this,'Archive product &quot;Elena Cowl-Neck Satin Top&quot;?');">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="delete_product">
+                                <input type="hidden" name="product_id" value="9">
+                                <button type="submit" class="prod-action-btn is-danger" title="Archive product" aria-label="Archive Elena Cowl-Neck Satin Top">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </form>
+                                                    </div>
+                    </td>
+                </tr>
+                                <tr data-category="Short Kurtis" data-name="kiara georgette short kurti" data-price="135.00">
+                    <td>
+                                                    <img src="../uploads/products/georgette_short_kurti_1784414734051.jpg" style="width:55px; height:65px; object-fit:cover; border-radius:4px; border:1px solid var(--border-light);">
+                                            </td>
+                    <td>
+                        <strong style="font-size:15px; color:var(--text-primary); display:block;">Kiara Georgette Short Kurti</strong>
+                                                                        <span style="font-size:12px; color:var(--text-muted);">SKU: <code>DV-8</code></span>
+                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; background:var(--bg-surface-soft); padding:4px 8px; border-radius:4px; color:var(--color-primary);">Short Kurtis</span>
+                                                <span class="prod-audience prod-audience--women" title="Audience comes from the collection this product is in">
+                            Woman                        </span>
+                    </td>
+                    <td>
+                        <strong style="font-size:14px; color:var(--text-primary);">₹135.00</strong>
+                    </td>
+                    <td>
+                                                                                                            <span class="badge-luxury" style="background:#ecfdf5; color:#10b981;">🟢 In Stock (40)</span>
+                                                                        </td>
+                    <td style="text-align:right;">
+                                                <div class="prod-actions">
+                            <a href="product_form.php?id=8" class="prod-action-btn is-primary" title="Edit product" aria-label="Edit Kiara Georgette Short Kurti">
+                                <i class="fa-solid fa-pen"></i>
+                            </a>
+                            <form method="POST" action="products.php">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="duplicate_product">
+                                <input type="hidden" name="product_id" value="8">
+                                <button type="submit" class="prod-action-btn" title="Duplicate product" aria-label="Duplicate Kiara Georgette Short Kurti">
+                                    <i class="fa-solid fa-copy"></i>
+                                </button>
+                            </form>
+                                                        <form method="POST" action="products.php?view=active" onsubmit="return dvConfirmForm(this,'Archive product &quot;Kiara Georgette Short Kurti&quot;?');">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="delete_product">
+                                <input type="hidden" name="product_id" value="8">
+                                <button type="submit" class="prod-action-btn is-danger" title="Archive product" aria-label="Archive Kiara Georgette Short Kurti">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </form>
+                                                    </div>
+                    </td>
+                </tr>
+                                <tr data-category="Short Kurtis" data-name="raya cotton short kurti" data-price="95.00">
+                    <td>
+                                                    <img src="../uploads/products/cotton_short_kurti_1784414719998.jpg" style="width:55px; height:65px; object-fit:cover; border-radius:4px; border:1px solid var(--border-light);">
+                                            </td>
+                    <td>
+                        <strong style="font-size:15px; color:var(--text-primary); display:block;">Raya Cotton Short Kurti</strong>
+                                                                        <span style="font-size:12px; color:var(--text-muted);">SKU: <code>DV-7</code></span>
+                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; background:var(--bg-surface-soft); padding:4px 8px; border-radius:4px; color:var(--color-primary);">Short Kurtis</span>
+                                                <span class="prod-audience prod-audience--women" title="Audience comes from the collection this product is in">
+                            Woman                        </span>
+                    </td>
+                    <td>
+                        <strong style="font-size:14px; color:var(--text-primary);">₹95.00</strong>
+                    </td>
+                    <td>
+                                                                                                            <span class="badge-luxury" style="background:#ecfdf5; color:#10b981;">🟢 In Stock (60)</span>
+                                                                        </td>
+                    <td style="text-align:right;">
+                                                <div class="prod-actions">
+                            <a href="product_form.php?id=7" class="prod-action-btn is-primary" title="Edit product" aria-label="Edit Raya Cotton Short Kurti">
+                                <i class="fa-solid fa-pen"></i>
+                            </a>
+                            <form method="POST" action="products.php">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="duplicate_product">
+                                <input type="hidden" name="product_id" value="7">
+                                <button type="submit" class="prod-action-btn" title="Duplicate product" aria-label="Duplicate Raya Cotton Short Kurti">
+                                    <i class="fa-solid fa-copy"></i>
+                                </button>
+                            </form>
+                                                        <form method="POST" action="products.php?view=active" onsubmit="return dvConfirmForm(this,'Archive product &quot;Raya Cotton Short Kurti&quot;?');">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="delete_product">
+                                <input type="hidden" name="product_id" value="7">
+                                <button type="submit" class="prod-action-btn is-danger" title="Archive product" aria-label="Archive Raya Cotton Short Kurti">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </form>
+                                                    </div>
+                    </td>
+                </tr>
+                                <tr data-category="Coord Sets" data-name="soraya linen coord set" data-price="245.00">
+                    <td>
+                                                    <img src="../uploads/products/linen_coord_1784414712638.jpg" style="width:55px; height:65px; object-fit:cover; border-radius:4px; border:1px solid var(--border-light);">
+                                            </td>
+                    <td>
+                        <strong style="font-size:15px; color:var(--text-primary); display:block;">Soraya Linen Coord Set</strong>
+                                                                        <span style="font-size:12px; color:var(--text-muted);">SKU: <code>DV-6</code></span>
+                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; background:var(--bg-surface-soft); padding:4px 8px; border-radius:4px; color:var(--color-primary);">Coord Sets</span>
+                                                <span class="prod-audience prod-audience--women" title="Audience comes from the collection this product is in">
+                            Woman                        </span>
+                    </td>
+                    <td>
+                        <strong style="font-size:14px; color:var(--text-primary);">₹245.00</strong>
+                    </td>
+                    <td>
+                                                                                                            <span class="badge-luxury" style="background:#ecfdf5; color:#10b981;">🟢 In Stock (33)</span>
+                                                                        </td>
+                    <td style="text-align:right;">
+                                                <div class="prod-actions">
+                            <a href="product_form.php?id=6" class="prod-action-btn is-primary" title="Edit product" aria-label="Edit Soraya Linen Coord Set">
+                                <i class="fa-solid fa-pen"></i>
+                            </a>
+                            <form method="POST" action="products.php">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="duplicate_product">
+                                <input type="hidden" name="product_id" value="6">
+                                <button type="submit" class="prod-action-btn" title="Duplicate product" aria-label="Duplicate Soraya Linen Coord Set">
+                                    <i class="fa-solid fa-copy"></i>
+                                </button>
+                            </form>
+                                                        <form method="POST" action="products.php?view=active" onsubmit="return dvConfirmForm(this,'Archive product &quot;Soraya Linen Coord Set&quot;?');">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="delete_product">
+                                <input type="hidden" name="product_id" value="6">
+                                <button type="submit" class="prod-action-btn is-danger" title="Archive product" aria-label="Archive Soraya Linen Coord Set">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </form>
+                                                    </div>
+                    </td>
+                </tr>
+                                <tr data-category="Coord Sets" data-name="luna satin coord set" data-price="290.00">
+                    <td>
+                                                    <img src="../uploads/products/luna_satin_coord_1785962869.jpg" style="width:55px; height:65px; object-fit:cover; border-radius:4px; border:1px solid var(--border-light);">
+                                            </td>
+                    <td>
+                        <strong style="font-size:15px; color:var(--text-primary); display:block;">Luna Satin Coord Set</strong>
+                                                                        <span style="font-size:12px; color:var(--text-muted);">SKU: <code>DV-LUNASATI</code></span>
+                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; background:var(--bg-surface-soft); padding:4px 8px; border-radius:4px; color:var(--color-primary);">Coord Sets</span>
+                                                <span class="prod-audience prod-audience--women" title="Audience comes from the collection this product is in">
+                            Woman                        </span>
+                    </td>
+                    <td>
+                        <strong style="font-size:14px; color:var(--text-primary);">₹290.00</strong>
+                    </td>
+                    <td>
+                                                                                                            <span class="badge-luxury" style="background:#ecfdf5; color:#10b981;" title="Size-level stock not tracked — treated as unlimited">🟢 In Stock</span>
+                                                                        </td>
+                    <td style="text-align:right;">
+                                                <div class="prod-actions">
+                            <a href="product_form.php?id=5" class="prod-action-btn is-primary" title="Edit product" aria-label="Edit Luna Satin Coord Set">
+                                <i class="fa-solid fa-pen"></i>
+                            </a>
+                            <form method="POST" action="products.php">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="duplicate_product">
+                                <input type="hidden" name="product_id" value="5">
+                                <button type="submit" class="prod-action-btn" title="Duplicate product" aria-label="Duplicate Luna Satin Coord Set">
+                                    <i class="fa-solid fa-copy"></i>
+                                </button>
+                            </form>
+                                                        <form method="POST" action="products.php?view=active" onsubmit="return dvConfirmForm(this,'Archive product &quot;Luna Satin Coord Set&quot;?');">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="delete_product">
+                                <input type="hidden" name="product_id" value="5">
+                                <button type="submit" class="prod-action-btn is-danger" title="Archive product" aria-label="Archive Luna Satin Coord Set">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </form>
+                                                    </div>
+                    </td>
+                </tr>
+                                <tr data-category="3 Piece Suits" data-name="meera silk 3-piece suit" data-price="420.00">
+                    <td>
+                                                    <img src="../uploads/products/silk_3_piece_1784414705496.jpg" style="width:55px; height:65px; object-fit:cover; border-radius:4px; border:1px solid var(--border-light);">
+                                            </td>
+                    <td>
+                        <strong style="font-size:15px; color:var(--text-primary); display:block;">Meera Silk 3-Piece Suit</strong>
+                                                                        <span style="font-size:12px; color:var(--text-muted);">SKU: <code>DV-4</code></span>
+                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; background:var(--bg-surface-soft); padding:4px 8px; border-radius:4px; color:var(--color-primary);">3 Piece Suits</span>
+                                                <span class="prod-audience prod-audience--women" title="Audience comes from the collection this product is in">
+                            Woman                        </span>
+                    </td>
+                    <td>
+                        <strong style="font-size:14px; color:var(--text-primary);">₹420.00</strong>
+                    </td>
+                    <td>
+                                                                                                            <span class="badge-luxury" style="background:#ecfdf5; color:#10b981;">🟢 In Stock (40)</span>
+                                                                        </td>
+                    <td style="text-align:right;">
+                                                <div class="prod-actions">
+                            <a href="product_form.php?id=4" class="prod-action-btn is-primary" title="Edit product" aria-label="Edit Meera Silk 3-Piece Suit">
+                                <i class="fa-solid fa-pen"></i>
+                            </a>
+                            <form method="POST" action="products.php">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="duplicate_product">
+                                <input type="hidden" name="product_id" value="4">
+                                <button type="submit" class="prod-action-btn" title="Duplicate product" aria-label="Duplicate Meera Silk 3-Piece Suit">
+                                    <i class="fa-solid fa-copy"></i>
+                                </button>
+                            </form>
+                                                        <form method="POST" action="products.php?view=active" onsubmit="return dvConfirmForm(this,'Archive product &quot;Meera Silk 3-Piece Suit&quot;?');">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="delete_product">
+                                <input type="hidden" name="product_id" value="4">
+                                <button type="submit" class="prod-action-btn is-danger" title="Archive product" aria-label="Archive Meera Silk 3-Piece Suit">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </form>
+                                                    </div>
+                    </td>
+                </tr>
+                                <tr data-category="3 Piece Suits" data-name="adara brocade 3-piece suit" data-price="350.00">
+                    <td>
+                                                    <img src="../uploads/products/adara_brocade_suit_1785962869.jpg" style="width:55px; height:65px; object-fit:cover; border-radius:4px; border:1px solid var(--border-light);">
+                                            </td>
+                    <td>
+                        <strong style="font-size:15px; color:var(--text-primary); display:block;">Adara Brocade 3-Piece Suit</strong>
+                                                                        <span style="font-size:12px; color:var(--text-muted);">SKU: <code>DV-3</code></span>
+                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; background:var(--bg-surface-soft); padding:4px 8px; border-radius:4px; color:var(--color-primary);">3 Piece Suits</span>
+                                                <span class="prod-audience prod-audience--women" title="Audience comes from the collection this product is in">
+                            Woman                        </span>
+                    </td>
+                    <td>
+                        <strong style="font-size:14px; color:var(--text-primary);">₹350.00</strong>
+                    </td>
+                    <td>
+                                                                                                            <span class="badge-luxury" style="background:#ecfdf5; color:#10b981;">🟢 In Stock (40)</span>
+                                                                        </td>
+                    <td style="text-align:right;">
+                                                <div class="prod-actions">
+                            <a href="product_form.php?id=3" class="prod-action-btn is-primary" title="Edit product" aria-label="Edit Adara Brocade 3-Piece Suit">
+                                <i class="fa-solid fa-pen"></i>
+                            </a>
+                            <form method="POST" action="products.php">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="duplicate_product">
+                                <input type="hidden" name="product_id" value="3">
+                                <button type="submit" class="prod-action-btn" title="Duplicate product" aria-label="Duplicate Adara Brocade 3-Piece Suit">
+                                    <i class="fa-solid fa-copy"></i>
+                                </button>
+                            </form>
+                                                        <form method="POST" action="products.php?view=active" onsubmit="return dvConfirmForm(this,'Archive product &quot;Adara Brocade 3-Piece Suit&quot;?');">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="delete_product">
+                                <input type="hidden" name="product_id" value="3">
+                                <button type="submit" class="prod-action-btn is-danger" title="Archive product" aria-label="Archive Adara Brocade 3-Piece Suit">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </form>
+                                                    </div>
+                    </td>
+                </tr>
+                                <tr data-category="Kurtis" data-name="zariah georgette kurti" data-price="165.00">
+                    <td>
+                                                    <img src="../uploads/products/georgette_kurti_1784414698877.jpg" style="width:55px; height:65px; object-fit:cover; border-radius:4px; border:1px solid var(--border-light);">
+                                            </td>
+                    <td>
+                        <strong style="font-size:15px; color:var(--text-primary); display:block;">Zariah Georgette Kurti</strong>
+                                                                        <span style="font-size:12px; color:var(--text-muted);">SKU: <code>DV-2</code></span>
+                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; background:var(--bg-surface-soft); padding:4px 8px; border-radius:4px; color:var(--color-primary);">Kurtis</span>
+                                                <span class="prod-audience prod-audience--women" title="Audience comes from the collection this product is in">
+                            Woman                        </span>
+                    </td>
+                    <td>
+                        <strong style="font-size:14px; color:var(--text-primary);">₹165.00</strong>
+                    </td>
+                    <td>
+                                                                                                            <span class="badge-luxury" style="background:#ecfdf5; color:#10b981;">🟢 In Stock (26)</span>
+                                                                        </td>
+                    <td style="text-align:right;">
+                                                <div class="prod-actions">
+                            <a href="product_form.php?id=2" class="prod-action-btn is-primary" title="Edit product" aria-label="Edit Zariah Georgette Kurti">
+                                <i class="fa-solid fa-pen"></i>
+                            </a>
+                            <form method="POST" action="products.php">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="duplicate_product">
+                                <input type="hidden" name="product_id" value="2">
+                                <button type="submit" class="prod-action-btn" title="Duplicate product" aria-label="Duplicate Zariah Georgette Kurti">
+                                    <i class="fa-solid fa-copy"></i>
+                                </button>
+                            </form>
+                                                        <form method="POST" action="products.php?view=active" onsubmit="return dvConfirmForm(this,'Archive product &quot;Zariah Georgette Kurti&quot;?');">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="delete_product">
+                                <input type="hidden" name="product_id" value="2">
+                                <button type="submit" class="prod-action-btn is-danger" title="Archive product" aria-label="Archive Zariah Georgette Kurti">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </form>
+                                                    </div>
+                    </td>
+                </tr>
+                                <tr data-category="Kurtis" data-name="aurelia silk kurti" data-price="180.00">
+                    <td>
+                                                    <img src="../uploads/products/dievon_silk_dress.png" style="width:55px; height:65px; object-fit:cover; border-radius:4px; border:1px solid var(--border-light);">
+                                            </td>
+                    <td>
+                        <strong style="font-size:15px; color:var(--text-primary); display:block;">Aurelia Silk Kurti</strong>
+                                                                                                        <span class="prod-badge prod-badge--draft">Draft</span>
+                                                <span style="font-size:12px; color:var(--text-muted);">SKU: <code>DV-1</code></span>
+                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; background:var(--bg-surface-soft); padding:4px 8px; border-radius:4px; color:var(--color-primary);">Kurtis</span>
+                                                <span class="prod-audience prod-audience--women" title="Audience comes from the collection this product is in">
+                            Woman                        </span>
+                    </td>
+                    <td>
+                        <strong style="font-size:14px; color:var(--text-primary);">₹180.00</strong>
+                    </td>
+                    <td>
+                                                                            <span style="font-size:11px; color:var(--text-muted);">∞ Available</span>
+                                            </td>
+                    <td style="text-align:right;">
+                                                <div class="prod-actions">
+                            <a href="product_form.php?id=1" class="prod-action-btn is-primary" title="Edit product" aria-label="Edit Aurelia Silk Kurti">
+                                <i class="fa-solid fa-pen"></i>
+                            </a>
+                            <form method="POST" action="products.php">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="duplicate_product">
+                                <input type="hidden" name="product_id" value="1">
+                                <button type="submit" class="prod-action-btn" title="Duplicate product" aria-label="Duplicate Aurelia Silk Kurti">
+                                    <i class="fa-solid fa-copy"></i>
+                                </button>
+                            </form>
+                                                        <form method="POST" action="products.php?view=active" onsubmit="return dvConfirmForm(this,'Archive product &quot;Aurelia Silk Kurti&quot;?');">
+                                <input type="hidden" name="csrf_token" value="121daace3f222e99d030e019bd16b1a0190b695edac85bde3eae0fa724bf3862">
+                                <input type="hidden" name="action" value="delete_product">
+                                <input type="hidden" name="product_id" value="1">
+                                <button type="submit" class="prod-action-btn is-danger" title="Archive product" aria-label="Archive Aurelia Silk Kurti">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </form>
+                                                    </div>
+                    </td>
+                </tr>
+                            </tbody>
+        </table>
+    </div>
+    </div>
+
+<script>
+function filterAndSortProducts() {
+    const cat = document.getElementById('prodFilterCategory').value;
+    const sort = document.getElementById('prodSort').value;
+    const rows = Array.from(document.querySelectorAll('#productsTable tbody tr'));
+
+    rows.forEach(row => {
+        const rowCat = row.getAttribute('data-category');
+        if (cat === 'all' || rowCat === cat) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+
+    if (sort !== 'default') {
+        const tbody = document.querySelector('#productsTable tbody');
+        rows.sort((a, b) => {
+            const nameA = a.getAttribute('data-name');
+            const nameB = b.getAttribute('data-name');
+            const priceA = parseFloat(a.getAttribute('data-price'));
+            const priceB = parseFloat(b.getAttribute('data-price'));
+
+            if (sort === 'name_asc') return nameA.localeCompare(nameB);
+            if (sort === 'name_desc') return nameB.localeCompare(nameA);
+            if (sort === 'price_asc') return priceA - priceB;
+            if (sort === 'price_desc') return priceB - priceA;
+            return 0;
+        });
+        rows.forEach(row => tbody.appendChild(row));
+    }
+}
+</script>
+
+    </main>
+</div>
+</div>
+<!-- Branded dialog (shares the storefront stylesheet, which admin already loads). -->
+<script src="http://localhost:8888/DievonOrders/assets/js/dievon-dialog.js?v=1785450739"></script>
+<script src="assets/js/admin.js"></script>
+</body>
+</html>

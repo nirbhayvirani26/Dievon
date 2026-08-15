@@ -1,0 +1,1856 @@
+
+/* ── Global Section Space Master Control ────────────────── */
+.section-space { padding: 80px 0 !important; }
+
+@media (max-width: 991px) {
+    .section-space { padding: 50px 0 !important; }
+    body:not(.admin-wrapper) { padding-top: var(--header-height, 75px) !important; }
+
+    /* The gap under every section heading comes down with the section padding.
+       .section-title-wrapper carries margin-bottom: 50px and had no mobile
+       override at all, so a phone got the full desktop gap — and with the
+       divider's own 14px above it that is about 66px of empty space between
+       "Dievon Collections" and the first card. On a 700px screen that is a
+       tenth of the viewport spent on nothing, repeated at every section. */
+    /* Country picker: swap to the code-only control where the row is tight.
+       The header prints both because a <select> renders one string and CSS
+       cannot rewrite an <option>. Desktop keeps "IN ₹ INR"; here it is "UK". */
+    .section-title-wrapper { margin-bottom: 28px; }
+    .section-title-wrapper::after { margin-top: 10px; }
+
+    /* The site has three heading blocks, not one, and they all carried a
+       desktop-sized gap on phones:
+         .section-title-wrapper      centred, with the gold divider (4 uses)
+         .home-section-header        left title + buttons on the right (homepage)
+         .product-section-header-row title + rule, on the product page
+       Fixing only the first would have left the other two loose and the
+       spacing down the page uneven, which reads as a mistake rather than a
+       style. The flex-direction rule for .home-section-header further down
+       this file never touched its margin. */
+    .home-section-header { margin-bottom: 28px; }
+    .product-section-header-row { margin-bottom: 24px; padding-bottom: 10px; }
+}
+
+@media (max-width: 480px) {
+    .section-space { padding: 35px 0 !important; }
+    body:not(.admin-wrapper) { padding-top: var(--header-height, 65px) !important; }
+
+    .section-title-wrapper { margin-bottom: 22px; }
+    .section-title-wrapper::after { margin-top: 8px; }
+    .home-section-header { margin-bottom: 22px; }
+    .product-section-header-row { margin-bottom: 20px; padding-bottom: 8px; }
+}
+/* ═══════════════════════════════════════════════════════════
+   DIEVON — RESPONSIVE CSS SYSTEM
+   Fluid responsive design from 1400px down to 320px
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── 1200px — Large Desktops / Laptops ────────────────── */
+@media (max-width: 1200px) {
+    .mega-menu-dropdown { width: 90vw; max-width: 900px; }
+}
+
+/* ── 1100px — Desktop ──────────────────────────────────── */
+@media (max-width: 1100px) {
+    .footer-top { grid-template-columns: 1fr 1fr; gap: 32px; }
+}
+
+/* ── 960px — Tablet Landscape ──────────────────────────── */
+@media (max-width: 960px) {
+    .hero-grid, .checkout-grid { grid-template-columns: 1fr; }
+    .hero-visual  { display: none; }
+    .hero-title   { font-size: 38px; }
+    .hero-stats   { flex-wrap: wrap; }
+    .hero-stat    { min-width: 50%; }
+    .order-detail-grid { grid-template-columns: 1fr; }
+    .form-row          { grid-template-columns: 1fr; }
+
+    .story-grid,
+    .about-story-grid,
+    .contact-grid { grid-template-columns: 1fr; }
+
+    .gallery-grid    { columns: 2; column-gap: 14px; }
+    .landing-title   { font-size: 46px; }
+    .story-img-block { height: 300px; }
+    .about-hero h1   { font-size: 36px; }
+}
+
+/* ── 900px — Shop / Product / Home Grids ───────────────── */
+@media (max-width: 900px) {
+    /* Shop layout */
+    .shop-layout { grid-template-columns: 1fr; }
+    .shop-sidebar { display: none !important; } /* Hidden on mobile; replaced by mobile sticky Refine drawer */
+    .mobile-shop-bottom-bar { display: flex !important; }
+    .shop-main { padding-bottom: 70px; }
+    .filters-sorting-bar { display: none !important; } /* Desktop sorting bar hidden on mobile */
+    .products-grid { grid-template-columns: repeat(2, 1fr); gap: 14px; }
+    .products-grid.list-view .product-card { flex-direction: column !important; height: auto; }
+    .products-grid.list-view .product-card > div:nth-child(3) { width: 100%; height: 320px !important; border-right: none; border-bottom: 1px solid var(--border-light) !important; }
+
+    /* ═══════════════════════════════════════════════════════════
+       MOBILE ADMIN PANEL RESPONSIVE SYSTEM
+       ═══════════════════════════════════════════════════════════ */
+    .admin-global-topbar { padding: 0 16px; }
+    .admin-brand-logo { font-size: 15px; }
+    .admin-user-pill { display: none; }
+    .admin-mobile-toggle { display: flex !important; }
+    
+    .admin-sidebar {
+        position: fixed;
+        left: -270px;
+        top: 60px;
+        bottom: 0;
+        width: 270px;
+        height: calc(100vh - 60px);
+        transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        z-index: 1000;
+        box-shadow: 10px 0 30px rgba(0,0,0,0.3);
+    }
+
+    .admin-sidebar.open {
+        transform: translateX(270px);
+    }
+
+    .admin-main {
+        margin-left: 0 !important;
+        width: 100% !important;
+    }
+
+    .admin-content {
+        padding: 20px 16px 50px !important;
+    }
+
+    .admin-page-header {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 12px;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 12px !important;
+    }
+
+    .admin-card-box {
+        padding: 16px !important;
+    }
+
+    .table-wrapper, .admin-table-container {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .product-form-grid {
+        grid-template-columns: 1fr !important;
+        gap: 20px !important;
+    }
+
+    /* Product page */
+    .product-layout { flex-direction: column; gap: 40px; }
+    .related-grid { grid-template-columns: repeat(2, 1fr); }
+
+    /* Home page grids */
+    .home-categories-grid { grid-template-columns: repeat(2, 1fr); gap: 20px; }
+    .home-best-sellers-grid { grid-template-columns: repeat(2, 1fr); gap: 20px; }
+    .home-blog-grid { grid-template-columns: repeat(2, 1fr); gap: 20px; }
+    .home-benefits-grid { grid-template-columns: repeat(2, 1fr); gap: 20px; }
+
+    /* Editorial & About grids */
+    .editorial-grid { grid-template-columns: 1fr; }
+    .editorial-content { padding-left: 0; padding-right: 0; padding-top: 30px; }
+    .about-narrative-grid { grid-template-columns: 1fr; gap: 40px; }
+    .about-values-grid { grid-template-columns: 1fr; gap: 30px; }
+    .contact-layout-grid { grid-template-columns: 1fr; gap: 40px; }
+    .contact-form-row { grid-template-columns: 1fr; gap: 0; }
+    .blog-list-grid { grid-template-columns: repeat(2, 1fr); gap: 20px; }
+
+
+    /* Search overlay */
+    .search-results-area { grid-template-columns: 1fr; gap: 20px; }
+    .instant-results-grid { grid-template-columns: 1fr; }
+
+    /* Section Spacing Responsive Adjustments */
+    .section-space { padding: 70px 0; }
+    /* .section-space-sm */ { padding: 45px 0; }
+    /* .section-space-lg */ { padding: 90px 0; }
+    .section-mb { margin-bottom: 40px; }
+    .section-mb-lg { margin-bottom: 60px; }
+}
+
+
+/* ── 768px — Tablet Portrait ───────────────────────────── */
+@media (max-width: 991px) {
+    /* ═══════════════════════════════════════════════════════════
+       LUXURY MOBILE HEADER & DRAWER MENU
+       ═══════════════════════════════════════════════════════════ */
+    .main-header-container {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        padding: 6px 16px !important;
+        gap: 10px !important;
+    }
+
+    .nav-hamburger {
+        display: flex !important;
+        order: 1;
+        margin-right: 0 !important;
+    }
+
+    .header-brand-group {
+        order: 2;
+        display: flex !important;
+        align-items: center !important;
+        margin-right: auto;
+        margin-left: 0px;
+    }
+
+    .header-brand-group .logo img,
+    .logo img {
+        object-fit: contain !important;
+    }
+
+    .nav-actions {
+        order: 3;
+        display: flex !important;
+        align-items: center !important;
+        gap: 14px !important;
+        /* Room for the count badge on the last icon.
+           ────────────────────────────────────────────────────────────
+           The badge is absolutely positioned at right: -9px and carries a 2px
+           white ring, so it sticks out 11px past the bag icon. The bag is the
+           last thing in the row and the row sits hard against the right edge,
+           so the badge ran into — and past — the container padding the moment
+           anything was in the cart. Empty, there is no badge and nothing looks
+           wrong, which is why it only showed up after adding a product.
+
+           12px, not 6px: 6px covers only half the overhang, so the ring would
+           still touch the edge. This padding is inside the flex row, so it
+           pushes the icons left rather than making the header wider. */
+        padding-right: 12px;
+    }
+
+    /* Keeps its pill on mobile — smaller, but still visibly a control.
+
+       This stripped the background, border, radius and shadow, so the country
+       picker rendered as bare text sitting between the icons with nothing to
+       say it could be tapped.
+
+       Worse, it used the `background` SHORTHAND. That resets background-image
+       along with the colour, and the dropdown arrow IS a background-image (an
+       inline SVG set in style.css) — so the arrow disappeared too. The
+       background-position line below it was then positioning an image that no
+       longer existed. background-color leaves the arrow alone. */
+    #currencySelector, #countrySelector {
+        /* Transparent, matching the desktop rule. A tinted fill made this the
+           only solid shape in a row of outline icons, so the eye went to it
+           first — and it is the least important control there. */
+        background-color: transparent !important;
+        border: 1px solid rgba(197, 155, 75, 0.28) !important;
+        border-radius: 16px !important;
+        box-shadow: none !important;
+        /* Sized to sit level with the icons beside it. The text was 11px
+           against 18-20px glyphs, so the control read as a small grey label
+           dropped into a row of proper controls. Matching their height and
+           lifting the text makes the row one thing rather than two. */
+        font-size: 12.5px !important;
+        font-weight: 600 !important;
+        padding: 5px 19px 5px 10px !important;
+        height: 26px !important;
+        background-position: right 7px center !important;
+    }
+
+    .show-mobile-only {
+        display: inline-flex !important;
+    }
+
+    .header-search-wrap {
+        display: none !important;
+    }
+
+    /* Fixed Mobile Bottom Dock */
+    .mobile-bottom-dock {
+        display: flex !important;
+    }
+
+    .whatsapp-float-btn {
+        display: none !important;
+    }
+
+    #backToTopBtn {
+        bottom: 70px !important;
+        right: 15px !important;
+    }
+
+    #recentlyPurchasedToast {
+        bottom: 70px !important;
+        left: 15px !important;
+    }
+
+    .mobile-shop-bottom-bar {
+        bottom: 58px !important;
+    }
+
+    body:not(.admin-wrapper) {
+        padding-bottom: 60px !important;
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       LUXURY FULL SCREEN MOBILE NAVIGATION OVERLAY (100vw)
+       ═══════════════════════════════════════════════════════════ */
+    .mobile-drawer-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        /* Tighter than the desktop 16px: the drawer is a full-screen overlay on a
+           short viewport, so every pixel above the fold is one fewer category the
+           shopper can see without scrolling. */
+        padding: 8px 20px;
+        background: #ffffff;
+        border-bottom: 1px solid var(--border-light);
+    }
+    /* Capped rather than left to the image's own width, so a wide logo upload
+       cannot push the close button off the edge of a 375px screen. */
+    .mobile-drawer-logo-link {
+        width: 100%;
+        max-width: 150px;
+    }
+    .mobile-drawer-logo-link img {
+        height: auto !important;
+        max-height: 44px !important;
+        width: 100% !important;
+        object-fit: contain;
+        display: block;
+    }
+    .mobile-drawer-close {
+        background: var(--bg-surface-soft) !important;
+        border: 1px solid var(--border-strong) !important;
+        color: var(--text-primary) !important;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+    .mobile-drawer-close:hover {
+        background: var(--color-primary) !important;
+        color: #ffffff !important;
+    }
+
+    .mobile-drawer-search-bar {
+        margin: 16px 20px 8px;
+        background: var(--bg-surface-soft);
+        border: 1px solid var(--border-strong);
+        border-radius: 25px;
+        padding: 12px 18px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        cursor: pointer;
+    }
+    .mobile-drawer-search-bar .search-icon {
+        color: var(--color-primary);
+        font-size: 14px;
+    }
+    .mobile-drawer-search-bar .search-placeholder {
+        font-size: 13px;
+        color: var(--text-muted);
+    }
+
+    .mobile-drawer-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 10px 20px 20px;
+    }
+    .mobile-nav-links {
+        list-style: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    .mobile-nav-links li {
+        list-style: none !important;
+        border-bottom: 1px solid var(--border-light);
+    }
+    .mobile-nav-links a {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        padding: 16px 0;
+        font-size: 14px;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--text-primary);
+        text-decoration: none;
+    }
+    .mobile-accordion-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 0;
+        font-size: 14px;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--text-primary);
+        cursor: pointer;
+    }
+    /* This was `display: none`, toggled inline by the JS. `display` is not an
+       animatable property, so the submenu snapped open with no motion — which is
+       the reported problem. Height is animated instead, from a measured pixel
+       value set in toggleMobileCategoryMenu(), then released back to `auto` so a
+       submenu can still reflow when the phone rotates.
+
+       `visibility` is what keeps the collapsed links out of the tab order:
+       height:0 + overflow:hidden hides them visually but leaves them focusable,
+       so Tab would walk into an invisible menu. It flips instantly on open and is
+       delayed by the full duration on close, so the content does not disappear
+       part-way through the collapse.
+
+       The bottom padding moved to the inner list. On the body it would have sat
+       outside the animated height and left a 10px gap under a closed row. */
+    .mobile-accordion-body {
+        height: 0;
+        overflow: hidden;
+        visibility: hidden;
+        transition: height 0.32s cubic-bezier(0.4, 0, 0.2, 1),
+                    visibility 0s linear 0.32s;
+    }
+    .mobile-nav-accordion.is-open > .mobile-accordion-body {
+        visibility: visible;
+        transition: height 0.32s cubic-bezier(0.4, 0, 0.2, 1),
+                    visibility 0s;
+    }
+    .accordion-arrow {
+        transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .mobile-nav-accordion.is-open > .mobile-accordion-header .accordion-arrow {
+        transform: rotate(180deg);
+    }
+    .mobile-subnav-list {
+        list-style: none !important;
+        padding-left: 15px !important;
+        padding-bottom: 10px;
+    }
+    .mobile-subnav-list li {
+        border-bottom: none !important;
+        list-style: none !important;
+    }
+    .mobile-subnav-list a {
+        padding: 8px 0 !important;
+        font-size: 13px !important;
+        text-transform: none !important;
+        font-weight: 500 !important;
+        color: var(--text-secondary) !important;
+    }
+    .view-all-sublink {
+        color: var(--color-primary) !important;
+        font-weight: 600 !important;
+    }
+
+    /* Bottom Action Footer */
+    .mobile-drawer-footer {
+        padding: 20px;
+        border-top: 1px solid var(--border-light);
+        background: var(--bg-surface-soft);
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        width: 100%;
+    }
+    .btn-mobile-action-primary {
+        width: 100%;
+        height: 48px;
+        background: var(--color-primary) !important;
+        color: #ffffff !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        border-radius: 4px;
+        font-size: 13px;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        text-decoration: none;
+        box-sizing: border-box;
+        border: none;
+    }
+    .btn-mobile-action-secondary {
+        width: 100%;
+        height: 48px;
+        background: #ffffff !important;
+        border: 1.5px solid var(--color-primary) !important;
+        color: var(--color-primary) !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        border-radius: 4px;
+        font-size: 13px;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        text-decoration: none;
+        cursor: pointer;
+        box-sizing: border-box;
+    }
+
+
+
+
+
+    /* Navbar */
+    .bottom-header-bar,.nav-links     { display: none !important; }
+    .nav-hamburger { display: flex; }
+    .mobile-drawer { display: block; }
+    .nav-actions .btn-primary { display: none; }
+    .nav-container { padding: 0 16px !important; }
+
+
+
+    /* Hero */
+    .landing-title   { font-size: 38px; }
+    .landing-subtitle { font-size: 15px; }
+    .hero-band        { padding: 48px 0 100px; }
+    .hero-title       { font-size: 34px; }
+    .about-hero h1    { font-size: 30px; }
+    .about-hero p     { font-size: 14px; }
+    .about-hero-eyebrow { font-size: 11px; }
+    .luxury-hero h1   { font-size: 34px; }
+    .luxury-hero      { padding: 80px 0 50px; }
+
+    /* Section headers */
+    .section-title    { font-size: 28px; }
+    .section-subtitle { font-size: 14px; }
+
+    /* Products */
+    .products-grid { grid-template-columns: repeat(2, 1fr); gap: 14px; }
+    .product-name  { font-size: 15px; }
+    .product-price { font-size: 19px; }
+    .product-body  { padding: 14px 16px 14px; }
+
+    /* Category tabs */
+    .category-tabs {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        flex-wrap: nowrap !important;
+        padding-bottom: 4px;
+        scrollbar-width: none;
+    }
+    .category-tabs::-webkit-scrollbar { display: none; }
+    .cat-tab { white-space: nowrap; flex-shrink: 0; }
+
+    /* Cart sidebar */
+    .cart-sidebar { width: 100%; max-width: 100vw; border-left: none; }
+
+    /* Stats */
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+
+    /* Checkout */
+    .checkout-grid { gap: 24px; }
+
+    /* Order confirmation */
+    .confirmation-title { font-size: 28px; }
+
+    /* Story section */
+    .story-grid        { gap: 32px; }
+    .story-img-block   { height: 240px; font-size: 80px; }
+    .story-content h2  { font-size: 28px; }
+    .story-highlights  { gap: 12px; }
+    .story-highlight   { padding: 10px 14px; min-width: 120px; }
+
+    /* About story */
+    .about-story-grid { gap: 28px; }
+    .about-story-img  { aspect-ratio: 16/9; }
+    .about-story-content h2 { font-size: 26px; }
+
+    /* Gallery */
+    .gallery-grid   { columns: 2; column-gap: 12px; }
+    .gallery-item   { margin-bottom: 12px; }
+
+    /* Footer */
+    .footer-top    { grid-template-columns: 1fr; gap: 24px; }
+    .footer-brand p { max-width: 100%; }
+    .footer-bottom-bar { flex-direction: column; align-items: flex-start; gap: 8px; }
+    .footer-newsletter-form { flex-direction: column; }
+    .footer-newsletter-form button { width: 100%; padding: 12px; }
+
+    /* CTA section */
+    .landing-cta-section h2 { font-size: 28px; }
+    .landing-cta-section p  { font-size: 14px; }
+
+    /* Social buttons */
+    .social-buttons-grid  { flex-direction: column; align-items: stretch; }
+    .social-btn           { justify-content: center; }
+
+    /* Map */
+    .map-container { height: 280px; }
+
+    /* Product page */
+    .product-detail-container { padding: 0 16px; }
+
+    /* Search overlay */
+    .search-header { padding: 20px; }
+    .search-input { font-size: 22px; }
+
+    /* Quick view modal */
+    .quick-view-content { flex-direction: column; height: auto; max-width: 95%; }
+    .quick-view-img { width: 100%; height: 260px; }
+    .quick-view-details { width: 100%; padding: 20px; }
+
+    /* Home page section headers */
+    .home-section-header { flex-direction: column; align-items: flex-start; gap: 16px; }
+
+    /* Hero slider mobile */
+    .hero-slider-section { height: 65vh; }
+    .slide-content { left: 5%; bottom: 18%; right: 5%; max-width: 100%; }
+    .slide-content h2 { font-size: 32px; margin-bottom: 12px; }
+    .slide-content p { font-size: 13px; margin-bottom: 20px; }
+    .btn-hero-explore { margin-top: 16px !important; padding: 8px 20px !important; font-size: 11px !important; }
+    .hero-arrow { width: 40px; height: 40px; }
+    .hero-arrow-left { left: 10px; }
+    .hero-arrow-right { right: 10px; }
+    .hero-dots-container { bottom: 20px; padding: 6px 12px; }
+
+    /* Occasion banners mobile */
+    .occasion-banner { padding: 80px 0; }
+    .occasion-banner-content h2 { font-size: 28px; }
+    .occasion-banner-content p { font-size: 13px; }
+
+    /* Video banner mobile */
+    /* .video-banner-* mobile overrides removed with the section itself. */
+
+    /* Reviews section mobile */
+    .reviews-slider-wrap { height: 220px; }
+    .review-quote { font-size: 16px; }
+
+    /* Cart layout mobile */
+    .cart-page-layout { grid-template-columns: 1fr; gap: 30px; }
+
+    /* Section Spacing Responsive Adjustments */
+    .section-space { padding: 50px 0; }
+    /* .section-space-sm */ { padding: 35px 0; }
+    /* .section-space-lg */ { padding: 70px 0; }
+    .section-mb { margin-bottom: 30px; }
+    .section-mb-lg { margin-bottom: 40px; }
+}
+
+
+/* ── 640px — Large Phone Landscape ────────────────────── */
+@media (max-width: 640px) {
+    .logo { font-size: 20px; }
+    .landing-hero  { padding: 60px 0 90px; }
+    .landing-title { font-size: 32px; line-height: 1.12; }
+    .landing-cta-group { flex-direction: column; align-items: center; gap: 12px; }
+    .landing-cta-group .btn-hero-primary,
+    .landing-cta-group .btn-hero-secondary { width: 100%; max-width: 320px; justify-content: center; }
+
+    .products-grid   { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .product-body    { padding: 12px 12px 10px; }
+    .product-name    { font-size: 14px; }
+    .product-desc    { font-size: 12px; margin-bottom: 10px; }
+    .product-price   { font-size: 17px; }
+    .btn-add-cart    { width: 34px; height: 34px; font-size: 14px; }
+
+    .section-card { padding: 20px 18px; }
+    .order-summary-item { gap: 10px; }
+
+    .hero-stats { gap: 0; }
+    .hero-stat  { min-width: 50%; padding: 18px 12px; }
+    .hero-stat-value { font-size: 26px; }
+
+    .story-section,
+    .gallery-page,
+    .about-story-section,
+    .contact-map-section,
+    .social-links-section {  }
+
+    .gallery-page { padding: 32px 0 60px; }
+    .confirmation-title { font-size: 26px; }
+    .order-code-value   { font-size: 26px; letter-spacing: 2px; }
+    .login-card { padding: 32px 24px; }
+    .about-hero h1 { font-size: 26px; }
+
+    /* Home page */
+
+    /* Collections: two per row on a phone.
+       ─────────────────────────────────────────────────────────────
+       One per row at the desktop 450px height put seven collections at about
+       3,250px — roughly 4.6 phone screens for a single section, with New
+       Arrivals, Best Sellers and the Journal all behind that wall. Two per row
+       at 230px brings it to about 950px.
+
+       A horizontal slider was tried first and gave a shorter section still, but
+       the tiles had to be ~147px for the next card to peek — and a two-column
+       grid gives 161px on the same screen. So the grid is BIGGER as well as
+       simpler: every collection is visible at once, there is no swipe to
+       discover, and nothing sits off-screen where a shopper may never look. */
+    .home-categories-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+
+    .home-categories-grid > .category-card {
+        /* Portrait, about 1:1.4 against a ~161px card on a 375px screen — the
+           shape a garment photograph wants. 450px is a desktop number; at half
+           the screen width it would be a tall thin sliver. */
+        height: 230px;
+    }
+    /* The caption scales with the tile. At the desktop 20px it wrapped to three
+       lines inside the card and covered the photograph it was labelling. */
+    .home-categories-grid > .category-card .category-card-overlay { padding: 14px; }
+    .home-categories-grid > .category-card .category-card-overlay h3 {
+        font-size: 15px;
+        margin-bottom: 3px;
+        line-height: 1.25;
+    }
+    .home-categories-grid > .category-card .category-card-link { font-size: 9.5px; }
+    .home-best-sellers-grid { grid-template-columns: repeat(2, 1fr); gap: 14px; }
+    .home-blog-grid { grid-template-columns: 1fr; gap: 20px; }
+    .blog-list-grid { grid-template-columns: 1fr; gap: 20px; }
+
+    .home-benefits-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+    
+    .section-space { padding: 40px 0; }
+    /* .section-space-sm */ { padding: 28px 0; }
+    /* .section-space-lg */ { padding: 55px 0; }
+    .section-mb { margin-bottom: 25px; }
+    .section-mb-lg { margin-bottom: 35px; }
+    .main-header-bar { padding: 10px 0 !important; }
+}
+
+/* ── 900px — Shop / Product / Home Grids ───────────────── */
+@media (max-width: 900px) {
+    /* Multi-tier Header Responsive */
+    .top-header-left { display: none; }
+    .top-header-container { justify-content: center; text-align: center; }
+    .header-search-wrap { max-width: 100%; }
+    .footer-top { grid-template-columns: repeat(2, 1fr); gap: 30px; }
+
+    /* Product Page Layout */
+    .product-layout { flex-direction: column !important; gap: 30px !important; width: 100% !important; }
+    .product-details-col { width: 100% !important; max-width: 100% !important; }
+    .specifications-grid { grid-template-columns: 1fr; gap: 10px; }
+    .related-compact-grid { grid-template-columns: repeat(2, 1fr); gap: 14px; }
+    .compact-card-img-wrap { aspect-ratio: 3 / 4; height: auto; }
+
+
+}
+
+/* ── 768px — Mobile & Tablet ────────────────────────────── */
+@media (max-width: 768px) {
+
+    .products-grid:not(.list-view) {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 12px !important;
+    }
+
+    .nav-actions { gap: 14px; }
+    .nav-action-item span { display: none; }
+    .nav-action-item i { font-size: 18px; }
+    .bottom-header-bar { display: none !important; }
+    .hide-mobile { display: none !important; }
+    .header-search-wrap input { font-size: 12px; }
+}
+
+/* ── 480px — Small Phone Portrait ────────────────────────── */
+@media (max-width: 480px) {
+    /* ── Header row, phones up to 480px ───────────────────────────────────
+       The tightest row on the site: menu button, logo, country control and
+       four icons, all on one line. With the <=991px sizes (140px logo, 22px
+       icons, 14px gaps) it needs ~388px — more than a 390px or 414px phone
+       has once padding is taken off, so it overflowed on an iPhone 12/13/14
+       and every Plus and Max. It only looked fine on a wide phone.
+
+           390px screen: 358px usable, 388px needed  ->  30px over
+
+       Trimmed to fit with room to spare, without dropping anything: 120px
+       logo, 20px icons, 10px gaps, 46px country control -> 332px. The
+       narrowest phones go further in the <=380px block below, which also
+       drops the contact pin. */
+    .nav-actions { gap: 10px !important; }
+    .nav-action-item { font-size: 20px !important; }
+    .logo img { max-width: 120px !important; }
+
+    /* Tighter on a small phone, but the pill and the arrow stay — only the
+       spacing shrinks. Left padding is kept so the text does not sit against
+       the border. */
+    #currencySelector, #countrySelector {
+        font-size: 12px !important;
+        padding: 5px 18px 5px 9px !important;
+        height: 25px !important;
+        max-width: 54px !important;
+        background-position: right 6px center !important;
+    }
+
+    .footer-top { grid-template-columns: 1fr; gap: 30px; }
+    .product-detail-container { padding: 0 12px; }
+    .delivery-checker-input-wrap { flex-direction: column; }
+    .delivery-checker-input-wrap button { width: 100%; margin-top: 5px; }
+
+    .gallery-grid        { columns: 1; }
+
+    .landing-title       { font-size: 28px; }
+    .landing-subtitle    { font-size: 14px; }
+
+    .hero-stat-value     { font-size: 24px; }
+    .hero-stat-label     { font-size: 11px; }
+
+    .checkout-grid > div:last-child .glass-panel { position: static; }
+    .section-title { font-size: 24px; }
+
+    .footer-social { gap: 8px; }
+    .footer-social a { width: 32px; height: 32px; font-size: 13px; }
+
+    .product-detail-container { padding: 0 12px; }
+    .product-accordion-header { font-size: 13px; }
+    .product-accordions { margin-bottom: 20px; }
+    .related-grid { grid-template-columns: 1fr; }
+    .nav-actions { gap: 10px; }
+}
+
+
+/* ── 380px — Small Phone (iPhone SE, etc.) ────────────────── */
+@media (max-width: 380px) {
+    /* ── Header row, smallest phones ──────────────────────────────────────
+       At 320px the row needs about 364px and has 296px: hamburger 26, logo
+       140, country picker 50, four icons 88, and 40px of gaps. It overflowed
+       by ~68px, which pushes the cart icon off the edge or wraps the row.
+
+       Recovered by trimming rather than removing anything essential:
+         logo   140 -> 100   (still legible, it is a wordmark)
+         gaps    10 -> 7
+         icons    22 -> 19
+         country  50 -> 42
+       and the contact pin is dropped — it is the only icon whose destination
+       is also in the drawer menu one tap away, unlike account, wishlist and
+       bag which have no other entry point in the header. */
+    .logo img { max-width: 100px !important; }
+    /* 8px, not 7. Adjacent touch targets need at least 8px between them, and
+       this is the narrowest breakpoint — the screens where a mis-tap is most
+       likely and where Contact Us is already hidden to make room. One pixel
+       back costs nothing here; the header measured 375px wide with room to
+       spare. */
+    .nav-actions { gap: 8px !important; }
+    .nav-action-item { font-size: 19px !important; }
+    .nav-actions > a[aria-label="Contact Us"] { display: none !important; }
+    #currencySelector, #countrySelector {
+        font-size: 11.5px !important;
+        padding: 4px 16px 4px 8px !important;
+        height: 23px !important;
+        max-width: 50px !important;
+    }
+
+    .logo            { font-size: 18px; }
+    .landing-title   { font-size: 24px; }
+    .hero-title      { font-size: 24px; }
+    .section-title   { font-size: 20px; }
+    .products-grid   { gap: 10px; }
+    .stats-grid      { grid-template-columns: 1fr 1fr; }
+    .stat-card       { padding: 14px 12px; }
+    .stat-value      { font-size: 24px; }
+    .nav-hamburger   { width: 25px; height: 25px; }
+    /* Still two per row on the narrowest phones — at 320px that is about 134px
+       a tile, which is tight but readable, and dropping to one column would
+       bring back the long stack this section was changed to avoid. Slightly
+       shorter to keep the same portrait proportion. */
+    .home-categories-grid { gap: 10px; }
+    .home-categories-grid > .category-card { height: 195px; }
+    .home-categories-grid > .category-card .category-card-overlay { padding: 11px; }
+    .home-categories-grid > .category-card .category-card-overlay h3 { font-size: 13px; }
+}
+
+/* ── Touch & Mobile Interaction ────────────────────────── */
+a, button { touch-action: manipulation; }
+
+.cart-sidebar {
+    height: 100vh;
+    height: 100dvh;
+}
+
+@media (max-width: 768px) {
+    .cart-footer { padding-bottom: max(20px, env(safe-area-inset-bottom)); }
+    .cart-sidebar { display: flex; flex-direction: column; }
+    .cart-items { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+    .cart-footer { flex-shrink: 0; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ADMIN PANEL RESPONSIVE OVERRIDES
+   Scoped strictly to body.admin-wrapper
+   ═══════════════════════════════════════════════════════════ */
+
+body.admin-wrapper .table-wrapper { 
+    width: 100%;
+    overflow-x: auto; 
+    -webkit-overflow-scrolling: touch; 
+    border-radius: 8px;
+}
+
+@media (max-width: 900px) {
+    body.admin-wrapper .admin-mobile-toggle { display: inline-flex !important; }
+    
+    body.admin-wrapper .admin-global-topbar {
+        padding: 0 12px !important;
+        height: 60px !important;
+        box-sizing: border-box;
+    }
+
+    body.admin-wrapper .admin-brand-logo {
+        font-size: 13px !important;
+        letter-spacing: 0.5px !important;
+    }
+    body.admin-wrapper .admin-brand-logo small {
+        display: none !important;
+    }
+
+    body.admin-wrapper .admin-topbar-actions {
+        gap: 6px !important;
+    }
+
+    body.admin-wrapper .topbar-btn-shop {
+        padding: 5px 8px !important;
+        font-size: 11px !important;
+    }
+
+    body.admin-wrapper .topbar-btn-logout {
+        padding: 5px 10px !important;
+        font-size: 11px !important;
+    }
+
+    body.admin-wrapper .product-form-grid { grid-template-columns: 1fr !important; }
+    body.admin-wrapper .product-form-grid > div:last-child { position: static !important; }
+
+    /* Live Preview above the form on mobile. It is the SECOND grid child so that
+       it can be the sticky right-hand column on desktop, which meant that once the
+       grid collapsed to one column the image preview landed underneath the entire
+       form — you had to scroll past every field to see the picture you just picked.
+       `order` reorders the grid visually without touching the DOM, so tab order and
+       the two submit buttons stay where they are. The save button at the foot of the
+       form (.admin-btn-save-submit) is untouched and is still the one at the bottom
+       on mobile, so nothing is stranded up top. */
+    body.admin-wrapper .product-form-grid > .admin-sticky-preview { order: -1; }
+
+    body.admin-wrapper .admin-sidebar { 
+        position: fixed !important;
+        top: 60px !important;
+        left: 0 !important;
+        bottom: 0 !important;
+        width: 260px !important;
+        height: calc(100vh - 60px) !important;
+        transform: translateX(-100%); 
+        transition: transform 0.3s ease; 
+        z-index: 999 !important;
+        background: #2B080F !important;
+        box-shadow: 4px 0 15px rgba(0,0,0,0.4);
+    }
+    body.admin-wrapper .admin-sidebar.open { transform: translateX(0) !important; }
+    body.admin-wrapper .admin-menu-toggle { display: block !important; }
+    body.admin-wrapper .admin-main { margin-left: 0 !important; width: 100% !important; }
+    body.admin-wrapper .admin-content { padding: 14px !important; }
+
+    /* Mobile Backdrop Overlay */
+    #adminSidebarBackdrop {
+        position: fixed;
+        top: 60px;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.6);
+        z-index: 998;
+        display: none;
+        backdrop-filter: blur(3px);
+    }
+    #adminSidebarBackdrop.active {
+        display: block !important;
+    }
+}
+
+@media (max-width: 768px) {
+    body.admin-wrapper .admin-page-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+    body.admin-wrapper .admin-gallery-grid { grid-template-columns: repeat(3, 1fr); }
+    body.admin-wrapper .form-row { grid-template-columns: 1fr !important; }
+    body.admin-wrapper form[style*="grid-template-columns"] { grid-template-columns: 1fr !important; }
+    body.admin-wrapper form[style*="display: grid"] { grid-template-columns: 1fr !important; }
+    body.admin-wrapper .stats-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+    body.admin-wrapper .admin-tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap !important; padding-bottom: 6px; scrollbar-width: none; gap: 4px !important; }
+    body.admin-wrapper .admin-tabs::-webkit-scrollbar { display: none; }
+    body.admin-wrapper .admin-tab { flex-shrink: 0; white-space: nowrap; padding: 8px 12px !important; font-size: 12px !important; }
+    body.admin-wrapper .glass-panel { padding: 16px !important; }
+    body.admin-wrapper .data-table { min-width: 600px; }
+    body.admin-wrapper .admin-nav-links { display: none !important; }
+    body.admin-wrapper .form-section { padding: 16px !important; }
+    body.admin-wrapper .order-detail-grid { grid-template-columns: 1fr !important; }
+    body.admin-wrapper .variant-row { flex-wrap: wrap !important; }
+}
+
+@media (max-width: 520px) {
+    body.admin-wrapper .admin-user-pill { display: none !important; }
+}
+
+@media (max-width: 480px) {
+    body.admin-wrapper .admin-gallery-grid { grid-template-columns: repeat(2, 1fr); }
+    body.admin-wrapper .stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
+    body.admin-wrapper .stat-card { padding: 12px 10px !important; }
+    body.admin-wrapper .stat-value { font-size: 22px !important; }
+    body.admin-wrapper .glass-panel { padding: 12px !important; }
+    body.admin-wrapper .filter-sort-bar { flex-direction: column !important; align-items: stretch !important; gap: 10px !important; }
+    body.admin-wrapper .admin-action-bar { flex-direction: column; gap: 8px; }
+    body.admin-wrapper .data-table { min-width: 540px; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MEMBER ACCOUNT PORTAL RESPONSIVE SYSTEM
+   ═══════════════════════════════════════════════════════════ */
+.account-container { max-width: 1240px; margin: 0 auto; padding: 0 20px; }
+.account-layout-grid { display: grid; grid-template-columns: 260px 1fr; gap: 35px; }
+.acc-stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 35px; }
+.acc-address-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
+.acc-form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+.acc-form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+.acc-form-card { border: 1px solid var(--border-light); padding: 25px; border-radius: 6px; background: var(--bg-surface); }
+.acc-card-title { font-family: var(--font-heading); font-size: 16px; margin-bottom: 15px; text-transform: uppercase; }
+.form-label-sm { display: block; font-size: 11px; text-transform: uppercase; margin-bottom: 6px; }
+.acc-tab-desc { color: var(--text-secondary); font-size: 13px; margin-bottom: 20px; }
+.acc-address-card { border: 1px solid var(--border-strong); padding: 20px; border-radius: 6px; background: var(--bg-surface-soft); position: relative; }
+.badge-default-addr { position: absolute; top: 12px; right: 12px; background: var(--color-primary); color: #fff; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 3px; text-transform: uppercase; }
+.addr-name { margin: 0 0 8px; font-size: 14px; text-transform: uppercase; color: var(--color-primary); }
+.addr-text { font-size: 13px; color: var(--text-secondary); margin-bottom: 15px; line-height: 1.6; }
+.account-nav-sidebar { background: var(--bg-surface); border: 1px solid var(--border-strong); padding: 25px 0; border-radius: 6px; height: fit-content; }
+.account-user-header { padding: 0 20px 20px; border-bottom: 1px solid var(--border-light); margin-bottom: 15px; }
+.account-user-header strong { font-family: var(--font-heading); font-size: 16px; display: block; text-transform: uppercase; color: var(--color-primary); }
+.account-user-header span { font-size: 12px; color: var(--text-muted); word-break: break-all; }
+.account-menu-list { list-style: none; padding: 0; margin: 0; }
+.signout-item { border-top: 1px solid var(--border-light); margin-top: 15px; padding-top: 10px; }
+.signout-btn { color: var(--color-danger) !important; }
+.account-content-panel { background: var(--bg-surface); border: 1px solid var(--border-strong); padding: 35px; border-radius: 6px; }
+
+/* Site-wide Overflow Prevention */
+html, body {
+    max-width: 100% !important;
+}
+
+/* `hidden` first as the fallback for old browsers, then `clip` for everything
+   modern. This matters: overflow-x:hidden makes html/body a scroll container
+   (the spec forces the other axis to `auto`), which silently breaks every
+   position:sticky on the site — including the sticky product gallery. `clip`
+   suppresses the horizontal overflow exactly the same way WITHOUT creating a
+   scroll container, so sticky keeps working.
+
+   Applied to html ONLY — never to body. On the ROOT element, overflow is
+   propagated to the viewport, so declaring it here still kills horizontal
+   scrolling site-wide, and fixed elements are unaffected.
+
+   On BODY it behaves completely differently. `clip` establishes a clip box on
+   body's own border box, and that box scrolls away with the document. Firefox
+   follows the spec and clips position:fixed descendants to it — so once body's
+   top edge scrolled past the top of the window, the fixed header was clipped
+   out of existence and never came back. Chromium does not clip fixed elements
+   against an ancestor's clip box, which is why this only ever appeared in
+   Firefox and looked like the header "sliding up and away". */
+html {
+    overflow-x: hidden !important;
+    overflow-x: clip !important;
+}
+
+@media (max-width: 991px) {
+    .account-container { padding: 0 12px !important; }
+    .account-layout-grid {
+        grid-template-columns: 1fr !important;
+        gap: 15px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    .acc-address-grid { grid-template-columns: 1fr !important; }
+    .acc-form-row-2 { grid-template-columns: 1fr !important; gap: 10px !important; }
+    .acc-form-row-3 { grid-template-columns: 1fr !important; gap: 10px !important; }
+    
+    .account-nav-sidebar {
+        padding: 10px 12px !important;
+        border-radius: 8px !important;
+        position: sticky !important;
+        top: calc(var(--header-height, 65px) + 5px) !important;
+        z-index: 95 !important;
+        background: var(--bg-surface, #ffffff) !important;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.06) !important;
+        border: 1px solid var(--border-light, #e2e8f0) !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        overflow-x: hidden !important;
+    }
+
+    .account-user-header {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        padding: 0 0 10px !important;
+        margin-bottom: 10px !important;
+    }
+
+    .account-user-header strong { font-size: 14px !important; }
+    .account-user-header span { font-size: 11px !important; }
+
+    .account-menu-list {
+        display: flex !important;
+        flex-direction: row !important;
+        overflow-x: auto !important;
+        white-space: nowrap !important;
+        gap: 8px !important;
+        padding-bottom: 4px !important;
+        -webkit-overflow-scrolling: touch !important;
+        scrollbar-width: none !important;
+    }
+
+    .account-menu-list::-webkit-scrollbar { display: none !important; }
+
+    .account-menu-list li {
+        border: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        flex-shrink: 0 !important;
+    }
+
+    .account-menu-list li a.acc-tab-btn {
+        padding: 8px 16px !important;
+        border-radius: 25px !important;
+        background: var(--bg-surface-soft, #f8fafc) !important;
+        border: 1px solid var(--border-light, #cbd5e1) !important;
+        font-size: 12px !important;
+        font-weight: 600 !important;
+        color: var(--text-main, #1e293b) !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        transition: all 0.2s ease !important;
+    }
+
+    .account-menu-list li a.acc-tab-btn.active {
+        background: var(--color-primary, #511126) !important;
+        color: #ffffff !important;
+        border-color: var(--color-primary, #511126) !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
+    }
+    .account-menu-list li a.acc-tab-btn.active i,
+    .account-menu-list li a.acc-tab-btn:hover i {
+        color: #ffffff !important;
+    }
+
+    .account-content-panel {
+        padding: 20px 14px !important;
+        border-radius: 8px !important;
+    }
+
+    .acc-tab-title { font-size: 20px !important; }
+
+    .acc-stat-card {
+        padding: 15px 10px !important;
+        text-align: center !important;
+    }
+
+    .acc-stat-card .stat-number { font-size: 22px !important; }
+    .acc-stat-card .stat-label { font-size: 11px !important; }
+}
+
+@media (max-width: 640px) {
+    .account-content-panel { padding: 16px 10px !important; }
+    .acc-stats-grid { grid-template-columns: 1fr !important; gap: 10px !important; }
+    .acc-form-card { padding: 16px 12px !important; }
+    .acc-stat-card { padding: 14px 10px !important; }
+    .acc-stat-card .stat-number { font-size: 22px !important; }
+    .acc-stat-card .stat-label { font-size: 11px !important; }
+}
+
+@media (max-width: 480px) {
+    .luxury-hero h1 { font-size: 26px !important; }
+    .account-menu-list li a.acc-tab-btn { padding: 7px 14px !important; font-size: 11px !important; }
+    .account-content-panel { padding: 14px 10px !important; }
+    .acc-tab-title { font-size: 18px !important; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   CART & CHECKOUT RESPONSIVE SYSTEM
+   ═══════════════════════════════════════════════════════════ */
+.cart-page-layout { display: grid; grid-template-columns: 1fr 380px; gap: 40px; }
+.cart-extra-tools-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 40px; }
+.checkout-grid { display: grid; grid-template-columns: 1fr 420px; gap: 40px; }
+
+/* Master Luxury Form & Section Panel Card Blocks */
+.checkout-form-panel,
+.cart-left-panel,
+.checkout-summary-card,
+.cart-summary-card,
+.account-content-panel,
+.auth-card,
+.contact-form-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    padding: 25px;
+    box-shadow: var(--shadow-xs);
+}
+
+.shipping-option-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 1px solid var(--border-strong);
+    padding: 18px 20px;
+    border-radius: 6px;
+    background: var(--bg-surface);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.step-nav-header {
+    display: flex;
+    border-bottom: 2px solid var(--border-light);
+    margin-bottom: 30px;
+}
+.step-nav-tab {
+    padding: 12px 20px;
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+}
+.step-nav-tab.active-tab {
+    font-weight: 700;
+    color: var(--color-primary);
+    border-bottom: 2px solid var(--color-primary);
+}
+
+.checkout-form-panel .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 15px;
+}
+
+/* Universal Container Grid Item Min-Width Fix for Browsers */
+.checkout-main-section,
+.checkout-main-section .container,
+.checkout-grid,
+.checkout-form-panel,
+.checkout-summary-sidebar,
+.cart-page-layout,
+.cart-left-panel,
+.cart-right-panel {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    width: 100%;
+}
+
+@media (max-width: 991px) {
+    .checkout-main-section .container {
+        padding: 0 12px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    .cart-page-layout,
+    .checkout-grid {
+        /* No `display: flex !important` here.
+           It beat .is-hidden{display:none} on every screen under 992px, so the cart
+           layout could not be hidden on a phone or a narrow window — the empty-cart
+           message appeared while the old item list stayed on screen underneath it.
+           The grid-template-columns below already collapses this to one column, so
+           the display override was doing nothing except breaking that. */
+        flex-direction: column !important;
+        grid-template-columns: 1fr !important;
+        gap: 20px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+    }
+    .checkout-form-panel,
+    .checkout-summary-sidebar {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box !important;
+    }
+    .cart-extra-tools-grid {
+        grid-template-columns: 1fr !important;
+        gap: 15px !important;
+    }
+    .checkout-form-panel .form-row {
+        grid-template-columns: 1fr !important;
+        gap: 12px !important;
+    }
+    .step-nav-header {
+        display: flex !important;
+        flex-direction: row !important;
+        overflow-x: auto !important;
+        white-space: nowrap !important;
+        -webkit-overflow-scrolling: touch !important;
+        scrollbar-width: none !important;
+        gap: 6px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box !important;
+        border-bottom: none !important;
+        margin-bottom: 20px !important;
+        padding-bottom: 4px !important;
+    }
+    .step-nav-header::-webkit-scrollbar { display: none !important; }
+    .step-nav-tab {
+        padding: 8px 14px !important;
+        font-size: 11px !important;
+        border-radius: 20px !important;
+        background: var(--bg-surface-soft, #f8f5f0) !important;
+        border: 1px solid var(--border-light, #e2e8f0) !important;
+        margin-bottom: 0 !important;
+        flex-shrink: 0 !important;
+        color: var(--text-main, #1e293b) !important;
+    }
+    .step-nav-tab.active-tab {
+        background: var(--color-primary, #511126) !important;
+        color: #ffffff !important;
+        border-color: var(--color-primary, #511126) !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
+    }
+    .shipping-option-card {
+        padding: 14px 12px !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 10px !important;
+    }
+    .shipping-price-badge {
+        align-self: flex-end !important;
+    }
+    .payment-mode-label {
+        padding: 14px 12px !important;
+        flex-direction: row !important;
+        align-items: flex-start !important;
+        gap: 10px !important;
+    }
+    .checkout-auth-banner {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 10px !important;
+    }
+    .btn-step-space-between {
+        flex-direction: column-reverse !important;
+        gap: 10px !important;
+    }
+    .btn-step-space-between button,
+    .btn-step-space-between a {
+        width: 100% !important;
+        text-align: center !important;
+        justify-content: center !important;
+    }
+}
+
+@media (max-width: 640px) {
+    /* Section and Outer Gaps Optimization */
+    .section-space { padding: 25px 0 !important; }
+    .section-mb, .section-mb-lg { margin-bottom: 20px !important; }
+    .section-mb-sm { margin-bottom: 12px !important; }
+
+    /* Luxury Hero Banner Compact Padding */
+    .luxury-hero { padding: 22px 12px !important; margin-bottom: 15px !important; text-align: center !important; }
+    .luxury-hero h1 { font-size: 22px !important; margin-bottom: 6px !important; }
+    .luxury-hero p { font-size: 12px !important; }
+    .luxury-hero-eyebrow { font-size: 10px !important; margin-bottom: 4px !important; }
+    .luxury-hero.has-bg-image { padding: 90px 16px 60px !important; }
+
+    /* Forms, Cards & Content Boxes Compact Padding */
+    .checkout-form-panel,
+    .cart-left-panel,
+    .checkout-auth-banner,
+    .address-book-picker,
+    #checkoutLoginBox,
+    .shipping-option-card,
+    .gift-options-box,
+    .invoice-section-box,
+    .razorpay-panel,
+    .checkout-summary-card,
+    .cart-summary-card,
+    .cart-tool-box,
+    .acc-form-card,
+    .acc-address-card,
+    .account-content-panel,
+    .auth-card,
+    .contact-form-card {
+        padding: 15px !important;
+        margin-bottom: 15px !important;
+        border-radius: 8px !important;
+    }
+
+    /* Form Input & Label Gaps */
+    .form-luxury-group { margin-bottom: 12px !important; }
+    .form-luxury-input { padding: 10px 12px !important; font-size: 13px !important; }
+
+    /* Cart & Items List Padding */
+    .cart-item-card,
+    .cart-page-item {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 12px !important;
+        padding: 12px !important;
+    }
+    .cart-item-image {
+        width: 100% !important;
+        height: 180px !important;
+    }
+    .cart-item-actions {
+        width: 100% !important;
+        justify-content: space-between !important;
+    }
+
+    /* Step Navigation Bar */
+    .step-nav-header { margin-bottom: 15px !important; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   GLOBAL CARD RADIUS
+   Single source of truth: every storefront card container is 4px.
+   Lives at the end of responsive.css because this file loads AFTER
+   style.css, so this reliably wins over the per-card radii that were
+   previously scattered across both files (6px, 8px, var(--radius-sm)
+   which is 0px, etc.). Admin cards are intentionally excluded — their
+   `body.admin-wrapper .stat-card` rule has higher specificity and keeps
+   its own radius.
+   ═══════════════════════════════════════════════════════════ */
+.product-card,
+.category-card,
+.blog-card,
+.mega-promo-card,
+.compact-product-card,
+.review-card-item,
+.search-product-card,
+.product-modal-card,
+.auth-card-box,
+.stat-card,
+.acc-form-card,
+.acc-address-card,
+.acc-stat-card,
+.acc-wishlist-card,
+.cart-summary-card,
+.checkout-summary-card {
+    border-radius: 4px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   BUTTONS ON MOBILE — 13px down to 12px
+   Only the six classes that actually sit at 13px are listed.
+   Deliberately NOT a blanket rule over every .btn-*: the icon
+   buttons carry their glyph size in font-size (.btn-wishlist-action
+   is 20px, .btn-close-cart 16px, .btn-remove-item 14px), so a
+   catch-all would silently shrink the icons too.
+   ═══════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+    .btn-luxury,
+    .btn-luxury-outline,
+    .btn-add-bag,
+    .btn-buy-now,
+    .btn-mobile-action-primary,
+    .btn-mobile-action-secondary { font-size: 12px; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   HOME TAB TOGGLE (Best Sellers / Trending Now)
+   The pair overflowed its row on a phone and wrapped to two
+   lines. Splitting the row in half and disallowing the wrap
+   keeps both captions on one line at every width.
+   ═══════════════════════════════════════════════════════════ */
+@media (max-width: 600px) {
+    .tab-toggle-wrapper { display: flex; width: 100%; }
+    .tab-toggle-wrapper .btn-luxury,
+    .tab-toggle-wrapper .btn-luxury-outline {
+        flex: 1 1 0;
+        min-width: 0;
+        padding-left: 8px;
+        padding-right: 8px;
+        white-space: nowrap;
+        letter-spacing: 0.04em;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   CONTAINER — the one responsive ladder
+   Base rule lives in style.css (.container, 1440px / 3.5rem).
+   These four steps are the ONLY other place .container padding
+   is set. Ordered largest breakpoint first so each narrower
+   step overrides the one above it.
+   Replaces five scattered rules across two files, four of which
+   never applied because the base rule carried !important.
+   ═══════════════════════════════════════════════════════════ */
+@media (max-width: 1200px) { .container { padding: 0 2rem; } }     /* 32px */
+@media (max-width: 900px)  { .container { padding: 0 1.5rem; } }   /* 24px */
+@media (max-width: 640px)  { .container { padding: 0 1rem; } }     /* 16px */
+@media (max-width: 380px)  { .container { padding: 0 0.75rem; } }  /* 12px */
+
+/* ═══════════════════════════════════════════════════════════
+   LEGAL PANELS ON MOBILE
+   ═══════════════════════════════════════════════════════════
+   .legal-panel is a flat 40px in style.css and had no responsive rule at all,
+   so on a 375px phone it stacked on top of the container's own 16px: 32 + 80 =
+   112px of the screen was padding and the text ran in a 263px column.
+
+   Stepped down on the same breakpoints as .container above, so the two shrink
+   together instead of one eating the other's room. At 375px the reading column
+   goes from 263px to 311px. */
+/* ═══════════════════════════════════════════════════════════
+   WOMEN / MEN SWITCH ON PHONES
+   ═══════════════════════════════════════════════════════════
+   The bar renders at every width now — it used to carry .hide-mobile and a
+   duplicate lived inside the drawer, where nobody would find it unless they
+   already knew to look. Choosing a side decides what the entire rest of the site
+   shows, so it sits above the fold on the small screen too.
+
+   Compact, not shrunken: it is only ever two words, and they have to stay
+   readable as tap targets. Rendered only when both audiences have stock, so this
+   costs a womenswear-only shop nothing. */
+@media (max-width: 640px) {
+    .audience-switch { gap: 0; }
+    .audience-switch-link {
+        flex: 1 1 50%;
+        padding: 9px 4px;
+        font-size: 11px;
+        letter-spacing: 0.14em;
+        text-align: center;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   COMPARE TOGGLE ON PHONES
+   ═══════════════════════════════════════════════════════════
+   On a 375px screen the grid gives each card a 168px-wide image, and three
+   controls were competing for the top of it: the BEST SELLER badge (99x25) at
+   top-left, the wishlist heart at top-right, and the Compare pill (96x27 — 56%
+   of the card's width) stacked directly under the badge. Together they covered
+   the upper half of the garment, which is the part a shopper is looking at.
+
+   It moves under the wishlist heart at top-RIGHT instead. The bottom of the card
+   looks free at rest — .quick-view-btn is revealed by :hover and measures 0x0 on
+   touch — but that is not dependable: mobile browsers commonly apply :hover on
+   tap, and Quick View (113x36, centred at the foot of the image) then lands
+   straight on top of a bottom-left pill. Measured overlap, not theory.
+
+   Top-right below the heart is clear of all three: the badge occupies t15-t40 on
+   the left, the heart t15-t51 on the right, and Quick View sits at t172. Right-
+   aligning keeps the label — an unlabelled tickbox on a photograph tells nobody
+   what it does.
+
+   Not applied above 640px: from there the cards are wide enough for the original
+   stacked layout. */
+@media (max-width: 640px) {
+    /* Bottom-right corner. Now that the word runs vertically the control is only
+       26px wide, so it tucks into the strip beside Quick View (which is centred
+       and ends 28px short of the right edge) instead of competing with the badge
+       and heart along the top. */
+    .compare-toggle {
+        top: auto;
+        bottom: 10px;
+        left: auto;
+        right: 8px;
+        /* The WORD runs vertically, not just the layout. Horizontally the pill was
+           87px across a 168px-wide image — half the garment. Turning the text on
+           its side reduces the control to the width of one character plus the
+           tick, so it reads as a slim tab down the right edge and leaves the
+           photograph almost untouched. */
+        flex-direction: column;
+        gap: 5px;
+        padding: 8px 5px;
+        font-size: 8.5px;
+        line-height: 1;
+        border-radius: 12px;
+    }
+    .compare-toggle span {
+        writing-mode: vertical-rl;
+        text-orientation: mixed;
+        letter-spacing: 0.12em;
+    }
+    /* The tick is the tap target and must stay comfortably hittable even though
+       the control around it is now only a few pixels wide. */
+    .compare-toggle input { width: 14px; height: 14px; flex: none; }
+
+    /* Quick View is centred along the foot of the image and, at 113px wide on a
+       168px card, reached to within -7px of the compare tab in the corner — a
+       measured overlap, not a near miss. Capping it pulls its right edge clear.
+       It only ever appears on hover, so nothing is lost on a phone, and the
+       label still fits on one line at this width. */
+    .quick-view-btn {
+        max-width: 88px;
+        padding-left: 8px;
+        padding-right: 8px;
+        font-size: 10px;
+        white-space: nowrap;
+    }
+
+    /* Badge, scaled for a 168px card.
+       At the desktop size it measured 99x25 — 59% of the card's width — so
+       "BEST SELLER" ran nearly edge to edge across the top of the garment. The
+       type is only stepped down to 8.5px, not shrunk to nothing: a badge that
+       cannot be read is worse than no badge, and it is the one label doing
+       merchandising work on the card. */
+    .badge-luxury {
+        top: 10px;
+        left: 10px;
+        font-size: 8.5px;
+        letter-spacing: 0.06em;
+        padding: 3px 7px;
+    }
+}
+
+@media (max-width: 900px) { .legal-panel { padding: 28px; } }
+@media (max-width: 640px) {
+    .legal-panel { padding: 20px; }
+    /* 24px headings are oversized next to 15px body text in a narrow column. */
+    .legal-heading { font-size: 20px; }
+}
+@media (max-width: 380px) {
+    .legal-panel { padding: 16px; }
+    .legal-heading { font-size: 18px; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   CHECKOUT DENSITY ON MOBILE
+   The step wizard was removed, so all three sections are on the
+   page at once. That is fewer clicks but more page, so the
+   vertical rhythm is tightened here to claw the height back.
+   Nothing is hidden that the shopper needs — see the one
+   exception below, which is dead space by definition.
+   ═══════════════════════════════════════════════════════════ */
+@media (max-width: 640px) {
+    .checkout-section .form-luxury-group { margin-bottom: 8px; }
+    .checkout-section .form-row          { margin-bottom: 8px; gap: 8px; }
+    .checkout-section .form-luxury-input { padding: 10px 12px; }
+
+    .shipping-options-grid { margin-bottom: 16px; }
+    .shipping-option-card  { padding: 12px; margin-bottom: 10px; }
+    .payment-mode-grid     { margin-bottom: 14px; }
+    .payment-mode-label    { padding: 11px 12px; }
+    .gift-options-box      { padding: 12px; margin-bottom: 10px; }
+    .razorpay-panel        { padding: 12px; margin-bottom: 10px; }
+    .shipping-zone-note    { padding: 9px 12px; margin-bottom: 10px; font-size: 12px; }
+
+    /* The shipping zone is decided by the postcode, not by the shopper — the
+       other option is rendered greyed out and cannot be clicked. On a phone that
+       is 150px of un-tappable card, and the zone note above already says which
+       one applies, so the dead one is dropped at this width only. */
+    .shipping-options-grid .shipping-option-card.shipping-option-disabled { display: none; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MOBILE HEADER LOGO
+   991px is where the mobile header and drawer take over (see
+   the LUXURY MOBILE HEADER block above), so the narrower cap
+   starts at the same width. Desktop keeps a.logo at 200px.
+   ═══════════════════════════════════════════════════════════ */
+@media (max-width: 991px) {
+    a.logo {
+        max-width: 140px;
+        display: block;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   IN-BAG STATUS BANNER (product page)
+   The desktop rule is a single flex row with
+   justify-content: space-between and no wrapping, so on a phone
+   the message and the "View Bag" link are squeezed onto one
+   line and the text is crushed. Stack them instead.
+   ═══════════════════════════════════════════════════════════ */
+@media (max-width: 640px) {
+    .in-bag-status-banner {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+        padding: 11px 13px;
+        font-size: 12.5px;
+        line-height: 1.5;
+        text-align: left;
+    }
+    .in-bag-status-banner > * { min-width: 0; }
+    .in-bag-view-link { white-space: nowrap; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   HEADINGS ON SMALL SCREENS
+   Bodoni Moda is a Didone: its hairline strokes are a fixed
+   proportion of the letterform, so as the type gets smaller
+   they thin toward invisibility. On a phone the hero drops from
+   48px to 22px, which is where it started to look skinny. One
+   step heavier compensates — the type looks the same weight to
+   the eye at 22px as the desktop setting does at 48px.
+   ═══════════════════════════════════════════════════════════ */
+@media (max-width: 991px) {
+    :root {
+        --font-heading-weight: 600;
+        --font-heading-weight-strong: 700;
+    }
+}
+@media (max-width: 480px) {
+    :root {
+        --font-heading-weight: 650;
+        --font-heading-weight-strong: 700;
+    }
+}
+
+/* ── Motion: parallax panels ─────────────────────────────────────────────
+   background-attachment: fixed is unsupported/choppy on iOS and wasteful on
+   phones — the panels keep their slow Ken Burns drift but scroll normally. */
+@media (max-width: 768px) {
+    .occasion-banner {
+        background-attachment: scroll;
+        animation: none; /* no parallax, no drift on phones */
+    }
+    .luxury-hero.has-bg-image {
+        background-attachment: scroll;
+        animation: none;
+    }
+}
+
+/* ── Contact page on a phone ──────────────────────────────────────────────
+   16px, not the desktop 40px. At 375px wide, 40px of padding each side left
+   the form fields only 215px — the inputs looked cramped inside a card that
+   was mostly empty border. Matches the padding the other content pages use. */
+@media (max-width: 768px) {
+    .contact-card      { padding: 16px; }
+    .contact-container { padding: 0 16px; }
+    .contact-card-title { font-size: 20px; margin-bottom: 18px; }
+    .contact-sub-title  { font-size: 16px; }
+    .contact-block      { margin-bottom: 22px; }
+}
+
+/* ── Solid header on a phone ──────────────────────────────────────────────
+   The header is frosted glass: style.css:420 sets it to rgba(255,255,255,0.8)
+   over a 5px backdrop blur, and .header-compact keeps the same 0.8 on scroll.
+
+   At the top of the page there is only white behind it, so it reads as solid
+   white. The moment you scroll, the hero image slides underneath and shows
+   through — a blurred smear of whatever is passing behind the logo and the
+   Women/Men row. The header never actually moves (measured: 98.1px tall,
+   top:0, at every scroll position) but seeing the picture travel through it
+   looks exactly like the header itself sliding.
+
+   On a phone the header sits on top of full-bleed imagery for most of the
+   scroll, so the effect is constant rather than occasional. Make it opaque
+   here. Desktop keeps the glass look, which is fine there.
+
+   background-COLOR, not the background shorthand — the shorthand would wipe
+   any background-image the header carries. Needs !important to beat the
+   !important already on both rules in style.css. */
+@media (max-width: 991px) {
+    .navbar-luxury,
+    .navbar-luxury.header-compact {
+        background-color: #ffffff !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+}
+
+/* ── Wishlist badge must not sit on the cart icon ─────────────────────────
+   The count badge is 15px at right:-9px with a 2px white ring (style.css:3675),
+   so it reaches 11px past its own icon. Between wishlist and cart the flex gap
+   is only 10px (<=480) or 7px (<=380) — so the badge landed ON the cart.
+   Measured at 375px wide: badge right edge 333.3px, cart button left edge
+   331.3px. Two pixels of overlap, four counting the ring.
+
+   Widening every gap is not affordable. At 320px there are only 26px of slack
+   between the logo and the icon group, and five gaps to pay for — raising the
+   gap enough to clear the badge would eat 15px of that.
+
+   Only this one pair collides. The cart badge is the last item, and its 11px
+   reach already fits inside the 12px padding-right. So the space goes on the
+   wishlist item alone: gap + margin must clear 11px with a little air.
+     <=480:  10 + 4 = 14
+     <=380:   7 + 7 = 14
+   Selected by aria-label, matching how the Contact icon is targeted above. */
+@media (max-width: 480px) {
+    .nav-actions > a[aria-label="Wishlist"] { margin-right: 4px; }
+}
+@media (max-width: 380px) {
+    .nav-actions > a[aria-label="Wishlist"] { margin-right: 7px; }
+}
+
+/* ── Occasion Edits: alternate the two panels ─────────────────────────────
+   The two panels were the same composition twice — identical "Occasion Edit"
+   eyebrow, identical centred eyebrow/heading/paragraph/button, identical
+   rgba(0,0,0,0.35) overlay, and 552px vs 553px tall. Stacked with nothing
+   between them they read as one banner repeated rather than as a pair of
+   curated edits, which is what made the join feel like it needed filling.
+
+   A divider rule would have separated two things that still looked identical.
+   Alternating the composition is what actually distinguishes them: first panel
+   reads from the left, second from the right, like facing pages of a spread.
+   No new images, no new copy, no extra requests.
+
+   nth-of-type(odd/even) rather than :first/:last-of-type so a third panel
+   would keep the rhythm instead of breaking it. */
+@media (min-width: 769px) {
+    .occasion-banners-section .occasion-banner .occasion-banner-content {
+        max-width: 1080px;
+    }
+    .occasion-banners-section .occasion-banner .occasion-banner-content h2,
+    .occasion-banners-section .occasion-banner .occasion-banner-content p {
+        max-width: 560px;
+    }
+    .occasion-banners-section .occasion-banner:nth-of-type(odd) .occasion-banner-content {
+        text-align: left;
+    }
+    .occasion-banners-section .occasion-banner:nth-of-type(odd) .occasion-banner-content h2,
+    .occasion-banners-section .occasion-banner:nth-of-type(odd) .occasion-banner-content p {
+        margin-left: 0;
+        margin-right: auto;
+    }
+    .occasion-banners-section .occasion-banner:nth-of-type(even) .occasion-banner-content {
+        text-align: right;
+    }
+    .occasion-banners-section .occasion-banner:nth-of-type(even) .occasion-banner-content h2,
+    .occasion-banners-section .occasion-banner:nth-of-type(even) .occasion-banner-content p {
+        margin-left: auto;
+        margin-right: 0;
+    }
+}
+
+/* On a phone there is no width to alternate into — right-aligned body copy on a
+   375px screen just looks like a mistake — so the panels stay centred and a
+   single hairline does the separating instead. */
+@media (max-width: 768px) {
+    .occasion-banners-section .occasion-banner + .occasion-banner {
+        border-top: 1px solid rgba(197, 155, 75, 0.45);
+    }
+}
+
+/* ── Occasion tiles: two across on a phone ────────────────────────────────
+   Four tiles in a 375px row leaves each about 80px wide — the label would not
+   fit on one line and the photograph would be a sliver with no subject in it.
+   Two across matches the Dievon Collections grid directly above, so the two
+   sections read as one idea rather than two. */
+/* Tile width down the breakpoints. Every value is chosen to leave a PART tile
+   showing at the right edge — that clipped sliver is the only thing telling the
+   shopper the strip scrolls, since there are no arrows and no dots. A width that
+   divides evenly into 100% would end the row flush and kill the affordance. */
+@media (max-width: 1199px) { .occasion-tile { flex-basis: 23%; } }  /* ~4.3 in view */
+@media (max-width: 991px)  { .occasion-tile { flex-basis: 30%; } }  /* ~3.3 in view */
+@media (max-width: 768px)  {
+    .occasion-slider { gap: 12px; padding: 0 14px 6px; scroll-padding-left: 14px; }
+    .occasion-tile   { flex-basis: 42%; }                            /* ~2.4 in view */
+}
+@media (max-width: 420px)  { .occasion-tile { flex-basis: 56%; } }  /* ~1.8 in view */
+
+/* ── Reduced motion ────────────────────────────────────────────────────────
+   The mobile accordion animates height and an arrow rotation. Someone who has
+   asked their phone for reduced motion should get the same open/closed states
+   with no travel — not a slower version of the same movement. Kept outside the
+   width media query on purpose: the preference does not depend on viewport. */
+@media (prefers-reduced-motion: reduce) {
+    .mobile-accordion-body,
+    .mobile-nav-accordion.is-open > .mobile-accordion-body,
+    .accordion-arrow {
+        transition: none !important;
+    }
+}

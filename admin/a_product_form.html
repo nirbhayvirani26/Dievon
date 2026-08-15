@@ -1,0 +1,2221 @@
+
+Notice: session_start(): Ignoring session_start() because a session is already active (started from /private/tmp/claude-501/-Applications-MAMP-htdocs-DievonOrders/dd744f57-fe3a-46c2-bcd9-965961a4bb0a/scratchpad/render_admin.php on line 4) in /Applications/MAMP/htdocs/DievonOrders/admin/product_form.php on line 5
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Admin Dashboard – Dievon</title>
+            <link rel="icon" type="image/png" href="http://localhost:8888/DievonOrders/assets/images/logo/favicon_1785598968_c1c530.png?v=1785694092" media="(prefers-color-scheme: light)">
+    <link rel="icon" type="image/png" href="http://localhost:8888/DievonOrders/assets/images/logo/favicondark_1785598968_84f1f2.png?v=1785694092" media="(prefers-color-scheme: dark)">
+        <!-- Versioned with filemtime, not time(): a cache-buster that changes on every
+         request defeats browser caching and re-downloads the CSS on each page view. -->
+    <link rel="stylesheet" href="http://localhost:8888/DievonOrders/assets/css/style.css?v=1786315671">
+    <link rel="stylesheet" href="http://localhost:8888/DievonOrders/admin/assets/css/style.css?v=1786231916">
+    <link rel="stylesheet" href="http://localhost:8888/DievonOrders/assets/css/responsive.css?v=1786232206">
+    <link rel="stylesheet" href="http://localhost:8888/DievonOrders/assets/fontawesome/css/all.min.css">
+    <script>
+        window.ADMIN_CSRF_TOKEN = '0684bcfa02c2f97b3324ba99394da28480dbb8a9b72da1ff92db7cc3b0767e3e';
+    </script>
+</head>
+
+<body class="admin-wrapper">
+
+<!-- ══ Global Top Header Bar (0,0 Fixed) ════════════════════════════════════ -->
+<header class="admin-global-topbar">
+    <div style="display: flex; align-items: center; gap: 12px;">
+        <button type="button" class="admin-mobile-toggle" onclick="toggleAdminSidebar()" style="display: none; background: none; border: none; color: #ffffff; font-size: 18px; cursor: pointer; padding: 4px;">
+            <i class="fa-solid fa-bars"></i>
+        </button>
+        <a href="../home.php" class="admin-brand-logo">
+            <span class="logo-emoji">✨</span> Dievon <small>ATELIER ADMIN</small>
+        </a>
+    </div>
+
+    <div class="admin-topbar-actions">
+        <a href="../home.php" target="_blank" class="topbar-btn-shop">
+            <i class="fa-solid fa-globe"></i> View Live Shop ↗
+        </a>
+        <div class="admin-user-pill">
+            <i class="fa-solid fa-user-shield"></i> qa-render        </div>
+        <a href="logout.php" class="topbar-btn-logout">
+            Sign Out
+        </a>
+    </div>
+</header>
+
+<!-- Mobile Sidebar Backdrop Overlay -->
+<div class="mobile-drawer-backdrop" id="adminSidebarBackdrop" onclick="toggleAdminSidebar(false)"></div>
+
+<script>
+function toggleAdminSidebar(force) {
+    const sidebar = document.querySelector('.admin-sidebar');
+    const backdrop = document.getElementById('adminSidebarBackdrop');
+    if (!sidebar) return;
+    
+    if (typeof force === 'boolean') {
+        if (force) {
+            sidebar.classList.add('open');
+            if (backdrop) backdrop.classList.add('active');
+        } else {
+            sidebar.classList.remove('open');
+            if (backdrop) backdrop.classList.remove('active');
+        }
+    } else {
+        sidebar.classList.toggle('open');
+        if (backdrop) backdrop.classList.toggle('active');
+    }
+}
+
+// Auto scroll-into-view & preserve sidebar scroll position across page reloads
+document.addEventListener('DOMContentLoaded', function() {
+    const sidebar = document.querySelector('.admin-sidebar');
+    if (!sidebar) return;
+
+    const savedScroll = localStorage.getItem('adminSidebarScroll');
+    if (savedScroll !== null) {
+        sidebar.scrollTop = parseInt(savedScroll, 10);
+    }
+
+    const activeItem = sidebar.querySelector('a.active');
+    if (activeItem) {
+        setTimeout(function() {
+            activeItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }, 100);
+    }
+
+    sidebar.addEventListener('scroll', function() {
+        localStorage.setItem('adminSidebarScroll', sidebar.scrollTop);
+    });
+});
+</script>
+
+<div class="admin-body-layout">
+
+    <!-- ══ Left Fixed Sidebar (Streamlined & Clean) ════════════════════════ -->
+        <aside class="admin-sidebar">
+        <nav class="admin-sidebar-nav">
+                        <div class="sidebar-group-title">Overview</div>
+                        <a href="dashboard.php" class=""><i class="fa-solid fa-chart-line"></i> Dashboard Analytics</a>
+                                    <div class="sidebar-group-title">Catalog &amp; Inventory</div>
+                        <a href="products.php" class="active"><i class="fa-solid fa-shirt"></i> Products &amp; Garments</a>
+                        <a href="categories.php" class=""><i class="fa-solid fa-folder-tree"></i> Categories &amp; Subcategories</a>
+                        <a href="attributes.php?type=colors" class=""><i class="fa-solid fa-palette"></i> Colours</a>
+                        <a href="brands.php" class=""><i class="fa-solid fa-tag"></i> Brands</a>
+                        <a href="settings.php?tab=stock" class=""><i class="fa-solid fa-boxes-stacked"></i> Inventory &amp; Stock</a>
+                        <a href="size_guide.php" class=""><i class="fa-solid fa-ruler"></i> Size Guide</a>
+                                    <div class="sidebar-group-title">Sales &amp; Clients</div>
+                        <a href="orders.php" class=""><i class="fa-solid fa-clipboard-list"></i> Orders &amp; Invoices</a>
+                        <a href="customers.php" class=""><i class="fa-solid fa-users"></i> Customers &amp; Inquiries</a>
+                        <a href="promo.php" class=""><i class="fa-solid fa-ticket"></i> Discount Coupons</a>
+                        <a href="reviews.php" class=""><i class="fa-solid fa-star"></i> Customer Reviews</a>
+                        <a href="returns.php" class=""><i class="fa-solid fa-rotate-left"></i> RMA Returns</a>
+                        <a href="support_tickets.php" class=""><i class="fa-solid fa-headset"></i> Support Tickets</a>
+                                    <div class="sidebar-group-title">Content &amp; Settings</div>
+                        <a href="banners.php" class=""><i class="fa-solid fa-sliders"></i> Banner Slider Manager</a>
+                        <a href="blog.php" class=""><i class="fa-solid fa-newspaper"></i> Blog Journal Manager</a>
+                        <a href="seo.php" class=""><i class="fa-solid fa-magnifying-glass"></i> SEO &amp; Social Previews</a>
+                        <a href="newsletter.php" class=""><i class="fa-solid fa-envelope"></i> Newsletter Subscribers</a>
+                        <a href="media.php" class=""><i class="fa-solid fa-images"></i> Media Library</a>
+                        <a href="lookbook.php" class=""><i class="fa-solid fa-book-open"></i> Lookbook Images</a>
+                        <a href="settings.php?tab=settings" class=""><i class="fa-solid fa-gear"></i> Store Settings</a>
+                        <a href="admin_users.php" class=""><i class="fa-solid fa-users-gear"></i> Staff Accounts</a>
+                        <a href="roles.php" class=""><i class="fa-solid fa-user-shield"></i> Roles &amp; Permissions</a>
+                        <a href="countries.php" class=""><i class="fa-solid fa-earth-asia"></i> Countries We Sell To</a>
+                        <a href="email_logs.php" class=""><i class="fa-solid fa-envelope-open-text"></i> Email Log</a>
+                        <a href="logs.php" class=""><i class="fa-solid fa-clipboard-list"></i> Audit Logs</a>
+                        <a href="backup.php" class=""><i class="fa-solid fa-database"></i> Database Backup</a>
+                                </nav>
+    </aside>
+
+    <!-- ══ Main Content Area ════════════════════════════════════════ -->
+    <div class="admin-main">
+        <main class="admin-content">
+
+        <!-- Alerts -->
+                
+        
+        
+        <!-- ═══════════════════ ORDERS TAB ═══════════════════ -->
+
+<div class="admin-page-header admin-page-header-flex">
+    <div>
+        <h1 class="admin-page-title">✏️ Edit Product</h1>
+        <p class="admin-page-subtitle">Update product details, pricing, variants & photos</p>
+    </div>
+    <a href="products.php" class="btn-secondary admin-header-btn-secondary">
+        <i class="fa-solid fa-arrow-left"></i> Back to Products
+    </a>
+</div>
+
+
+
+
+        
+        <form action="product_form.php" method="POST" enctype="multipart/form-data" id="productForm">
+            <input type="hidden" name="csrf_token" value="0684bcfa02c2f97b3324ba99394da28480dbb8a9b72da1ff92db7cc3b0767e3e">
+                                    <input type="hidden" name="confirm_incomplete" id="confirmIncompleteFlag"
+                   value="">
+                        <input type="hidden" name="product_id" value="18">
+            <input type="hidden" name="existing_image" value="qa-anaya-kurti.jpg">
+            
+            <div class="product-form-grid">
+
+                <!-- ── Form Fields ───────────────────────── -->
+                <div>
+                    <div class="glass-panel form-section">
+                        <h3><i class="fa-solid fa-circle-info"></i> Basic Info</h3>
+
+                        <div class="form-group">
+                            <label class="form-label">Product Name *</label>
+                            <input type="text" name="name" class="form-control"
+                                placeholder="e.g. Aurelia Silk Kurti"
+                                value="QA TEST Anaya Chikankari Kurti" required
+                                oninput="updatePreviewName(this.value)">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Description *</label>
+                            <textarea name="description" class="form-control" rows="3"
+                                placeholder="Describe the fabric, craftsmanship, and fit…" required>A hand-embroidered chikankari kurti in soft breathable cotton, cut straight through the body with side slits and a lightly gathered yoke. Finished with a covered placket and wooden buttons.</textarea>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Selling Price (₹) *</label>
+                                <input type="number" name="price" class="form-control"
+                                    step="0.01" min="0.01" placeholder="e.g. 1299.00"
+                                    value="1899.00" required
+                                    oninput="updatePreviewPrice(this.value)">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">MRP / Strikethrough (₹)</label>
+                                <input type="number" name="mrp_price" class="form-control"
+                                    step="0.01" min="0" placeholder="e.g. 1899.00"
+                                    value="2799.00">
+                                <small class="text-muted">Set higher than Selling Price to put this product on Sale — shows a strikethrough price and "% OFF" badge across the site.</small>
+                            </div>
+                        </div>
+                        <!-- Cost Price was removed from this form: it is internal-only, is not
+                             read anywhere on the storefront, and sat next to Selling Price and
+                             MRP where it was easy to type into the wrong box. The `cost_price`
+                             DB column is intentionally left in place so historic values are
+                             preserved and are not overwritten when a product is saved. -->
+
+                                                <div class="form-row">
+                            <div class="form-group" style="grid-column: 1 / -1;">
+                                <label class="admin-checkbox-label">
+                                    <input type="checkbox" name="use_category_tax" id="useCategoryTax" value="1"
+                                           class="admin-checkbox-input" >
+                                    Use Category Tax Settings
+                                </label>
+                                <small class="text-muted" id="taxModeHint">Inherited from the collection's defaults — uncheck to edit this product's own HSN & GST.</small>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Product HSN Code</label>
+                                <input type="text" name="hsn_code" id="taxHsnInput" class="form-control"
+                                       placeholder="e.g. 6204 4300"
+                                                                              value="6211">
+                                <small class="text-muted">Tax classification for invoices. Leave blank for no tax on this product.</small>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Product GST Tax Class/Rate (%)</label>
+                                <input type="number" name="gst_rate" id="taxGstInput" class="form-control"
+                                       step="0.01" min="0" placeholder="e.g. 12"
+                                                                              value="5">
+                                <small class="text-muted">Indian GST slabs: 0, 0.25, 3, 5, 12, 18 or 28. 0 = no tax.</small>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group" style="grid-column: 1 / -1;">
+                                <label class="form-label">Price Includes GST</label>
+                                <input type="text" class="form-control tax-locked" readonly tabindex="-1"
+                                       value="Yes — selling price already includes GST">
+                                <small class="text-muted">Store-wide setting — change it under Settings &rarr; Store General Settings &rarr; Invoice &amp; GST details. The same choice applies to every product.</small>
+                            </div>
+                        </div>
+
+                                                                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Who is it for *</label>
+                                <select id="productAudience" class="form-control">
+                                                                        <option value="unisex" >
+                                        Unisex                                    </option>
+                                                                        <option value="men" >
+                                        Man                                    </option>
+                                                                        <option value="women" selected>
+                                        Woman                                    </option>
+                                                                    </select>
+                                <p class="form-hint">Choose this first — it narrows the collections below.</p>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Category *</label>
+                                                                <select name="category_id" id="productCategory" class="form-control" required>
+                                    <option value="">— Select —</option>
+                                                                        <optgroup label="QA TEST Accessories" data-gender="unisex">
+                                                                                <option value="21" data-gender="unisex" >
+                                            QA TEST Accessories (main collection)                                        </option>
+                                                                            </optgroup>
+                                                                        <optgroup label="QA TEST Menswear" data-gender="men">
+                                                                                <option value="20" data-gender="men" >
+                                            QA TEST Menswear (main collection)                                        </option>
+                                                                            </optgroup>
+                                                                        <optgroup label="QA TEST Womenswear" data-gender="women">
+                                                                                <option value="19" data-gender="women" selected>
+                                            QA TEST Womenswear (main collection)                                        </option>
+                                                                            </optgroup>
+                                                                        <optgroup label="Kurtis" data-gender="women">
+                                                                                <option value="1" data-gender="women" >
+                                            Kurtis (main collection)                                        </option>
+                                                                                <option value="7" data-gender="women" >
+                                            — Long Kurtis                                        </option>
+                                                                                <option value="8" data-gender="women" >
+                                            — Anarkali Sets                                        </option>
+                                                                                <option value="9" data-gender="women" >
+                                            — Sharara &amp; Gharara Sets                                        </option>
+                                                                                <option value="4" data-gender="women" >
+                                            — Short Kurtis                                        </option>
+                                                                                <option value="10" data-gender="women" >
+                                            — Straight Cut Kurtis                                        </option>
+                                                                            </optgroup>
+                                                                        <optgroup label="Shirts" data-gender="men">
+                                                                                <option value="17" data-gender="men" >
+                                            Shirts (main collection)                                        </option>
+                                                                            </optgroup>
+                                                                        <optgroup label="3 Piece Suits" data-gender="women">
+                                                                                <option value="2" data-gender="women" >
+                                            3 Piece Suits (main collection)                                        </option>
+                                                                            </optgroup>
+                                                                        <optgroup label="Trousers" data-gender="men">
+                                                                                <option value="18" data-gender="men" >
+                                            Trousers (main collection)                                        </option>
+                                                                            </optgroup>
+                                                                        <optgroup label="Coord Sets" data-gender="women">
+                                                                                <option value="3" data-gender="women" >
+                                            Coord Sets (main collection)                                        </option>
+                                                                            </optgroup>
+                                                                        <optgroup label="Women&#039;s Tops" data-gender="women">
+                                                                                <option value="5" data-gender="women" >
+                                            Women&#039;s Tops (main collection)                                        </option>
+                                                                            </optgroup>
+                                                                        <optgroup label="Bottoms" data-gender="women">
+                                                                                <option value="6" data-gender="women" >
+                                            Bottoms (main collection)                                        </option>
+                                                                            </optgroup>
+                                                                        <optgroup label="QA TEST Cat Sweep" data-gender="men">
+                                                                                <option value="25" data-gender="men" >
+                                            QA TEST Cat Sweep (main collection)                                        </option>
+                                                                            </optgroup>
+                                                                        <optgroup label="QA TEST Womenswear" data-gender="women">
+                                                                                <option value="26" data-gender="women" >
+                                            QA TEST Womenswear (main collection)                                        </option>
+                                                                            </optgroup>
+                                                                        <optgroup label="QA TEST O&#039;B &quot;x&quot; 🎉" data-gender="women">
+                                                                                <option value="27" data-gender="women" >
+                                            QA TEST O&#039;B &quot;x&quot; 🎉 (main collection)                                        </option>
+                                                                            </optgroup>
+                                                                        <optgroup label="QA TEST Womenswear" data-gender="women">
+                                                                                <option value="28" data-gender="women" >
+                                            QA TEST Womenswear (main collection)                                        </option>
+                                                                            </optgroup>
+                                                                        <optgroup label="QA TEST LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL" data-gender="women">
+                                                                                <option value="30" data-gender="women" >
+                                            QA TEST LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL (main collection)                                        </option>
+                                                                            </optgroup>
+                                                                        <optgroup label="Q" data-gender="women">
+                                                                                <option value="31" data-gender="women" >
+                                            Q (main collection)                                        </option>
+                                                                            </optgroup>
+                                                                        <optgroup label="QA TEST O&#039;Neill &quot;X&quot;" data-gender="women">
+                                                                                <option value="32" data-gender="women" >
+                                            QA TEST O&#039;Neill &quot;X&quot; (main collection)                                        </option>
+                                                                            </optgroup>
+                                                                        <optgroup label="QA TEST 😀 Cat" data-gender="women">
+                                                                                <option value="33" data-gender="women" >
+                                            QA TEST 😀 Cat (main collection)                                        </option>
+                                                                            </optgroup>
+                                                                        <optgroup label="QA TEST Womenswear" data-gender="women">
+                                                                                <option value="34" data-gender="women" >
+                                            QA TEST Womenswear (main collection)                                        </option>
+                                                                            </optgroup>
+                                                                        <optgroup label="Uncategorised" data-gender="women">
+                                                                                <option value="23" data-gender="women" >
+                                            QA TEST Level Three (main collection)                                        </option>
+                                                                                <option value="22" data-gender="women" >
+                                            QA TEST Orphan Child (main collection)                                        </option>
+                                                                                <option value="29" data-gender="women" >
+                                            QA TEST FV BadParent (main collection)                                        </option>
+                                                                                <option value="35" data-gender="women" >
+                                            QA TEST FV Orphan (main collection)                                        </option>
+                                                                            </optgroup>
+                                                                    </select>
+                                <p class="form-hint">
+                                    The collection you pick is what makes the product menswear or womenswear —
+                                    there is no separate setting on the product itself.
+                                </p>
+                            </div>
+                        </div>
+
+                            <script>
+                            (function () {
+                                var aud = document.getElementById('productAudience');
+                                var cat = document.getElementById('productCategory');
+                                if (!aud || !cat) { return; }
+
+                                // Rebuilding the <select> from a stored copy rather than toggling
+                                // display on <optgroup>: hiding option groups with CSS is honoured
+                                // inconsistently across browsers, and a merely hidden option can
+                                // still be selected by keyboard, which would file a men's product
+                                // under a women's collection with nothing on screen to show it.
+                                var master = cat.cloneNode(true);
+
+                                function apply(keepValue) {
+                                    var want = aud.value;
+                                    cat.innerHTML = '';
+                                    var blank = document.createElement('option');
+                                    blank.value = '';
+                                    blank.textContent = '— Select —';
+                                    cat.appendChild(blank);
+
+                                    var matched = 0;
+                                    Array.prototype.forEach.call(master.querySelectorAll('optgroup'), function (g) {
+                                        if (g.getAttribute('data-gender') !== want) { return; }
+                                        var clone = g.cloneNode(true);
+                                        cat.appendChild(clone);
+                                        matched += clone.querySelectorAll('option').length;
+                                    });
+
+                                    // Keep the current choice only when it survives the filter.
+                                    if (keepValue) {
+                                        cat.value = keepValue;
+                                        if (cat.value !== keepValue) { cat.value = ''; }
+                                    }
+                                    cat.disabled = matched === 0;
+                                }
+
+                                apply(cat.value);
+                                aud.addEventListener('change', function () { apply(cat.value); });
+                            })();
+                            </script>
+
+                            <script>
+                            // Tax settings: the HSN/GST fields below are ALWAYS visible. While the
+                            // "Use Category Tax Settings" checkbox is checked they are locked to the
+                            // inherited values (which update as the category changes, falling back to
+                            // the product's own stored values when the category has no defaults — so
+                            // editing a legacy product shows what the invoice will actually print).
+                            // Unchecking unlocks them so this product can carry its own HSN/GST; the
+                            // inherited values are copied in as a starting point.
+                            (function () {
+                                var taxMap = {"1":{"hsn":"","gst":0},"2":{"hsn":"","gst":0},"3":{"hsn":"","gst":0},"4":{"hsn":"","gst":0},"5":{"hsn":"","gst":0},"6":{"hsn":"","gst":0},"7":{"hsn":"","gst":0},"8":{"hsn":"","gst":0},"9":{"hsn":"","gst":0},"10":{"hsn":"","gst":0},"17":{"hsn":"","gst":0},"18":{"hsn":"","gst":0},"19":{"hsn":"","gst":0},"20":{"hsn":"","gst":0},"21":{"hsn":"","gst":0},"22":{"hsn":"","gst":0},"23":{"hsn":"","gst":0},"25":{"hsn":"","gst":0},"26":{"hsn":"","gst":0},"27":{"hsn":"","gst":0},"28":{"hsn":"","gst":0},"29":{"hsn":"","gst":0},"30":{"hsn":"","gst":0},"31":{"hsn":"","gst":0},"32":{"hsn":"","gst":0},"33":{"hsn":"","gst":0},"34":{"hsn":"","gst":0},"35":{"hsn":"","gst":0}};
+                                var catSel = document.getElementById('productCategory');
+                                var audSel = document.getElementById('productAudience');
+                                var useCat = document.getElementById('useCategoryTax');
+                                var hsnIn = document.getElementById('taxHsnInput');
+                                var gstIn = document.getElementById('taxGstInput');
+                                var hint  = document.getElementById('taxModeHint');
+                                // The product's own stored values, so the locked fields can fall
+                                // back to them when no category default exists.
+                                var storedHsn = "6211";
+                                var storedGst = 5;
+                                if (!catSel || !hsnIn || !gstIn || !useCat) { return; }
+                                function inheritedTax() {
+                                    var t = taxMap[catSel.value] || null;
+                                    var h = (t && t.hsn) ? t.hsn : storedHsn;
+                                    var g = (t && t.gst) ? t.gst : storedGst;
+                                    return { hsn: h, gst: g > 0 ? g : '' };
+                                }
+                                function lockTax(on) {
+                                    hsnIn.readOnly = on;
+                                    gstIn.readOnly = on;
+                                    hsnIn.tabIndex = on ? -1 : 0;
+                                    gstIn.tabIndex = on ? -1 : 0;
+                                    hsnIn.classList.toggle('tax-locked', on);
+                                    gstIn.classList.toggle('tax-locked', on);
+                                }
+                                function refreshTax() {
+                                    // Only touch the fields while locked: once unlocked, whatever
+                                    // the owner typed is theirs to keep.
+                                    if (useCat.checked) {
+                                        var v = inheritedTax();
+                                        hsnIn.value = v.hsn;
+                                        gstIn.value = v.gst;
+                                    }
+                                }
+                                function syncTaxMode() {
+                                    var on = useCat.checked;
+                                    lockTax(on);
+                                    hint.textContent = on
+                                        ? 'Inherited from the collection\'s defaults — uncheck to edit this product\'s own HSN & GST.'
+                                        : 'Override: this product\'s own HSN & GST will be saved exactly as typed.';
+                                    if (on) { refreshTax(); }
+                                }
+                                useCat.addEventListener('change', syncTaxMode);
+                                catSel.addEventListener('change', refreshTax);
+                                if (audSel) { audSel.addEventListener('change', function () { setTimeout(refreshTax, 0); }); }
+                                syncTaxMode();
+                            })();
+                            </script>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Badge</label>
+                                <select name="badge" class="form-control">
+                                                                        <option value="" >
+                                        — None —                                    </option>
+                                                                        <option value="New" selected>
+                                        New                                    </option>
+                                                                        <option value="Hot" >
+                                        Hot                                    </option>
+                                                                        <option value="Best Seller" >
+                                        Best Seller                                    </option>
+                                                                    </select>
+                            </div>
+                            <div class="form-group admin-form-checkbox-align">
+                                                                <input type="hidden" name="loaded_updated_at" value="2026-08-10 00:06:55">
+
+                                                                <label class="admin-checkbox-label">
+                                    <input type="checkbox" name="available" value="1" id="availableCheckbox" class="admin-checkbox-input"
+                                        checked>
+                                    Published &mdash; visible to shoppers
+                                </label>
+                                <p class="admin-publish-hint">
+                                    Leave unticked to keep it as a <strong>draft</strong>. A draft can be saved
+                                    incomplete; publishing requires an image, SKU, SEO title, meta description and slug.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Dynamic Fashion Specifications -->
+                    <div class="glass-panel form-section admin-section-mt">
+                        <h3><i class="fa-solid fa-gem"></i> Fashion Specifications</h3>
+                        <p class="admin-section-desc">These details appear on the product page.</p>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                                                <label class="form-label">Color Way
+                                    <a href="attributes.php?type=colors" style="font-size:11px; font-weight:400; color:var(--text-muted); margin-left:6px;"
+                                       title="Manage the shop's colour list">
+                                        15 saved &rarr;
+                                    </a>
+                                </label>
+                                <input type="text" name="color_way" list="dv-color-options" class="form-control" placeholder="e.g. Mint Green" value="Bone Ivory">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Composition</label>
+                                <input type="text" name="composition" list="dv-composition-options" class="form-control" placeholder="e.g. 100% Premium Silk" value="100% Cotton">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group" style="grid-column:1 / -1;">
+                                                                <label class="form-label">Sourcing / Origin</label>
+                                <input type="text" class="form-control" value="INDIA" readonly tabindex="-1">
+                                <p class="form-hint">Sourced in India — the same for every product.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Advanced Filtering & Details -->
+                    <div class="glass-panel form-section admin-section-mt">
+                        <h3><i class="fa-solid fa-filter"></i> Advanced Filters & Details</h3>
+                        <p class="admin-section-desc">These attributes power the sidebar filters and product page tabs.</p>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Brand</label>
+                                <input type="text" name="brand" list="dv-brand-options" class="form-control" placeholder="e.g. Dievon" value="Dievon">
+                            </div>
+                                                    </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Fabric</label>
+                                <input type="text" name="fabric" list="dv-fabric-options" class="form-control" placeholder="e.g. Cotton" value="Cotton">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Sleeve</label>
+                                <input type="text" name="sleeve" list="dv-sleeve-options" class="form-control" placeholder="e.g. Full Sleeve" value="Three-Quarter Sleeve">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Neck</label>
+                                <input type="text" name="neck" list="dv-neck-options" class="form-control" placeholder="e.g. Round Neck" value="Mandarin Collar">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Pattern</label>
+                                <input type="text" name="pattern" list="dv-pattern-options" class="form-control" placeholder="e.g. Floral" value="Embroidered">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Occasion</label>
+                                <input type="text" name="occasion" list="dv-occasion-options" class="form-control" placeholder="e.g. Casual" value="Daywear">
+                            </div>
+                                                    </div>
+
+                                                <div class="form-row">
+                            <div class="form-group" style="grid-column:1 / -1;">
+                                <label class="form-label">Image Alt Text
+                                    <span class="form-hint">describes the photo for screen readers and Google Images</span>
+                                </label>
+                                <input type="text" name="image_alt" class="form-control" maxlength="160"
+                                       placeholder="e.g. Model wearing a wine silk kurti with gold zari border"
+                                       value="QA TEST Anaya Chikankari Kurti in bone ivory cotton">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Fit Description</label>
+                                <input type="text" name="fit_description" class="form-control" maxlength="255"
+                                       placeholder="e.g. Relaxed through the body, true to size"
+                                       value="Regular fit, true to size">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Model Height</label>
+                                <input type="text" name="model_height" class="form-control" maxlength="40"
+                                       placeholder="e.g. 5ft 8in"
+                                       value="5ft 7in">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Size Worn by Model</label>
+                                <input type="text" name="model_size_worn" class="form-control" maxlength="20"
+                                       placeholder="e.g. S"
+                                       value="S">
+                            </div>
+                        </div>
+                        
+                        <div class="admin-attribute-grid">
+                            <div class="form-group" style="grid-column: span 2;">
+                                <label class="form-label">Wash Care</label>
+                                <textarea name="wash_care" class="form-control" rows="3" placeholder="e.g. Dry clean only...">Hand wash cold separately. Do not bleach. Dry in shade. Warm iron on reverse.</textarea>
+                            </div>
+                            <div class="form-group">
+                                                                <label class="form-label">Shipping &amp; Returns</label>
+                                <p class="form-hint" style="margin-top:6px;">
+                                    The same for every product — the shop-wide promise is shown
+                                    automatically on the product page. No entry needed here.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Inventory & Logistics (SKU, Barcode, Weight, Dimensions) -->
+                    <div class="glass-panel form-section admin-section-mt">
+                        <h3><i class="fa-solid fa-boxes-packing"></i> Inventory &amp; Logistics Specifications</h3>
+                        <p class="admin-section-desc">Track SKU codes, barcodes for scanner billing, and package weight/dimensions for shipping calculators.</p>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">SKU Code</label>
+                                <input type="text" name="sku" class="form-control" placeholder="e.g. DV-KURTI-001" value="QA-KUR-001">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Barcode / EAN</label>
+                                <input type="text" name="barcode" class="form-control" placeholder="e.g. 5060123456789" value="8901234500011">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Package Weight</label>
+                                <input type="text" name="weight" class="form-control" placeholder="e.g. 0.85 kg" value="0.35">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Dimensions (L × W × H)</label>
+                                <input type="text" name="dimensions" class="form-control" placeholder="e.g. 35 × 25 × 5 cm" value="46 x 32 x 3 cm">
+                            </div>
+                        </div>
+                    </div>
+
+                                                            <!-- SEO, OpenGraph & Search Tags -->
+                    <div class="glass-panel form-section admin-section-mt">
+                        <h3 style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+                            <span><i class="fa-solid fa-magnifying-glass-chart"></i> SEO, OpenGraph &amp; Google Schema</span>
+                            <button type="button" id="seoToggleBtn" onclick="toggleSeoPanel()" class="btn-sm btn-sm-outline" style="padding:6px 12px; cursor:pointer;">
+                                <i class="fa-solid fa-chevron-up"></i>
+                                Hide SEO options
+                            </button>
+                        </h3>
+                        <p class="admin-section-desc">Optimize how your product ranks on Google Search, WhatsApp, Instagram, and Twitter share previews.</p>
+
+                        <div id="seoPanelBody" style="display:;">
+
+                                                <div class="seo-auto-note">
+                            <i class="fa-solid fa-wand-magic-sparkles seo-auto-note-icon"></i>
+                            <div>
+                                <strong class="seo-auto-note-title">These are generated automatically</strong>
+                                Leave any field blank and it is built from the product name, category, description and
+                                attributes — the greyed-out text in each box is exactly what will be used.
+                                Fill a field in only when you want to override it.
+                                <button type="button" onclick="fillAutoSeo()" class="seo-auto-fill-btn">
+                                    Copy the generated values in so I can edit them
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">SEO URL Slug <small class="text-muted">(auto)</small></label>
+                                <input type="text" name="seo_url" id="seoUrlField" class="form-control" placeholder="qa-test-anaya-chikankari-kurti" value="qa-test-anaya-chikankari-kurti">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Search Tags <small class="text-muted">(auto, comma separated)</small></label>
+                                <input type="text" name="tags" id="seoTagsField" class="form-control" placeholder="qa test, kurti, chikankari, cotton" value="qa test, kurti, chikankari, cotton">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Meta Title <small class="text-muted">(auto — best under 60 characters)</small></label>
+                            <input type="text" name="meta_title" id="seoTitleField" class="form-control" placeholder="QA TEST Anaya Chikankari Kurti | Dievon" value="QA TEST Anaya Chikankari Kurti | Dievon" oninput="countSeo(this,'seoTitleCount',60)">
+                            <small class="text-muted"><span id="seoTitleCount"></span></small>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Meta Description <small class="text-muted">(auto — best under 155 characters)</small></label>
+                            <textarea name="meta_description" id="seoDescField" class="form-control" rows="2" placeholder="Hand-embroidered chikankari kurti in breathable cotton with mandarin collar and three-quarter sleeves. QA fixture product." oninput="countSeo(this,'seoDescCount',155)">Hand-embroidered chikankari kurti in breathable cotton with mandarin collar and three-quarter sleeves. QA fixture product.</textarea>
+                            <small class="text-muted"><span id="seoDescCount"></span></small>
+                        </div>
+                        </div>
+                    </div>
+
+                    <script>
+                    // Pull the server-generated values into the inputs so they can be tweaked
+                    // by hand. Until then the fields stay empty, which is what keeps them
+                    // "automatic" — the storefront regenerates them as the product changes.
+                    const DIEVON_AUTO_SEO = {"meta_title":"QA TEST Anaya Chikankari Kurti | Dievon","meta_description":"Hand-embroidered chikankari kurti in breathable cotton with mandarin collar and three-quarter sleeves. QA fixture product.","seo_url":"qa-test-anaya-chikankari-kurti","tags":"qa test, kurti, chikankari, cotton"};
+                    async function fillAutoSeo() {
+                        // Copying the values in turns them into stored, manual text. From then
+                        // on they no longer follow the product — rename the garment, change its
+                        // fabric or price, and these fields will keep the old wording until
+                        // someone edits them by hand. Worth an explicit confirmation.
+                        const ok = await dievonConfirm(
+                            'Right now these SEO fields are automatic — they rewrite themselves whenever you change the product name, category or description.\n\n' +
+                            'Copying the generated text into the boxes makes them manual. They will stay exactly as written and will stop updating on their own.\n\n' +
+                            'Do you want to take over and edit the SEO yourself?',
+                            { title: 'Switch SEO to manual?', confirmText: 'Yes, let me edit', cancelText: 'Keep it automatic' }
+                        );
+                        if (!ok) return;
+
+                        const map = {
+                            seoUrlField:   DIEVON_AUTO_SEO.seo_url,
+                            seoTagsField:  DIEVON_AUTO_SEO.tags,
+                            seoTitleField: DIEVON_AUTO_SEO.meta_title,
+                            seoDescField:  DIEVON_AUTO_SEO.meta_description
+                        };
+                        Object.entries(map).forEach(([id, val]) => {
+                            const el = document.getElementById(id);
+                            if (el && !el.value.trim()) { el.value = val || ''; el.dispatchEvent(new Event('input')); }
+                        });
+                        dievonAlert('The generated text has been copied into the fields. Edit it as you like — to go back to automatic, simply clear a field and save.', { type: 'success', title: 'Now editable' });
+                    }
+                    function countSeo(el, targetId, limit) {
+                        const out = document.getElementById(targetId);
+                        if (!out) return;
+                        const n = el.value.trim().length;
+                        // Colour comes from the .seo-count-over class, not an inline style.
+                        if (n === 0) { out.textContent = 'Blank — the generated value shown above will be used.'; out.classList.remove('seo-count-over'); return; }
+                        out.textContent = n + ' / ' + limit + ' characters' + (n > limit ? ' — Google may truncate this' : '');
+                        out.classList.toggle('seo-count-over', n > limit);
+                    }
+                    document.addEventListener('DOMContentLoaded', () => {
+                        ['seoTitleField','seoDescField'].forEach(id => {
+                            const el = document.getElementById(id);
+                            if (el) countSeo(el, id === 'seoTitleField' ? 'seoTitleCount' : 'seoDescCount', id === 'seoTitleField' ? 60 : 155);
+                        });
+                    });
+                    function toggleSeoPanel() {
+                        const body = document.getElementById('seoPanelBody');
+                        const btn  = document.getElementById('seoToggleBtn');
+                        if (!body || !btn) return;
+                        const open = body.style.display !== 'none';
+                        body.style.display = open ? 'none' : '';
+                        btn.innerHTML = open
+                            ? '<i class="fa-solid fa-chevron-down"></i> Show SEO options'
+                            : '<i class="fa-solid fa-chevron-up"></i> Hide SEO options';
+                    }
+                    </script>
+
+                    <!-- Stock Management -->
+                    <div class="form-row admin-form-row-mt">
+                        <div class="form-group admin-form-checkbox-align">
+                            <label class="admin-checkbox-label">
+                                <input type="checkbox" name="track_stock" value="1" id="trackStockCb" class="admin-checkbox-input"
+                                    checked>
+                                📦 Track Stock
+                            </label>
+                                                        <span class="admin-stock-badge-active">
+                                🟢 In Stock: 22                            </span>
+                                                    </div>
+                        <!-- Stock quantity is managed via the Stock tab, not here -->
+                        <input type="hidden" name="stock_qty" value="40">
+                    </div>
+
+                    <!-- ── Image & Video Media Upload ───────────────────── -->
+                    <div class="glass-panel form-section">
+                        <h3><i class="fa-solid fa-photo-film"></i> Product Image &amp; 360° Video</h3>
+                        <p class="admin-section-desc">Upload primary product photo and/or 360° product video.</p>
+
+                                                <div class="admin-current-img-box">
+                            <p class="admin-current-img-label">Current image:</p>
+                            <img src="../uploads/products/qa-anaya-kurti.jpg"
+                                 alt="Current product image"
+                                 class="image-current-thumb admin-current-img-thumb"
+                                 id="previewCurrentImg">
+                        </div>
+                        
+                        <div class="form-group admin-mb-18">
+                            <label class="form-label admin-label-bold">1. Product Main Photo</label>
+                            <div class="image-upload-box" id="uploadBox">
+                                <input type="file" name="product_image" accept="image/jpeg,image/png,image/webp,image/gif"
+                                    id="productImageInput" onchange="previewUpload(this)">
+                                <div class="image-upload-icon">📷</div>
+                                <p class="image-upload-label">
+                                    <strong>Click to upload photo</strong> or drag & drop<br>
+                                    JPG, PNG, WebP, or GIF — max 8MB
+                                </p>
+                            </div>
+
+                            <img src="" alt="New image preview" id="newImgPreview" class="admin-new-img-preview">
+                        </div>
+
+                        <!-- ── Product 360° Video (Bottom of Product Image section) ── -->
+                        <div class="form-group admin-video-box-mt">
+                            <label class="form-label admin-label-bold"><i class="fa-solid fa-video admin-video-icon-primary"></i> 2. Product 360° Video (Use if no product photo or for 360° view)</label>
+                                                        <div class="admin-video-flex-column">
+                                <div>
+                                    <label class="form-label admin-sublabel-muted">Upload Product Video File (MP4 / WebM)</label>
+                                    <input type="file" name="product_video" class="form-control" accept="video/mp4,video/webm,video/quicktime">
+                                </div>
+                                <div>
+                                    <label class="form-label admin-sublabel-muted">OR Enter Video URL (YouTube / External MP4 Link)</label>
+                                    <input type="text" name="video_url" class="form-control" placeholder="e.g. https://www.youtube.com/watch?v=... or my_video.mp4" value="">
+                                </div>
+                            </div>
+                            <small class="form-text text-muted admin-help-text-muted">
+                                💡 Note: If you have no main photo uploaded, this Product 360° Video will automatically take the place of <code>product-main-img</code> on the storefront product page!
+                            </small>
+                        </div>
+
+                        <!-- Fallback emoji (shown if no image) -->
+                        <div class="form-group admin-mt-16">
+                            <label class="form-label admin-label-xs">Emoji (shown if no image or video)</label>
+                            <input type="text" name="emoji" id="emojiInput" class="form-control admin-emoji-input-size"
+                                value="👗">
+                        </div>
+                    </div>
+
+                    <!-- ── Additional Gallery Images ──────────── -->
+                                        <div class="glass-panel form-section admin-section-mt">
+                        <h3><i class="fa-solid fa-images"></i> Additional Images Gallery</h3>
+                                                <p class="admin-section-desc">Upload multiple photos to show every side of your product.</p>
+                        
+                                                <div class="admin-gallery-wrap-flex" id="additionalImagesContainer">
+                                                        <div class="gallery-image-wrap admin-gallery-thumb-item" id="ai-3">
+                                <img src="../uploads/products/qa-anaya-kurti-2.jpg" class="admin-gallery-thumb-img">
+                                <button type="button" onclick="deleteAdditionalImage(3)" title="Remove Image" class="admin-gallery-del-btn">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                                <span class="admin-gallery-saved-tag">Saved</span>
+                            </div>
+                                                        <div class="gallery-image-wrap admin-gallery-thumb-item" id="ai-4">
+                                <img src="../uploads/products/qa-anaya-kurti-3.jpg" class="admin-gallery-thumb-img">
+                                <button type="button" onclick="deleteAdditionalImage(4)" title="Remove Image" class="admin-gallery-del-btn">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                                <span class="admin-gallery-saved-tag">Saved</span>
+                            </div>
+                                                    </div>
+                        
+                        <div class="image-upload-box">
+                            <input type="file" name="additional_images[]" id="additional_images_input" accept="image/jpeg,image/png,image/webp,image/gif" multiple onchange="previewSelectedGalleryImages(this)">
+                            <div class="image-upload-icon">📸</div>
+                            <p class="image-upload-label">
+                                <strong>Select multiple files</strong><br>
+                                Shift-click or Cmd-click to select multiple
+                            </p>
+                        </div>
+                        <div id="newSelectedGalleryPreview" class="admin-gallery-wrap-flex admin-section-mt"></div>
+
+                                                                                            </div>
+
+                    <button type="submit" class="btn-primary admin-btn-save-submit">
+                        <i class="fa-solid fa-floppy-disk"></i>
+                        Save Changes                    </button>
+
+                                    </div>
+
+                <!-- ── Live Preview ───────────────────────── -->
+                <div class="admin-sticky-preview">
+                    <div class="glass-panel preview-card">
+                        <p class="admin-preview-eyebrow">Live Preview</p>
+                        <div class="preview-img-wrap has-image" id="previewWrap">
+                                                        <img src="../uploads/products/qa-anaya-kurti.jpg" alt="Preview" id="previewImg" class="admin-preview-img-fill">
+                                                    </div>
+                        <h3 id="previewName" class="admin-preview-name-text">QA TEST Anaya Chikankari Kurti</h3>
+                        <div id="previewPrice" class="admin-preview-price-text">
+                            ₹1,899.00                        </div>
+
+                                                <button type="submit" class="btn-primary preview-save-btn">
+                            <i class="fa-solid fa-floppy-disk"></i>
+                            Save Changes                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+
+                <datalist id="dv-color-options">
+                        <option value="Bone Ivory"></option>
+                        <option value="Champagne"></option>
+                        <option value="Emerald Green"></option>
+                        <option value="Indigo Blue"></option>
+                        <option value="Lilac"></option>
+                        <option value="Midnight Black"></option>
+                        <option value="Natural Olive"></option>
+                        <option value="Natural Sand"></option>
+                        <option value="Olive Silk"></option>
+                        <option value="QA TEST COLOR CSRF"></option>
+                        <option value="QA TEST NoCSRF Attr"></option>
+                        <option value="QA TEST Size Sweep"></option>
+                        <option value="red"></option>
+                        <option value="red"></option>
+                        <option value="Rose Petal"></option>
+                    </datalist>
+
+                        <datalist id="dv-fabric-options">
+                        <option value="Brocade"></option>
+                        <option value="Chanderi"></option>
+                        <option value="Cotton"></option>
+                        <option value="Cotton Poplin"></option>
+                        <option value="Cotton Twill"></option>
+                        <option value="Georgette"></option>
+                        <option value="Linen"></option>
+                        <option value="Polywool Blend"></option>
+                        <option value="QA"></option>
+                        <option value="Rayon"></option>
+                        <option value="Rib Knit"></option>
+                        <option value="Satin"></option>
+                        <option value="Silk"></option>
+                        <option value="Viscose Weave"></option>
+                    </datalist>
+                <datalist id="dv-sleeve-options">
+                        <option value="3/4 Sleeve"></option>
+                        <option value="Full Sleeve"></option>
+                        <option value="Half Sleeve"></option>
+                        <option value="Not Applicable"></option>
+                        <option value="Short Sleeve"></option>
+                        <option value="Sleeveless"></option>
+                        <option value="Three-Quarter Sleeve"></option>
+                    </datalist>
+                <datalist id="dv-neck-options">
+                        <option value="Boat Neck"></option>
+                        <option value="Button-Down Collar"></option>
+                        <option value="Collar"></option>
+                        <option value="Mandarin Collar"></option>
+                        <option value="Not Applicable"></option>
+                        <option value="Point Collar"></option>
+                        <option value="Round Neck"></option>
+                        <option value="Scoop Neck"></option>
+                        <option value="V-Neck"></option>
+                    </datalist>
+                <datalist id="dv-pattern-options">
+                        <option value="Embroidered"></option>
+                        <option value="Solid"></option>
+                        <option value="Striped"></option>
+                        <option value="Textured"></option>
+                    </datalist>
+                <datalist id="dv-occasion-options">
+                        <option value="Casual"></option>
+                        <option value="Daywear"></option>
+                        <option value="Festive"></option>
+                        <option value="Formal"></option>
+                        <option value="Party"></option>
+                        <option value="Resort"></option>
+                        <option value="Wedding"></option>
+                        <option value="Workwear"></option>
+                    </datalist>
+                <datalist id="dv-composition-options">
+                        <option value="100% Cotton"></option>
+                        <option value="100% Cotton Oxford"></option>
+                        <option value="100% QA"></option>
+                        <option value="100% Rayon"></option>
+                        <option value="55% Linen, 45% Viscose"></option>
+                        <option value="60% Viscose, 40% Silk Blend"></option>
+                        <option value="70% Viscose, 30% Silk Blend"></option>
+                        <option value="80% Viscose, 20% Cotton"></option>
+                        <option value="95% Viscose, 5% Elastane"></option>
+                        <option value="98% Cotton, 2% Elastane"></option>
+                    </datalist>
+        
+        <datalist id="dv-brand-options">
+                        <option value="Dievon"></option>
+                        <option value="QA TEST BRAND CSRF"></option>
+                        <option value="QA TEST Brand NoCSRF"></option>
+                        <option value="QA TEST Brand Sweep"></option>
+                    </datalist>
+
+                <!-- ── Product Sizes Section ─────────────────── -->
+                <div class="glass-panel form-section" style="margin-top:28px;">
+            <h3 style="display:flex; align-items:center; gap:10px;">
+                <i class="fa-solid fa-ruler-combined" style="color:var(--color-secondary);"></i>
+                Product Sizes
+                <span style="font-size:12px; font-weight:500; color:var(--text-muted); margin-left:4px;">Optional — e.g. Small, Medium, Large</span>
+            </h3>
+                                    <p style="font-size:13px; color:var(--text-secondary); margin-bottom:14px;">
+                Tick the sizes this product comes in. <strong>Shown as</strong> is exactly what a
+                shopper sees on the size button — rename it if your label differs, and the size
+                still sorts where the ladder puts it. <strong>Price</strong> blank means the main
+                selling price; <strong>Stock</strong> blank means this size is not counted.
+            </p>
+
+            <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(260px,1fr)); gap:10px; margin-bottom:22px;">
+                                <div class="size-stock-row" style="display:flex; align-items:center; gap:8px; padding:8px 10px; background:var(--bg-surface); border-radius:6px; border:1px solid var(--border-light); flex-wrap:wrap;">
+                    <label style="display:flex; align-items:center; gap:6px; font-size:13px; font-weight:600; cursor:pointer;">
+                        <input type="checkbox" id="psize-XS" checked                            data-variant-id="90"
+                            onchange="togglePlainSize('XS', '30/XS', this)">
+                        30/XS                    </label>
+                    <input type="text" id="plabel-XS" class="form-control"
+                        placeholder="Shown as 30/XS"
+                        style="flex:1; min-width:88px; padding:4px 6px; font-size:12px;"
+                        value="30/XS"
+                                                onchange="savePlainSize('XS')">
+                    <input type="number" id="pstock-XS" min="0" class="form-control" placeholder="Stock"
+                        style="width:72px; padding:4px 6px; font-size:12px;"
+                        value="6"
+                                                onchange="savePlainSize('XS')">
+                    <input type="number" id="pprice-XS" min="0" step="0.01" class="form-control"
+                        placeholder="₹1,899.00"
+                        style="width:92px; padding:4px 6px; font-size:12px;"
+                        value=""
+                                                onchange="savePlainSize('XS')">
+                </div>
+                                <div class="size-stock-row" style="display:flex; align-items:center; gap:8px; padding:8px 10px; background:var(--bg-surface); border-radius:6px; border:1px solid var(--border-light); flex-wrap:wrap;">
+                    <label style="display:flex; align-items:center; gap:6px; font-size:13px; font-weight:600; cursor:pointer;">
+                        <input type="checkbox" id="psize-S" checked                            data-variant-id="91"
+                            onchange="togglePlainSize('S', '32/S', this)">
+                        32/S                    </label>
+                    <input type="text" id="plabel-S" class="form-control"
+                        placeholder="Shown as 32/S"
+                        style="flex:1; min-width:88px; padding:4px 6px; font-size:12px;"
+                        value="32/S"
+                                                onchange="savePlainSize('S')">
+                    <input type="number" id="pstock-S" min="0" class="form-control" placeholder="Stock"
+                        style="width:72px; padding:4px 6px; font-size:12px;"
+                        value="8"
+                                                onchange="savePlainSize('S')">
+                    <input type="number" id="pprice-S" min="0" step="0.01" class="form-control"
+                        placeholder="₹1,899.00"
+                        style="width:92px; padding:4px 6px; font-size:12px;"
+                        value=""
+                                                onchange="savePlainSize('S')">
+                </div>
+                                <div class="size-stock-row" style="display:flex; align-items:center; gap:8px; padding:8px 10px; background:var(--bg-surface); border-radius:6px; border:1px solid var(--border-light); flex-wrap:wrap;">
+                    <label style="display:flex; align-items:center; gap:6px; font-size:13px; font-weight:600; cursor:pointer;">
+                        <input type="checkbox" id="psize-M" checked                            data-variant-id="92"
+                            onchange="togglePlainSize('M', '34/M', this)">
+                        34/M                    </label>
+                    <input type="text" id="plabel-M" class="form-control"
+                        placeholder="Shown as 34/M"
+                        style="flex:1; min-width:88px; padding:4px 6px; font-size:12px;"
+                        value="34/M"
+                                                onchange="savePlainSize('M')">
+                    <input type="number" id="pstock-M" min="0" class="form-control" placeholder="Stock"
+                        style="width:72px; padding:4px 6px; font-size:12px;"
+                        value="8"
+                                                onchange="savePlainSize('M')">
+                    <input type="number" id="pprice-M" min="0" step="0.01" class="form-control"
+                        placeholder="₹1,899.00"
+                        style="width:92px; padding:4px 6px; font-size:12px;"
+                        value=""
+                                                onchange="savePlainSize('M')">
+                </div>
+                                <div class="size-stock-row" style="display:flex; align-items:center; gap:8px; padding:8px 10px; background:var(--bg-surface); border-radius:6px; border:1px solid var(--border-light); flex-wrap:wrap;">
+                    <label style="display:flex; align-items:center; gap:6px; font-size:13px; font-weight:600; cursor:pointer;">
+                        <input type="checkbox" id="psize-L" checked                            data-variant-id="93"
+                            onchange="togglePlainSize('L', '36/L', this)">
+                        36/L                    </label>
+                    <input type="text" id="plabel-L" class="form-control"
+                        placeholder="Shown as 36/L"
+                        style="flex:1; min-width:88px; padding:4px 6px; font-size:12px;"
+                        value="36/L"
+                                                onchange="savePlainSize('L')">
+                    <input type="number" id="pstock-L" min="0" class="form-control" placeholder="Stock"
+                        style="width:72px; padding:4px 6px; font-size:12px;"
+                        value="4"
+                                                onchange="savePlainSize('L')">
+                    <input type="number" id="pprice-L" min="0" step="0.01" class="form-control"
+                        placeholder="₹1,899.00"
+                        style="width:92px; padding:4px 6px; font-size:12px;"
+                        value=""
+                                                onchange="savePlainSize('L')">
+                </div>
+                                <div class="size-stock-row" style="display:flex; align-items:center; gap:8px; padding:8px 10px; background:var(--bg-surface); border-radius:6px; border:1px solid var(--border-light); flex-wrap:wrap;">
+                    <label style="display:flex; align-items:center; gap:6px; font-size:13px; font-weight:600; cursor:pointer;">
+                        <input type="checkbox" id="psize-XL" checked                            data-variant-id="94"
+                            onchange="togglePlainSize('XL', '38/XL', this)">
+                        38/XL                    </label>
+                    <input type="text" id="plabel-XL" class="form-control"
+                        placeholder="Shown as 38/XL"
+                        style="flex:1; min-width:88px; padding:4px 6px; font-size:12px;"
+                        value="38/XL"
+                                                onchange="savePlainSize('XL')">
+                    <input type="number" id="pstock-XL" min="0" class="form-control" placeholder="Stock"
+                        style="width:72px; padding:4px 6px; font-size:12px;"
+                        value="0"
+                                                onchange="savePlainSize('XL')">
+                    <input type="number" id="pprice-XL" min="0" step="0.01" class="form-control"
+                        placeholder="₹1,899.00"
+                        style="width:92px; padding:4px 6px; font-size:12px;"
+                        value="2099.00"
+                                                onchange="savePlainSize('XL')">
+                </div>
+                                <div class="size-stock-row" style="display:flex; align-items:center; gap:8px; padding:8px 10px; background:var(--bg-surface); border-radius:6px; border:1px solid var(--border-light); flex-wrap:wrap;">
+                    <label style="display:flex; align-items:center; gap:6px; font-size:13px; font-weight:600; cursor:pointer;">
+                        <input type="checkbox" id="psize-2XL"                             data-variant-id=""
+                            onchange="togglePlainSize('2XL', '40/2XL', this)">
+                        40/2XL                    </label>
+                    <input type="text" id="plabel-2XL" class="form-control"
+                        placeholder="Shown as 40/2XL"
+                        style="flex:1; min-width:88px; padding:4px 6px; font-size:12px;"
+                        value=""
+                        disabled                        onchange="savePlainSize('2XL')">
+                    <input type="number" id="pstock-2XL" min="0" class="form-control" placeholder="Stock"
+                        style="width:72px; padding:4px 6px; font-size:12px;"
+                        value=""
+                        disabled                        onchange="savePlainSize('2XL')">
+                    <input type="number" id="pprice-2XL" min="0" step="0.01" class="form-control"
+                        placeholder="₹1,899.00"
+                        style="width:92px; padding:4px 6px; font-size:12px;"
+                        value=""
+                        disabled                        onchange="savePlainSize('2XL')">
+                </div>
+                                <div class="size-stock-row" style="display:flex; align-items:center; gap:8px; padding:8px 10px; background:var(--bg-surface); border-radius:6px; border:1px solid var(--border-light); flex-wrap:wrap;">
+                    <label style="display:flex; align-items:center; gap:6px; font-size:13px; font-weight:600; cursor:pointer;">
+                        <input type="checkbox" id="psize-3XL"                             data-variant-id=""
+                            onchange="togglePlainSize('3XL', '42/3XL', this)">
+                        42/3XL                    </label>
+                    <input type="text" id="plabel-3XL" class="form-control"
+                        placeholder="Shown as 42/3XL"
+                        style="flex:1; min-width:88px; padding:4px 6px; font-size:12px;"
+                        value=""
+                        disabled                        onchange="savePlainSize('3XL')">
+                    <input type="number" id="pstock-3XL" min="0" class="form-control" placeholder="Stock"
+                        style="width:72px; padding:4px 6px; font-size:12px;"
+                        value=""
+                        disabled                        onchange="savePlainSize('3XL')">
+                    <input type="number" id="pprice-3XL" min="0" step="0.01" class="form-control"
+                        placeholder="₹1,899.00"
+                        style="width:92px; padding:4px 6px; font-size:12px;"
+                        value=""
+                        disabled                        onchange="savePlainSize('3XL')">
+                </div>
+                                <div class="size-stock-row" style="display:flex; align-items:center; gap:8px; padding:8px 10px; background:var(--bg-surface); border-radius:6px; border:1px solid var(--border-light); flex-wrap:wrap;">
+                    <label style="display:flex; align-items:center; gap:6px; font-size:13px; font-weight:600; cursor:pointer;">
+                        <input type="checkbox" id="psize-4XL"                             data-variant-id=""
+                            onchange="togglePlainSize('4XL', '44/4XL', this)">
+                        44/4XL                    </label>
+                    <input type="text" id="plabel-4XL" class="form-control"
+                        placeholder="Shown as 44/4XL"
+                        style="flex:1; min-width:88px; padding:4px 6px; font-size:12px;"
+                        value=""
+                        disabled                        onchange="savePlainSize('4XL')">
+                    <input type="number" id="pstock-4XL" min="0" class="form-control" placeholder="Stock"
+                        style="width:72px; padding:4px 6px; font-size:12px;"
+                        value=""
+                        disabled                        onchange="savePlainSize('4XL')">
+                    <input type="number" id="pprice-4XL" min="0" step="0.01" class="form-control"
+                        placeholder="₹1,899.00"
+                        style="width:92px; padding:4px 6px; font-size:12px;"
+                        value=""
+                        disabled                        onchange="savePlainSize('4XL')">
+                </div>
+                                <div class="size-stock-row" style="display:flex; align-items:center; gap:8px; padding:8px 10px; background:var(--bg-surface); border-radius:6px; border:1px solid var(--border-light); flex-wrap:wrap;">
+                    <label style="display:flex; align-items:center; gap:6px; font-size:13px; font-weight:600; cursor:pointer;">
+                        <input type="checkbox" id="psize-5XL"                             data-variant-id=""
+                            onchange="togglePlainSize('5XL', '46/5XL', this)">
+                        46/5XL                    </label>
+                    <input type="text" id="plabel-5XL" class="form-control"
+                        placeholder="Shown as 46/5XL"
+                        style="flex:1; min-width:88px; padding:4px 6px; font-size:12px;"
+                        value=""
+                        disabled                        onchange="savePlainSize('5XL')">
+                    <input type="number" id="pstock-5XL" min="0" class="form-control" placeholder="Stock"
+                        style="width:72px; padding:4px 6px; font-size:12px;"
+                        value=""
+                        disabled                        onchange="savePlainSize('5XL')">
+                    <input type="number" id="pprice-5XL" min="0" step="0.01" class="form-control"
+                        placeholder="₹1,899.00"
+                        style="width:92px; padding:4px 6px; font-size:12px;"
+                        value=""
+                        disabled                        onchange="savePlainSize('5XL')">
+                </div>
+                            </div>
+
+                        <h4 style="font-size:13px; font-weight:600; color:var(--text-secondary); margin:0 0 10px;">
+                Other sizes &amp; options
+                <span style="font-weight:400; color:var(--text-muted);">— for anything the ladder above cannot describe</span>
+            </h4>
+
+            <div id="variantsList">
+                            </div>
+
+            <div style="display:flex; align-items:center; gap:12px; margin-top:14px; padding:14px 16px; border:2px dashed var(--border-strong); border-radius:var(--radius-sm); background:var(--bg-surface);">
+                <i class="fa-solid fa-plus-circle" style="color:var(--color-secondary); font-size:18px; flex-shrink:0;"></i>
+                <input type="text" id="newVariantName" placeholder="Free Size, One Size, 500ml…" class="form-control" style="flex:1;">
+                <div style="display:flex; align-items:center; gap:4px;">
+                    <span style="font-size:15px;">₹</span>
+                    <input type="number" id="newVariantPrice" placeholder="Same as ₹1,899.00" step="0.01" min="0" class="form-control" style="width:150px;">
+                </div>
+                <input type="number" id="newVariantStock" min="0" placeholder="Stock" class="form-control" style="width:90px;">
+                <button type="button" class="btn-primary" style="padding:10px 18px; flex-shrink:0;" onclick="addVariant(18)">
+                    <i class="fa-solid fa-plus"></i> Add Size
+                </button>
+            </div>
+            <p style="font-size:12px; color:var(--text-muted); margin-top:10px;">
+                <i class="fa-solid fa-circle-info"></i>
+                Use the ladder above for garment sizes — a size added here has no place in the
+                ladder, so it sorts after them and is not matched by the size guide.
+            </p>
+        </div>
+
+        <!-- ── Colour Variants Section (Biba-style image colour selector) ── -->
+        <div class="glass-panel form-section" style="margin-top:28px;">
+            <h3 style="display:flex; align-items:center; gap:10px;">
+                <i class="fa-solid fa-palette" style="color:var(--color-primary);"></i>
+                Colour Variants
+                <span style="font-size:12px; font-weight:500; color:var(--text-muted); margin-left:4px;">Optional — each colour gets its own gallery, price and sizes/stock</span>
+            </h3>
+            <p style="font-size:13px; color:var(--text-secondary); margin-bottom:20px;">
+                Add one colour per look. Upload a gallery for each colour, pick a circular thumbnail, and set which sizes are in stock for that colour.
+                Products with no colour added here keep using the plain "Product Sizes" list above.
+            </p>
+
+            <div id="colorsList">
+                            </div>
+
+                            <!-- Empty state. The thumbnail/gallery upload controls live INSIDE each
+                     colour card, so with no colours added there is no upload button
+                     anywhere — which reads as "the upload option is missing on this
+                     product" unless we say why. -->
+                <div class="colors-empty-state">
+                    <i class="fa-solid fa-palette colors-empty-icon"></i>
+                    <strong class="colors-empty-title">No colours added yet</strong>
+                    <span class="colors-empty-text">
+                        Add a colour below first — each colour then gets its own
+                        <strong>thumbnail upload</strong> and <strong>image gallery</strong>.
+                        That is why no image upload appears on this product yet.
+                    </span>
+                </div>
+            
+            <div style="display:flex; align-items:center; gap:12px; margin-top:14px; padding:14px 16px; border:2px dashed var(--border-strong); border-radius:var(--radius-sm); background:var(--bg-surface); flex-wrap:wrap;">
+                <input type="text" id="newColorName" list="dv-color-options" placeholder="Colour name (e.g. Green)" class="form-control" style="flex:1; min-width:140px;">
+                <input type="text" id="newColorSku" placeholder="Variant SKU (optional)" class="form-control" style="width:160px;">
+                <input type="number" step="0.01" min="0" id="newColorPrice" placeholder="Price override (optional)" class="form-control" style="width:170px;">
+                <button type="button" class="btn-primary" style="padding:10px 18px; flex-shrink:0;" onclick="addColor(18)">
+                    <i class="fa-solid fa-plus"></i> Add Colour
+                </button>
+            </div>
+        </div>
+
+        <!-- ── Product Specifications Section (general Label/Value/Unit rows) ── -->
+        <div class="glass-panel form-section" style="margin-top:28px;">
+            <h3 style="display:flex; align-items:center; gap:10px;">
+                <i class="fa-solid fa-list-check" style="color:var(--color-secondary);"></i>
+                Product Specifications
+                <span style="font-size:12px; font-weight:500; color:var(--text-muted); margin-left:4px;">Optional — general details shown on the product page (e.g. Fabric: Cotton)</span>
+            </h3>
+            <p style="font-size:13px; color:var(--text-secondary); margin-bottom:20px;">
+                Add any label/value details relevant to this product. Suggestions are just hints — you can always type a custom label.
+                Empty sections are hidden automatically on the product page.
+            </p>
+
+            <div id="generalSpecsList">
+                                <div class="spec-row" id="gspec-5" style="display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--bg-main); border-radius:var(--radius-sm); margin-bottom:10px; border:1px solid var(--border-light); flex-wrap:wrap;">
+                    <div style="display:flex; flex-direction:column; gap:2px;">
+                        <button type="button" title="Move up" onclick="moveGeneralSpec(5, 'up')" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:0;line-height:1;"><i class="fa-solid fa-caret-up"></i></button>
+                        <button type="button" title="Move down" onclick="moveGeneralSpec(5, 'down')" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:0;line-height:1;"><i class="fa-solid fa-caret-down"></i></button>
+                    </div>
+                    <input type="text" class="form-control gspec-label" list="specLabelSuggestions" value="Kurti Length" placeholder="Label (e.g. Fabric)" style="flex:1; min-width:120px;" onchange="updateGeneralSpec(5)">
+                    <input type="text" class="form-control gspec-value" value="46" placeholder="Value (e.g. Pure Cotton)" style="flex:1; min-width:140px;" onchange="updateGeneralSpec(5)">
+                    <input type="text" class="form-control gspec-unit" list="specUnitSuggestions" value="in" placeholder="Unit (optional)" style="width:110px;" onchange="updateGeneralSpec(5)">
+                    <button type="button" class="btn-danger" style="padding:6px 12px; flex-shrink:0;" onclick="deleteGeneralSpec(5)">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </div>
+                                <div class="spec-row" id="gspec-6" style="display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--bg-main); border-radius:var(--radius-sm); margin-bottom:10px; border:1px solid var(--border-light); flex-wrap:wrap;">
+                    <div style="display:flex; flex-direction:column; gap:2px;">
+                        <button type="button" title="Move up" onclick="moveGeneralSpec(6, 'up')" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:0;line-height:1;"><i class="fa-solid fa-caret-up"></i></button>
+                        <button type="button" title="Move down" onclick="moveGeneralSpec(6, 'down')" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:0;line-height:1;"><i class="fa-solid fa-caret-down"></i></button>
+                    </div>
+                    <input type="text" class="form-control gspec-label" list="specLabelSuggestions" value="Slit Height" placeholder="Label (e.g. Fabric)" style="flex:1; min-width:120px;" onchange="updateGeneralSpec(6)">
+                    <input type="text" class="form-control gspec-value" value="12" placeholder="Value (e.g. Pure Cotton)" style="flex:1; min-width:140px;" onchange="updateGeneralSpec(6)">
+                    <input type="text" class="form-control gspec-unit" list="specUnitSuggestions" value="in" placeholder="Unit (optional)" style="width:110px;" onchange="updateGeneralSpec(6)">
+                    <button type="button" class="btn-danger" style="padding:6px 12px; flex-shrink:0;" onclick="deleteGeneralSpec(6)">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </div>
+                                <div class="spec-row" id="gspec-7" style="display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--bg-main); border-radius:var(--radius-sm); margin-bottom:10px; border:1px solid var(--border-light); flex-wrap:wrap;">
+                    <div style="display:flex; flex-direction:column; gap:2px;">
+                        <button type="button" title="Move up" onclick="moveGeneralSpec(7, 'up')" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:0;line-height:1;"><i class="fa-solid fa-caret-up"></i></button>
+                        <button type="button" title="Move down" onclick="moveGeneralSpec(7, 'down')" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:0;line-height:1;"><i class="fa-solid fa-caret-down"></i></button>
+                    </div>
+                    <input type="text" class="form-control gspec-label" list="specLabelSuggestions" value="Lining" placeholder="Label (e.g. Fabric)" style="flex:1; min-width:120px;" onchange="updateGeneralSpec(7)">
+                    <input type="text" class="form-control gspec-value" value="Unlined" placeholder="Value (e.g. Pure Cotton)" style="flex:1; min-width:140px;" onchange="updateGeneralSpec(7)">
+                    <input type="text" class="form-control gspec-unit" list="specUnitSuggestions" value="" placeholder="Unit (optional)" style="width:110px;" onchange="updateGeneralSpec(7)">
+                    <button type="button" class="btn-danger" style="padding:6px 12px; flex-shrink:0;" onclick="deleteGeneralSpec(7)">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </div>
+                                <div class="spec-row" id="gspec-10" style="display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--bg-main); border-radius:var(--radius-sm); margin-bottom:10px; border:1px solid var(--border-light); flex-wrap:wrap;">
+                    <div style="display:flex; flex-direction:column; gap:2px;">
+                        <button type="button" title="Move up" onclick="moveGeneralSpec(10, 'up')" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:0;line-height:1;"><i class="fa-solid fa-caret-up"></i></button>
+                        <button type="button" title="Move down" onclick="moveGeneralSpec(10, 'down')" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:0;line-height:1;"><i class="fa-solid fa-caret-down"></i></button>
+                    </div>
+                    <input type="text" class="form-control gspec-label" list="specLabelSuggestions" value="QA Spec Label ROMEO" placeholder="Label (e.g. Fabric)" style="flex:1; min-width:120px;" onchange="updateGeneralSpec(10)">
+                    <input type="text" class="form-control gspec-value" value="QA Spec Value SIERRA" placeholder="Value (e.g. Pure Cotton)" style="flex:1; min-width:140px;" onchange="updateGeneralSpec(10)">
+                    <input type="text" class="form-control gspec-unit" list="specUnitSuggestions" value="cm" placeholder="Unit (optional)" style="width:110px;" onchange="updateGeneralSpec(10)">
+                    <button type="button" class="btn-danger" style="padding:6px 12px; flex-shrink:0;" onclick="deleteGeneralSpec(10)">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </div>
+                            </div>
+
+            <div style="display:flex; align-items:center; gap:10px; margin-top:14px; padding:14px 16px; border:2px dashed var(--border-strong); border-radius:var(--radius-sm); background:var(--bg-surface); flex-wrap:wrap;">
+                <input type="text" id="newGeneralSpecLabel" list="specLabelSuggestions" placeholder="Label (e.g. Fabric)" class="form-control" style="flex:1; min-width:120px;">
+                <input type="text" id="newGeneralSpecValue" placeholder="Value (e.g. Pure Cotton)" class="form-control" style="flex:1; min-width:140px;">
+                <input type="text" id="newGeneralSpecUnit" list="specUnitSuggestions" placeholder="Unit (optional)" class="form-control" style="width:110px;">
+                <button type="button" class="btn-primary" style="padding:10px 18px; flex-shrink:0;" onclick="addGeneralSpec(18)">
+                    <i class="fa-solid fa-plus"></i> Add Specification
+                </button>
+            </div>
+        </div>
+
+        <!-- ── Product Components Section (Kurti / Palazzo / Dupatta ..., each with its own specs) ── -->
+        <div class="glass-panel form-section" style="margin-top:28px;">
+            <h3 style="display:flex; align-items:center; gap:10px;">
+                <i class="fa-solid fa-shirt" style="color:var(--color-primary);"></i>
+                Product Components
+                <span style="font-size:12px; font-weight:500; color:var(--text-muted); margin-left:4px;">Optional — for sets with multiple pieces (e.g. Kurti + Palazzo + Dupatta)</span>
+            </h3>
+            <p style="font-size:13px; color:var(--text-secondary); margin-bottom:20px;">
+                Add a component for each piece in this product, then add its own specifications underneath it.
+                Each component with at least one specification appears as its own section on the product page.
+            </p>
+
+            <div id="componentsList">
+                            </div>
+
+            <div style="display:flex; align-items:center; gap:12px; margin-top:14px; padding:14px 16px; border:2px dashed var(--border-strong); border-radius:var(--radius-sm); background:var(--bg-surface);">
+                <input type="text" id="newComponentName" list="componentNameSuggestions" placeholder="Component name (e.g. Kurti, Palazzo, Dupatta)" class="form-control" style="flex:1;">
+                <button type="button" class="btn-primary" style="padding:10px 18px; flex-shrink:0;" onclick="addComponent(18)">
+                    <i class="fa-solid fa-plus"></i> Add Component
+                </button>
+            </div>
+        </div>
+
+        <datalist id="specLabelSuggestions">
+            <option value="Fabric"><option value="Fit"><option value="Pattern"><option value="Occasion"><option value="Wash Care"><option value="Country of Origin"><option value="Style Code"><option value="Season"><option value="Closure Type"><option value="Transparency"><option value="Lining"><option value="Stretchable">        </datalist>
+        <datalist id="componentNameSuggestions">
+            <option value="Kurti"><option value="Top"><option value="Bottom"><option value="Palazzo"><option value="Pants"><option value="Skirt"><option value="Dupatta"><option value="Saree"><option value="Blouse"><option value="Jacket"><option value="Shrug"><option value="Petticoat">        </datalist>
+        <datalist id="componentLabelSuggestions">
+            <option value="Fabric"><option value="Length"><option value="Sleeve"><option value="Neck"><option value="Closure"><option value="Fit"><option value="Pattern"><option value="Work"><option value="Border">        </datalist>
+        <datalist id="specUnitSuggestions">
+            <option value="cm"><option value="inch"><option value="m"><option value="kg"><option value="g"><option value="ml"><option value="L"><option value="pieces">        </datalist>
+        
+    </main>
+</div>
+
+<script>
+function previewUpload(input) {
+    const newPrev = document.getElementById('newImgPreview');
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = e => {
+            if (newPrev) {
+                newPrev.src = e.target.result;
+                newPrev.classList.add('active');
+                newPrev.style.setProperty('display', 'block', 'important');
+            }
+
+            // Update the live preview card
+            const wrap = document.getElementById('previewWrap');
+            let img = document.getElementById('previewImg');
+            if (!img) {
+                img = document.createElement('img');
+                img.id = 'previewImg';
+                img.alt = 'Preview';
+                img.className = 'admin-preview-img-fill';
+                if (wrap) {
+                    wrap.innerHTML = '';
+                    wrap.appendChild(img);
+                }
+            }
+            if (wrap) wrap.classList.add('has-image');
+            if (img) img.src = e.target.result;
+        };
+        reader.readAsDataURL(input.files[0]);
+    } else {
+        if (newPrev) {
+            newPrev.src = '';
+            newPrev.classList.remove('active');
+            newPrev.style.setProperty('display', 'none', 'important');
+        }
+    }
+}
+
+function updatePreviewName(val) {
+    document.getElementById('previewName').textContent = val || 'Product Name';
+}
+
+function updatePreviewPrice(val) {
+    const p = parseFloat(val) || 0;
+    document.getElementById('previewPrice').textContent = '₹' + p.toFixed(2);
+}
+
+// Drag-and-drop highlight
+const box = document.getElementById('uploadBox');
+box.addEventListener('dragover', e => { e.preventDefault(); box.classList.add('dragover'); });
+box.addEventListener('dragleave', () => box.classList.remove('dragover'));
+box.addEventListener('drop', e => {
+    e.preventDefault(); box.classList.remove('dragover');
+    const input = document.getElementById('productImageInput');
+    input.files = e.dataTransfer.files;
+    previewUpload(input);
+});
+
+// ── Variant Management ────────────────────────────────────────
+// The product these rows belong to. The update handler scopes its UPDATE by
+// product_id, so this has to be the real id — see saveVariantRow().
+const DIEVON_VARIANT_PRODUCT_ID = 18;
+
+// ── Plain (colour-less) sizes, ticked off the ladder ──────────
+//
+// Same shape as the colour version, minus color_id: ticking writes a variant
+// carrying size_code, which is what the free-text box never did. The code is
+// the canonical key — ordering, size-guide matching and cart matching all hang
+// off it — while the "Shown as" box only decides what the button reads.
+async function togglePlainSize(code, label, checkbox) {
+    const labelEl = document.getElementById('plabel-' + code);
+    const stockEl = document.getElementById('pstock-' + code);
+    const priceEl = document.getElementById('pprice-' + code);
+    const enable  = (on) => [labelEl, stockEl, priceEl].forEach(el => { if (el) el.disabled = !on; });
+
+    if (checkbox.checked) {
+        const body = new URLSearchParams();
+        body.set('action', 'add');
+        body.set('product_id', DIEVON_VARIANT_PRODUCT_ID);
+        body.set('name', label);
+        body.set('size_code', code);
+        body.set('price', '0');       // 0 => handler substitutes the product price
+        body.set('stock_qty', '');    // blank => not counted until a number is typed
+        body.set('csrf_token', window.ADMIN_CSRF_TOKEN || '');
+
+        try {
+            const res  = await fetch('variant_handler.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: body.toString(),
+            });
+            const data = await res.json();
+            if (!data.success) { alert(data.message || 'Error adding size.'); checkbox.checked = false; return; }
+            checkbox.dataset.variantId = data.id;
+            enable(true);
+            if (labelEl) labelEl.value = label;
+            if (stockEl) { stockEl.value = ''; stockEl.focus(); }
+        } catch (e) {
+            alert('Network error. Please try again.');
+            checkbox.checked = false;
+        }
+        return;
+    }
+
+    const variantId = checkbox.dataset.variantId;
+    if (!variantId) { enable(false); return; }
+    if (!await dievonConfirm(`Remove size ${label}? Its stock and price for this size will be lost.`)) {
+        checkbox.checked = true;
+        return;
+    }
+    try {
+        const res = await fetch('variant_handler.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `action=delete&id=${variantId}&product_id=${DIEVON_VARIANT_PRODUCT_ID}&csrf_token=${encodeURIComponent(window.ADMIN_CSRF_TOKEN || '')}`,
+        });
+        const data = await res.json();
+        if (!data.success) { alert('Error removing size.'); checkbox.checked = true; return; }
+        checkbox.dataset.variantId = '';
+        enable(false);
+        if (labelEl) labelEl.value = '';
+        if (stockEl) stockEl.value = '';
+        if (priceEl) priceEl.value = '';
+    } catch (e) {
+        alert('Network error. Please try again.');
+        checkbox.checked = true;
+    }
+}
+
+// Label, stock and price always travel together: variant_handler.php rewrites all
+// of them in one statement, so sending only the field that changed would blank
+// the other two.
+function savePlainSize(code) {
+    const checkbox = document.getElementById('psize-' + code);
+    const variantId = checkbox ? checkbox.dataset.variantId : '';
+    if (!variantId) return;
+
+    const labelEl = document.getElementById('plabel-' + code);
+    const stockEl = document.getElementById('pstock-' + code);
+    const priceEl = document.getElementById('pprice-' + code);
+    const label   = (labelEl && labelEl.value.trim() !== '')
+        ? labelEl.value.trim()
+        : (checkbox.parentElement ? checkbox.parentElement.textContent.trim() : code);
+
+    const body = new URLSearchParams();
+    body.set('action', 'update');
+    body.set('id', variantId);
+    body.set('product_id', DIEVON_VARIANT_PRODUCT_ID);
+    body.set('name', label);
+    body.set('price', (priceEl && priceEl.value.trim() !== '') ? priceEl.value.trim() : '0');
+    body.set('stock_qty', (stockEl && stockEl.value.trim() !== '') ? stockEl.value.trim() : '');
+    body.set('available', '1');
+    body.set('csrf_token', window.ADMIN_CSRF_TOKEN || '');
+
+    fetch('variant_handler.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: body.toString(),
+    })
+    .then(r => r.json())
+    .then(data => { if (!data.success) alert(data.message || 'Could not save this size.'); })
+    .catch(() => alert('Network error. Please try again.'));
+}
+
+function addVariant(productId) {
+    const nameEl  = document.getElementById('newVariantName');
+    const priceEl = document.getElementById('newVariantPrice');
+    const stockEl = document.getElementById('newVariantStock');
+    const name    = nameEl.value.trim();
+    const price   = parseFloat(priceEl.value) || 0;
+    const stock   = (stockEl && stockEl.value.trim() !== '') ? String(Math.max(0, parseInt(stockEl.value, 10) || 0)) : '';
+
+    if (!name) { alert('Please enter a size name (e.g. S, M, L)'); nameEl.focus(); return; }
+
+    fetch('variant_handler.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `action=add&product_id=${productId}&name=${encodeURIComponent(name)}&price=${price}&stock_qty=${encodeURIComponent(stock)}&csrf_token=${encodeURIComponent(window.ADMIN_CSRF_TOKEN || '')}`,
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (!data.success) { alert(data.message || 'Error adding variant'); return; }
+        // Append new row to list
+        const list = document.getElementById('variantsList');
+        const id = data.id;
+        const row = document.createElement('div');
+        row.className = 'variant-row';
+        row.id = 'vrow-' + id;
+        row.style.cssText = 'display:flex; align-items:center; gap:12px; padding:12px 16px; background:var(--bg-main); border-radius:var(--radius-sm); margin-bottom:10px; border:1px solid var(--border-light);';
+        // The price box stays EMPTY when no override was typed, matching how the
+        // server-rendered rows above decide: a filled box would claim this size
+        // has its own price when it is simply inheriting the product's.
+        row.innerHTML = `
+            <i class="fa-solid fa-grip-vertical" style="color:var(--text-muted); font-size:14px;"></i>
+            <input type="text" id="vn-${id}" value="${escHtml(name)}" placeholder="Size name"
+                class="form-control" style="flex:1; min-width:120px;"
+                onchange="saveVariantRow(${id})">
+            <div style="display:flex; align-items:center; gap:4px;">
+                <span style="font-size:15px;">₹</span>
+                <input type="number" id="vp-${id}" value="${price > 0 ? price.toFixed(2) : ''}" step="0.01" min="0"
+                    placeholder="Same as ₹1,899.00"
+                    class="form-control" style="width:150px;"
+                    onchange="saveVariantRow(${id})">
+            </div>
+            <input type="number" id="vs-${id}" min="0" value="${escHtml(stock)}" placeholder="Stock"
+                class="form-control" style="width:90px;" onchange="saveVariantRow(${id})">
+            <label style="display:flex; align-items:center; gap:6px; font-size:13px; color:var(--text-secondary); white-space:nowrap; cursor:pointer;">
+                <input type="checkbox" id="va-${id}" checked onchange="saveVariantRow(${id})">
+                Available
+            </label>
+            <button type="button" class="btn-danger" style="padding:6px 12px; flex-shrink:0;" onclick="deleteVariant(${id}, ${productId})">
+                <i class="fa-solid fa-trash"></i>
+            </button>`;
+        list.appendChild(row);
+        nameEl.value  = '';
+        priceEl.value = '';
+        if (stockEl) stockEl.value = '';
+        nameEl.focus();
+    })
+    .catch(() => alert('Network error. Please try again.'));
+}
+
+let updateTimer = {};
+
+// Saves one Product Sizes row — name, price, stock and availability together.
+//
+// This replaces updateVariant(), which posted product_id=0 while the handler ran
+// "UPDATE ... WHERE id = :id AND product_id = :pid". Nothing matches product_id 0,
+// so every edit here affected ZERO rows — renaming a size, correcting its price or
+// unticking Available all did nothing, and the row still flashed green because the
+// handler reports success whether or not it changed anything. Measured directly:
+// rowCount() = 0 against a real variant.
+//
+// Reading the four fields from the row by id also drops the old arrangement where
+// each control passed the other two by re-querying the DOM inline; a rename had to
+// go and fetch the price box, and vice versa.
+function saveVariantRow(id) {
+    clearTimeout(updateTimer[id]);
+    updateTimer[id] = setTimeout(() => {
+        const nameEl  = document.getElementById('vn-' + id);
+        const priceEl = document.getElementById('vp-' + id);
+        const stockEl = document.getElementById('vs-' + id);
+        const availEl = document.getElementById('va-' + id);
+        const name    = nameEl ? nameEl.value.trim() : '';
+        if (!name) { if (nameEl) nameEl.focus(); return; }
+
+        const body = new URLSearchParams();
+        body.set('action', 'update');
+        body.set('id', id);
+        body.set('product_id', DIEVON_VARIANT_PRODUCT_ID);
+        body.set('name', name);
+        // Blank price means "no override" — the handler substitutes the product
+        // price when it receives 0, so the size follows the product from now on.
+        body.set('price', (priceEl && priceEl.value.trim() !== '') ? priceEl.value.trim() : '0');
+        // stock_qty is always sent so that CLEARING the box stores NULL ("not
+        // counted") instead of being read as "field omitted, leave as it was".
+        body.set('stock_qty', (stockEl && stockEl.value.trim() !== '') ? stockEl.value.trim() : '');
+        if (availEl && availEl.checked) { body.set('available', '1'); }
+        body.set('csrf_token', window.ADMIN_CSRF_TOKEN || '');
+
+        fetch('variant_handler.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: body.toString(),
+        })
+        .then(r => r.json())
+        .then(data => {
+            const row = document.getElementById('vrow-' + id);
+            if (row) {
+                row.style.borderColor = data.success ? 'rgba(16,185,129,0.4)' : 'rgba(239,68,68,0.4)';
+                setTimeout(() => { row.style.borderColor = ''; }, 1200);
+            }
+            if (!data.success) { alert(data.message || 'Could not save this size.'); }
+        })
+        .catch(() => alert('Network error. Please try again.'));
+    }, 600);
+}
+
+async function deleteVariant(id, productId) {
+    if (!await dievonConfirm('Remove this variant? This cannot be undone.')) return;
+    fetch('variant_handler.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `action=delete&id=${id}&product_id=${productId}&csrf_token=${encodeURIComponent(window.ADMIN_CSRF_TOKEN || '')}`,
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            const row = document.getElementById('vrow-' + id);
+            if (row) { row.style.opacity = '0'; row.style.transition = 'opacity 0.3s'; setTimeout(() => row.remove(), 300); }
+        }
+    });
+}
+
+async function deleteAdditionalImage(id) {
+    if (!await dievonConfirm('Remove this image? This cannot be undone.')) return;
+    fetch('image_handler.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        // The endpoint now requires a CSRF token — it deletes a file from disk.
+        body: 'action=delete&id=' + encodeURIComponent(id)
+            + '&csrf_token=' + encodeURIComponent(window.ADMIN_CSRF_TOKEN || ''),
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            const el = document.getElementById('ai-' + id);
+            if (el) { el.style.opacity = '0'; el.style.transition = 'opacity 0.3s'; setTimeout(() => el.remove(), 300); }
+        } else {
+            // Surface the real reason (e.g. a permissions problem) instead of a
+            // generic message, since the row is deliberately kept on failure.
+            (window.dievonAlert || alert)(data.message || 'Error deleting image.', { type: 'error' });
+        }
+    });
+}
+
+let galleryDataTransfer = new DataTransfer();
+
+function previewSelectedGalleryImages(input) {
+    const container = document.getElementById('newSelectedGalleryPreview');
+    if (!container) return;
+
+    if (input.files && input.files.length > 0) {
+        // Accumulate files instead of replacing
+        Array.from(input.files).forEach(file => {
+            galleryDataTransfer.items.add(file);
+        });
+
+        // Sync accumulated files back to input element
+        input.files = galleryDataTransfer.files;
+    }
+
+    renderGalleryPreviews();
+}
+
+function renderGalleryPreviews() {
+    const container = document.getElementById('newSelectedGalleryPreview');
+    if (!container) return;
+    container.innerHTML = '';
+
+    const files = galleryDataTransfer.files;
+    if (files && files.length > 0) {
+        Array.from(files).forEach((file, index) => {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const wrap = document.createElement('div');
+                wrap.id = 'new-gallery-wrap-' + index;
+                wrap.className = 'gallery-image-wrap admin-gallery-new-item';
+                wrap.innerHTML = `
+                    <img src="${e.target.result}" class="admin-gallery-thumb-img">
+                    <button type="button" onclick="removeNewSelectedImage(${index})" title="Remove from selection" class="admin-gallery-del-btn">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                    <span class="admin-gallery-new-tag">New</span>
+                `;
+                container.appendChild(wrap);
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+}
+
+function removeNewSelectedImage(index) {
+    const input = document.getElementById('additional_images_input');
+    const newDt = new DataTransfer();
+    
+    Array.from(galleryDataTransfer.files).forEach((file, i) => {
+        if (i !== index) {
+            newDt.items.add(file);
+        }
+    });
+
+    galleryDataTransfer = newDt;
+    if (input) {
+        input.files = galleryDataTransfer.files;
+    }
+    
+    renderGalleryPreviews();
+}
+
+
+
+function escHtml(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Colour Variant Management ──────────────────────────────────
+function addColor(productId) {
+    const nameEl = document.getElementById('newColorName');
+    const name   = nameEl.value.trim();
+    if (!name) { alert('Please enter a colour name (e.g. Green)'); nameEl.focus(); return; }
+
+    const fd = new FormData();
+    fd.append('action', 'add');
+    fd.append('product_id', productId);
+    fd.append('color_name', name);
+    fd.append('sku', document.getElementById('newColorSku').value.trim());
+    fd.append('price_override', document.getElementById('newColorPrice').value);
+    fd.append('csrf_token', window.ADMIN_CSRF_TOKEN || '');
+
+    fetch('color_handler.php', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) { location.reload(); }
+            else { alert(data.message || 'Error adding colour.'); }
+        })
+        .catch(() => alert('Network error. Please try again.'));
+}
+
+function updateColor(id) {
+    const fd = new FormData();
+    fd.append('action', 'update');
+    fd.append('id', id);
+    fd.append('product_id', 18);
+    fd.append('color_name', document.getElementById('cname-' + id).value.trim());
+    fd.append('sku', document.getElementById('csku-' + id).value.trim());
+    fd.append('price_override', document.getElementById('cprice-' + id).value);
+    fd.append('mrp_price_override', document.getElementById('cmrp-' + id).value);
+    if (document.getElementById('cactive-' + id).checked) fd.append('is_active', '1');
+    fd.append('csrf_token', window.ADMIN_CSRF_TOKEN || '');
+
+    fetch('color_handler.php', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(data => { if (!data.success) alert(data.message || 'Error saving colour.'); })
+        .catch(() => alert('Network error. Please try again.'));
+}
+
+async function deleteColor(id, name) {
+    if (!await dievonConfirm(`Delete colour "${name}"? This removes its gallery images and size/stock data too. This cannot be undone.`)) return;
+    const fd = new FormData();
+    fd.append('action', 'delete');
+    fd.append('id', id);
+    fd.append('product_id', 18);
+    fd.append('csrf_token', window.ADMIN_CSRF_TOKEN || '');
+
+    fetch('color_handler.php', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(data => { if (data.success) location.reload(); else alert(data.message || 'Error deleting colour.'); })
+        .catch(() => alert('Network error. Please try again.'));
+}
+
+function uploadColorThumbnail(id, input) {
+    if (!input.files || !input.files[0]) return;
+    const fd = new FormData();
+    fd.append('action', 'update');
+    fd.append('id', id);
+    fd.append('product_id', 18);
+    fd.append('color_name', document.getElementById('cname-' + id).value.trim());
+    fd.append('sku', document.getElementById('csku-' + id).value.trim());
+    fd.append('price_override', document.getElementById('cprice-' + id).value);
+    fd.append('mrp_price_override', document.getElementById('cmrp-' + id).value);
+    if (document.getElementById('cactive-' + id).checked) fd.append('is_active', '1');
+    fd.append('thumbnail', input.files[0]);
+    fd.append('csrf_token', window.ADMIN_CSRF_TOKEN || '');
+
+    fetch('color_handler.php', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) { alert(data.message || 'Error uploading thumbnail.'); return; }
+            const reader = new FileReader();
+            reader.onload = e => {
+                const img = document.getElementById('cthumb-' + id);
+                const ph  = document.getElementById('cthumb-placeholder-' + id);
+                if (img) { img.src = e.target.result; img.style.display = 'block'; img.style.borderColor = 'var(--color-primary)'; }
+                if (ph) ph.style.display = 'none';
+            };
+            reader.readAsDataURL(input.files[0]);
+        })
+        .catch(() => alert('Network error. Please try again.'));
+}
+
+function setColorThumbnail(colorId, image) {
+    const fd = new FormData();
+    fd.append('action', 'set_thumbnail');
+    fd.append('id', colorId);
+    fd.append('product_id', 18);
+    fd.append('image', image);
+    fd.append('csrf_token', window.ADMIN_CSRF_TOKEN || '');
+
+    fetch('color_handler.php', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) { alert(data.message || 'Error setting thumbnail.'); return; }
+            const gallery = document.getElementById('cgallery-' + colorId);
+            if (gallery) {
+                gallery.querySelectorAll('img').forEach(im => { im.style.borderColor = 'transparent'; });
+            }
+            const img = document.getElementById('cthumb-' + colorId);
+            const ph  = document.getElementById('cthumb-placeholder-' + colorId);
+            if (img) { img.src = '../uploads/products/' + image; img.style.display = 'block'; img.style.borderColor = 'var(--color-primary)'; }
+            if (ph) ph.style.display = 'none';
+            event.target.style.borderColor = 'var(--color-primary)';
+        })
+        .catch(() => alert('Network error. Please try again.'));
+}
+
+// Attach the product's own photographs to this colour.
+//
+// Nothing is uploaded and nothing is deleted — the files are already on the
+// server, so this only adds rows pointing at them. The product keeps its copies,
+// which is what makes the action safe to undo by simply deleting the images
+// again from this colour.
+function adoptProductImages(colorId, btn) {
+    const original = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Attaching…';
+
+    const fd = new FormData();
+    fd.append('action', 'adopt_product_images');
+    fd.append('color_id', colorId);
+    fd.append('product_id', 18);
+    fd.append('csrf_token', window.ADMIN_CSRF_TOKEN || '');
+
+    fetch('color_handler.php', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(data => {
+            btn.disabled = false;
+            btn.innerHTML = original;
+            if (!data.success) { alert(data.message || 'Could not attach the photos.'); return; }
+
+            const gallery = document.getElementById('cgallery-' + colorId);
+            (data.added || []).forEach(item => {
+                if (!gallery) return;
+                const wrap = document.createElement('div');
+                wrap.className = 'color-gallery-item';
+                wrap.id = 'cimg-' + item.id;
+                wrap.style.cssText = 'position:relative; width:64px; height:64px;';
+                wrap.innerHTML =
+                    '<img src="../uploads/products/' + item.image + '" style="width:100%; height:100%; object-fit:cover; border-radius:8px; cursor:pointer; border:2px solid transparent;"' +
+                    ' title="Click to set as thumbnail" onclick="setColorThumbnail(' + colorId + ', \'' + item.image + '\')">' +
+                    '<button type="button" onclick="deleteColorImage(' + item.id + ', ' + colorId + ')" style="position:absolute; top:-6px; right:-6px; width:18px; height:18px; border-radius:50%; background:#c0392b; color:#fff; border:none; font-size:10px; cursor:pointer; line-height:1;">×</button>';
+                gallery.appendChild(wrap);
+            });
+
+            // The colour-has-no-images warning is now out of date.
+            const warn = document.getElementById('cwarn-img-' + colorId);
+            if (warn && (data.added || []).length) { warn.style.display = 'none'; }
+
+            if (typeof showToast === 'function') { showToast('Photos attached', data.message); }
+            else { alert(data.message); }
+        })
+        .catch(() => {
+            btn.disabled = false;
+            btn.innerHTML = original;
+            alert('Network error. Please try again.');
+        });
+}
+
+function uploadColorGallery(colorId, input) {
+    if (!input.files || !input.files.length) return;
+    const fd = new FormData();
+    fd.append('action', 'upload_gallery');
+    fd.append('color_id', colorId);
+    fd.append('product_id', 18);
+    Array.from(input.files).forEach(f => fd.append('gallery_images[]', f));
+    fd.append('csrf_token', window.ADMIN_CSRF_TOKEN || '');
+
+    fetch('color_handler.php', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) { alert(data.message || 'Error uploading images.'); return; }
+            const gallery = document.getElementById('cgallery-' + colorId);
+            if (!gallery) return;
+            (data.uploaded || []).forEach(item => {
+                const wrap = document.createElement('div');
+                wrap.className = 'color-gallery-item';
+                wrap.id = 'cimg-' + item.id;
+                wrap.style.cssText = 'position:relative; width:64px; height:64px;';
+                wrap.innerHTML = `
+                    <img src="../uploads/products/${escHtml(item.image)}" style="width:100%; height:100%; object-fit:cover; border-radius:8px; cursor:pointer; border:2px solid transparent;" title="Click to set as thumbnail" onclick="setColorThumbnail(${colorId}, '${escHtml(item.image)}')">
+                    <button type="button" onclick="deleteColorImage(${item.id}, ${colorId})" style="position:absolute; top:-6px; right:-6px; width:18px; height:18px; border-radius:50%; background:#c0392b; color:#fff; border:none; font-size:10px; cursor:pointer; line-height:1;">×</button>`;
+                gallery.appendChild(wrap);
+            });
+            input.value = '';
+        })
+        .catch(() => alert('Network error. Please try again.'));
+}
+
+async function deleteColorImage(imageId, colorId) {
+    if (!await dievonConfirm('Remove this image? This cannot be undone.')) return;
+    const fd = new FormData();
+    fd.append('action', 'delete_image');
+    fd.append('id', imageId);
+    fd.append('product_id', 18);
+    fd.append('csrf_token', window.ADMIN_CSRF_TOKEN || '');
+
+    fetch('color_handler.php', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) { alert(data.message || 'Error deleting image.'); return; }
+            const el = document.getElementById('cimg-' + imageId);
+            if (el) el.remove();
+        })
+        .catch(() => alert('Network error. Please try again.'));
+}
+
+async function toggleColorSize(colorId, code, label, checkbox) {
+    const stockInput = document.getElementById('cstock-' + colorId + '-' + code);
+    const labelInput = document.getElementById('clabel-' + colorId + '-' + code);
+    const productId  = 18;
+
+    if (checkbox.checked) {
+        const fd = new FormData();
+        fd.append('action', 'add');
+        fd.append('product_id', productId);
+        fd.append('color_id', colorId);
+        fd.append('size_code', code);
+        fd.append('name', label);
+        fd.append('stock_qty', '0');
+        fd.append('csrf_token', window.ADMIN_CSRF_TOKEN || '');
+
+        fetch('variant_handler.php', { method: 'POST', body: fd })
+            .then(r => r.json())
+            .then(data => {
+                if (!data.success) { alert(data.message || 'Error adding size.'); checkbox.checked = false; return; }
+                checkbox.dataset.variantId = data.id;
+                // The rename box opens with the size ticked; it starts on the ladder
+                // label, which is what was just saved as the variant's name.
+                if (labelInput) { labelInput.disabled = false; labelInput.value = label; }
+                if (stockInput) { stockInput.disabled = false; stockInput.value = '0'; stockInput.focus(); }
+            })
+            .catch(() => { alert('Network error. Please try again.'); checkbox.checked = false; });
+    } else {
+        const variantId = checkbox.dataset.variantId;
+        if (!variantId) {
+            if (stockInput) { stockInput.disabled = true; stockInput.value = ''; }
+            if (labelInput) { labelInput.disabled = true; labelInput.value = ''; }
+            return;
+        }
+        if (!await dievonConfirm(`Remove size ${label} for this colour? Its stock data will be lost.`)) { checkbox.checked = true; return; }
+
+        fetch('variant_handler.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `action=delete&id=${variantId}&product_id=${productId}&csrf_token=${encodeURIComponent(window.ADMIN_CSRF_TOKEN || '')}`,
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) { alert('Error removing size.'); checkbox.checked = true; return; }
+            checkbox.dataset.variantId = '';
+            if (stockInput) { stockInput.disabled = true; stockInput.value = ''; }
+            if (labelInput) { labelInput.disabled = true; labelInput.value = ''; }
+        })
+        .catch(() => { alert('Network error. Please try again.'); checkbox.checked = true; });
+    }
+}
+
+// Saves one colour size — its label and its stock always travel together.
+//
+// The name has to be sent on every update because variant_handler.php rewrites
+// name, price, available and stock in a single statement; omitting the label
+// while saving stock would blank it. It used to read the label off the checkbox
+// caption, which is the LADDER text — so any rename was silently overwritten by
+// "34/M" the next time the stock box was touched.
+function saveColorSize(colorId, code) {
+    const checkbox  = document.getElementById('csize-' + colorId + '-' + code);
+    const variantId = checkbox ? checkbox.dataset.variantId : '';
+    if (!variantId) return;
+
+    const labelEl = document.getElementById('clabel-' + colorId + '-' + code);
+    const stockEl = document.getElementById('cstock-' + colorId + '-' + code);
+    // Falls back to the ladder caption when the box is left empty, so a size can
+    // never end up nameless on the storefront.
+    const label = (labelEl && labelEl.value.trim() !== '')
+        ? labelEl.value.trim()
+        : (checkbox.parentElement ? checkbox.parentElement.textContent.trim() : code);
+
+    const fd = new FormData();
+    fd.append('action', 'update');
+    fd.append('id', variantId);
+    fd.append('product_id', 18);
+    fd.append('name', label);
+    fd.append('price', '0');
+    fd.append('available', '1');
+    fd.append('stock_qty', stockEl ? stockEl.value : '');
+    fd.append('csrf_token', window.ADMIN_CSRF_TOKEN || '');
+
+    return fetch('variant_handler.php', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(data => { if (!data.success) alert(data.message || 'Error saving this size.'); return data; })
+        .catch(() => alert('Network error. Please try again.'));
+}
+
+function updateColorSizeStock(colorId, code) { saveColorSize(colorId, code); }
+function updateColorSizeLabel(colorId, code) { saveColorSize(colorId, code); }
+
+// ── General Product Specifications ──────────────────────────────
+const DIEVON_PRODUCT_ID = 18;
+
+function addGeneralSpec(productId) {
+    const labelEl = document.getElementById('newGeneralSpecLabel');
+    const valueEl = document.getElementById('newGeneralSpecValue');
+    const label = labelEl.value.trim();
+    const value = valueEl.value.trim();
+    if (!label || !value) { alert('Please enter both a label and a value.'); (label ? valueEl : labelEl).focus(); return; }
+
+    const fd = new FormData();
+    fd.append('action', 'add');
+    fd.append('product_id', productId);
+    fd.append('label', label);
+    fd.append('value', value);
+    fd.append('unit', document.getElementById('newGeneralSpecUnit').value.trim());
+    fd.append('csrf_token', window.ADMIN_CSRF_TOKEN || '');
+
+    fetch('specification_handler.php', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(data => { if (data.success) location.reload(); else alert(data.message || 'Error adding specification.'); })
+        .catch(() => alert('Network error. Please try again.'));
+}
+
+function updateGeneralSpec(id) {
+    const row = document.getElementById('gspec-' + id);
+    const fd = new FormData();
+    fd.append('action', 'update');
+    fd.append('id', id);
+    fd.append('product_id', DIEVON_PRODUCT_ID);
+    fd.append('label', row.querySelector('.gspec-label').value.trim());
+    fd.append('value', row.querySelector('.gspec-value').value.trim());
+    fd.append('unit', row.querySelector('.gspec-unit').value.trim());
+    fd.append('csrf_token', window.ADMIN_CSRF_TOKEN || '');
+
+    fetch('specification_handler.php', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(data => { if (!data.success) alert(data.message || 'Error saving specification.'); })
+        .catch(() => alert('Network error. Please try again.'));
+}
+
+async function deleteGeneralSpec(id) {
+    if (!await dievonConfirm('Delete this specification? This cannot be undone.')) return;
+    const fd = new FormData();
+    fd.append('action', 'delete');
+    fd.append('id', id);
+    fd.append('product_id', DIEVON_PRODUCT_ID);
+    fd.append('csrf_token', window.ADMIN_CSRF_TOKEN || '');
+
+    fetch('specification_handler.php', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(data => { if (data.success) location.reload(); else alert(data.message || 'Error deleting specification.'); })
+        .catch(() => alert('Network error. Please try again.'));
+}
+
+function moveGeneralSpec(id, direction) {
+    const fd = new FormData();
+    fd.append('action', direction === 'up' ? 'move_up' : 'move_down');
+    fd.append('id', id);
+    fd.append('product_id', DIEVON_PRODUCT_ID);
+    fd.append('csrf_token', window.ADMIN_CSRF_TOKEN || '');
+
+    fetch('specification_handler.php', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(data => { if (data.success) location.reload(); else alert(data.message || 'Error reordering.'); })
+        .catch(() => alert('Network error. Please try again.'));
+}
+
+// ── Product Components & their nested Specifications ─────────────
+function addComponent(productId) {
+    const nameEl = document.getElementById('newComponentName');
+    const name = nameEl.value.trim();
+    if (!name) { alert('Please enter a component name (e.g. Kurti).'); nameEl.focus(); return; }
+
+    const fd = new FormData();
+    fd.append('action', 'add_component');
+    fd.append('product_id', productId);
+    fd.append('name', name);
+    fd.append('csrf_token', window.ADMIN_CSRF_TOKEN || '');
+
+    fetch('component_handler.php', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(data => { if (data.success) location.reload(); else alert(data.message || 'Error adding component.'); })
+        .catch(() => alert('Network error. Please try again.'));
+}
+
+function updateComponent(id) {
+    const card = document.getElementById('comp-' + id);
+    const fd = new FormData();
+    fd.append('action', 'update_component');
+    fd.append('id', id);
+    fd.append('product_id', DIEVON_PRODUCT_ID);
+    fd.append('name', card.querySelector('.comp-name').value.trim());
+    fd.append('csrf_token', window.ADMIN_CSRF_TOKEN || '');
+
+    fetch('component_handler.php', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(data => { if (!data.success) alert(data.message || 'Error saving component.'); })
+        .catch(() => alert('Network error. Please try again.'));
+}
+
+async function deleteComponent(id, name) {
+    if (!await dievonConfirm(`Delete component "${name}"? This removes all of its specifications too. This cannot be undone.`)) return;
+    const fd = new FormData();
+    fd.append('action', 'delete_component');
+    fd.append('id', id);
+    fd.append('product_id', DIEVON_PRODUCT_ID);
+    fd.append('csrf_token', window.ADMIN_CSRF_TOKEN || '');
+
+    fetch('component_handler.php', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(data => { if (data.success) location.reload(); else alert(data.message || 'Error deleting component.'); })
+        .catch(() => alert('Network error. Please try again.'));
+}
+
+function moveComponent(id, direction) {
+    const fd = new FormData();
+    fd.append('action', direction === 'up' ? 'move_component_up' : 'move_component_down');
+    fd.append('id', id);
+    fd.append('product_id', DIEVON_PRODUCT_ID);
+    fd.append('csrf_token', window.ADMIN_CSRF_TOKEN || '');
+
+    fetch('component_handler.php', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(data => { if (data.success) location.reload(); else alert(data.message || 'Error reordering.'); })
+        .catch(() => alert('Network error. Please try again.'));
+}
+
+function addComponentSpec(componentId, productId) {
+    const labelEl = document.getElementById('newCompSpecLabel-' + componentId);
+    const valueEl = document.getElementById('newCompSpecValue-' + componentId);
+    const label = labelEl.value.trim();
+    const value = valueEl.value.trim();
+    if (!label || !value) { alert('Please enter both a label and a value.'); (label ? valueEl : labelEl).focus(); return; }
+
+    const fd = new FormData();
+    fd.append('action', 'add_spec');
+    fd.append('component_id', componentId);
+    fd.append('product_id', productId);
+    fd.append('label', label);
+    fd.append('value', value);
+    fd.append('unit', document.getElementById('newCompSpecUnit-' + componentId).value.trim());
+    fd.append('csrf_token', window.ADMIN_CSRF_TOKEN || '');
+
+    fetch('component_handler.php', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(data => { if (data.success) location.reload(); else alert(data.message || 'Error adding specification.'); })
+        .catch(() => alert('Network error. Please try again.'));
+}
+
+function updateComponentSpec(id, componentId) {
+    const row = document.getElementById('cspec-' + id);
+    const fd = new FormData();
+    fd.append('action', 'update_spec');
+    fd.append('id', id);
+    fd.append('component_id', componentId);
+    fd.append('product_id', DIEVON_PRODUCT_ID);
+    fd.append('label', row.querySelector('.cspec-label').value.trim());
+    fd.append('value', row.querySelector('.cspec-value').value.trim());
+    fd.append('unit', row.querySelector('.cspec-unit').value.trim());
+    fd.append('csrf_token', window.ADMIN_CSRF_TOKEN || '');
+
+    fetch('component_handler.php', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(data => { if (!data.success) alert(data.message || 'Error saving specification.'); })
+        .catch(() => alert('Network error. Please try again.'));
+}
+
+async function deleteComponentSpec(id, componentId) {
+    if (!await dievonConfirm('Delete this specification? This cannot be undone.')) return;
+    const fd = new FormData();
+    fd.append('action', 'delete_spec');
+    fd.append('id', id);
+    fd.append('component_id', componentId);
+    fd.append('product_id', DIEVON_PRODUCT_ID);
+    fd.append('csrf_token', window.ADMIN_CSRF_TOKEN || '');
+
+    fetch('component_handler.php', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(data => { if (data.success) location.reload(); else alert(data.message || 'Error deleting specification.'); })
+        .catch(() => alert('Network error. Please try again.'));
+}
+
+function moveComponentSpec(id, componentId, direction) {
+    const fd = new FormData();
+    fd.append('action', direction === 'up' ? 'move_spec_up' : 'move_spec_down');
+    fd.append('id', id);
+    fd.append('component_id', componentId);
+    fd.append('product_id', DIEVON_PRODUCT_ID);
+    fd.append('csrf_token', window.ADMIN_CSRF_TOKEN || '');
+
+    fetch('component_handler.php', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(data => { if (data.success) location.reload(); else alert(data.message || 'Error reordering.'); })
+        .catch(() => alert('Network error. Please try again.'));
+}
+
+</script>
+    </main>
+</div>
+</div>
+<!-- Branded dialog (shares the storefront stylesheet, which admin already loads). -->
+<script src="http://localhost:8888/DievonOrders/assets/js/dievon-dialog.js?v=1785450739"></script>
+<script src="assets/js/admin.js"></script>
+</body>
+</html>
+
+

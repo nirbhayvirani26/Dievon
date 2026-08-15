@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Admin Dashboard – Dievon</title>
+            <link rel="icon" type="image/png" href="http://localhost:8888/DievonOrders/assets/images/logo/favicon_1785598968_c1c530.png?v=1785694092" media="(prefers-color-scheme: light)">
+    <link rel="icon" type="image/png" href="http://localhost:8888/DievonOrders/assets/images/logo/favicondark_1785598968_84f1f2.png?v=1785694092" media="(prefers-color-scheme: dark)">
+        <!-- Versioned with filemtime, not time(): a cache-buster that changes on every
+         request defeats browser caching and re-downloads the CSS on each page view. -->
+    <link rel="stylesheet" href="http://localhost:8888/DievonOrders/assets/css/style.css?v=1786315671">
+    <link rel="stylesheet" href="http://localhost:8888/DievonOrders/admin/assets/css/style.css?v=1786231916">
+    <link rel="stylesheet" href="http://localhost:8888/DievonOrders/assets/css/responsive.css?v=1786232206">
+    <link rel="stylesheet" href="http://localhost:8888/DievonOrders/assets/fontawesome/css/all.min.css">
+    <script>
+        window.ADMIN_CSRF_TOKEN = '43049d74540f287490baad1487a9638c39a57623e5aec7e51e6d92bcba8d906e';
+    </script>
+</head>
+
+<body class="admin-wrapper">
+
+<!-- ══ Global Top Header Bar (0,0 Fixed) ════════════════════════════════════ -->
+<header class="admin-global-topbar">
+    <div style="display: flex; align-items: center; gap: 12px;">
+        <button type="button" class="admin-mobile-toggle" onclick="toggleAdminSidebar()" style="display: none; background: none; border: none; color: #ffffff; font-size: 18px; cursor: pointer; padding: 4px;">
+            <i class="fa-solid fa-bars"></i>
+        </button>
+        <a href="../home.php" class="admin-brand-logo">
+            <span class="logo-emoji">✨</span> Dievon <small>ATELIER ADMIN</small>
+        </a>
+    </div>
+
+    <div class="admin-topbar-actions">
+        <a href="../home.php" target="_blank" class="topbar-btn-shop">
+            <i class="fa-solid fa-globe"></i> View Live Shop ↗
+        </a>
+        <div class="admin-user-pill">
+            <i class="fa-solid fa-user-shield"></i> qa-render        </div>
+        <a href="logout.php" class="topbar-btn-logout">
+            Sign Out
+        </a>
+    </div>
+</header>
+
+<!-- Mobile Sidebar Backdrop Overlay -->
+<div class="mobile-drawer-backdrop" id="adminSidebarBackdrop" onclick="toggleAdminSidebar(false)"></div>
+
+<script>
+function toggleAdminSidebar(force) {
+    const sidebar = document.querySelector('.admin-sidebar');
+    const backdrop = document.getElementById('adminSidebarBackdrop');
+    if (!sidebar) return;
+    
+    if (typeof force === 'boolean') {
+        if (force) {
+            sidebar.classList.add('open');
+            if (backdrop) backdrop.classList.add('active');
+        } else {
+            sidebar.classList.remove('open');
+            if (backdrop) backdrop.classList.remove('active');
+        }
+    } else {
+        sidebar.classList.toggle('open');
+        if (backdrop) backdrop.classList.toggle('active');
+    }
+}
+
+// Auto scroll-into-view & preserve sidebar scroll position across page reloads
+document.addEventListener('DOMContentLoaded', function() {
+    const sidebar = document.querySelector('.admin-sidebar');
+    if (!sidebar) return;
+
+    const savedScroll = localStorage.getItem('adminSidebarScroll');
+    if (savedScroll !== null) {
+        sidebar.scrollTop = parseInt(savedScroll, 10);
+    }
+
+    const activeItem = sidebar.querySelector('a.active');
+    if (activeItem) {
+        setTimeout(function() {
+            activeItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }, 100);
+    }
+
+    sidebar.addEventListener('scroll', function() {
+        localStorage.setItem('adminSidebarScroll', sidebar.scrollTop);
+    });
+});
+</script>
+
+<div class="admin-body-layout">
+
+    <!-- ══ Left Fixed Sidebar (Streamlined & Clean) ════════════════════════ -->
+        <aside class="admin-sidebar">
+        <nav class="admin-sidebar-nav">
+                        <div class="sidebar-group-title">Overview</div>
+                        <a href="dashboard.php" class=""><i class="fa-solid fa-chart-line"></i> Dashboard Analytics</a>
+                                    <div class="sidebar-group-title">Catalog &amp; Inventory</div>
+                        <a href="products.php" class=""><i class="fa-solid fa-shirt"></i> Products &amp; Garments</a>
+                        <a href="categories.php" class=""><i class="fa-solid fa-folder-tree"></i> Categories &amp; Subcategories</a>
+                        <a href="attributes.php?type=colors" class=""><i class="fa-solid fa-palette"></i> Colours</a>
+                        <a href="brands.php" class=""><i class="fa-solid fa-tag"></i> Brands</a>
+                        <a href="settings.php?tab=stock" class=""><i class="fa-solid fa-boxes-stacked"></i> Inventory &amp; Stock</a>
+                        <a href="size_guide.php" class=""><i class="fa-solid fa-ruler"></i> Size Guide</a>
+                                    <div class="sidebar-group-title">Sales &amp; Clients</div>
+                        <a href="orders.php" class=""><i class="fa-solid fa-clipboard-list"></i> Orders &amp; Invoices</a>
+                        <a href="customers.php" class=""><i class="fa-solid fa-users"></i> Customers &amp; Inquiries</a>
+                        <a href="promo.php" class=""><i class="fa-solid fa-ticket"></i> Discount Coupons</a>
+                        <a href="reviews.php" class=""><i class="fa-solid fa-star"></i> Customer Reviews</a>
+                        <a href="returns.php" class=""><i class="fa-solid fa-rotate-left"></i> RMA Returns</a>
+                        <a href="support_tickets.php" class=""><i class="fa-solid fa-headset"></i> Support Tickets</a>
+                                    <div class="sidebar-group-title">Content &amp; Settings</div>
+                        <a href="banners.php" class=""><i class="fa-solid fa-sliders"></i> Banner Slider Manager</a>
+                        <a href="blog.php" class=""><i class="fa-solid fa-newspaper"></i> Blog Journal Manager</a>
+                        <a href="seo.php" class=""><i class="fa-solid fa-magnifying-glass"></i> SEO &amp; Social Previews</a>
+                        <a href="newsletter.php" class=""><i class="fa-solid fa-envelope"></i> Newsletter Subscribers</a>
+                        <a href="media.php" class=""><i class="fa-solid fa-images"></i> Media Library</a>
+                        <a href="lookbook.php" class=""><i class="fa-solid fa-book-open"></i> Lookbook Images</a>
+                        <a href="settings.php?tab=settings" class=""><i class="fa-solid fa-gear"></i> Store Settings</a>
+                        <a href="admin_users.php" class=""><i class="fa-solid fa-users-gear"></i> Staff Accounts</a>
+                        <a href="roles.php" class=""><i class="fa-solid fa-user-shield"></i> Roles &amp; Permissions</a>
+                        <a href="countries.php" class=""><i class="fa-solid fa-earth-asia"></i> Countries We Sell To</a>
+                        <a href="email_logs.php" class=""><i class="fa-solid fa-envelope-open-text"></i> Email Log</a>
+                        <a href="logs.php" class="active"><i class="fa-solid fa-clipboard-list"></i> Audit Logs</a>
+                        <a href="backup.php" class=""><i class="fa-solid fa-database"></i> Database Backup</a>
+                                </nav>
+    </aside>
+
+    <!-- ══ Main Content Area ════════════════════════════════════════ -->
+    <div class="admin-main">
+        <main class="admin-content">
+
+        <!-- Alerts -->
+                
+        
+        
+        <!-- ═══════════════════ ORDERS TAB ═══════════════════ -->
+
+<div class="admin-page-header" style="margin-bottom:22px;">
+    <h1 class="admin-page-title">📋 Audit Log</h1>
+    <p class="admin-page-subtitle">
+        Who changed what, and when. Read-only — nothing here can be edited or deleted,
+        which is the whole point of keeping it.
+    </p>
+</div>
+
+
+<div class="glass-panel" style="padding:20px 24px; margin-bottom:20px;">
+    <form method="GET" style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end;">
+        <div>
+            <label class="form-label" style="font-size:12px;">Action</label>
+            <select name="action_type" class="form-control" style="min-width:210px;">
+                <option value="">All actions</option>
+                                                        <option value="product_updated" >
+                        Product updated (68)
+                    </option>
+                                                        <option value="order_status_changed" >
+                        Order status changed (48)
+                    </option>
+                                                        <option value="promo_action_create" >
+                        Promo action create (45)
+                    </option>
+                                                        <option value="product_created" >
+                        Product created (21)
+                    </option>
+                                                        <option value="category_add" >
+                        Category added (18)
+                    </option>
+                                                        <option value="refund_issued" >
+                        Refund issued (17)
+                    </option>
+                                                        <option value="soft_delete_product" >
+                        Product archived (16)
+                    </option>
+                                                        <option value="category_action_add" >
+                        Category action add (10)
+                    </option>
+                                                        <option value="order_archived" >
+                        Order archived (8)
+                    </option>
+                                                        <option value="update_ticket_status" >
+                        Update ticket status (8)
+                    </option>
+                                                        <option value="lookbook_update" >
+                        Lookbook image changed (5)
+                    </option>
+                                                        <option value="role_created" >
+                        Role created (5)
+                    </option>
+                                                        <option value="admin_user_created" >
+                        Admin user created (5)
+                    </option>
+                                                        <option value="category_delete" >
+                        Category deleted (4)
+                    </option>
+                                                        <option value="order_payment_status_changed" >
+                        Order payment status changed (4)
+                    </option>
+                                                        <option value="category_seo_save" >
+                        Category seo save (3)
+                    </option>
+                                                        <option value="cod_marked_paid" >
+                        COD marked paid (3)
+                    </option>
+                                                        <option value="lookbook_restore" >
+                        Lookbook image restored (3)
+                    </option>
+                                                        <option value="role_updated" >
+                        Role updated (3)
+                    </option>
+                                                        <option value="cod_remitted" >
+                        COD marked remitted (2)
+                    </option>
+                                                        <option value="category_action_delete" >
+                        Category action delete (2)
+                    </option>
+                                                        <option value="delete_media" >
+                        Delete media (2)
+                    </option>
+                                                        <option value="purge_product" >
+                        Purge product (2)
+                    </option>
+                                                        <option value="backup_saved" >
+                        Backup saved (1)
+                    </option>
+                                                        <option value="promo_action_delete" >
+                        Promo action delete (1)
+                    </option>
+                                                        <option value="size_charts_cleaned" >
+                        Size charts tidied (1)
+                    </option>
+                                                        <option value="admin_users_save_roles" >
+                        Staff roles changed (1)
+                    </option>
+                                                        <option value="delete_newsletter_subscriber" >
+                        Delete newsletter subscriber (1)
+                    </option>
+                                                        <option value="role_deleted" >
+                        Role deleted (1)
+                    </option>
+                                                        <option value="customer_deleted" >
+                        Customer deleted (1)
+                    </option>
+                                                        <option value="staff_permissions_updated" >
+                        Staff permissions updated (1)
+                    </option>
+                                                        <option value="approve_review" >
+                        Approve review (1)
+                    </option>
+                                                        <option value="run_db_update" >
+                        Run db update (1)
+                    </option>
+                                                        <option value="upload_media" >
+                        Upload media (1)
+                    </option>
+                                                        <option value="countries_saved" >
+                        Countries saved (1)
+                    </option>
+                                                        <option value="media_quarantine" >
+                        Media quarantine (1)
+                    </option>
+                                                        <option value="category_tree_repaired" >
+                        Category tree repaired (1)
+                    </option>
+                                                        <option value="duplicate_product" >
+                        Duplicate product (1)
+                    </option>
+                                                        <option value="delete_blog" >
+                        Delete blog (1)
+                    </option>
+                                                        <option value="restore_product" >
+                        Restore product (1)
+                    </option>
+                            </select>
+        </div>
+        <div>
+            <label class="form-label" style="font-size:12px;">Who</label>
+            <select name="admin" class="form-control" style="min-width:160px;">
+                <option value="0">Everyone</option>
+                                <option value="0" selected>
+                    Admin #0                </option>
+                                <option value="1" >
+                    dievonadmin                </option>
+                            </select>
+        </div>
+        <div style="flex:1; min-width:200px;">
+            <label class="form-label" style="font-size:12px;">Search the detail</label>
+            <input type="text" name="q" value="" class="form-control" placeholder="order code, product name…">
+        </div>
+        <button type="submit" class="btn-primary" style="padding:10px 20px;"><i class="fa-solid fa-magnifying-glass"></i> Filter</button>
+            </form>
+</div>
+
+<div class="glass-panel" style="padding:24px;">
+        <div class="table-wrapper">
+        <table class="data-table" style="width:100%;">
+            <thead>
+                <tr><th style="width:150px;">When</th><th style="width:190px;">Action</th><th style="width:130px;">Who</th><th>Detail</th><th style="width:120px;">From</th></tr>
+            </thead>
+            <tbody>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        10 Aug 2026, 00:29                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#6b7280;">Update ticket status</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">Ticket ID 11 set to In Progress</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        10 Aug 2026, 00:29                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#6b7280;">Update ticket status</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">Ticket ID 11 set to In Progress (advisor replied)</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        10 Aug 2026, 00:29                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#6b7280;">Update ticket status</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">Ticket ID 9 set to Closed</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        10 Aug 2026, 00:29                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#6b7280;">Update ticket status</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">Ticket ID 9 set to Resolved</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        10 Aug 2026, 00:29                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#6b7280;">Update ticket status</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">Ticket ID 9 set to In Progress</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        10 Aug 2026, 00:29                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#6b7280;">Update ticket status</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">Ticket ID 9 set to In Progress (advisor replied)</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        10 Aug 2026, 00:08                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#b91c1c;">Refund issued</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">Order CB-77130022 (#200) — ₹1,098.00 via manual, ref 10 — QA edge concurrent refund 1</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        10 Aug 2026, 00:07                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#b91c1c;">Refund issued</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">Order CB-87453776 (#201) — ₹1,098.00 via manual, ref 9 — QA edge first refund</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        9 Aug 2026, 23:47                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#059669;">Category added</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">Created category: QA TEST FV Orphan (women)</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        9 Aug 2026, 23:47                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#059669;">Category added</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">Created category: QA TEST Womenswear (women)</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        9 Aug 2026, 23:47                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#059669;">Category added</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">Created category: QA TEST 😀 Cat (women)</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        9 Aug 2026, 23:47                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#059669;">Category added</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">Created category: QA TEST O&#039;Neill &quot;X&quot; (women)</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        9 Aug 2026, 23:47                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#059669;">Category added</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">Created category: Q (women)</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        9 Aug 2026, 23:47                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#6b7280;">Promo action create</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">Action: create</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        9 Aug 2026, 23:47                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#6b7280;">Promo action create</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">Action: create</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        9 Aug 2026, 23:47                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#6b7280;">Promo action create</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">Action: create</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        9 Aug 2026, 23:46                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#6b7280;">Promo action create</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">Action: create</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        9 Aug 2026, 23:46                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#6b7280;">Promo action create</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">Action: create</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        9 Aug 2026, 23:46                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#6b7280;">Promo action create</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">Action: create</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        9 Aug 2026, 23:46                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#6b7280;">Promo action create</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">Action: create</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        9 Aug 2026, 23:46                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#6b7280;">Promo action create</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">Action: create</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        9 Aug 2026, 23:46                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#6b7280;">Promo action create</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">Action: create</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        9 Aug 2026, 23:46                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#6b7280;">Promo action create</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">Action: create</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        9 Aug 2026, 23:46                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#6b7280;">Promo action create</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">Action: create</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        9 Aug 2026, 23:46                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#6b7280;">Promo action create</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">Action: create</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        9 Aug 2026, 23:46                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#6b7280;">Promo action create</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">Action: create</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        9 Aug 2026, 23:46                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#6b7280;">Promo action create</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">Action: create</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        9 Aug 2026, 23:46                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#6b7280;">Promo action create</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">Action: create</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        9 Aug 2026, 23:46                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#6b7280;">Promo action create</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">Action: create</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        9 Aug 2026, 23:46                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#6b7280;">Promo action create</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">Action: create</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        9 Aug 2026, 23:46                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#6b7280;">Promo action create</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">Action: create</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        9 Aug 2026, 23:45                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#059669;">Product created</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">#41 &quot;QA TEST Anaya Chikankari Kurti&quot; — ₹1,999.00, draft</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        9 Aug 2026, 23:45                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#059669;">Product created</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">#40 &quot;QA TEST 😀 Emoji Piece&quot; — ₹1,999.00, draft</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        9 Aug 2026, 23:44                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#059669;">Product created</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">#39 &quot;QA TEST O&#039;Neill &quot;Le Grand&quot;&quot; — ₹1,999.00, draft</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        9 Aug 2026, 23:44                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#059669;">Product created</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">#38 &quot;QA TEST FV Product&quot; — ₹1,999.00, draft</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        9 Aug 2026, 23:44                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#059669;">Product created</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">#37 &quot;QA TEST FV Product&quot; — ₹1,999.00, draft</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        9 Aug 2026, 22:31                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#6b7280;">Order status changed</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">Order #159 set to Delivered</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        9 Aug 2026, 22:31                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#6b7280;">Order status changed</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">Order #159 set to Cancelled</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        9 Aug 2026, 22:31                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#6b7280;">Order status changed</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">Order #159 set to Delivered</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        9 Aug 2026, 22:31                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#6b7280;">Order status changed</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">Order #159 set to Cancelled</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        9 Aug 2026, 22:31                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#6b7280;">Order status changed</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">Order #159 set to Delivered</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        9 Aug 2026, 22:31                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#6b7280;">Order status changed</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">Order #159 set to Cancelled</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        9 Aug 2026, 22:29                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#b91c1c;">Refund issued</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">Order CB-79133632 (#157) — ₹2,598.00 via manual, ref 8 — QA TEST conc refund A</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        9 Aug 2026, 22:28                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#b91c1c;">Refund issued</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">Order CB-23095737 (#156) — ₹3,499.00 via manual, ref 7 — QA TEST refund 1</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        9 Aug 2026, 22:13                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#6b7280;">Category action add</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">Action: add</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        9 Aug 2026, 22:13                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#6b7280;">Category action add</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">Action: add</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        9 Aug 2026, 22:13                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#6b7280;">Category action add</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">Action: add</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        9 Aug 2026, 22:06                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#6b7280;">Category seo save</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">SEO updated for category #25</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        9 Aug 2026, 22:06                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#6b7280;">Category seo save</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">SEO updated for category #25</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        9 Aug 2026, 22:06                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#059669;">Category added</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">Created category: QA TEST FV BadParent (women)</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        9 Aug 2026, 22:05                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#6b7280;">Category action add</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">Action: add</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        9 Aug 2026, 22:05                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#059669;">Category added</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">Created category: QA TEST Womenswear (women)</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        9 Aug 2026, 22:05                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#6b7280;">Category action add</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">Action: add</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        9 Aug 2026, 22:05                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#6b7280;">Category action add</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">Action: add</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        9 Aug 2026, 22:05                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#6b7280;">Category action add</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">Action: add</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        9 Aug 2026, 22:05                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#6b7280;">Category action add</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">Action: add</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        9 Aug 2026, 22:05                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#6b7280;">Category action add</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">Action: add</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        9 Aug 2026, 22:05                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#6b7280;">Category action add</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">Action: add</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        9 Aug 2026, 22:05                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#6b7280;">Promo action create</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">Action: create</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                                            <tr>
+                    <td style="white-space:nowrap; font-size:12.5px; color:var(--text-secondary);">
+                        9 Aug 2026, 22:05                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#6b7280;">Promo action create</span>
+                    </td>
+                    <td style="font-size:12.5px;">
+                        dievonadmin                                                    <br><span style="font-size:11px; color:var(--text-muted);">Shop Owner</span>
+                                            </td>
+                    <td style="font-size:12.5px;">Action: create</td>
+                    <td style="font-size:11.5px; color:var(--text-muted);">127.0.0.1</td>
+                </tr>
+                        </tbody>
+        </table>
+    </div>
+
+            <div style="display:flex; gap:10px; align-items:center; margin-top:18px; font-size:13px;">
+                <span style="color:var(--text-muted);">Page 1 of 6 &nbsp;·&nbsp; 319 records</span>
+        <a href="logs.php?page=2" class="btn-secondary" style="padding:7px 14px; text-decoration:none;">Older →</a>    </div>
+        </div>
+
+    </main>
+</div>
+</div>
+<!-- Branded dialog (shares the storefront stylesheet, which admin already loads). -->
+<script src="http://localhost:8888/DievonOrders/assets/js/dievon-dialog.js?v=1785450739"></script>
+<script src="assets/js/admin.js"></script>
+</body>
+</html>

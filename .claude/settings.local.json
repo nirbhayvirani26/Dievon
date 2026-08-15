@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(/Applications/MAMP/Library/bin/mysql -h localhost -P 8889 -u root -proot dievonfashion -e \"SELECT id, order_code, customer_id, customer_name, customer_email, phone, status, payment_status, created_at FROM orders ORDER BY id DESC;\")",
+      "Bash(find /Applications/MAMP -maxdepth 4 -iname \"mysql\" -type f 2>/dev/null)",
+      "Bash(command -v php)",
+      "Bash(/Applications/MAMP/Library/bin/mysql57/bin/mysql -h localhost -P 8889 -u root -proot dievonfashion -e \"DESCRIBE orders;\")",
+      "Bash(/Applications/MAMP/Library/bin/mysql57/bin/mysql -h localhost -P 8889 -u root -proot dievonfashion -e \"SELECT id, order_code, LENGTH\\(items_json\\) as len, items_json FROM orders ORDER BY id;\")",
+      "Bash(/Applications/MAMP/Library/bin/mysql57/bin/mysql -h localhost -P 8889 -u root -proot dievonfashion -e \"SELECT id, order_code, CONCAT\\('[',customer_email,']'\\) as email_val, LENGTH\\(customer_email\\) as email_len FROM orders;\")",
+      "Bash(/Applications/MAMP/Library/bin/mysql57/bin/mysql -h localhost -P 8889 -u root -proot dievonfashion -e \"SELECT id, name, email, phone FROM customers;\")",
+      "Bash(/Applications/MAMP/Library/bin/mysql57/bin/mysql -h localhost -P 8889 -u root -proot dievonfashion -e \"SELECT id, name, email FROM customers WHERE email='princevir2610@gmail.com';\")",
+      "Bash(curl -s -i \"http://localhost:8888/DievonOrders/pages/print_invoice.php?code=CB-342257\")",
+      "Bash(/Applications/MAMP/Library/bin/mysql57/bin/mysql -h localhost -P 8889 -u root -proot dievonfashion -e ' *)"
+    ]
+  }
+}

@@ -1,0 +1,174 @@
+RewriteEngine On
+Options -MultiViews -Indexes
+
+# -2. Block direct download of secret / config files.
+#
+# Without this, https://<site>/.env returns the file as plain text — mail
+# password, Razorpay secret and database credentials, readable by anyone who
+# guesses the URL. It is a well-known path that scanners try automatically, so
+# this is not a theoretical risk.
+#
+# Two syntaxes on purpose: Apache 2.4 uses Require, Apache 2.2 uses Order/Deny.
+# IfModule guards mean whichever the host runs, the other block is ignored
+# rather than causing a 500.
+<FilesMatch "^\.env|^\.user\.ini$|^\.htaccess$|^composer\.(json|lock)$|\.(log|sql|bak|sqlite)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# Belt and braces: some hosts (LiteSpeed/nginx front-ends) do not always apply
+# FilesMatch to dotfiles, so refuse the request at the rewrite layer too.
+RewriteRule ^\.env - [F,L]
+RewriteRule (^|/)\. - [F,L]
+
+# -1. Force HTTPS in production only — skips localhost/MAMP (matches the same host check
+# config.php uses for $isLocal) so local development keeps working over plain HTTP.
+# Safe to leave active even before SSL is confirmed on the live domain: it only fires for
+# non-localhost hosts, and only once you deploy this file there.
+RewriteCond %{HTTPS} off
+RewriteCond %{HTTP_HOST} !^localhost [NC]
+RewriteCond %{HTTP_HOST} !^127\.0\.0\.1
+RewriteCond %{HTTP_HOST} !:8888$
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# -0.5 Security response headers.
+#
+# The site sent none of these. They cost nothing, and two of them close real
+# holes: without X-Content-Type-Options an uploaded file that a browser
+# MIME-sniffs as HTML can execute in the site's own origin, and without
+# X-Frame-Options the checkout can be framed by another site and clickjacked.
+#
+# HSTS is deliberately conditional on HTTPS: sending it over plain HTTP is
+# ignored by browsers, and turning it on for a domain whose certificate is not
+# yet working would lock visitors out for max-age seconds with no way back.
+#
+# No Content-Security-Policy yet. The pages carry a large amount of inline
+# script and inline style, so any honest CSP would need 'unsafe-inline' and
+# would protect almost nothing; adding one that permissive would be theatre.
+# See the SEO/readiness panel in the admin for what a real CSP would require.
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+    Header always set Cross-Origin-Opener-Policy "same-origin"
+
+    # Only once the connection really is HTTPS.
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains" env=HTTPS
+
+    # X-Powered-By announces the exact PHP version to anyone scanning for
+    # version-specific exploits. php.ini's expose_php is the other half of this.
+    Header always unset X-Powered-By
+
+    # This page depends on a cookie — say so, to any cache between here and the
+    # visitor.
+    #
+    # "/" and "/shop" pick which products to show from the dievon_shop_for
+    # cookie (home.php:88 and shop.php:509, via shopGenderSqlFilter), while both
+    # declare a single fixed canonical URL. So one address is two different
+    # documents, and nothing was telling a shared cache what the difference
+    # depended on. On a host with edge caching in front of the origin — the
+    # normal Hostinger setup — one visitor pressing "Men" could have that
+    # response stored and replayed to everybody who asked for the same URL
+    # afterwards, Googlebot included.
+    #
+    # PHP does currently send no-store on these pages, but only as a side effect
+    # of session_start()'s default cache limiter. That is a coincidence, not a
+    # decision: one session_cache_limiter() call, or one page that does not open
+    # a session, and the protection disappears silently. This states it outright.
+    #
+    # The Vary header itself is sent from PHP (config/config.php, next to
+    # session_start) rather than from here.
+    #
+    # Three .htaccess forms were tried and every one of them silently emitted
+    # nothing while the security headers above kept working: an expr= on
+    # %{CONTENT_TYPE}, a <FilesMatch "\.php$"> wrapper, and SetEnvIf plus
+    # `Header always set ... env=`. A directive that quietly matches nothing is
+    # worse than no directive at all, and the live host runs LiteSpeed rather
+    # than Apache, so a form that cannot be verified here could equally fail
+    # there — or take the whole site down with a 500. PHP sends it on every
+    # response this site generates, on any host, and can be checked.
+</IfModule>
+
+# 0. Dynamically generated SEO files (always match the current domain / live catalog)
+RewriteRule ^robots\.txt$ robots.php [L]
+RewriteRule ^sitemap\.xml$ sitemap.php [L]
+
+# 0b. SEO-friendly product URLs: /product/aurelia-silk-kurti-1 -> pages/product.php?id=1
+# The trailing number is the real lookup key; the slug text is decorative for readability/SEO
+# and is not itself parsed, so renaming a product never breaks an already-shared link.
+RewriteRule ^product/[a-z0-9-]+-([0-9]+)/?$ pages/product.php?id=$1 [L,QSA]
+
+# 0c. Clean collection URLs: /collections/womens-kurtis -> pages/shop.php?collection=womens-kurtis
+# The slug is the real lookup key here (unlike /product/, where it is decorative),
+# because it is what makes a collection URL survive the category being renamed.
+RewriteRule ^collections/([a-z0-9\-]+)/?$ pages/shop.php?collection=$1 [L,QSA]
+
+# 1. Admin Panel Routing
+RewriteRule ^admin/?$ admin/index.php [L,NC]
+
+# 2. Direct Clean URL mapping to pages/ folder (e.g. /login -> pages/login.php)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{DOCUMENT_ROOT}/pages/$1.php -f
+RewriteRule ^([^/]+)/?$ pages/$1.php [L,QSA]
+
+# 3. Fallback Clean URL mapping for subfolder setups (e.g. /DievonOrders/login)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php?route=$1 [QSA,L]
+
+# ============================================================
+#  Optimization & Security
+# ============================================================
+
+# Security Headers
+
+# Session Cookie Security Flags
+<IfModule mod_php.c>
+    php_flag session.cookie_httponly on
+    # php_flag session.cookie_secure on
+    php_flag session.use_strict_mode on
+</IfModule>
+
+# GZIP / Deflate Compression
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/plain text/html text/xml text/css application/xml application/xhtml+xml application/rss+xml application/javascript application/x-javascript image/svg+xml
+    BrowserMatch ^Mozilla/4 gzip-only-text/html
+    BrowserMatch ^Mozilla/4\.0[678] no-gzip
+    BrowserMatch \bMSIE !no-gzip !gzip-only-text/html
+</IfModule>
+
+# Browser Caching (Expires Headers)
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType image/jpg "access plus 1 year"
+    ExpiresByType image/jpeg "access plus 1 year"
+    ExpiresByType image/gif "access plus 1 year"
+    ExpiresByType image/png "access plus 1 year"
+    ExpiresByType image/webp "access plus 1 year"
+    ExpiresByType image/svg+xml "access plus 1 year"
+    ExpiresByType text/css "access plus 1 month"
+    ExpiresByType application/javascript "access plus 1 month"
+    ExpiresByType text/javascript "access plus 1 month"
+    ExpiresByType application/pdf "access plus 1 month"
+    ExpiresByType image/x-icon "access plus 1 year"
+
+    # HTML gets no shelf life. Without this line the ExpiresDefault below
+    # applies to pages as well as files, handing every HTML response a two-day
+    # freshness lifetime — on documents that differ per visitor depending on the
+    # dievon_shop_for cookie, and that carry no Vary header of their own. A
+    # stale product grid is a nuisance; a cached menswear grid served to every
+    # visitor and to Googlebot for two days is an indexing problem.
+    #
+    # Listed before ExpiresDefault only for readability: ExpiresByType always
+    # takes precedence over ExpiresDefault regardless of order.
+    ExpiresByType text/html "access plus 0 seconds"
+
+    ExpiresDefault "access plus 2 days"
+</IfModule>

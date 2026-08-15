@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Admin Dashboard – Dievon</title>
+            <link rel="icon" type="image/png" href="http://localhost:8888/DievonOrders/assets/images/logo/favicon_1785598968_c1c530.png?v=1785694092" media="(prefers-color-scheme: light)">
+    <link rel="icon" type="image/png" href="http://localhost:8888/DievonOrders/assets/images/logo/favicondark_1785598968_84f1f2.png?v=1785694092" media="(prefers-color-scheme: dark)">
+        <!-- Versioned with filemtime, not time(): a cache-buster that changes on every
+         request defeats browser caching and re-downloads the CSS on each page view. -->
+    <link rel="stylesheet" href="http://localhost:8888/DievonOrders/assets/css/style.css?v=1786315671">
+    <link rel="stylesheet" href="http://localhost:8888/DievonOrders/admin/assets/css/style.css?v=1786231916">
+    <link rel="stylesheet" href="http://localhost:8888/DievonOrders/assets/css/responsive.css?v=1786232206">
+    <link rel="stylesheet" href="http://localhost:8888/DievonOrders/assets/fontawesome/css/all.min.css">
+    <script>
+        window.ADMIN_CSRF_TOKEN = 'f63f4e54e82f75e99882f7711832af51ae687cc0e970516decdd2a95c1020a17';
+    </script>
+</head>
+
+<body class="admin-wrapper">
+
+<!-- ══ Global Top Header Bar (0,0 Fixed) ════════════════════════════════════ -->
+<header class="admin-global-topbar">
+    <div style="display: flex; align-items: center; gap: 12px;">
+        <button type="button" class="admin-mobile-toggle" onclick="toggleAdminSidebar()" style="display: none; background: none; border: none; color: #ffffff; font-size: 18px; cursor: pointer; padding: 4px;">
+            <i class="fa-solid fa-bars"></i>
+        </button>
+        <a href="../home.php" class="admin-brand-logo">
+            <span class="logo-emoji">✨</span> Dievon <small>ATELIER ADMIN</small>
+        </a>
+    </div>
+
+    <div class="admin-topbar-actions">
+        <a href="../home.php" target="_blank" class="topbar-btn-shop">
+            <i class="fa-solid fa-globe"></i> View Live Shop ↗
+        </a>
+        <div class="admin-user-pill">
+            <i class="fa-solid fa-user-shield"></i> qa-render        </div>
+        <a href="logout.php" class="topbar-btn-logout">
+            Sign Out
+        </a>
+    </div>
+</header>
+
+<!-- Mobile Sidebar Backdrop Overlay -->
+<div class="mobile-drawer-backdrop" id="adminSidebarBackdrop" onclick="toggleAdminSidebar(false)"></div>
+
+<script>
+function toggleAdminSidebar(force) {
+    const sidebar = document.querySelector('.admin-sidebar');
+    const backdrop = document.getElementById('adminSidebarBackdrop');
+    if (!sidebar) return;
+    
+    if (typeof force === 'boolean') {
+        if (force) {
+            sidebar.classList.add('open');
+            if (backdrop) backdrop.classList.add('active');
+        } else {
+            sidebar.classList.remove('open');
+            if (backdrop) backdrop.classList.remove('active');
+        }
+    } else {
+        sidebar.classList.toggle('open');
+        if (backdrop) backdrop.classList.toggle('active');
+    }
+}
+
+// Auto scroll-into-view & preserve sidebar scroll position across page reloads
+document.addEventListener('DOMContentLoaded', function() {
+    const sidebar = document.querySelector('.admin-sidebar');
+    if (!sidebar) return;
+
+    const savedScroll = localStorage.getItem('adminSidebarScroll');
+    if (savedScroll !== null) {
+        sidebar.scrollTop = parseInt(savedScroll, 10);
+    }
+
+    const activeItem = sidebar.querySelector('a.active');
+    if (activeItem) {
+        setTimeout(function() {
+            activeItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }, 100);
+    }
+
+    sidebar.addEventListener('scroll', function() {
+        localStorage.setItem('adminSidebarScroll', sidebar.scrollTop);
+    });
+});
+</script>
+
+<div class="admin-body-layout">
+
+    <!-- ══ Left Fixed Sidebar (Streamlined & Clean) ════════════════════════ -->
+        <aside class="admin-sidebar">
+        <nav class="admin-sidebar-nav">
+                        <div class="sidebar-group-title">Overview</div>
+                        <a href="dashboard.php" class=""><i class="fa-solid fa-chart-line"></i> Dashboard Analytics</a>
+                                    <div class="sidebar-group-title">Catalog &amp; Inventory</div>
+                        <a href="products.php" class=""><i class="fa-solid fa-shirt"></i> Products &amp; Garments</a>
+                        <a href="categories.php" class=""><i class="fa-solid fa-folder-tree"></i> Categories &amp; Subcategories</a>
+                        <a href="attributes.php?type=colors" class=""><i class="fa-solid fa-palette"></i> Colours</a>
+                        <a href="brands.php" class=""><i class="fa-solid fa-tag"></i> Brands</a>
+                        <a href="settings.php?tab=stock" class=""><i class="fa-solid fa-boxes-stacked"></i> Inventory &amp; Stock</a>
+                        <a href="size_guide.php" class=""><i class="fa-solid fa-ruler"></i> Size Guide</a>
+                                    <div class="sidebar-group-title">Sales &amp; Clients</div>
+                        <a href="orders.php" class=""><i class="fa-solid fa-clipboard-list"></i> Orders &amp; Invoices</a>
+                        <a href="customers.php" class="active"><i class="fa-solid fa-users"></i> Customers &amp; Inquiries</a>
+                        <a href="promo.php" class=""><i class="fa-solid fa-ticket"></i> Discount Coupons</a>
+                        <a href="reviews.php" class=""><i class="fa-solid fa-star"></i> Customer Reviews</a>
+                        <a href="returns.php" class=""><i class="fa-solid fa-rotate-left"></i> RMA Returns</a>
+                        <a href="support_tickets.php" class=""><i class="fa-solid fa-headset"></i> Support Tickets</a>
+                                    <div class="sidebar-group-title">Content &amp; Settings</div>
+                        <a href="banners.php" class=""><i class="fa-solid fa-sliders"></i> Banner Slider Manager</a>
+                        <a href="blog.php" class=""><i class="fa-solid fa-newspaper"></i> Blog Journal Manager</a>
+                        <a href="seo.php" class=""><i class="fa-solid fa-magnifying-glass"></i> SEO &amp; Social Previews</a>
+                        <a href="newsletter.php" class=""><i class="fa-solid fa-envelope"></i> Newsletter Subscribers</a>
+                        <a href="media.php" class=""><i class="fa-solid fa-images"></i> Media Library</a>
+                        <a href="lookbook.php" class=""><i class="fa-solid fa-book-open"></i> Lookbook Images</a>
+                        <a href="settings.php?tab=settings" class=""><i class="fa-solid fa-gear"></i> Store Settings</a>
+                        <a href="admin_users.php" class=""><i class="fa-solid fa-users-gear"></i> Staff Accounts</a>
+                        <a href="roles.php" class=""><i class="fa-solid fa-user-shield"></i> Roles &amp; Permissions</a>
+                        <a href="countries.php" class=""><i class="fa-solid fa-earth-asia"></i> Countries We Sell To</a>
+                        <a href="email_logs.php" class=""><i class="fa-solid fa-envelope-open-text"></i> Email Log</a>
+                        <a href="logs.php" class=""><i class="fa-solid fa-clipboard-list"></i> Audit Logs</a>
+                        <a href="backup.php" class=""><i class="fa-solid fa-database"></i> Database Backup</a>
+                                </nav>
+    </aside>
+
+    <!-- ══ Main Content Area ════════════════════════════════════════ -->
+    <div class="admin-main">
+        <main class="admin-content">
+
+        <!-- Alerts -->
+                
+        
+        
+        <!-- ═══════════════════ ORDERS TAB ═══════════════════ -->
+
+<div class="admin-page-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+    <div>
+        <h1 class="admin-page-title">👥 Customer Accounts &amp; Inquiries</h1>
+        <p class="admin-page-subtitle">Manage registered buyer accounts and website contact messages.</p>
+    </div>
+</div>
+
+
+
+<!-- ══ SECTION 1: Registered Customer Accounts ════════════════════════ -->
+<div class="glass-panel" style="padding:0; overflow:hidden; margin-bottom:32px;">
+    <div style="padding:18px 24px; border-bottom:1px solid var(--border-light); font-weight:700; font-size:15px; color:var(--text-primary); display:flex; justify-content:space-between; align-items:center;">
+        <span>👤 Registered Customers (12)</span>
+    </div>
+    <div class="table-wrapper">
+        <table class="data-table" style="width:100%;">
+            <thead>
+                <tr>
+                    <th style="width:50px;">ID</th>
+                    <th>Customer Name</th>
+                    <th>Email Address</th>
+                    <th>Phone</th>
+                    <th>Delivery Address</th>
+                    <th>Joined Date</th>
+                    <th style="width:100px; text-align:right;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                                                            <tr>
+                            <td style="color:var(--text-muted); font-size:12px;">#84</td>
+                            <td><strong style="color:var(--text-primary); font-size:14px;">QA TEST &lt;script&gt;alert(1)&lt;/script&gt;</strong></td>
+                            <td><a href="mailto:qa.xss@qa.dievon.invalid" style="color:var(--color-primary); text-decoration:none; font-weight:600; font-size:13px;">qa.xss@qa.dievon.invalid</a></td>
+                            <td style="font-size:13px; color:var(--text-secondary);">N/A</td>
+                            <td style="font-size:12px; color:var(--text-muted); max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">N/A</td>
+                            <td style="font-size:12px; color:var(--text-muted);">09 Aug 2026</td>
+                            <td style="text-align:right;">
+                                <div class="admin-actions">
+                                    <form method="POST" action="customers.php" style="display:inline;" onsubmit="return dvConfirmForm(this,'Delete this customer account?');">
+                                        <input type="hidden" name="csrf_token" value="f63f4e54e82f75e99882f7711832af51ae687cc0e970516decdd2a95c1020a17">
+                                        <input type="hidden" name="delete_customer" value="84">
+                                        <button type="submit" class="admin-action-btn is-danger" title="Delete customer" aria-label="Delete customer QA TEST &lt;script&gt;alert(1)&lt;/script&gt;">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                                            <tr>
+                            <td style="color:var(--text-muted); font-size:12px;">#83</td>
+                            <td><strong style="color:var(--text-primary); font-size:14px;">QA TEST Reg</strong></td>
+                            <td><a href="mailto:qa.spaced@qa.dievon.invalid" style="color:var(--color-primary); text-decoration:none; font-weight:600; font-size:13px;">qa.spaced@qa.dievon.invalid</a></td>
+                            <td style="font-size:13px; color:var(--text-secondary);">N/A</td>
+                            <td style="font-size:12px; color:var(--text-muted); max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">N/A</td>
+                            <td style="font-size:12px; color:var(--text-muted);">09 Aug 2026</td>
+                            <td style="text-align:right;">
+                                <div class="admin-actions">
+                                    <form method="POST" action="customers.php" style="display:inline;" onsubmit="return dvConfirmForm(this,'Delete this customer account?');">
+                                        <input type="hidden" name="csrf_token" value="f63f4e54e82f75e99882f7711832af51ae687cc0e970516decdd2a95c1020a17">
+                                        <input type="hidden" name="delete_customer" value="83">
+                                        <button type="submit" class="admin-action-btn is-danger" title="Delete customer" aria-label="Delete customer QA TEST Reg">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                                            <tr>
+                            <td style="color:var(--text-muted); font-size:12px;">#82</td>
+                            <td><strong style="color:var(--text-primary); font-size:14px;">QA TEST Reg</strong></td>
+                            <td><a href="mailto:qa.ph2@qa.dievon.invalid" style="color:var(--color-primary); text-decoration:none; font-weight:600; font-size:13px;">qa.ph2@qa.dievon.invalid</a></td>
+                            <td style="font-size:13px; color:var(--text-secondary);">abcdefghij</td>
+                            <td style="font-size:12px; color:var(--text-muted); max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">N/A</td>
+                            <td style="font-size:12px; color:var(--text-muted);">09 Aug 2026</td>
+                            <td style="text-align:right;">
+                                <div class="admin-actions">
+                                    <form method="POST" action="customers.php" style="display:inline;" onsubmit="return dvConfirmForm(this,'Delete this customer account?');">
+                                        <input type="hidden" name="csrf_token" value="f63f4e54e82f75e99882f7711832af51ae687cc0e970516decdd2a95c1020a17">
+                                        <input type="hidden" name="delete_customer" value="82">
+                                        <button type="submit" class="admin-action-btn is-danger" title="Delete customer" aria-label="Delete customer QA TEST Reg">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                                            <tr>
+                            <td style="color:var(--text-muted); font-size:12px;">#81</td>
+                            <td><strong style="color:var(--text-primary); font-size:14px;">QA TEST 😀🎉👗</strong></td>
+                            <td><a href="mailto:qa.emoji2@qa.dievon.invalid" style="color:var(--color-primary); text-decoration:none; font-weight:600; font-size:13px;">qa.emoji2@qa.dievon.invalid</a></td>
+                            <td style="font-size:13px; color:var(--text-secondary);">N/A</td>
+                            <td style="font-size:12px; color:var(--text-muted); max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">N/A</td>
+                            <td style="font-size:12px; color:var(--text-muted);">09 Aug 2026</td>
+                            <td style="text-align:right;">
+                                <div class="admin-actions">
+                                    <form method="POST" action="customers.php" style="display:inline;" onsubmit="return dvConfirmForm(this,'Delete this customer account?');">
+                                        <input type="hidden" name="csrf_token" value="f63f4e54e82f75e99882f7711832af51ae687cc0e970516decdd2a95c1020a17">
+                                        <input type="hidden" name="delete_customer" value="81">
+                                        <button type="submit" class="admin-action-btn is-danger" title="Delete customer" aria-label="Delete customer QA TEST 😀🎉👗">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                                            <tr>
+                            <td style="color:var(--text-muted); font-size:12px;">#80</td>
+                            <td><strong style="color:var(--text-primary); font-size:14px;">QA TEST O&#039;Neill &quot;Le Grand&quot; \</strong></td>
+                            <td><a href="mailto:qa.quotes@qa.dievon.invalid" style="color:var(--color-primary); text-decoration:none; font-weight:600; font-size:13px;">qa.quotes@qa.dievon.invalid</a></td>
+                            <td style="font-size:13px; color:var(--text-secondary);">N/A</td>
+                            <td style="font-size:12px; color:var(--text-muted); max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">N/A</td>
+                            <td style="font-size:12px; color:var(--text-muted);">09 Aug 2026</td>
+                            <td style="text-align:right;">
+                                <div class="admin-actions">
+                                    <form method="POST" action="customers.php" style="display:inline;" onsubmit="return dvConfirmForm(this,'Delete this customer account?');">
+                                        <input type="hidden" name="csrf_token" value="f63f4e54e82f75e99882f7711832af51ae687cc0e970516decdd2a95c1020a17">
+                                        <input type="hidden" name="delete_customer" value="80">
+                                        <button type="submit" class="admin-action-btn is-danger" title="Delete customer" aria-label="Delete customer QA TEST O&#039;Neill &quot;Le Grand&quot; \">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                                            <tr>
+                            <td style="color:var(--text-muted); font-size:12px;">#79</td>
+                            <td><strong style="color:var(--text-primary); font-size:14px;">QA TEST LongAddr</strong></td>
+                            <td><a href="mailto:qa.addr@qa.dievon.invalid" style="color:var(--color-primary); text-decoration:none; font-weight:600; font-size:13px;">qa.addr@qa.dievon.invalid</a></td>
+                            <td style="font-size:13px; color:var(--text-secondary);">N/A</td>
+                            <td style="font-size:12px; color:var(--text-muted); max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ</td>
+                            <td style="font-size:12px; color:var(--text-muted);">09 Aug 2026</td>
+                            <td style="text-align:right;">
+                                <div class="admin-actions">
+                                    <form method="POST" action="customers.php" style="display:inline;" onsubmit="return dvConfirmForm(this,'Delete this customer account?');">
+                                        <input type="hidden" name="csrf_token" value="f63f4e54e82f75e99882f7711832af51ae687cc0e970516decdd2a95c1020a17">
+                                        <input type="hidden" name="delete_customer" value="79">
+                                        <button type="submit" class="admin-action-btn is-danger" title="Delete customer" aria-label="Delete customer QA TEST LongAddr">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                                            <tr>
+                            <td style="color:var(--text-muted); font-size:12px;">#78</td>
+                            <td><strong style="color:var(--text-primary); font-size:14px;">QA TEST PhoneAlpha</strong></td>
+                            <td><a href="mailto:qa.phonealpha@qa.dievon.invalid" style="color:var(--color-primary); text-decoration:none; font-weight:600; font-size:13px;">qa.phonealpha@qa.dievon.invalid</a></td>
+                            <td style="font-size:13px; color:var(--text-secondary);">abc&#039;&quot;&lt;script&gt;</td>
+                            <td style="font-size:12px; color:var(--text-muted); max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">N/A</td>
+                            <td style="font-size:12px; color:var(--text-muted);">09 Aug 2026</td>
+                            <td style="text-align:right;">
+                                <div class="admin-actions">
+                                    <form method="POST" action="customers.php" style="display:inline;" onsubmit="return dvConfirmForm(this,'Delete this customer account?');">
+                                        <input type="hidden" name="csrf_token" value="f63f4e54e82f75e99882f7711832af51ae687cc0e970516decdd2a95c1020a17">
+                                        <input type="hidden" name="delete_customer" value="78">
+                                        <button type="submit" class="admin-action-btn is-danger" title="Delete customer" aria-label="Delete customer QA TEST PhoneAlpha">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                                            <tr>
+                            <td style="color:var(--text-muted); font-size:12px;">#77</td>
+                            <td><strong style="color:var(--text-primary); font-size:14px;">QA TEST PhoneShort</strong></td>
+                            <td><a href="mailto:qa.phone6@qa.dievon.invalid" style="color:var(--color-primary); text-decoration:none; font-weight:600; font-size:13px;">qa.phone6@qa.dievon.invalid</a></td>
+                            <td style="font-size:13px; color:var(--text-secondary);">123456</td>
+                            <td style="font-size:12px; color:var(--text-muted); max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">N/A</td>
+                            <td style="font-size:12px; color:var(--text-muted);">09 Aug 2026</td>
+                            <td style="text-align:right;">
+                                <div class="admin-actions">
+                                    <form method="POST" action="customers.php" style="display:inline;" onsubmit="return dvConfirmForm(this,'Delete this customer account?');">
+                                        <input type="hidden" name="csrf_token" value="f63f4e54e82f75e99882f7711832af51ae687cc0e970516decdd2a95c1020a17">
+                                        <input type="hidden" name="delete_customer" value="77">
+                                        <button type="submit" class="admin-action-btn is-danger" title="Delete customer" aria-label="Delete customer QA TEST PhoneShort">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                                            <tr>
+                            <td style="color:var(--text-muted); font-size:12px;">#76</td>
+                            <td><strong style="color:var(--text-primary); font-size:14px;">QA TEST 🎉🧵 Emoji</strong></td>
+                            <td><a href="mailto:qa.emoji@qa.dievon.invalid" style="color:var(--color-primary); text-decoration:none; font-weight:600; font-size:13px;">qa.emoji@qa.dievon.invalid</a></td>
+                            <td style="font-size:13px; color:var(--text-secondary);">N/A</td>
+                            <td style="font-size:12px; color:var(--text-muted); max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">N/A</td>
+                            <td style="font-size:12px; color:var(--text-muted);">09 Aug 2026</td>
+                            <td style="text-align:right;">
+                                <div class="admin-actions">
+                                    <form method="POST" action="customers.php" style="display:inline;" onsubmit="return dvConfirmForm(this,'Delete this customer account?');">
+                                        <input type="hidden" name="csrf_token" value="f63f4e54e82f75e99882f7711832af51ae687cc0e970516decdd2a95c1020a17">
+                                        <input type="hidden" name="delete_customer" value="76">
+                                        <button type="submit" class="admin-action-btn is-danger" title="Delete customer" aria-label="Delete customer QA TEST 🎉🧵 Emoji">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                                            <tr>
+                            <td style="color:var(--text-muted); font-size:12px;">#61</td>
+                            <td><strong style="color:var(--text-primary); font-size:14px;">QA TEST ROLE PROBE catalogue</strong></td>
+                            <td><a href="mailto:qa.roleprobe.catalogue@qa.dievon.invalid" style="color:var(--color-primary); text-decoration:none; font-weight:600; font-size:13px;">qa.roleprobe.catalogue@qa.dievon.invalid</a></td>
+                            <td style="font-size:13px; color:var(--text-secondary);">9000000000</td>
+                            <td style="font-size:12px; color:var(--text-muted); max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">QA probe address</td>
+                            <td style="font-size:12px; color:var(--text-muted);">09 Aug 2026</td>
+                            <td style="text-align:right;">
+                                <div class="admin-actions">
+                                    <form method="POST" action="customers.php" style="display:inline;" onsubmit="return dvConfirmForm(this,'Delete this customer account?');">
+                                        <input type="hidden" name="csrf_token" value="f63f4e54e82f75e99882f7711832af51ae687cc0e970516decdd2a95c1020a17">
+                                        <input type="hidden" name="delete_customer" value="61">
+                                        <button type="submit" class="admin-action-btn is-danger" title="Delete customer" aria-label="Delete customer QA TEST ROLE PROBE catalogue">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                                            <tr>
+                            <td style="color:var(--text-muted); font-size:12px;">#60</td>
+                            <td><strong style="color:var(--text-primary); font-size:14px;">QA TEST Arjun Rao</strong></td>
+                            <td><a href="mailto:qa.arjun@qa.dievon.invalid" style="color:var(--color-primary); text-decoration:none; font-weight:600; font-size:13px;">qa.arjun@qa.dievon.invalid</a></td>
+                            <td style="font-size:13px; color:var(--text-secondary);">9000000102</td>
+                            <td style="font-size:12px; color:var(--text-muted); max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">44 Lake View Road</td>
+                            <td style="font-size:12px; color:var(--text-muted);">09 Aug 2026</td>
+                            <td style="text-align:right;">
+                                <div class="admin-actions">
+                                    <form method="POST" action="customers.php" style="display:inline;" onsubmit="return dvConfirmForm(this,'Delete this customer account?');">
+                                        <input type="hidden" name="csrf_token" value="f63f4e54e82f75e99882f7711832af51ae687cc0e970516decdd2a95c1020a17">
+                                        <input type="hidden" name="delete_customer" value="60">
+                                        <button type="submit" class="admin-action-btn is-danger" title="Delete customer" aria-label="Delete customer QA TEST Arjun Rao">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                                            <tr>
+                            <td style="color:var(--text-muted); font-size:12px;">#59</td>
+                            <td><strong style="color:var(--text-primary); font-size:14px;">QA TEST Priya Menon</strong></td>
+                            <td><a href="mailto:qa.priya@qa.dievon.invalid" style="color:var(--color-primary); text-decoration:none; font-weight:600; font-size:13px;">qa.priya@qa.dievon.invalid</a></td>
+                            <td style="font-size:13px; color:var(--text-secondary);">9000000101</td>
+                            <td style="font-size:12px; color:var(--text-muted); max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">12 Rosewood Apartments, Bandra West, Mumbai 400050</td>
+                            <td style="font-size:12px; color:var(--text-muted);">09 Aug 2026</td>
+                            <td style="text-align:right;">
+                                <div class="admin-actions">
+                                    <form method="POST" action="customers.php" style="display:inline;" onsubmit="return dvConfirmForm(this,'Delete this customer account?');">
+                                        <input type="hidden" name="csrf_token" value="f63f4e54e82f75e99882f7711832af51ae687cc0e970516decdd2a95c1020a17">
+                                        <input type="hidden" name="delete_customer" value="59">
+                                        <button type="submit" class="admin-action-btn is-danger" title="Delete customer" aria-label="Delete customer QA TEST Priya Menon">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                                                </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ══ SECTION 2: Customer Contact Inquiries ═════════════════════════ -->
+<div class="glass-panel" style="padding:0; overflow:hidden;">
+    <div style="padding:18px 24px; border-bottom:1px solid var(--border-light); font-weight:700; font-size:15px; color:var(--text-primary); display:flex; justify-content:space-between; align-items:center;">
+        <span>📬 Contact Form Inquiries (20)</span>
+                <form method="POST" action="customers.php" style="display:inline;" onsubmit="return dvConfirmForm(this,'Delete ALL inquiries?');">
+            <input type="hidden" name="csrf_token" value="f63f4e54e82f75e99882f7711832af51ae687cc0e970516decdd2a95c1020a17">
+            <input type="hidden" name="delete_inquiry" value="all">
+            <button type="submit" style="color:#ef4444; font-size:12px; font-weight:700; text-decoration:none; background:none; border:none; cursor:pointer;">
+                <i class="fa-solid fa-trash"></i> Clear All
+            </button>
+        </form>
+            </div>
+
+    <div style="padding:20px;">
+                    <div style="display:flex; flex-direction:column; gap:16px;">
+                                <div style="background:var(--bg-surface-soft); border-radius:8px; padding:18px 20px; border:1px solid var(--border-light); position:relative;">
+                    <form method="POST" action="customers.php" style="position:absolute; top:16px; right:16px;" onsubmit="return dvConfirmForm(this,'Delete this inquiry?');">
+                        <input type="hidden" name="csrf_token" value="f63f4e54e82f75e99882f7711832af51ae687cc0e970516decdd2a95c1020a17">
+                        <input type="hidden" name="delete_inquiry" value="20">
+                        <button type="submit" style="color:#ef4444; font-size:13px; background:none; border:none; cursor:pointer;" title="Delete">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </form>
+                    <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
+                        <div style="width:36px; height:36px; border-radius:50%; background:#2b080f; color:#ffffff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px;">
+                            Q                        </div>
+                        <div>
+                            <strong style="font-size:15px; color:var(--text-primary); display:block;">QA Contact Valid [Service: Private Fitting]</strong>
+                            <span style="font-size:12px; color:var(--text-muted);">10 Aug 2026, 00:25</span>
+                        </div>
+                    </div>
+                    <div style="font-size:13px; color:var(--text-secondary); margin-bottom:10px; display:flex; gap:16px;">
+                        <span>📧 <a href="mailto:qa.contact@qa.dievon.invalid" style="color:var(--color-primary); font-weight:600; text-decoration:none;">qa.contact@qa.dievon.invalid</a></span>
+                                                    <span>📞 +91 90000 00001</span>
+                                            </div>
+                    <div style="background:#ffffff; border-radius:6px; padding:12px 14px; font-size:13px; color:#334155; border-left:3px solid #2b080f;">
+                        QA TEST valid contact enquiry body.                    </div>
+                </div>
+                                <div style="background:var(--bg-surface-soft); border-radius:8px; padding:18px 20px; border:1px solid var(--border-light); position:relative;">
+                    <form method="POST" action="customers.php" style="position:absolute; top:16px; right:16px;" onsubmit="return dvConfirmForm(this,'Delete this inquiry?');">
+                        <input type="hidden" name="csrf_token" value="f63f4e54e82f75e99882f7711832af51ae687cc0e970516decdd2a95c1020a17">
+                        <input type="hidden" name="delete_inquiry" value="21">
+                        <button type="submit" style="color:#ef4444; font-size:13px; background:none; border:none; cursor:pointer;" title="Delete">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </form>
+                    <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
+                        <div style="width:36px; height:36px; border-radius:50%; background:#2b080f; color:#ffffff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px;">
+                            Q                        </div>
+                        <div>
+                            <strong style="font-size:15px; color:var(--text-primary); display:block;">QA Contact SvcInject [Service: &lt;script&gt;alert(1)&lt;/script&gt;]</strong>
+                            <span style="font-size:12px; color:var(--text-muted);">10 Aug 2026, 00:25</span>
+                        </div>
+                    </div>
+                    <div style="font-size:13px; color:var(--text-secondary); margin-bottom:10px; display:flex; gap:16px;">
+                        <span>📧 <a href="mailto:qa.contact4@qa.dievon.invalid" style="color:var(--color-primary); font-weight:600; text-decoration:none;">qa.contact4@qa.dievon.invalid</a></span>
+                                            </div>
+                    <div style="background:#ffffff; border-radius:6px; padding:12px 14px; font-size:13px; color:#334155; border-left:3px solid #2b080f;">
+                        QA TEST service field probe.                    </div>
+                </div>
+                                <div style="background:var(--bg-surface-soft); border-radius:8px; padding:18px 20px; border:1px solid var(--border-light); position:relative;">
+                    <form method="POST" action="customers.php" style="position:absolute; top:16px; right:16px;" onsubmit="return dvConfirmForm(this,'Delete this inquiry?');">
+                        <input type="hidden" name="csrf_token" value="f63f4e54e82f75e99882f7711832af51ae687cc0e970516decdd2a95c1020a17">
+                        <input type="hidden" name="delete_inquiry" value="19">
+                        <button type="submit" style="color:#ef4444; font-size:13px; background:none; border:none; cursor:pointer;" title="Delete">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </form>
+                    <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
+                        <div style="width:36px; height:36px; border-radius:50%; background:#2b080f; color:#ffffff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px;">
+                            Q                        </div>
+                        <div>
+                            <strong style="font-size:15px; color:var(--text-primary); display:block;">QA TEST Enq2 [Product: QA TEST Product]</strong>
+                            <span style="font-size:12px; color:var(--text-muted);">09 Aug 2026, 23:40</span>
+                        </div>
+                    </div>
+                    <div style="font-size:13px; color:var(--text-secondary); margin-bottom:10px; display:flex; gap:16px;">
+                        <span>📧 <a href="mailto:qa.enq2@qa.dievon.invalid" style="color:var(--color-primary); font-weight:600; text-decoration:none;">qa.enq2@qa.dievon.invalid</a></span>
+                                            </div>
+                    <div style="background:#ffffff; border-radius:6px; padding:12px 14px; font-size:13px; color:#334155; border-left:3px solid #2b080f;">
+                        Product: QA TEST Product<br />
+Enquiry: QA TEST neg pid                    </div>
+                </div>
+                                <div style="background:var(--bg-surface-soft); border-radius:8px; padding:18px 20px; border:1px solid var(--border-light); position:relative;">
+                    <form method="POST" action="customers.php" style="position:absolute; top:16px; right:16px;" onsubmit="return dvConfirmForm(this,'Delete this inquiry?');">
+                        <input type="hidden" name="csrf_token" value="f63f4e54e82f75e99882f7711832af51ae687cc0e970516decdd2a95c1020a17">
+                        <input type="hidden" name="delete_inquiry" value="18">
+                        <button type="submit" style="color:#ef4444; font-size:13px; background:none; border:none; cursor:pointer;" title="Delete">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </form>
+                    <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
+                        <div style="width:36px; height:36px; border-radius:50%; background:#2b080f; color:#ffffff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px;">
+                            Q                        </div>
+                        <div>
+                            <strong style="font-size:15px; color:var(--text-primary); display:block;">QA TEST Enq2 [Product: QA TEST Product]</strong>
+                            <span style="font-size:12px; color:var(--text-muted);">09 Aug 2026, 23:40</span>
+                        </div>
+                    </div>
+                    <div style="font-size:13px; color:var(--text-secondary); margin-bottom:10px; display:flex; gap:16px;">
+                        <span>📧 <a href="mailto:qa.enq2@qa.dievon.invalid" style="color:var(--color-primary); font-weight:600; text-decoration:none;">qa.enq2@qa.dievon.invalid</a></span>
+                                            </div>
+                    <div style="background:#ffffff; border-radius:6px; padding:12px 14px; font-size:13px; color:#334155; border-left:3px solid #2b080f;">
+                        Product: QA TEST Product<br />
+Enquiry: QA TEST no-csrf enquiry probe                    </div>
+                </div>
+                                <div style="background:var(--bg-surface-soft); border-radius:8px; padding:18px 20px; border:1px solid var(--border-light); position:relative;">
+                    <form method="POST" action="customers.php" style="position:absolute; top:16px; right:16px;" onsubmit="return dvConfirmForm(this,'Delete this inquiry?');">
+                        <input type="hidden" name="csrf_token" value="f63f4e54e82f75e99882f7711832af51ae687cc0e970516decdd2a95c1020a17">
+                        <input type="hidden" name="delete_inquiry" value="17">
+                        <button type="submit" style="color:#ef4444; font-size:13px; background:none; border:none; cursor:pointer;" title="Delete">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </form>
+                    <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
+                        <div style="width:36px; height:36px; border-radius:50%; background:#2b080f; color:#ffffff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px;">
+                            Q                        </div>
+                        <div>
+                            <strong style="font-size:15px; color:var(--text-primary); display:block;">QA TEST Contact [Service: General Inquiry]</strong>
+                            <span style="font-size:12px; color:var(--text-muted);">09 Aug 2026, 23:36</span>
+                        </div>
+                    </div>
+                    <div style="font-size:13px; color:var(--text-secondary); margin-bottom:10px; display:flex; gap:16px;">
+                        <span>📧 <a href="mailto:qa.contact@qa.dievon.invalid" style="color:var(--color-primary); font-weight:600; text-decoration:none;">qa.contact@qa.dievon.invalid</a></span>
+                                            </div>
+                    <div style="background:#ffffff; border-radius:6px; padding:12px 14px; font-size:13px; color:#334155; border-left:3px solid #2b080f;">
+                        QA TEST no-csrf probe                    </div>
+                </div>
+                                <div style="background:var(--bg-surface-soft); border-radius:8px; padding:18px 20px; border:1px solid var(--border-light); position:relative;">
+                    <form method="POST" action="customers.php" style="position:absolute; top:16px; right:16px;" onsubmit="return dvConfirmForm(this,'Delete this inquiry?');">
+                        <input type="hidden" name="csrf_token" value="f63f4e54e82f75e99882f7711832af51ae687cc0e970516decdd2a95c1020a17">
+                        <input type="hidden" name="delete_inquiry" value="16">
+                        <button type="submit" style="color:#ef4444; font-size:13px; background:none; border:none; cursor:pointer;" title="Delete">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </form>
+                    <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
+                        <div style="width:36px; height:36px; border-radius:50%; background:#2b080f; color:#ffffff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px;">
+                            Q                        </div>
+                        <div>
+                            <strong style="font-size:15px; color:var(--text-primary); display:block;">QA TEST Contact [Service: General Inquiry]</strong>
+                            <span style="font-size:12px; color:var(--text-muted);">09 Aug 2026, 23:36</span>
+                        </div>
+                    </div>
+                    <div style="font-size:13px; color:var(--text-secondary); margin-bottom:10px; display:flex; gap:16px;">
+                        <span>📧 <a href="mailto:qa.contact@qa.dievon.invalid" style="color:var(--color-primary); font-weight:600; text-decoration:none;">qa.contact@qa.dievon.invalid</a></span>
+                                            </div>
+                    <div style="background:#ffffff; border-radius:6px; padding:12px 14px; font-size:13px; color:#334155; border-left:3px solid #2b080f;">
+                        QA TEST no-csrf probe                    </div>
+                </div>
+                                <div style="background:var(--bg-surface-soft); border-radius:8px; padding:18px 20px; border:1px solid var(--border-light); position:relative;">
+                    <form method="POST" action="customers.php" style="position:absolute; top:16px; right:16px;" onsubmit="return dvConfirmForm(this,'Delete this inquiry?');">
+                        <input type="hidden" name="csrf_token" value="f63f4e54e82f75e99882f7711832af51ae687cc0e970516decdd2a95c1020a17">
+                        <input type="hidden" name="delete_inquiry" value="13">
+                        <button type="submit" style="color:#ef4444; font-size:13px; background:none; border:none; cursor:pointer;" title="Delete">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </form>
+                    <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
+                        <div style="width:36px; height:36px; border-radius:50%; background:#2b080f; color:#ffffff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px;">
+                            Q                        </div>
+                        <div>
+                            <strong style="font-size:15px; color:var(--text-primary); display:block;">QA TEST 😀 [Service: General Inquiry]</strong>
+                            <span style="font-size:12px; color:var(--text-muted);">09 Aug 2026, 23:36</span>
+                        </div>
+                    </div>
+                    <div style="font-size:13px; color:var(--text-secondary); margin-bottom:10px; display:flex; gap:16px;">
+                        <span>📧 <a href="mailto:qa.contact@qa.dievon.invalid" style="color:var(--color-primary); font-weight:600; text-decoration:none;">qa.contact@qa.dievon.invalid</a></span>
+                                            </div>
+                    <div style="background:#ffffff; border-radius:6px; padding:12px 14px; font-size:13px; color:#334155; border-left:3px solid #2b080f;">
+                        QA TEST 🎉🎉                    </div>
+                </div>
+                                <div style="background:var(--bg-surface-soft); border-radius:8px; padding:18px 20px; border:1px solid var(--border-light); position:relative;">
+                    <form method="POST" action="customers.php" style="position:absolute; top:16px; right:16px;" onsubmit="return dvConfirmForm(this,'Delete this inquiry?');">
+                        <input type="hidden" name="csrf_token" value="f63f4e54e82f75e99882f7711832af51ae687cc0e970516decdd2a95c1020a17">
+                        <input type="hidden" name="delete_inquiry" value="14">
+                        <button type="submit" style="color:#ef4444; font-size:13px; background:none; border:none; cursor:pointer;" title="Delete">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </form>
+                    <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
+                        <div style="width:36px; height:36px; border-radius:50%; background:#2b080f; color:#ffffff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px;">
+                            Q                        </div>
+                        <div>
+                            <strong style="font-size:15px; color:var(--text-primary); display:block;">QA TEST Contact [Service: General Inquiry]</strong>
+                            <span style="font-size:12px; color:var(--text-muted);">09 Aug 2026, 23:36</span>
+                        </div>
+                    </div>
+                    <div style="font-size:13px; color:var(--text-secondary); margin-bottom:10px; display:flex; gap:16px;">
+                        <span>📧 <a href="mailto:qa.contact@qa.dievon.invalid" style="color:var(--color-primary); font-weight:600; text-decoration:none;">qa.contact@qa.dievon.invalid</a></span>
+                                            </div>
+                    <div style="background:#ffffff; border-radius:6px; padding:12px 14px; font-size:13px; color:#334155; border-left:3px solid #2b080f;">
+                        QA TEST no-csrf probe                    </div>
+                </div>
+                                <div style="background:var(--bg-surface-soft); border-radius:8px; padding:18px 20px; border:1px solid var(--border-light); position:relative;">
+                    <form method="POST" action="customers.php" style="position:absolute; top:16px; right:16px;" onsubmit="return dvConfirmForm(this,'Delete this inquiry?');">
+                        <input type="hidden" name="csrf_token" value="f63f4e54e82f75e99882f7711832af51ae687cc0e970516decdd2a95c1020a17">
+                        <input type="hidden" name="delete_inquiry" value="15">
+                        <button type="submit" style="color:#ef4444; font-size:13px; background:none; border:none; cursor:pointer;" title="Delete">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </form>
+                    <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
+                        <div style="width:36px; height:36px; border-radius:50%; background:#2b080f; color:#ffffff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px;">
+                            Q                        </div>
+                        <div>
+                            <strong style="font-size:15px; color:var(--text-primary); display:block;">QA TEST Contact [Service: General Inquiry]</strong>
+                            <span style="font-size:12px; color:var(--text-muted);">09 Aug 2026, 23:36</span>
+                        </div>
+                    </div>
+                    <div style="font-size:13px; color:var(--text-secondary); margin-bottom:10px; display:flex; gap:16px;">
+                        <span>📧 <a href="mailto:qa.contact@qa.dievon.invalid" style="color:var(--color-primary); font-weight:600; text-decoration:none;">qa.contact@qa.dievon.invalid</a></span>
+                                            </div>
+                    <div style="background:#ffffff; border-radius:6px; padding:12px 14px; font-size:13px; color:#334155; border-left:3px solid #2b080f;">
+                        QA TEST bad-csrf probe                    </div>
+                </div>
+                                <div style="background:var(--bg-surface-soft); border-radius:8px; padding:18px 20px; border:1px solid var(--border-light); position:relative;">
+                    <form method="POST" action="customers.php" style="position:absolute; top:16px; right:16px;" onsubmit="return dvConfirmForm(this,'Delete this inquiry?');">
+                        <input type="hidden" name="csrf_token" value="f63f4e54e82f75e99882f7711832af51ae687cc0e970516decdd2a95c1020a17">
+                        <input type="hidden" name="delete_inquiry" value="12">
+                        <button type="submit" style="color:#ef4444; font-size:13px; background:none; border:none; cursor:pointer;" title="Delete">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </form>
+                    <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
+                        <div style="width:36px; height:36px; border-radius:50%; background:#2b080f; color:#ffffff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px;">
+                            Q                        </div>
+                        <div>
+                            <strong style="font-size:15px; color:var(--text-primary); display:block;">QA TEST O&#039;Brien &quot;X&quot; [Service: General Inquiry]</strong>
+                            <span style="font-size:12px; color:var(--text-muted);">09 Aug 2026, 23:36</span>
+                        </div>
+                    </div>
+                    <div style="font-size:13px; color:var(--text-secondary); margin-bottom:10px; display:flex; gap:16px;">
+                        <span>📧 <a href="mailto:qa.contact@qa.dievon.invalid" style="color:var(--color-primary); font-weight:600; text-decoration:none;">qa.contact@qa.dievon.invalid</a></span>
+                                            </div>
+                    <div style="background:#ffffff; border-radius:6px; padding:12px 14px; font-size:13px; color:#334155; border-left:3px solid #2b080f;">
+                        it&#039;s a &quot;test&quot; \ &lt;b&gt;bold&lt;/b&gt;                    </div>
+                </div>
+                                <div style="background:var(--bg-surface-soft); border-radius:8px; padding:18px 20px; border:1px solid var(--border-light); position:relative;">
+                    <form method="POST" action="customers.php" style="position:absolute; top:16px; right:16px;" onsubmit="return dvConfirmForm(this,'Delete this inquiry?');">
+                        <input type="hidden" name="csrf_token" value="f63f4e54e82f75e99882f7711832af51ae687cc0e970516decdd2a95c1020a17">
+                        <input type="hidden" name="delete_inquiry" value="9">
+                        <button type="submit" style="color:#ef4444; font-size:13px; background:none; border:none; cursor:pointer;" title="Delete">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </form>
+                    <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
+                        <div style="width:36px; height:36px; border-radius:50%; background:#2b080f; color:#ffffff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px;">
+                            Q                        </div>
+                        <div>
+                            <strong style="font-size:15px; color:var(--text-primary); display:block;">QA TEST Contact [Service: General Inquiry]</strong>
+                            <span style="font-size:12px; color:var(--text-muted);">09 Aug 2026, 23:36</span>
+                        </div>
+                    </div>
+                    <div style="font-size:13px; color:var(--text-secondary); margin-bottom:10px; display:flex; gap:16px;">
+                        <span>📧 <a href="mailto:qa.contact@qa.dievon.invalid" style="color:var(--color-primary); font-weight:600; text-decoration:none;">qa.contact@qa.dievon.invalid</a></span>
+                                            </div>
+                    <div style="background:#ffffff; border-radius:6px; padding:12px 14px; font-size:13px; color:#334155; border-left:3px solid #2b080f;">
+                        QA TEST LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL                    </div>
+                </div>
+                                <div style="background:var(--bg-surface-soft); border-radius:8px; padding:18px 20px; border:1px solid var(--border-light); position:relative;">
+                    <form method="POST" action="customers.php" style="position:absolute; top:16px; right:16px;" onsubmit="return dvConfirmForm(this,'Delete this inquiry?');">
+                        <input type="hidden" name="csrf_token" value="f63f4e54e82f75e99882f7711832af51ae687cc0e970516decdd2a95c1020a17">
+                        <input type="hidden" name="delete_inquiry" value="10">
+                        <button type="submit" style="color:#ef4444; font-size:13px; background:none; border:none; cursor:pointer;" title="Delete">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </form>
+                    <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
+                        <div style="width:36px; height:36px; border-radius:50%; background:#2b080f; color:#ffffff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px;">
+                            Q                        </div>
+                        <div>
+                            <strong style="font-size:15px; color:var(--text-primary); display:block;">QA TEST Contact [Service: General Inquiry]</strong>
+                            <span style="font-size:12px; color:var(--text-muted);">09 Aug 2026, 23:36</span>
+                        </div>
+                    </div>
+                    <div style="font-size:13px; color:var(--text-secondary); margin-bottom:10px; display:flex; gap:16px;">
+                        <span>📧 <a href="mailto:qa.contact@qa.dievon.invalid" style="color:var(--color-primary); font-weight:600; text-decoration:none;">qa.contact@qa.dievon.invalid</a></span>
+                                                    <span>📞 123456</span>
+                                            </div>
+                    <div style="background:#ffffff; border-radius:6px; padding:12px 14px; font-size:13px; color:#334155; border-left:3px solid #2b080f;">
+                        QA TEST message body                    </div>
+                </div>
+                                <div style="background:var(--bg-surface-soft); border-radius:8px; padding:18px 20px; border:1px solid var(--border-light); position:relative;">
+                    <form method="POST" action="customers.php" style="position:absolute; top:16px; right:16px;" onsubmit="return dvConfirmForm(this,'Delete this inquiry?');">
+                        <input type="hidden" name="csrf_token" value="f63f4e54e82f75e99882f7711832af51ae687cc0e970516decdd2a95c1020a17">
+                        <input type="hidden" name="delete_inquiry" value="11">
+                        <button type="submit" style="color:#ef4444; font-size:13px; background:none; border:none; cursor:pointer;" title="Delete">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </form>
+                    <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
+                        <div style="width:36px; height:36px; border-radius:50%; background:#2b080f; color:#ffffff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px;">
+                            Q                        </div>
+                        <div>
+                            <strong style="font-size:15px; color:var(--text-primary); display:block;">QA TEST Contact [Service: General Inquiry]</strong>
+                            <span style="font-size:12px; color:var(--text-muted);">09 Aug 2026, 23:36</span>
+                        </div>
+                    </div>
+                    <div style="font-size:13px; color:var(--text-secondary); margin-bottom:10px; display:flex; gap:16px;">
+                        <span>📧 <a href="mailto:qa.contact@qa.dievon.invalid" style="color:var(--color-primary); font-weight:600; text-decoration:none;">qa.contact@qa.dievon.invalid</a></span>
+                                                    <span>📞 abc&#039;&quot;&lt;b&gt;</span>
+                                            </div>
+                    <div style="background:#ffffff; border-radius:6px; padding:12px 14px; font-size:13px; color:#334155; border-left:3px solid #2b080f;">
+                        QA TEST message body                    </div>
+                </div>
+                                <div style="background:var(--bg-surface-soft); border-radius:8px; padding:18px 20px; border:1px solid var(--border-light); position:relative;">
+                    <form method="POST" action="customers.php" style="position:absolute; top:16px; right:16px;" onsubmit="return dvConfirmForm(this,'Delete this inquiry?');">
+                        <input type="hidden" name="csrf_token" value="f63f4e54e82f75e99882f7711832af51ae687cc0e970516decdd2a95c1020a17">
+                        <input type="hidden" name="delete_inquiry" value="8">
+                        <button type="submit" style="color:#ef4444; font-size:13px; background:none; border:none; cursor:pointer;" title="Delete">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </form>
+                    <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
+                        <div style="width:36px; height:36px; border-radius:50%; background:#2b080f; color:#ffffff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px;">
+                            Q                        </div>
+                        <div>
+                            <strong style="font-size:15px; color:var(--text-primary); display:block;">QA TEST Enquirer [Product: QA TEST Not A Real Product]</strong>
+                            <span style="font-size:12px; color:var(--text-muted);">09 Aug 2026, 22:10</span>
+                        </div>
+                    </div>
+                    <div style="font-size:13px; color:var(--text-secondary); margin-bottom:10px; display:flex; gap:16px;">
+                        <span>📧 <a href="mailto:qa.enq@qa.dievon.invalid" style="color:var(--color-primary); font-weight:600; text-decoration:none;">qa.enq@qa.dievon.invalid</a></span>
+                                                    <span>📞 9876500011</span>
+                                            </div>
+                    <div style="background:#ffffff; border-radius:6px; padding:12px 14px; font-size:13px; color:#334155; border-left:3px solid #2b080f;">
+                        Product: QA TEST Not A Real Product<br />
+Enquiry: QA TEST enquiry body                    </div>
+                </div>
+                                <div style="background:var(--bg-surface-soft); border-radius:8px; padding:18px 20px; border:1px solid var(--border-light); position:relative;">
+                    <form method="POST" action="customers.php" style="position:absolute; top:16px; right:16px;" onsubmit="return dvConfirmForm(this,'Delete this inquiry?');">
+                        <input type="hidden" name="csrf_token" value="f63f4e54e82f75e99882f7711832af51ae687cc0e970516decdd2a95c1020a17">
+                        <input type="hidden" name="delete_inquiry" value="7">
+                        <button type="submit" style="color:#ef4444; font-size:13px; background:none; border:none; cursor:pointer;" title="Delete">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </form>
+                    <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
+                        <div style="width:36px; height:36px; border-radius:50%; background:#2b080f; color:#ffffff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px;">
+                            Q                        </div>
+                        <div>
+                            <strong style="font-size:15px; color:var(--text-primary); display:block;">QA O&#039;B &quot;x&quot; 🎉 [Product: QA TEST Anaya Chikankari Kurti]</strong>
+                            <span style="font-size:12px; color:var(--text-muted);">09 Aug 2026, 22:10</span>
+                        </div>
+                    </div>
+                    <div style="font-size:13px; color:var(--text-secondary); margin-bottom:10px; display:flex; gap:16px;">
+                        <span>📧 <a href="mailto:qa.enq@qa.dievon.invalid" style="color:var(--color-primary); font-weight:600; text-decoration:none;">qa.enq@qa.dievon.invalid</a></span>
+                                                    <span>📞 9876500011</span>
+                                            </div>
+                    <div style="background:#ffffff; border-radius:6px; padding:12px 14px; font-size:13px; color:#334155; border-left:3px solid #2b080f;">
+                        Product: QA TEST Anaya Chikankari Kurti<br />
+Enquiry: QA TEST enquiry body                    </div>
+                </div>
+                                <div style="background:var(--bg-surface-soft); border-radius:8px; padding:18px 20px; border:1px solid var(--border-light); position:relative;">
+                    <form method="POST" action="customers.php" style="position:absolute; top:16px; right:16px;" onsubmit="return dvConfirmForm(this,'Delete this inquiry?');">
+                        <input type="hidden" name="csrf_token" value="f63f4e54e82f75e99882f7711832af51ae687cc0e970516decdd2a95c1020a17">
+                        <input type="hidden" name="delete_inquiry" value="6">
+                        <button type="submit" style="color:#ef4444; font-size:13px; background:none; border:none; cursor:pointer;" title="Delete">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </form>
+                    <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
+                        <div style="width:36px; height:36px; border-radius:50%; background:#2b080f; color:#ffffff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px;">
+                            Q                        </div>
+                        <div>
+                            <strong style="font-size:15px; color:var(--text-primary); display:block;">QA TEST Enquirer [Product: QA TEST Anaya Chikankari Kurti]</strong>
+                            <span style="font-size:12px; color:var(--text-muted);">09 Aug 2026, 22:10</span>
+                        </div>
+                    </div>
+                    <div style="font-size:13px; color:var(--text-secondary); margin-bottom:10px; display:flex; gap:16px;">
+                        <span>📧 <a href="mailto:qa.enq@qa.dievon.invalid" style="color:var(--color-primary); font-weight:600; text-decoration:none;">qa.enq@qa.dievon.invalid</a></span>
+                                                    <span>📞 123456</span>
+                                            </div>
+                    <div style="background:#ffffff; border-radius:6px; padding:12px 14px; font-size:13px; color:#334155; border-left:3px solid #2b080f;">
+                        Product: QA TEST Anaya Chikankari Kurti<br />
+Enquiry: QA TEST enquiry body                    </div>
+                </div>
+                                <div style="background:var(--bg-surface-soft); border-radius:8px; padding:18px 20px; border:1px solid var(--border-light); position:relative;">
+                    <form method="POST" action="customers.php" style="position:absolute; top:16px; right:16px;" onsubmit="return dvConfirmForm(this,'Delete this inquiry?');">
+                        <input type="hidden" name="csrf_token" value="f63f4e54e82f75e99882f7711832af51ae687cc0e970516decdd2a95c1020a17">
+                        <input type="hidden" name="delete_inquiry" value="5">
+                        <button type="submit" style="color:#ef4444; font-size:13px; background:none; border:none; cursor:pointer;" title="Delete">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </form>
+                    <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
+                        <div style="width:36px; height:36px; border-radius:50%; background:#2b080f; color:#ffffff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px;">
+                            Q                        </div>
+                        <div>
+                            <strong style="font-size:15px; color:var(--text-primary); display:block;">QA TEST Enquirer [Product: QA TEST Anaya Chikankari Kurti]</strong>
+                            <span style="font-size:12px; color:var(--text-muted);">09 Aug 2026, 22:10</span>
+                        </div>
+                    </div>
+                    <div style="font-size:13px; color:var(--text-secondary); margin-bottom:10px; display:flex; gap:16px;">
+                        <span>📧 <a href="mailto:qa.enq@qa.dievon.invalid" style="color:var(--color-primary); font-weight:600; text-decoration:none;">qa.enq@qa.dievon.invalid</a></span>
+                                                    <span>📞 9876500011</span>
+                                            </div>
+                    <div style="background:#ffffff; border-radius:6px; padding:12px 14px; font-size:13px; color:#334155; border-left:3px solid #2b080f;">
+                        Product: QA TEST Anaya Chikankari Kurti<br />
+Enquiry: QA TEST MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM                    </div>
+                </div>
+                                <div style="background:var(--bg-surface-soft); border-radius:8px; padding:18px 20px; border:1px solid var(--border-light); position:relative;">
+                    <form method="POST" action="customers.php" style="position:absolute; top:16px; right:16px;" onsubmit="return dvConfirmForm(this,'Delete this inquiry?');">
+                        <input type="hidden" name="csrf_token" value="f63f4e54e82f75e99882f7711832af51ae687cc0e970516decdd2a95c1020a17">
+                        <input type="hidden" name="delete_inquiry" value="4">
+                        <button type="submit" style="color:#ef4444; font-size:13px; background:none; border:none; cursor:pointer;" title="Delete">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </form>
+                    <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
+                        <div style="width:36px; height:36px; border-radius:50%; background:#2b080f; color:#ffffff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px;">
+                            Q                        </div>
+                        <div>
+                            <strong style="font-size:15px; color:var(--text-primary); display:block;">QA TEST Enquirer [Product: QA TEST Anaya Chikankari Kurti]</strong>
+                            <span style="font-size:12px; color:var(--text-muted);">09 Aug 2026, 22:10</span>
+                        </div>
+                    </div>
+                    <div style="font-size:13px; color:var(--text-secondary); margin-bottom:10px; display:flex; gap:16px;">
+                        <span>📧 <a href="mailto:qa.enq@qa.dievon.invalid" style="color:var(--color-primary); font-weight:600; text-decoration:none;">qa.enq@qa.dievon.invalid</a></span>
+                                                    <span>📞 9876500011</span>
+                                            </div>
+                    <div style="background:#ffffff; border-radius:6px; padding:12px 14px; font-size:13px; color:#334155; border-left:3px solid #2b080f;">
+                        Product: QA TEST Anaya Chikankari Kurti<br />
+Enquiry: QA TEST enquiry body                    </div>
+                </div>
+                                <div style="background:var(--bg-surface-soft); border-radius:8px; padding:18px 20px; border:1px solid var(--border-light); position:relative;">
+                    <form method="POST" action="customers.php" style="position:absolute; top:16px; right:16px;" onsubmit="return dvConfirmForm(this,'Delete this inquiry?');">
+                        <input type="hidden" name="csrf_token" value="f63f4e54e82f75e99882f7711832af51ae687cc0e970516decdd2a95c1020a17">
+                        <input type="hidden" name="delete_inquiry" value="3">
+                        <button type="submit" style="color:#ef4444; font-size:13px; background:none; border:none; cursor:pointer;" title="Delete">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </form>
+                    <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
+                        <div style="width:36px; height:36px; border-radius:50%; background:#2b080f; color:#ffffff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px;">
+                            Q                        </div>
+                        <div>
+                            <strong style="font-size:15px; color:var(--text-primary); display:block;">QA TEST O&#039;Brien &quot;X&quot; 🎉 [Service: General Enquiry]</strong>
+                            <span style="font-size:12px; color:var(--text-muted);">09 Aug 2026, 22:00</span>
+                        </div>
+                    </div>
+                    <div style="font-size:13px; color:var(--text-secondary); margin-bottom:10px; display:flex; gap:16px;">
+                        <span>📧 <a href="mailto:qa.ct4@qa.dievon.invalid" style="color:var(--color-primary); font-weight:600; text-decoration:none;">qa.ct4@qa.dievon.invalid</a></span>
+                                                    <span>📞 123456</span>
+                                            </div>
+                    <div style="background:#ffffff; border-radius:6px; padding:12px 14px; font-size:13px; color:#334155; border-left:3px solid #2b080f;">
+                        QA TEST it&#039;s a &quot;test&quot; 🎉 &lt;script&gt;alert(1)&lt;/script&gt;                    </div>
+                </div>
+                                <div style="background:var(--bg-surface-soft); border-radius:8px; padding:18px 20px; border:1px solid var(--border-light); position:relative;">
+                    <form method="POST" action="customers.php" style="position:absolute; top:16px; right:16px;" onsubmit="return dvConfirmForm(this,'Delete this inquiry?');">
+                        <input type="hidden" name="csrf_token" value="f63f4e54e82f75e99882f7711832af51ae687cc0e970516decdd2a95c1020a17">
+                        <input type="hidden" name="delete_inquiry" value="2">
+                        <button type="submit" style="color:#ef4444; font-size:13px; background:none; border:none; cursor:pointer;" title="Delete">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </form>
+                    <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
+                        <div style="width:36px; height:36px; border-radius:50%; background:#2b080f; color:#ffffff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px;">
+                            Q                        </div>
+                        <div>
+                            <strong style="font-size:15px; color:var(--text-primary); display:block;">QA TEST LongMsg [Service: General Enquiry]</strong>
+                            <span style="font-size:12px; color:var(--text-muted);">09 Aug 2026, 22:00</span>
+                        </div>
+                    </div>
+                    <div style="font-size:13px; color:var(--text-secondary); margin-bottom:10px; display:flex; gap:16px;">
+                        <span>📧 <a href="mailto:qa.ct2@qa.dievon.invalid" style="color:var(--color-primary); font-weight:600; text-decoration:none;">qa.ct2@qa.dievon.invalid</a></span>
+                                            </div>
+                    <div style="background:#ffffff; border-radius:6px; padding:12px 14px; font-size:13px; color:#334155; border-left:3px solid #2b080f;">
+                        QA TEST MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM                    </div>
+                </div>
+                            </div>
+            </div>
+</div>
+
+    </main>
+</div>
+</div>
+<!-- Branded dialog (shares the storefront stylesheet, which admin already loads). -->
+<script src="http://localhost:8888/DievonOrders/assets/js/dievon-dialog.js?v=1785450739"></script>
+<script src="assets/js/admin.js"></script>
+</body>
+</html>
