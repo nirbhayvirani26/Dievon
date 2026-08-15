@@ -297,8 +297,29 @@ $searchHint = $searchHintNames
     <meta name="twitter:image" content="<?= $image ?>">
 
     <!-- Canonical Link to prevent duplicate content SEO penalties -->
-    <?php $canonicalHref = isset($canonicalUrl) ? $canonicalUrl : strtok($currentUrl, '?'); ?>
+    <?php
+    /* An error response names no canonical at all.
+       ────────────────────────────────────────────────────────────────────────
+       pages/404.php sets $noindex but never $canonicalUrl, so the fallback below
+       used the REQUESTED url — and for a query-string 404 like
+       /shop?category=Nonexistent that resolves to /shop. The page then answered
+       404 with "noindex" and a canonical pointing at a live money page, which is
+       the one combination Google is documented to resolve badly: it may follow
+       the canonical and apply the noindex to the target. pages/shop.php:802
+       already documents guarding against exactly this on its own path; the error
+       path was left open, and /blog-single?id=1 aimed at /blog the same way.
+
+       Decided from the response code rather than patched into 404.php, so every
+       error path this template serves is covered — including the 410 Gone that
+       product.php issues for a withdrawn product. */
+    $dvStatus = function_exists('http_response_code') ? (int)http_response_code() : 200;
+    $canonicalHref = ($dvStatus >= 400)
+        ? null
+        : (isset($canonicalUrl) ? $canonicalUrl : strtok($currentUrl, '?'));
+    ?>
+    <?php if ($canonicalHref !== null): ?>
     <link rel="canonical" href="<?= htmlspecialchars($canonicalHref) ?>">
+    <?php endif; ?>
 
     <!-- Schema.org Organization Structured Data -->
     <script type="application/ld+json">

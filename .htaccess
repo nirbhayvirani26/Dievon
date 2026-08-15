@@ -59,6 +59,19 @@ RewriteCond %{HTTP_HOST} !^127\.0\.0\.1
 RewriteCond %{HTTP_HOST} !:8888$
 RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
+# -0.9 www → apex, once, after HTTPS so there is no second hop.
+#
+# There was no www rule at all, and the site answers on every *.dievon.com with
+# a canonical naming whichever host was asked for. So www.dievon.com was a full
+# duplicate of the shop that endorsed itself — every product, every collection,
+# its own robots.txt saying Allow: / and its own Sitemap: line. Google picks one
+# and splits the ranking signals across the two.
+#
+# Ordered after the HTTPS redirect deliberately: http://www → https://apex in a
+# single 301 rather than http://www → https://www → https://apex.
+RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
+RewriteRule ^(.*)$ https://%1/$1 [L,R=301]
+
 # -0.5 Security response headers.
 #
 # The site sent none of these. They cost nothing, and two of them close real

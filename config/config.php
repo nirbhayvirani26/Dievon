@@ -44,6 +44,27 @@ if (session_status() === PHP_SESSION_NONE) {
  */
 const TRUSTED_LOCAL_HOSTS = ['localhost:8888', '127.0.0.1:8888'];
 
+/** The one hostname this shop is meant to be indexed under. */
+const CANONICAL_SITE_HOST = 'dievon.com';
+
+/**
+ * Is this request being served under the host the shop should be indexed as?
+ *
+ * trustedSiteHost() accepts every *.dievon.com, which is right for deciding
+ * whether a Host header is FORGED — but wrong for deciding whether a crawler
+ * should be invited in. www.dievon.com and any staging subdomain were serving
+ * the whole catalogue with self-referencing canonicals and a robots.txt reading
+ * "Allow: /" plus their own Sitemap: line — a complete, self-endorsing duplicate
+ * of the shop, which is how a staging site ends up outranking production.
+ *
+ * Local development counts as canonical so robots.php behaves normally there.
+ */
+function isCanonicalSiteHost(?string $host = null): bool
+{
+    $host = strtolower(trim((string)($host ?? ($_SERVER['HTTP_HOST'] ?? ''))));
+    return $host === CANONICAL_SITE_HOST || in_array($host, TRUSTED_LOCAL_HOSTS, true);
+}
+
 /** Is this host the local MAMP machine? */
 function isLocalDevHost(string $host): bool
 {
@@ -75,12 +96,14 @@ function trustedSiteHost(?string $claimed): string
     }
 
     // Production: dievon.com and every subdomain (stage., testing., www., …).
-    if ($claimed === 'dievon.com' || str_ends_with($claimed, '.dievon.com')) {
+    // Accepting subdomains here is about rejecting a FORGED host, not about
+    // which host should be indexed — see isCanonicalSiteHost() for that.
+    if ($claimed === CANONICAL_SITE_HOST || str_ends_with($claimed, '.' . CANONICAL_SITE_HOST)) {
         return $claimed;
     }
 
     // A poisoned Host header. Fall back to the canonical production host.
-    return 'dievon.com';
+    return CANONICAL_SITE_HOST;
 }
 
 // ── Error display ───────────────────────────────────────────
