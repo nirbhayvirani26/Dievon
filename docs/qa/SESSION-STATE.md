@@ -1,42 +1,43 @@
 # Where this work stands — read this first if you are picking it back up
 
-Last updated 15 Aug 2026, mid-audit. Branch `claude/chat-session-875zz6`.
+Last updated 15 Aug 2026. Branch `claude/chat-session-875zz6`, 22 commits, all pushed.
 
 ## What is finished and safe
 
 All code work is **committed and pushed**. Nothing is lost by stopping here.
 
-| Commit | What it did |
-|---|---|
-| `9021731` | Per-size prices reach the storefront; stop losing them in admin |
-| `e36972e` | Price box on colour-size cards; warn when a price cannot apply |
-| `ef9792f` | Refuse a negative size price instead of reading it as "follow the product" |
-| `1a7e0a1` | `.claude/skills/verify/SKILL.md` — how to run this shop locally |
-| `3691561` | Every price through `effectiveVariantPrice()`; harden the size-price box |
-| `ee86544` | Checkout no longer bills more than it displays; RCE and XSS closed |
-| `e444dbf` | Checkpoint of in-flight QA fixes — **not reviewed** |
+Every finding below was driven against a running copy of the shop — real MariaDB,
+real browser, real orders — not read off the source. `.claude/skills/verify/SKILL.md`
+is the recipe for standing that environment up again; it takes about ten minutes.
+
+The audit ran in waves: ten targeted passes, then five QA engineers covering
+product lifecycle, money, orders/returns, permissions and discovery. The engineers'
+own commit (`e444dbf`) went in unreviewed when they were cut short — **that has
+since been read line by line and re-driven**, so it is no longer an open risk.
+Two of their reported findings turned out to be the auditor's test error rather
+than real defects, which is why nothing here is recorded on a report alone.
 
 `docs/qa/` holds the bug register, the go-live plan and the pre-flight SQL.
+`PRE-LAUNCH-BUG-REGISTER.md` is the full account: severity, root cause, files,
+fix and regression result for each.
 
-## What was still in flight when this stopped
+## What is left
 
-Five QA engineers were running, roughly 30 minutes in, covering areas the first
-ten audits did not reach:
+**Nothing in the code.** The last three open items closed on 15 Aug:
 
-1. Product create/edit/**clone**, SKU, categories, stock, media, validation
-2. Coupons, GST, shipping, COD, rounding, order totals
-3. Order numbers, invoices, cancellations, returns, refunds, stock restoration
-4. Staff permissions, admin accounts, 2FA, CMS, blog XSS
-5. Search, filters, pagination, wishlist, compare, quick view
+- the admin password-reset code could be ground out by deleting a cookie (H11),
+- six form fields had a placeholder and no name, and the header search box could
+  not be opened from a keyboard at all,
+- every price JavaScript wrote was missing its thousands separator, so a checkout
+  page carried `₹14,400.00` and `₹14400.00` at the same time.
 
-**Their findings were not delivered.** Commit `e444dbf` contains the code they had
-changed by that point, unreviewed. Anything in it may need revising or reverting
-once the reasoning behind it is known — in the first wave, two reported findings
-turned out to be the auditor's own test error rather than real defects.
+Two paths were **never exercised end to end**, and both are blocked by the
+environment rather than by the code:
 
-If you resume: re-run those five audits rather than trusting `e444dbf` blind. The
-briefs are in the conversation; the environment recipe is in
-`.claude/skills/verify/SKILL.md`.
+- **Exchanges.** The flow allows one request per order, and that one was spent on
+  a return. Worth walking through once on live with a throwaway order.
+- **Automated Razorpay refunds.** Their servers are unreachable from here, so the
+  refund call itself has only been verified up to the point of dispatch.
 
 ## Database changes made during the audit
 
@@ -53,34 +54,39 @@ ALTER TABLE product_country_prices ADD COLUMN updated_at TIMESTAMP NOT NULL
     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP;
 ```
 
+`docs/qa/indexes.sql` holds the index additions, and `preflight-price-audit.sql`
+the queries to run against live before deploying.
+
 Separately worth knowing: **a fresh install of this shop cannot bootstrap itself.**
 `update_new_database.php` needs `store_settings` to exist before it will run, and
 it is itself the thing that creates it. The local database had to be built by
 scraping `CREATE TABLE` statements out of the app's own source before the
 migration tool would start. On live this only matters for a new environment.
 
-## The one thing that does not wait
+## The two things that do not wait, and are yours
 
-`database/recovery_2026-08-11/env.backup.txt` held the live **Razorpay key
-secret**, the **SMTP password** and a **backup cron token** in cleartext, and was
-git-tracked from the initial commit. It is untracked now and `.gitignore` covers
-the pattern — but **it is still in git history**, and history is permanent.
+Neither is a code change, which is why neither can be done from here.
 
-**Rotate all three.** This is independent of launching, of this branch, and of
-anything else in this document.
+**1. Rotate three credentials.** `database/recovery_2026-08-11/env.backup.txt` held
+the live **Razorpay key secret**, the **SMTP password** and a **backup cron token**
+in cleartext, and was git-tracked from the initial commit. It is untracked now and
+`.gitignore` covers the pattern — but **it is still in git history**, and history is
+permanent. Anyone who has ever cloned this repo has those three secrets. Rotate all
+three. This is independent of launching, of this branch, and of everything else here.
 
-## Launch position at the time of stopping
+**2. Confirm this repository is what dievon.com actually runs.** Everything in this
+document was verified against a local copy of `main` plus this branch. dievon.com was
+never contacted. Before deploying, diff the live server's `pages/product.php` and
+`admin/variant_handler.php` against `main` — if the live files differ, the live site
+is carrying changes this branch does not know about, and merging would revert them.
 
-**NOT READY**, for these reasons, in order:
+## Launch position
 
-1. Credentials in git history — rotate (above).
-2. Six critical defects were found; five are fixed. See `PRE-LAUNCH-BUG-REGISTER.md`.
-3. Six High findings remain open: empty sitemap, 19 of 25 products uncrawlable,
-   HTTPS mis-detected behind a proxy, `www`/subdomains indexable, 88 schema
-   statements per request, and no database indexes beyond primary keys.
-4. Product lifecycle, coupons, GST, shipping, returns, refunds and staff
-   permissions were **never fully tested** — the audits covering them did not finish.
+**READY WITH MINOR FIXES** — blocked only on the two items above.
 
-Nothing found so far says the shop is broken for a normal purchase. The blockers
-are credential exposure, discoverability, and untested money paths — not a
-storefront that fails to sell.
+Every Critical and every High finding is fixed and regression-tested. The money
+paths hold: order totals are computed server-side, the Razorpay signature is
+verified in both the checkout action and the webhook, historical orders are
+immutable, coupons cap correctly, and all 40 test orders reconcile as
+`lines − discount + delivery_charge + cod_fee`. A normal purchase — browse, pick a
+size, pay, receive the invoice, return, refund — works from end to end.

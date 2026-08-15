@@ -164,6 +164,30 @@ Four defects, all fixed and regression-tested:
 - A partially-typed number (`1e`, `-`, `--`) left the box empty, which reads exactly like a
   deliberate clear, so the size silently went back to following the product price.
 
+### H11 ✅ Admin password-reset code could be ground out by deleting a cookie
+**Severity** High (full admin takeover)
+**Symptom** With a fresh cookie jar on every request, 25 of 25 wrong 6-digit codes were evaluated and
+the form never locked. Zero rows were recorded anywhere.
+**Root cause** `admin/reset_password.php` counted wrong codes in `$_SESSION['pw_reset_fails']` only.
+A session cookie belongs to whoever is calling; deleting it set the counter back to zero. The
+server-side throttle the sign-in page uses (`login_attempts`, keyed on account AND source address)
+was never wired into this page.
+**Files** `admin/reset_password.php`
+**DB** none — reuses the existing `login_attempts` table
+**Fix** Failures now also go through `recordFailedLogin()` / `loginLockRemaining()` under an
+`admin-reset:` key, so a fresh cookie buys nothing. The prefix keeps this counter separate from the
+sign-in counter, so grinding the reset form cannot lock the owner out of the panel; the row still
+carries the address, so the per-IP ceiling spans both pages. The session counter stays as the
+friendly first stop at five tries. Same commit closes a username oracle in the same handler:
+password strength was only checked once an account had been found, so a too-short password answered
+"at least 12 characters" for a real username and "that code was not correct" for one that did not
+exist.
+**Regression** Locks on the 11th attempt and stops recording — later tries are refused before the
+code is checked. 20 failures from one address disables the form on a plain GET and refuses a third
+username never tried. A correct code still resets the password, marks the code used and clears the
+9 failures standing against the account. Sign-in unaffected: 302 to `orders.php` with 10 reset
+failures on record.
+
 ---
 
 ## MEDIUM
@@ -195,6 +219,22 @@ the canonical strips it · `/docs/` and `UPLOAD_LIST.txt` crawlable · `/men` re
 two design tokens fail WCAG contrast (2.04:1 and 4.21:1) · no `<main>` landmark or skip link ·
 modals do not trap focus · lightbox not keyboard-openable · 6 form fields placeholder-only ·
 no `autocomplete` on checkout fields · `#backToTopBtn` unnamed.
+
+All of the above are now fixed. Two of them turned out to be more than polish once driven:
+
+- **The header search box was a keyboard dead end.** It is a readonly doorway that opens the search
+  overlay, and the opener lived on the wrapping div's `onclick` — so a mouse worked and a keyboard
+  did not. Tab to it and press Enter: nothing. Press Space: the page scrolled. Enter and Space now
+  open the overlay and move focus into the box that takes typing.
+- **Every price JavaScript wrote was missing its thousands separator.** `formatPriceJS()` stopped at
+  `toFixed()` while PHP's `number_format()` grouped, so a checkout page carried `₹14,400.00` and
+  `₹14400.00` at the same time. That is the bag drawer, the cart page, the checkout totals, and the
+  product page's own headline price — which is written by JS on load, and so was the only
+  unseparated price on a page otherwise full of correctly formatted cards. Grouped in threes to
+  match `number_format()`, and done by hand rather than through `Intl` so it cannot follow the
+  visitor's system locale: a machine set to German would render "1.500,00", which reads as one and
+  a half rupees. Checked against PHP over 17 values from 0 to 1,234,567.89, boundary rounding and
+  negatives included.
 
 ---
 
