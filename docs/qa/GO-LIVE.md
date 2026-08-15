@@ -1,10 +1,10 @@
 # Dievon — go-live plan
 
-Branch `claude/chat-session-875zz6`, 23 commits, 35 files. Rewritten 15 Aug 2026.
+Branch `claude/chat-session-875zz6`, 26 commits, 36 files. Rewritten 15 Aug 2026.
 
 > **This document replaced an earlier one that described a 4-file release.** That
 > version was written when the branch was 4 commits long and is no longer safe to
-> follow — uploading 4 of these 35 files lands you in exactly the broken half-state
+> follow — uploading 4 of these 36 files lands you in exactly the broken half-state
 > it warned about. If you have a copy of the old plan, discard it.
 
 ---
@@ -33,7 +33,7 @@ would silently revert them — stop and reconcile first.
 
 ---
 
-## 1. Upload these 35 files
+## 1. Upload these 36 files
 
 ```
 .htaccess                          ← read section 2 before uploading this one
@@ -74,6 +74,7 @@ admin/email_logs.php
 admin/reset_password.php
 
 assets/css/style.css
+assets/css/responsive.css
 assets/js/dievon-dialog.js
 admin/assets/css/style.css
 ```
@@ -220,6 +221,22 @@ Use one real product that has colours **and** per-size prices.
 11. `https://www.dievon.com` → must land on `https://dievon.com`, one hop.
 12. `https://dievon.com/sitemap.xml` → must list products, not be empty.
 13. Upload a normal JPG as a product image — it must still work.
+
+**On an actual phone** — this release reshapes the mobile product page
+14. Open a product with a long description. The photograph, the name and the
+    price should all be visible **without scrolling**. The old decorative band
+    above the photo is gone on a phone; it is unchanged on a desktop.
+15. The description shows four lines and a **Read more**. Tap it: the rest opens
+    and the label becomes Read less. A product with a one-line description
+    should show no toggle at all.
+16. A sticky **Add to Bag** bar sits at the bottom, **in place of** the
+    Home / Search / Login dock — on product pages only. Every other page keeps
+    its dock.
+17. Scroll down to the real Add to Bag button: the sticky bar should retreat, and
+    return once you scroll past it.
+18. Tap the sticky bar **before** choosing a size → the same "Please select a
+    size" message, and the bag stays empty. Choose a size, and the bar's price
+    must move to that size's price. Tap again → added.
 
 ---
 
