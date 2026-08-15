@@ -31,6 +31,20 @@ $activeTab = 'email_logs';
 $successMsg = '';
 $errorMsg   = '';
 
+/**
+ * Mask a one-time code out of a stored email subject before it is shown.
+ *
+ * The real fix is in services/EmailService::logEmail(), which no longer WRITES
+ * the code into the log — but rows created before that change still hold live
+ * codes ("Your Dievon admin password reset code: 839066"), and this screen is
+ * exactly where an attacker was reading them. Redacting on the way out covers
+ * those historical rows without needing to rewrite the table. Keyed on the word
+ * "code"/"OTP" so order numbers and amounts elsewhere in a subject stay legible.
+ */
+function emailLogSafeSubject(?string $subject): string {
+    return (string)preg_replace('/\b(code|otp)\b([:\s#]*)\d{4,8}/i', '$1$2••••••', (string)$subject);
+}
+
 // ── Resend a single failed message ──────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'resend') {
     if (!verifyCsrfToken($_POST['csrf_token'] ?? '')) {
@@ -213,7 +227,7 @@ require_once __DIR__ . '/includes/header.php';
                     </td>
                     <td style="font-size:12.5px;"><?= htmlspecialchars((string)$r['email_type']) ?></td>
                     <td style="font-size:12.5px;"><?= htmlspecialchars((string)$r['recipient']) ?></td>
-                    <td style="font-size:12.5px;"><?= htmlspecialchars((string)$r['subject']) ?></td>
+                    <td style="font-size:12.5px;"><?= htmlspecialchars(emailLogSafeSubject($r['subject'])) ?></td>
                     <td style="white-space:nowrap;">
                         <?php if ($r['status'] === 'sent'): ?>
                             <span style="color:var(--color-success); font-weight:600; font-size:12.5px;">

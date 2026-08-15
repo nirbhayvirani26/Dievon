@@ -10,7 +10,14 @@
       "Bash(/Applications/MAMP/Library/bin/mysql57/bin/mysql -h localhost -P 8889 -u root -proot dievonfashion -e \"SELECT id, name, email, phone FROM customers;\")",
       "Bash(/Applications/MAMP/Library/bin/mysql57/bin/mysql -h localhost -P 8889 -u root -proot dievonfashion -e \"SELECT id, name, email FROM customers WHERE email='princevir2610@gmail.com';\")",
       "Bash(curl -s -i \"http://localhost:8888/DievonOrders/pages/print_invoice.php?code=CB-342257\")",
-      "Bash(/Applications/MAMP/Library/bin/mysql57/bin/mysql -h localhost -P 8889 -u root -proot dievonfashion -e ' *)"
+      "Bash(/Applications/MAMP/Library/bin/mysql57/bin/mysql -h localhost -P 8889 -u root -proot dievonfashion -e ' *)",
+      "Bash(mariadb -u root -D dievonfashion -e \"ALTER TABLE product_country_prices ADD COLUMN sale_price DECIMAL\\(10,2\\) NULL AFTER price;\")",
+      "Bash(mariadb -u root -D dievonfashion -e \"DESCRIBE product_country_prices;\")",
+      "Bash(mariadb -u root -D dievonfashion -e \"ALTER TABLE product_country_prices ADD UNIQUE KEY uniq_product_country \\(product_id, country_code\\);\")",
+      "Bash(mariadb -u root -D dievonfashion -e \"ALTER TABLE product_country_prices ADD COLUMN updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP;\")",
+      "Bash(mariadb -u root -D dievonfashion -e \"DESCRIBE product_country_prices; SHOW INDEX FROM product_country_prices;\")",
+      "Bash(node dup.mjs)",
+      "Bash(mariadb -u root -D dievonfashion -e \"SELECT id,name,sku,seo_url,price,available,track_stock,total_stock,damage_stock,sold_offline,sold_online,image FROM products WHERE name LIKE 'QA1%';\")"
     ]
   }
 }

@@ -184,15 +184,33 @@ class EmailService {
 
     /**
      * Log email dispatch attempt to email_logs table
+     *
+     * The subject is REDACTED of one-time codes before it is stored. The sign-in
+     * and password-reset emails put the live 6-digit code in the subject line
+     * itself ("Your Dievon admin password reset code: 839066"), and this row is
+     * kept for the life of the shop. That turned the audit log into a live
+     * credential store: anyone able to read email_logs — through admin/email_logs.php
+     * (settings.manage, which a non-owner role can hold) or through a database
+     * backup — could read a reset code straight off the screen. Chained with the
+     * unauthenticated forgot-password page, which will issue a code for any
+     * account including the owner, that was a complete account takeover, and it
+     * defeated emailed 2FA the same way, because sign-in codes were logged too.
+     *
+     * The email that goes to the customer is untouched — it still carries the real
+     * code, because that is the whole point of it. Only the stored copy is masked.
+     * The pattern keys on the literal word "code"/"OTP" before the digits, so order
+     * numbers, amounts and ticket references (which are not preceded by that word)
+     * are left readable.
      */
     private function logEmail(string $type, string $recipient, string $subject, string $status, ?string $error): void {
         try {
             if (!$this->pdo) return;
+            $safeSubject = preg_replace('/\b(code|otp)\b([:\s#]*)\d{4,8}/i', '$1$2••••••', $subject);
             $stmt = $this->pdo->prepare("INSERT INTO email_logs (email_type, recipient, subject, status, error_message, test_mode, created_at) VALUES (:type, :rec, :subj, :status, :err, :test, NOW())");
             $stmt->execute([
                 'type'   => $type,
                 'rec'    => $recipient,
-                'subj'   => $subject,
+                'subj'   => $safeSubject,
                 'status' => $status,
                 'err'    => $error,
                 'test'   => $this->testMode ? 1 : 0

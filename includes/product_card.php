@@ -50,9 +50,39 @@ if (function_exists('countrySelectorEnabled') && countrySelectorEnabled()) {
     $cardMrp   = (float)($cardProduct['mrp_price'] ?? 0);
 }
 
+/* The price a shopper can actually pay — resolved BEFORE anything is drawn.
+   ────────────────────────────────────────────────────────────────────────────
+   This used to sit further down, beside the price line, which put it AFTER the
+   badge at the top of the card. So the badge was worked out from
+   products.price while the price line beneath it showed the cheapest buyable
+   figure, and the two disagreed on every product with a colourway override:
+   trousers listed at 1250 with an MRP of 1600 and an Ivory colourway at 1100
+   rendered "22% OFF" over "₹1,600 ₹1,100" — a real saving of 31%, understated
+   by nine points by the card's own two halves not agreeing.
+
+   Resolving it once, first, is what makes the badge, the strikethrough and the
+   price a single consistent statement.
+
+   Country pricing is one flat figure per product and overrides sizes entirely
+   (see productCountryPricing), so it is left exactly as it was — the spread
+   only applies where the product's own columns are the ones in play. */
+$cardRange  = $cardCountryPricing ?? null;
+$cardVaries = false;
+if ($cardRange === null && !$cardNotSoldHere) {
+    $r = productPriceRange($cardProduct);
+    if ($r['varies'] || $r['min'] < $cardPrice - 0.005) {
+        $cardPrice  = $r['min'];
+        $cardVaries = $r['varies'];
+    }
+}
+
 // A "discount" is only real when the compare-at price is genuinely higher.
 // Equal values would render as "0% OFF", which reads as a bug.
 $cardHasDiscount    = $cardMrp > $cardPrice && $cardPrice > 0;
+// A "from" price and a strikethrough MRP together claim a discount that only
+// holds for the cheapest size, so the strike is dropped once the price is a
+// floor rather than the price.
+$cardHasDiscount    = $cardHasDiscount && !$cardVaries;
 $cardDiscountPercent = $cardHasDiscount ? (int)round((($cardMrp - $cardPrice) / $cardMrp) * 100) : 0;
 
 // ── Sold-out state ──────────────────────────────────────────
@@ -176,35 +206,9 @@ $cardUrl = productUrl($cardProduct['id'], $cardProduct['name'], $cardProduct['se
         <h3 class="product-card-title">
             <a href="<?= $cardUrl ?>"><?= htmlspecialchars($cardProduct['name']) ?></a>
         </h3>
-        <?php
-        /* The price a shopper can actually pay.
-           ────────────────────────────────────────────────────────────────
-           This printed products.price flat. Every other surface resolves the
-           price through effectiveVariantPrice(), which prefers a size's own
-           price — so on a product whose sizes are priced individually the card
-           advertised a figure that was not for sale. A product priced 50 whose
-           only size was priced 2000 was listed at ₹50 here and charged ₹2,000
-           at the bag.
-
-           Country pricing is one flat figure per product and overrides sizes
-           entirely (see productCountryPricing), so it is left exactly as it
-           was — the spread only applies where the product's own columns are
-           the ones in play. */
-        $cardRange   = $cardCountryPricing ?? null;
-        $cardVaries  = false;
-        if ($cardRange === null && !$cardNotSoldHere) {
-            $r = productPriceRange($cardProduct);
-            if ($r['varies'] || $r['min'] < $cardPrice - 0.005) {
-                $cardPrice   = $r['min'];
-                $cardVaries  = $r['varies'];
-                // A "from" price and a strikethrough MRP together claim a
-                // discount that only holds for the cheapest size, so the
-                // strike is dropped once the price is a floor rather than
-                // the price.
-                $cardHasDiscount = $cardHasDiscount && !$cardVaries;
-            }
-        }
-        ?>
+        <?php /* $cardPrice, $cardVaries, $cardHasDiscount and
+                 $cardDiscountPercent were all settled at the top of this file,
+                 before the badge was drawn — see the comment there. */ ?>
         <div class="product-card-price">
             <?php if ($cardNotSoldHere): ?>
                 Not available in your country

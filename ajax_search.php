@@ -12,6 +12,18 @@ if (strlen($query) < 2) {
     exit;
 }
 
+/**
+ * Escape the three characters LIKE treats as syntax.
+ *
+ * Guarded: pages/shop.php declares the same helper for the same reason, and a
+ * future include order must not fatal on a redeclare.
+ */
+if (!function_exists('likeEscape')) {
+    function likeEscape(string $term): string {
+        return str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $term);
+    }
+}
+
 try {
     // Scoped to the side of the shop being browsed, exactly as the grid is.
     //
@@ -51,9 +63,17 @@ try {
         LIMIT 8
     ");
     
-    $likeQuery  = "%" . $query . "%";
-    $startQuery = $query . "%";
-    
+    /* % and _ are LIKE syntax, not letters.
+       ────────────────────────────────────────────────────────────────────────
+       The term went into the pattern untouched, so it was executed rather than
+       searched for: "Aur%Saree" matched "Aurora Silk Saree", "Aurora_Silk"
+       matched "Aurora Silk", and "%%" listed eight arbitrary products as though
+       they were results. Escaping only makes a shopper's punctuation mean
+       itself — nothing that used to match stops matching. The equality test on
+       :q_raw is left alone: = is not LIKE and takes the term verbatim. */
+    $likeQuery  = "%" . likeEscape($query) . "%";
+    $startQuery = likeEscape($query) . "%";
+
     $stmt->execute([
         'q1'       => $likeQuery,
         'q2'       => $likeQuery,
@@ -70,9 +90,30 @@ try {
     
     $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+    /* The dropdown has to quote a price the shopper can actually pay.
+       ────────────────────────────────────────────────────────────────────────
+       This formatted products.price, while the results page the dropdown leads
+       to — and the shop grid, the home rails, the wishlist and the product page
+       — all print productPriceRange()['min'], the cheapest buyable size or
+       colourway. On any product priced by size the two openly disagreed:
+
+         Aurora Silk Saree   suggestion ₹3,000   results page "From ₹1,500"
+         Zephyr Palazzo      suggestion ₹1,250   results page "₹1,100"
+
+       Neither of those suggestion figures is for sale at any size. A dropdown
+       that quotes a price the next click contradicts is worse than one that
+       quotes none. "From" travels with it, because assets/js/search.js prints
+       formatted_price verbatim — so the dropdown says exactly what the card
+       under it will say.
+
+       Primed once for all eight rows rather than once per row. */
+    productPriceRangePrime($results, $pdo);
+
     // Format image URLs and multi-currency formatted price
     foreach ($results as &$r) {
-        $r['formatted_price'] = formatPrice($r['price']);
+        $range  = productPriceRange($r);
+        $shown  = $range['min'] > 0 ? (float)$range['min'] : (float)$r['price'];
+        $r['formatted_price'] = ($range['varies'] ? 'From ' : '') . formatPrice($shown);
         // Absolute URLs. These were relative, and the browser resolves a relative
         // src against the CURRENT page — so a search run from /product/<slug>-<id>
         // asked for /product/uploads/products/x.jpg and every result rendered as a

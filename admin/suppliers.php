@@ -14,6 +14,24 @@
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../config/db.php';
 
+/* The gate has to be HERE, not in the header include at the bottom of this file.
+   This screen handles its POST before it renders anything, and the header is
+   what checks who you are — so every INSERT, UPDATE and DELETE below used to run
+   to completion and only THEN reach the check that would have refused it. The
+   403 page and the redirect to login.php were both being served after the write
+   had already committed.
+   Two things got through it: an Order-staff account, which has no
+   suppliers.manage, could add and delete suppliers; and so could a visitor who
+   had never signed in at all, because the CSRF token on line 21 is the ordinary
+   session token that the storefront's own /login page hands to anybody who asks.
+   requireAdminCapability() covers both — it redirects when there is no admin
+   session and 403s when the capability is missing — and it must run before the
+   first line of work, which is what "before the POST block" means. The header
+   include still repeats the same check for the GET path; a second identical
+   check costs one array lookup and keeps this page correct even if the map in
+   the header is ever edited. */
+requireAdminCapability('suppliers.manage');
+
 $successMsg = '';
 $errorMsg   = '';
 

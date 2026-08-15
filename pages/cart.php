@@ -13,8 +13,26 @@ require_once __DIR__ . '/../includes/header.php';
 // shopper first learned the real cost on the payment page.
 // Per-country threshold, not the global India one — see freeShippingMinForCountry().
 $cartFreeShipMin = freeShippingMinForCountry($pdo);
-$cartShipFee     = (float)storeSetting($pdo, 'standard_shipping_fee', 99);
-$cartIntlShipFee = (float)storeSetting($pdo, 'international_shipping_fee', 2500);
+/* Through shippingCostForZone(), not the raw Store Settings rows.
+   ────────────────────────────────────────────────────────────────────────────
+   These two read `standard_shipping_fee` and `international_shipping_fee`
+   directly, while the checkout and actions/checkout_action.php both price
+   delivery through shippingCostForZone() — which reads the COUNTRIES screen
+   first and only falls back to those settings. Three screens, three answers for
+   one postcode: this estimator quoted ₹2,500 for a foreign PIN, the checkout
+   page quoted ₹99 for the same one, and the server refused it outright.
+
+   The two probe amounts (0, and a figure far above any threshold) ask the same
+   helper for the fee with and without free delivery applied, exactly as
+   pages/checkout.php does. */
+$cartShipFee     = shippingCostForZone('domestic', 0.0, $pdo);
+$cartIntlShipFee = shippingCostForZone('international', 0.0, $pdo);
+/* Does the shop actually deliver abroad?
+   isDeliverablePostcode() refuses every foreign postcode when it does not, so
+   quoting a price for one promised a service checkout will not sell — the
+   shopper typed SW1A 1AA, was told "International delivery: ₹2,500.00", and
+   then met "Please enter a valid delivery postcode" on the payment page. */
+$cartShipsIntl   = shipsInternationally($pdo);
 ?>
 
 <!-- ══ Luxury Cart Hero ══════════════════════════════════ -->
@@ -176,7 +194,7 @@ $cartIntlShipFee = (float)storeSetting($pdo, 'international_shipping_fee', 2500)
             const listEl = document.getElementById('cartPageList');
             if (listEl) { listEl.innerHTML = ''; }
             if (countBadge) { countBadge.textContent = '(0 Items)'; }
-            ['summarySubtotal', 'summaryDiscount', 'summaryGrandTotal'].forEach(id => {
+            ['summarySubtotal', 'summaryPromoAmount', 'summaryGrandTotal'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) { el.textContent = formatPriceJS(0); }
             });
@@ -330,7 +348,8 @@ $cartIntlShipFee = (float)storeSetting($pdo, 'international_shipping_fee', 2500)
     const CART_SHIP = {
         freeOver: <?= json_encode($cartFreeShipMin) ?>,
         fee:      <?= json_encode($cartShipFee) ?>,
-        intlFee:  <?= json_encode($cartIntlShipFee) ?>
+        intlFee:  <?= json_encode($cartIntlShipFee) ?>,
+        shipsIntl: <?= $cartShipsIntl ? 'true' : 'false' ?>
     };
 
     // Same test as detectShippingZone(): an Indian PIN is six digits starting 1-9.
@@ -363,6 +382,16 @@ $cartIntlShipFee = (float)storeSetting($pdo, 'international_shipping_fee', 2500)
         const subtotal = Math.max(0, grossSubtotal - cartAppliedDiscount);
         const q = cartShippingFor(pin, subtotal);
 
+        // Nowhere to send it — say so rather than quoting a price for a delivery
+        // the checkout will refuse. Same rule isDeliverablePostcode() applies.
+        if (q.zone === 'international' && !CART_SHIP.shipsIntl) {
+            msg.style.color = 'var(--color-danger)';
+            msg.textContent = `We do not deliver outside India yet, so we cannot quote for ${pin}. Please check the postcode if you meant an Indian PIN.`;
+            const rowIntl = document.querySelector('.cart-summary-shipping');
+            if (rowIntl) { rowIntl.textContent = 'Calculated at checkout'; }
+            return;
+        }
+
         msg.style.color = 'var(--color-success)';
         if (q.cost === 0) {
             msg.textContent = `✓ Shipping to ${country} (${pin}): Complimentary`;
@@ -385,7 +414,7 @@ $cartIntlShipFee = (float)storeSetting($pdo, 'international_shipping_fee', 2500)
     // markup back without the backend that has to come first.
 
     function checkPromoCodeSession(cartTotalRaw) {
-        fetch('promo_handler.php?action=validate&cart_total=' + cartTotalRaw)
+        fetch(`<?= SITE_URL ?>/promo_handler.php?action=validate&cart_total=${cartTotalRaw}`)
             .then(res => res.json())
             .then(data => {
                 const promoRow = document.getElementById('summaryPromoRow');
@@ -424,7 +453,7 @@ $cartIntlShipFee = (float)storeSetting($pdo, 'international_shipping_fee', 2500)
 
         const subtotalRaw = cartState.cart_total_raw || 0;
 
-        fetch(`promo_handler.php?action=validate&code=${encodeURIComponent(code)}&cart_total=${subtotalRaw}`)
+        fetch(`<?= SITE_URL ?>/promo_handler.php?action=validate&code=${encodeURIComponent(code)}&cart_total=${subtotalRaw}`)
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
@@ -447,7 +476,7 @@ $cartIntlShipFee = (float)storeSetting($pdo, 'international_shipping_fee', 2500)
 
     function removePromoCode(e) {
         e.preventDefault();
-        fetch('promo_handler.php?action=remove')
+        fetch('<?= SITE_URL ?>/promo_handler.php?action=remove')
             .then(res => res.json())
             .then(data => {
                 if (data.success) {

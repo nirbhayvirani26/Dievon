@@ -77,8 +77,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_banner']) && !ve
     $title    = trim($_POST['title'] ?? '');
     $subtitle = trim($_POST['subtitle'] ?? '');
     $link     = trim($_POST['link'] ?? 'shop');
-    $status   = $_POST['status'] ?? 'Active';
+    /* Whitelisted for the same reason gender and placement are, a few lines
+       below — this is an ENUM('Active','Inactive') and the value went in
+       untouched. Any other string died on "SQLSTATE[01000]: Warning: 1265 Data
+       truncated for column 'status'", printed raw to the page; and on a server
+       running without STRICT_TRANS_TABLES the same POST stores '' instead,
+       which matches neither 'Active' nor 'Inactive'. Such a banner is invisible
+       on the homepage AND unfixable from this screen, because the toggle flips
+       between the two real values and never reaches ''. */
+    $status   = ($_POST['status'] ?? 'Active') === 'Inactive' ? 'Inactive' : 'Active';
     $imgName  = $_POST['existing_image'] ?? '';
+
+    /* Column limits, checked before the write rather than after it. title and
+       link are VARCHAR(255); pasting a long tracking URL into the link field
+       produced the raw driver message naming the column. */
+    if (mb_strlen($title) > 255) {
+        $errorMsg = 'The banner title is too long — keep it to 255 characters or fewer. Nothing was saved.';
+        $title = '';
+    } elseif (mb_strlen($link) > 255) {
+        $errorMsg = 'That link is too long — keep it to 255 characters or fewer. Nothing was saved.';
+        $title = '';
+    }
 
     // What is stored is a BARE FILENAME, never a path.
     //
@@ -163,8 +182,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_banner']) && !ve
                 $successMsg = "New banner slide '{$title}' added successfully!";
             }
             $editBanner = null; // Clear edit mode after save
+            /* Creating and editing a banner were the only two actions on this
+               screen that left no trace — toggle and delete below both log. A
+               banner is the first thing every visitor sees, so "who changed the
+               homepage, and when" is exactly the question the audit log exists
+               to answer. */
+            logAdminAction($_SESSION['admin_id'] ?? 1,
+                $bannerId > 0 ? 'update_banner' : 'create_banner',
+                ($bannerId > 0 ? "Updated banner ID $bannerId" : 'Created banner')
+                . " ('{$title}', {$status}, {$bannerPlacement})");
         } catch (PDOException $e) {
-            $errorMsg = "Error saving banner: " . $e->getMessage();
+            // Not the driver's own words: they name the table column and are of
+            // no use to whoever is uploading a banner.
+            error_log('banner save: ' . $e->getMessage());
+            $errorMsg = 'The banner could not be saved. Nothing was changed — please try again.';
         }
     }
 }

@@ -103,13 +103,26 @@ require_once __DIR__ . '/../includes/header.php';
 // so all six queries below are byte-identical to before until menswear is live.
 $homeGenderSql = function_exists('shopGenderSqlFilter') ? shopGenderSqlFilter() : '';
 
+// Archived stock must not be merchandised.
+//
+// All six rails below tested `available = 1` and nothing else, while the shop
+// grid, the search, the sitemap and the Merchant feed all pair that with an
+// is_deleted guard. A row archived while still flagged available therefore
+// appeared ONLY here — on the shop's most-visited page — with a price, a badge,
+// a wishlist heart, Quick View and a Details link, and nowhere else on the site.
+// Measured: product 249 (available = 1, is_deleted = 1) rendered in New Arrivals
+// under a "New" badge while /shop, /search and every collection correctly hid it.
+//
+// One constant so the six queries cannot drift apart again.
+$homeLiveSql = " AND (is_deleted = 0 OR is_deleted IS NULL)";
+
 // Fetch products for New Arrivals (limit 8)
 $newArrivals = [];
 try {
-    $stmt = $pdo->query("SELECT * FROM products WHERE available = 1 AND badge = 'New'{$homeGenderSql} ORDER BY id DESC LIMIT 8");
+    $stmt = $pdo->query("SELECT * FROM products WHERE available = 1{$homeLiveSql} AND badge = 'New'{$homeGenderSql} ORDER BY id DESC LIMIT 8");
     $newArrivals = $stmt->fetchAll();
     if (count($newArrivals) < 8) {
-        $stmt = $pdo->query("SELECT * FROM products WHERE available = 1{$homeGenderSql} ORDER BY id DESC LIMIT 8");
+        $stmt = $pdo->query("SELECT * FROM products WHERE available = 1{$homeLiveSql}{$homeGenderSql} ORDER BY id DESC LIMIT 8");
         $newArrivals = $stmt->fetchAll();
     }
 } catch (PDOException $e) {}
@@ -137,10 +150,10 @@ try {
 // Fetch Best Sellers
 $bestSellers = [];
 try {
-    $stmt = $pdo->query("SELECT * FROM products WHERE available = 1 AND badge = 'Best Seller'{$homeGenderSql} ORDER BY id ASC LIMIT 4");
+    $stmt = $pdo->query("SELECT * FROM products WHERE available = 1{$homeLiveSql} AND badge = 'Best Seller'{$homeGenderSql} ORDER BY id ASC LIMIT 4");
     $bestSellers = $stmt->fetchAll();
     if (empty($bestSellers)) {
-        $stmt = $pdo->query("SELECT * FROM products WHERE available = 1{$homeGenderSql} ORDER BY price DESC LIMIT 4");
+        $stmt = $pdo->query("SELECT * FROM products WHERE available = 1{$homeLiveSql}{$homeGenderSql} ORDER BY price DESC LIMIT 4");
         $bestSellers = $stmt->fetchAll();
     }
 } catch (PDOException $e) {}
@@ -148,10 +161,10 @@ try {
 // Fetch Trending / Hot
 $trending = [];
 try {
-    $stmt = $pdo->query("SELECT * FROM products WHERE available = 1 AND badge = 'Hot'{$homeGenderSql} ORDER BY id ASC LIMIT 4");
+    $stmt = $pdo->query("SELECT * FROM products WHERE available = 1{$homeLiveSql} AND badge = 'Hot'{$homeGenderSql} ORDER BY id ASC LIMIT 4");
     $trending = $stmt->fetchAll();
     if (empty($trending)) {
-        $stmt = $pdo->query("SELECT * FROM products WHERE available = 1{$homeGenderSql} ORDER BY price ASC LIMIT 4");
+        $stmt = $pdo->query("SELECT * FROM products WHERE available = 1{$homeLiveSql}{$homeGenderSql} ORDER BY price ASC LIMIT 4");
         $trending = $stmt->fetchAll();
     }
 } catch (PDOException $e) {}

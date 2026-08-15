@@ -89,7 +89,59 @@ $subtotalAfterDiscount = max(0, $cartTotal - $discountAmount);
 // switches it, and actions/checkout_action.php re-derives the fee server-side
 // either way, so this is a display value, not a trusted one.
 $domesticCost = shippingCostForZone('domestic', $subtotalAfterDiscount, $pdo);
-$grandTotal   = $subtotalAfterDiscount + $domesticCost;
+
+/* ── GST added on top (Store Setting `price_includes_gst` = No) ────────────
+   This page had NO tax term anywhere — not in $grandTotal, not in
+   recalcCheckoutTotal() below — while actions/checkout_action.php:403-430 adds
+   $gstAddedTotal to the total it charges whenever the setting is '0'. So the
+   moment the owner picks "No — GST is added on top at checkout" in Store
+   Settings, every checkout quotes a Total Due short by exactly the tax:
+   measured on a ₹2,650 basket with a 33% coupon, ₹99 delivery and the ₹49 COD
+   fee, this page said ₹1,923.50 and the order was written for ₹2,381.13 —
+   ₹457.63 more than the number the shopper pressed Place Order on, and on a
+   COD order that gap is cash a courier demands at the door.
+
+   Derived here exactly the way checkout_action.php derives it, and nowhere
+   else: the same productTaxSnapshot() walk, the same per-line round(), and the
+   same pre-discount base (that base is checkout_action.php's stated choice —
+   see its comment at line 415 — so this screen must show what is charged, not
+   what a different rule would charge).
+
+   Inclusive pricing — the default, and what this shop runs today — leaves
+   $chkGstAdded at 0.0 and every figure below is unchanged. */
+$chkGstExclusive = ((string)storeSetting($pdo, 'price_includes_gst', '1')) === '0';
+$chkGstAdded     = 0.0;
+$chkLineGst      = [];   // cart_key => resolved rate, so the JS can re-derive exactly
+if ($chkGstExclusive) {
+    $chkTaxProducts = [];
+    foreach ($cart as $item) {
+        $cKey  = (string)($item['cart_key'] ?? $item['product_id'] ?? '');
+        $cPid  = (int)($item['product_id'] ?? 0);
+        $cQty  = (int)($item['quantity'] ?? 1);
+        $cPrice = (float)($item['price'] ?? 0);
+        if ($cPid <= 0 || $cKey === '') { continue; }
+        if (!array_key_exists($cPid, $chkTaxProducts)) {
+            try {
+                $tStmt = $pdo->prepare("SELECT * FROM products WHERE id = :id");
+                $tStmt->execute(['id' => $cPid]);
+                $chkTaxProducts[$cPid] = $tStmt->fetch(PDO::FETCH_ASSOC) ?: null;
+            } catch (PDOException $e) { $chkTaxProducts[$cPid] = null; }
+        }
+        if (!$chkTaxProducts[$cPid]) { continue; }
+        // Rate resolved against the price THIS line sells at, because an
+        // "Apparel – Auto by Price" collection changes slab at ₹2,500.
+        $cRate = (float)productTaxSnapshot($pdo, $chkTaxProducts[$cPid], $cPrice)['gst_rate'];
+        // Zero-rated lines are recorded too. Leaving them out would make the JS
+        // below treat a legitimately untaxed piece as a line it has never seen
+        // and reload the page on every quantity change.
+        $chkLineGst[$cKey] = $cRate;
+        if ($cRate <= 0) { continue; }
+        $chkGstAdded += round($cPrice * $cQty * $cRate / 100, 2);
+    }
+    $chkGstAdded = round($chkGstAdded, 2);
+}
+
+$grandTotal   = $subtotalAfterDiscount + $chkGstAdded + $domesticCost;
 
 // Fetch logged-in customer info and saved addresses if available
 $customer = null;
@@ -618,6 +670,14 @@ $storeCodMax       = (float)storeSetting($pdo, 'cod_max_order_value', COD_MAX_OR
                             <span id="chkDiscountAmount">-<?= formatPrice($discountAmount) ?></span>
                         </div>
 
+                        <?php // Only rendered when GST is charged ON TOP. With inclusive
+                              // pricing the tax is already inside every line above, so a
+                              // separate row here would read as a second charge. ?>
+                        <div id="chkGstRow" style="display: <?= $chkGstExclusive && $chkGstAdded > 0 ? 'flex' : 'none' ?>; justify-content: space-between; margin-bottom: 8px; font-size: 13px; color: var(--text-secondary);">
+                            <span>GST</span>
+                            <span id="chkGstAmount">+<?= formatPrice($chkGstAdded) ?></span>
+                        </div>
+
                         <div class="summary-row" style="display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 13px; color: var(--text-secondary);">
                             <span>Shipping</span>
                             <span id="chkShippingText" style="font-weight: 600; color: var(--color-accent); font-size: 12px; text-transform: uppercase;"><?= $domesticCost > 0 ? formatPrice($domesticCost) : "Complimentary" ?></span>
@@ -672,6 +732,14 @@ function syncSummaryPeek() {
 // qualified was still quoted ₹99.
 let cartTotalRaw = <?= (float)$cartTotal ?>;
 let chkDiscount  = <?= (float)$discountAmount ?>;
+/* GST added on top, and the per-line rates it was derived from.
+   The map is keyed by cart_key so a quantity change in the drawer can re-derive
+   the tax exactly — line by line, rounded per line — the way
+   actions/checkout_action.php does, rather than scaling one scalar and drifting.
+   Both are 0 / empty under inclusive pricing, which is the shop's default. */
+let chkGstAdded  = <?= (float)$chkGstAdded ?>;
+const CHK_GST_EXCLUSIVE = <?= $chkGstExclusive ? 'true' : 'false' ?>;
+const CHK_LINE_GST = <?= json_encode($chkLineGst, JSON_UNESCAPED_UNICODE) ?>;
 // Starts at the domestic rate, matching what the page has already printed.
 let selectedShippingCost = <?= (float)$domesticCost ?>;
 // COD handling fee (0 when disabled). Only added to the total while COD is the
@@ -827,11 +895,15 @@ function recalcCheckoutTotal() {
     // The COD handling fee joins the total only while cash is being collected;
     // switching back to online or bank wire drops it again.
     const codFeeAdd = currentPaymentMode === 'cod' ? selectedCodFee : 0;
-    const total = Math.max(0, cartTotalRaw - chkDiscount + selectedShippingCost + codFeeAdd);
+    const total = Math.max(0, cartTotalRaw - chkDiscount + chkGstAdded + selectedShippingCost + codFeeAdd);
     const sub = document.getElementById('chkSubtotal');
     if (sub) { sub.textContent = formatPriceJS(cartTotalRaw); }
     const disc = document.getElementById('chkDiscountAmount');
     if (disc) { disc.textContent = '-' + formatPriceJS(chkDiscount); }
+    const gstRow = document.getElementById('chkGstRow');
+    const gstEl  = document.getElementById('chkGstAmount');
+    if (gstRow) { gstRow.style.display = (CHK_GST_EXCLUSIVE && chkGstAdded > 0) ? 'flex' : 'none'; }
+    if (gstEl)  { gstEl.textContent = '+' + formatPriceJS(chkGstAdded); }
     const ship = document.getElementById('chkShippingText');
     if (ship) { ship.textContent = selectedShippingCost === 0 ? 'Complimentary' : formatPriceJS(selectedShippingCost); }
     const feeRow = document.getElementById('chkCodFeeRow');
@@ -857,6 +929,23 @@ function onCartUpdated(cart) {
         // form sitting above an empty bag.
         window.location.href = window.SITE_URL + '/cart';
         return;
+    }
+    // GST-on-top has to follow the bag, or the Total Due goes stale the moment a
+    // quantity changes in the drawer. Re-derived per line from the rates the
+    // server resolved, exactly as actions/checkout_action.php sums them. A line
+    // the server never priced (something added from the drawer after this page
+    // loaded) has no rate here, so the page is reloaded rather than guessed at —
+    // a Total Due must never be an estimate.
+    if (CHK_GST_EXCLUSIVE) {
+        let gst = 0, unknown = false;
+        cart.items.forEach(function (it) {
+            const key = String(it.cart_key || it.product_id || '');
+            if (!Object.prototype.hasOwnProperty.call(CHK_LINE_GST, key)) { unknown = true; return; }
+            const rate = parseFloat(CHK_LINE_GST[key]) || 0;
+            gst += Math.round(parseFloat(it.price) * parseInt(it.quantity, 10) * rate) / 100;
+        });
+        if (unknown) { window.location.reload(); return; }
+        chkGstAdded = Math.round(gst * 100) / 100;
     }
     recalcCheckoutTotal();
 }
