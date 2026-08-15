@@ -36,3 +36,10 @@ uploads/
 # web access to the folder is kept so a fresh clone still has the guard.
 database/backups/*.sql
 database/backups/*.sql.gz
+
+# Any copy of the env file under another name. A backup called env.backup.txt
+# sat in database/recovery_2026-08-11/ and reached a first commit because the
+# check only looked for ".env" exactly.
+**/env.backup*
+*.env.backup
+database/recovery_2026-08-11/env.backup.txt
