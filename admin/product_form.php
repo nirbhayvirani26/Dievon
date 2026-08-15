@@ -2588,6 +2588,10 @@ require_once __DIR__ . '/includes/header.php';
                         <input type="number" id="vp-<?= $v['id'] ?>" value="<?= $vHasOverride ? number_format($vPrice, 2, '.', '') : '' ?>"
                             step="0.01" min="0" placeholder="Same as <?= htmlspecialchars(formatPrice($vBase)) ?>"
                             class="form-control" style="width:150px;"
+                            <?php // Lets restorePriceBox()/markPriceOverride() judge this box by the
+                                  // same rule as the other two panels. Without it a refused save
+                                  // left the rejected figure sitting here. ?>
+                            data-base-price="<?= number_format((float)$vBase, 2, '.', '') ?>"
                             onchange="saveVariantRow(<?= $v['id'] ?>)">
                     </div>
                     <input type="number" id="vs-<?= $v['id'] ?>" min="0" value="<?= $v['stock_qty'] === null ? '' : (int)$v['stock_qty'] ?>"
@@ -2691,11 +2695,28 @@ require_once __DIR__ . '/includes/header.php';
                             </div>
                             <div>
                                 <label class="form-label" style="font-size:11px;">Price Override <span style="color:var(--text-muted);">(blank = main price)</span></label>
-                                <input type="number" step="0.01" min="0" id="cprice-<?= $c['id'] ?>" class="form-control" value="<?= $c['price_override'] !== null ? number_format($c['price_override'], 2) : '' ?>" onchange="updateColor(<?= $c['id'] ?>)">
+                                <?php /* number_format WITHOUT a thousands separator, or the box
+                                         silently empties and the override is destroyed.
+                                         ────────────────────────────────────────────────────
+                                         This printed value="1,650.00". An <input type="number">
+                                         refuses a value it cannot parse, so .value came back as
+                                         "" — the box rendered blank even though the override was
+                                         set, and the panel beside it correctly said "Price
+                                         Override of ₹1,650.00", which is how the two disagreed in
+                                         plain sight. updateColor() then reads .value and posts it,
+                                         so editing ANY field in this block — the colour's name,
+                                         its SKU, the Active tick — wrote price_override = NULL.
+                                         An override deleted by renaming a colour, silently, and
+                                         with it every per-size price it was suppressing.
+                                         Reproduced on a colour holding 1650: typing a SKU cleared
+                                         it. The per-size boxes below already pass '.' and '' here;
+                                         this is the same fix, and cmrp- below needs it too. */ ?>
+                                <input type="number" step="0.01" min="0" id="cprice-<?= $c['id'] ?>" class="form-control" value="<?= $c['price_override'] !== null ? number_format((float)$c['price_override'], 2, '.', '') : '' ?>" onchange="updateColor(<?= $c['id'] ?>)">
                             </div>
                             <div>
                                 <label class="form-label" style="font-size:11px;">MRP Override <span style="color:var(--text-muted);">(blank = main MRP)</span></label>
-                                <input type="number" step="0.01" min="0" id="cmrp-<?= $c['id'] ?>" class="form-control" value="<?= $c['mrp_price_override'] !== null ? number_format($c['mrp_price_override'], 2) : '' ?>" onchange="updateColor(<?= $c['id'] ?>)">
+                                <?php // Same separator bug as the Price Override above, same fix. ?>
+                                <input type="number" step="0.01" min="0" id="cmrp-<?= $c['id'] ?>" class="form-control" value="<?= $c['mrp_price_override'] !== null ? number_format((float)$c['mrp_price_override'], 2, '.', '') : '' ?>" onchange="updateColor(<?= $c['id'] ?>)">
                             </div>
                         </div>
 
@@ -3216,7 +3237,15 @@ async function togglePlainSize(code, label, checkbox) {
 // Label, stock and price always travel together: variant_handler.php rewrites all
 // of them in one statement, so sending only the field that changed would blank
 // the other two.
+/* Chained for the same reason as the colour cards — see chainRowSave(). This
+   panel posts the same full-card snapshot, so it raced the same way. The onchange
+   attributes in the markup still call savePlainSize(); the work moved down into
+   savePlainSizeNow() so the DOM is read when the request is actually built. */
 function savePlainSize(code) {
+    return chainRowSave('ps-' + code, () => savePlainSizeNow(code));
+}
+
+function savePlainSizeNow(code) {
     const checkbox = document.getElementById('psize-' + code);
     const variantId = checkbox ? checkbox.dataset.variantId : '';
     if (!variantId) return;
@@ -3224,6 +3253,7 @@ function savePlainSize(code) {
     const labelEl = document.getElementById('plabel-' + code);
     const stockEl = document.getElementById('pstock-' + code);
     const priceEl = document.getElementById('pprice-' + code);
+    if (priceBoxRejectedBadInput(priceEl)) { return; }
     const label   = (labelEl && labelEl.value.trim() !== '')
         ? labelEl.value.trim()
         : (checkbox.parentElement ? checkbox.parentElement.textContent.trim() : code);
@@ -3245,7 +3275,7 @@ function savePlainSize(code) {
     })
     .then(r => r.json())
     .then(data => {
-        if (!data.success) { restorePriceBox(priceEl, data); alert(data.message || 'Could not save this size.'); return; }
+        if (!data.success) { restorePriceBox(priceEl, data); showSaveError(data.message); return; }
         // This panel owns a price box too, and was the one saver that reported
         // neither the outline nor the clamp — so a price typed into the ladder
         // saved in complete silence, which is the fault being fixed everywhere
@@ -3339,6 +3369,22 @@ function showSizePriceNotice(message) {
     }
 }
 
+/* A refused save must not be dressed as a successful one.
+   ────────────────────────────────────────────────────────────────────────────
+   These failures went through the bare alert(), which dievon-dialog.js overrides
+   with its DEFAULT styling — so "₹100,000,000.00 is higher than this shop can
+   store, so it was not saved" was announced under a green tick and the heading
+   "Success". The words said refused and every other signal said saved, which is
+   the precise confusion this screen keeps being fixed for. */
+function showSaveError(message) {
+    const text = message || 'Could not save this size.';
+    if (typeof window.dievonAlert === 'function') {
+        window.dievonAlert(text, { type: 'error' });
+    } else {
+        alert(text);
+    }
+}
+
 /* Keep the "this size has its own price" outline honest after a save.
    ────────────────────────────────────────────────────────────────────────────
    The server decides it as "stored price differs from what the size would
@@ -3366,6 +3412,37 @@ function restorePriceBox(priceEl, data) {
         : data.stored_price;
     markPriceOverride(priceEl);
 }
+
+/* Unparseable text in a price box must not read as "clear this price".
+   ────────────────────────────────────────────────────────────────────────────
+   An <input type="number"> holding "abc" reports value === "", which is exactly
+   what a deliberately emptied box reports — so the savers posted price=0, the
+   handler read that as "follow the price above", and a size selling at 1,500
+   went back to the product price on a mistyped keystroke, answering
+   {"success":true} with no warning. The same class of mistake as "-50", which
+   IS refused; only the shape of the typo differed.
+
+   validity.badInput is what tells the two apart: true only when the control
+   holds text it cannot parse. The stashed value comes from focusin below,
+   because the DOM no longer holds the figure that was there a moment ago. */
+function priceBoxRejectedBadInput(priceEl) {
+    if (!priceEl || !priceEl.validity || !priceEl.validity.badInput) { return false; }
+    priceEl.value = priceEl.dataset.lastGood !== undefined ? priceEl.dataset.lastGood : '';
+    markPriceOverride(priceEl);
+    showSizePriceNotice('That price is not a number, so nothing on this size was changed. '
+        + 'To make this size follow the price above, clear the box or enter 0.');
+    return true;
+}
+
+/* Remember what a price box held before it was edited, so a rejected edit has
+   something truthful to go back to. Delegated because these boxes are also
+   created at runtime (addVariant, copyColorSizes). */
+document.addEventListener('focusin', function (e) {
+    const el = e.target;
+    if (el && el.id && /^(pprice-|cprice-\d+-|vp-)/.test(el.id)) {
+        el.dataset.lastGood = el.value;
+    }
+});
 
 function markPriceOverride(priceEl) {
     if (!priceEl) { return; }
@@ -3400,6 +3477,7 @@ function saveVariantRow(id) {
         const availEl = document.getElementById('va-' + id);
         const name    = nameEl ? nameEl.value.trim() : '';
         if (!name) { if (nameEl) nameEl.focus(); return; }
+        if (priceBoxRejectedBadInput(priceEl)) { return; }
 
         const body = new URLSearchParams();
         body.set('action', 'update');
@@ -3427,10 +3505,11 @@ function saveVariantRow(id) {
                 row.style.borderColor = data.success ? 'rgba(16,185,129,0.4)' : 'rgba(239,68,68,0.4)';
                 setTimeout(() => { row.style.borderColor = ''; }, 1200);
             }
-            if (!data.success) { alert(data.message || 'Could not save this size.'); return; }
+            if (!data.success) { restorePriceBox(priceEl, data); showSaveError(data.message); return; }
             // A green border means "stored", which is true — and used to be the
             // whole story even when the figure stored was one the shop will never
             // charge. See showSizePriceNotice().
+            markPriceOverride(priceEl);
             showSizePriceNotice(data.warning);
         })
         .catch(() => alert('Network error. Please try again.'));
@@ -3906,6 +3985,7 @@ function saveColorSize(colorId, code) {
     const labelEl = document.getElementById('clabel-' + colorId + '-' + code);
     const stockEl = document.getElementById('cstock-' + colorId + '-' + code);
     const priceEl = document.getElementById('cprice-' + colorId + '-' + code);
+    if (priceBoxRejectedBadInput(priceEl)) { return; }
     // Falls back to the ladder caption when the box is left empty, so a size can
     // never end up nameless on the storefront.
     const label = (labelEl && labelEl.value.trim() !== '')
@@ -3925,7 +4005,7 @@ function saveColorSize(colorId, code) {
     return fetch('variant_handler.php', { method: 'POST', body: fd })
         .then(r => r.json())
         .then(data => {
-            if (!data.success) { restorePriceBox(priceEl, data); alert(data.message || 'Error saving this size.'); return data; }
+            if (!data.success) { restorePriceBox(priceEl, data); showSaveError(data.message); return data; }
             // The outline has to follow the number it describes, or a size that has
             // just been given its own price goes on looking like one that follows
             // the price above until the page is reloaded.
@@ -3938,9 +4018,37 @@ function saveColorSize(colorId, code) {
         .catch(() => alert('Network error. Please try again.'));
 }
 
-function updateColorSizeStock(colorId, code) { saveColorSize(colorId, code); }
-function updateColorSizeLabel(colorId, code) { saveColorSize(colorId, code); }
-function updateColorSizePrice(colorId, code) { saveColorSize(colorId, code); }
+/* One save at a time per size row, in the order the edits were made.
+   ────────────────────────────────────────────────────────────────────────────
+   Every control on a size card posts a FULL snapshot of that card — name, stock,
+   available, price — so two saves in flight together are two snapshots racing,
+   and whichever lands last wins wholesale. Edit stock and then price a few
+   milliseconds apart and the stock request, built before the price box was
+   touched and still carrying the OLD price, can arrive after the price request
+   and quietly undo it. Measured at 0 ms interleaving: 3 of 8 rounds kept the
+   previous round's figure.
+
+   Harmless until now only because saveColorSize() used to post a hard-coded
+   price=0 — there was no price on these cards to lose. Adding the price box put
+   a real figure into every snapshot and made the race destructive.
+
+   Chaining rather than debouncing: the callback reads the DOM when it RUNS, so
+   each request is built from the boxes as they stand after the previous one
+   finished, and the later edit always wins. A debounce would also close the race
+   but adds a window where navigating away loses the edit outright — a fault the
+   variant-row panel already has at 600 ms. `.then(fn, fn)` so one failed save
+   does not strand the rest of the queue for that row. */
+const dvSaveChain = {};
+function chainRowSave(key, run) {
+    const prev = dvSaveChain[key] || Promise.resolve();
+    const next = prev.then(run, run);
+    dvSaveChain[key] = next.catch(() => {});
+    return next;
+}
+
+function updateColorSizeStock(colorId, code) { chainRowSave('cs-' + colorId + '-' + code, () => saveColorSize(colorId, code)); }
+function updateColorSizeLabel(colorId, code) { chainRowSave('cs-' + colorId + '-' + code, () => saveColorSize(colorId, code)); }
+function updateColorSizePrice(colorId, code) { chainRowSave('cs-' + colorId + '-' + code, () => saveColorSize(colorId, code)); }
 
 /**
  * Copy the ticked sizes and their stock from one colour onto another.

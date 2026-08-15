@@ -630,12 +630,26 @@ require_once __DIR__ . '/../includes/header.php';
     // listing guidance.
     $schemaVariants = [];
     $variantRows = $productColors
-        ? array_merge(...array_map(fn($c) => array_map(fn($v) => $v + ['_color' => $c['color_name'], '_csku' => $c['sku'] ?? ''], $c['sizes'] ?? []), $productColors) ?: [[]])
+        ? array_merge(...array_map(fn($c) => array_map(fn($v) => $v + ['_color' => $c['color_name'], '_csku' => $c['sku'] ?? '', '_colorRow' => $c], $c['sizes'] ?? []), $productColors) ?: [[]])
         : $variants;
     foreach ($variantRows as $v) {
         $sz = trim(str_replace('Size:', '', (string)($v['size_code'] ?? $v['name'] ?? '')));
         if ($sz === '') { continue; }
-        $vPrice = (float)($v['price'] ?? 0) > 0 ? (float)$v['price'] : (float)$product['price'];
+        /* Resolved through effectiveVariantPrice(), like every other price on
+           this page.
+           ────────────────────────────────────────────────────────────────────
+           This was a second, hand-written copy of the ladder — "the size's price
+           if it has one, else the product's" — which knows nothing about a
+           colour's price_override or the sale clamp. So this block published
+           figures the shop refuses to charge, INSIDE the same document as a
+           correct one: the ProductGroup offer above resolves through
+           productPriceRange() and said ₹1,650 while this loop said ₹2,450 for
+           the same size, because Rose carries an override. On a sale product it
+           published the pre-clamp ₹2,450 against a page and bag charging ₹1,899.
+           Two contradictory prices for one size, in the format Google trusts
+           most, which is a Merchant policy problem and not merely untidy.
+           The colour row is carried through above so its override still wins. */
+        $vPrice = effectiveVariantPrice($product, $v, $v['_colorRow'] ?? null);
         $vStock = array_key_exists('stock_qty', $v) && $v['stock_qty'] !== null
             ? (int)$v['stock_qty'] > 0 : $schemaInStock;
         $entry = [

@@ -79,7 +79,14 @@ function sizePriceClampNotice(PDO $pdo, int $productId, float $enteredPrice, ?in
         $cs = $pdo->prepare("SELECT color_name, price_override FROM product_colors WHERE id = :cid AND product_id = :pid");
         $cs->execute(['cid' => $colorId, 'pid' => $productId]);
         $crow = $cs->fetch(PDO::FETCH_ASSOC);
-        if ($crow && $crow['price_override'] !== null) {
+        /* Nothing to warn about when the two figures agree.
+           This tested only that an override EXISTS, so entering the override's
+           own price produced "this size will still sell at ₹1,650.00, not
+           ₹1,650.00" — a warning that contradicts itself and teaches the owner
+           to dismiss the ones that matter. The clamp branch below already
+           compares before speaking; this one now does too. */
+        if ($crow && $crow['price_override'] !== null
+            && abs((float)$crow['price_override'] - $enteredPrice) > 0.005) {
             return sprintf(
                 'Saved — but this size will still sell at %s, not %s. The colour “%s” has a Price Override '
                 . 'of %s, and a colour override takes precedence over a per-size price, so every size in '
@@ -121,8 +128,12 @@ function sizePriceClampNotice(PDO $pdo, int $productId, float $enteredPrice, ?in
     );
 }
 
+/** The largest figure product_variants.price can hold: DECIMAL(10,2). */
+const SIZE_PRICE_MAX = 99999999.99;
+
 /**
- * A negative price is a typo, and must not be read as an instruction.
+ * A price outside what the column can hold is a typo, and must not be read as
+ * an instruction — in either direction.
  *
  * Blank and 0 both mean "this size follows the price above", and the branches
  * below turn any figure of 0 or less into the product price to express that.
@@ -141,15 +152,36 @@ function sizePriceClampNotice(PDO $pdo, int $productId, float $enteredPrice, ?in
  * So the refusal has to be here, where the write is. Nothing is written when
  * this returns a message, which is the point — the price already stored stays
  * stored, and the caller is told which figure was rejected.
+ *
+ * The upper bound is the same rule, and was missed when the lower one was added.
+ * price is DECIMAL(10,2) and the connection runs STRICT_TRANS_TABLES, so 100000000
+ * does not round or truncate — PDO throws SQLSTATE[22003] out of range. Nothing
+ * caught it, so the handler died mid-request and answered with a PHP fatal
+ * instead of JSON; the caller's r.json() then threw and reported "Network error.
+ * Please try again." for what is purely a validation problem, leaving the box
+ * showing a figure the database had refused. Measured: 99999999.99 writes,
+ * 100000000 throws. Bounded here so both ends fail the same clean way.
  */
-function rejectNegativePrice(bool $priceProvided, float $price): ?string
+function rejectPriceOutOfRange(bool $priceProvided, float $price): ?string
 {
-    if (!$priceProvided || $price >= 0) { return null; }
-    return sprintf(
-        'A price cannot be negative, so %s was not saved and nothing on this size was changed. '
-        . 'To make this size follow the price above, clear the box or enter 0.',
-        formatPrice($price)
-    );
+    if (!$priceProvided) { return null; }
+
+    if ($price < 0) {
+        return sprintf(
+            'A price cannot be negative, so %s was not saved and nothing on this size was changed. '
+            . 'To make this size follow the price above, clear the box or enter 0.',
+            formatPrice($price)
+        );
+    }
+    if ($price > SIZE_PRICE_MAX) {
+        return sprintf(
+            '%s is higher than this shop can store, so it was not saved and nothing on this size '
+            . 'was changed. The most a size can be priced at is %s.',
+            formatPrice($price),
+            formatPrice(SIZE_PRICE_MAX)
+        );
+    }
+    return null;
 }
 
 // ── LIST all variants for a product (optionally filtered by colour) ──
@@ -201,7 +233,7 @@ if ($action === 'add') {
     }
 
     // Refused before the INSERT, so a mistyped figure creates nothing.
-    if ($negMsg = rejectNegativePrice(array_key_exists('price', $_POST), $enteredPrice)) {
+    if ($negMsg = rejectPriceOutOfRange(array_key_exists('price', $_POST), $enteredPrice)) {
         echo json_encode(['success' => false, 'message' => $negMsg]);
         exit;
     }
@@ -275,7 +307,7 @@ if ($action === 'update') {
        The stored figure travels back with the refusal: the box on screen still
        holds the rejected number, and a box showing one thing while the database
        holds another is the fault this whole screen has been fixed for twice. */
-    if ($negMsg = rejectNegativePrice($priceProvided, $enteredPrice)) {
+    if ($negMsg = rejectPriceOutOfRange($priceProvided, $enteredPrice)) {
         $cur = $pdo->prepare("SELECT price FROM product_variants WHERE id = :id AND product_id = :pid");
         $cur->execute(['id' => $id, 'pid' => $productId]);
         $stored = $cur->fetchColumn();
