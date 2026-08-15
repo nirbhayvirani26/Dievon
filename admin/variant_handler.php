@@ -232,6 +232,33 @@ if ($action === 'add') {
         exit;
     }
 
+    /* The product must exist, and the colour must belong to it.
+       ────────────────────────────────────────────────────────────────────────
+       Neither was checked. A size could be created against a product_id that
+       has never existed — a row nothing will ever read or clean up — and, worse,
+       against a colour belonging to a DIFFERENT product. The storefront's
+       colour-size query selects by color_id without also filtering on
+       product_id, so a size added to product A under product B's colour
+       rendered on B's page as one of B's sizes. It was unbuyable, because the
+       cart does check ownership, so a shopper could pick a size that then
+       refused to go in the bag with no explanation on screen.
+
+       Both are cheap lookups on a path that runs once per size added. */
+    $pExists = $pdo->prepare("SELECT id FROM products WHERE id = :pid");
+    $pExists->execute(['pid' => $productId]);
+    if (!$pExists->fetchColumn()) {
+        echo json_encode(['success' => false, 'message' => 'That product no longer exists.']);
+        exit;
+    }
+    if ($colorId !== null) {
+        $cOwns = $pdo->prepare("SELECT id FROM product_colors WHERE id = :cid AND product_id = :pid");
+        $cOwns->execute(['cid' => $colorId, 'pid' => $productId]);
+        if (!$cOwns->fetchColumn()) {
+            echo json_encode(['success' => false, 'message' => 'That colour does not belong to this product.']);
+            exit;
+        }
+    }
+
     // Refused before the INSERT, so a mistyped figure creates nothing.
     if ($negMsg = rejectPriceOutOfRange(array_key_exists('price', $_POST), $enteredPrice)) {
         echo json_encode(['success' => false, 'message' => $negMsg]);

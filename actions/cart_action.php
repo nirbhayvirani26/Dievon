@@ -173,8 +173,29 @@ switch ($action) {
                     echo json_encode(['success' => false, 'message' => 'Selected colour is no longer available.']);
                     exit;
                 }
-                if ((int)$variant['stock_qty'] < $addQty) {
-                    echo json_encode(['success' => false, 'message' => 'Only ' . max(0, (int)$variant['stock_qty']) . ' left in this size/colour.']);
+                /* NULL stock means "not counted", not "none left".
+                   ────────────────────────────────────────────────────────────
+                   This cast straight to int, and (int)null is 0, so an UNTRACKED
+                   colour size was refused with "Only 0 left in this size/colour"
+                   — while the plain-size branch below, and both checkout
+                   branches, all guard with `!== null` and sell the identical
+                   row. Two rows with the same data, opposite answers, depending
+                   only on whether a colour was attached.
+
+                   The product page advertises both as buyable, so the shopper
+                   met the refusal only at the moment they tried to add to bag.
+                   Same rule as everywhere else now: only enforce a ceiling when
+                   the product tracks stock AND a number is actually recorded. */
+                if (!empty($product['track_stock'])
+                    && array_key_exists('stock_qty', $variant)
+                    && $variant['stock_qty'] !== null
+                    && (int)$variant['stock_qty'] < $addQty) {
+                    echo json_encode([
+                        'success' => false,
+                        'message' => (int)$variant['stock_qty'] === 0
+                            ? 'That size is sold out in this colour.'
+                            : 'Only ' . max(0, (int)$variant['stock_qty']) . ' left in this size/colour.',
+                    ]);
                     exit;
                 }
                 $colorId   = (int)$color['id'];
