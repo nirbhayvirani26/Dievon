@@ -273,6 +273,20 @@
         display: flex !important;
     }
 
+    /* The product page hands this strip to its sticky Add to Bag bar — the
+       primary action there is to buy, not to navigate, and stacking both would
+       take 121px of an 844px screen. The body class is set by JS (initPdpBuyBar
+       in pages/product.php), so a browser that never runs it keeps the dock.
+       !important because the rule above is !important; without it the dock and
+       the buy bar render on top of each other. */
+    body.has-pdp-buy-bar .mobile-bottom-dock {
+        display: none !important;
+    }
+    /* Back-to-top clears the dock by 70px; the buy bar is taller. */
+    body.has-pdp-buy-bar #backToTopBtn {
+        bottom: 88px !important;
+    }
+
     .whatsapp-float-btn {
         display: none !important;
     }

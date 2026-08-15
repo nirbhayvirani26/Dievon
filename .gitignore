@@ -36,3 +36,16 @@ uploads/
 # web access to the folder is kept so a fresh clone still has the guard.
 database/backups/*.sql
 database/backups/*.sql.gz
+
+# Credential dumps and database recovery material.
+# env.backup.txt held live Razorpay and SMTP secrets in cleartext and was
+# committed from the initial commit onward. Untracking does NOT remove it from
+# history — those credentials must be rotated. These patterns stop the next one.
+database/recovery_*/
+database/**/*.sql
+*env.backup*
+*.env.bak
+
+# Python bytecode from the bundled skill search tool
+__pycache__/
+*.pyc

@@ -109,15 +109,69 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_post']) && !veri
     $tags     = trim($_POST['tags'] ?? '');
     $metaT    = trim($_POST['meta_title'] ?? '');
     $metaD    = trim($_POST['meta_description'] ?? '');
-    $status   = $_POST['status'] ?? 'Published';
+    // status is written straight into an ENUM('Published','Draft'). Anything else
+    // is coerced by the database rather than refused, so it is whitelisted here
+    // for the same reason gender below is.
+    $status   = ($_POST['status'] ?? 'Published') === 'Draft' ? 'Draft' : 'Published';
     // Audience. Anything unrecognised falls back to womenswear, which is what
     // every article was before this field existed.
     $artGender = strtolower(trim((string)($_POST['gender'] ?? 'women')));
     if (!in_array($artGender, ['women','men','both'], true)) { $artGender = 'women'; }
     $imgName  = $_POST['existing_image'] ?? '';
 
-    $slug = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $title), '-'));
-    if (!$slug) $slug = 'post-' . time();
+    /* Lengths are checked HERE rather than being left to the column definition.
+       Every one of these fields went into the INSERT unmeasured, so a title of
+       256 characters — ordinary for a long editorial headline — came back as
+       "Error saving article: SQLSTATE[22001]: String data, right truncated:
+       1406 Data too long for column 'title' at row 1". That is the raw driver
+       message printed to the screen: it names the table column, it tells the
+       author nothing they can act on, and it discloses schema detail to anyone
+       who can reach this form. The same applies to excerpt, tags and the two
+       SEO overrides, which are all VARCHARs of various sizes.
+       Measured with mb_strlen, not strlen: the columns count CHARACTERS, and a
+       Devanagari or accented headline is several bytes per character, so a byte
+       count would refuse titles the database would have accepted. */
+    $blogLimits = [
+        'Title'            => [$title,  255],
+        'Category'         => [$category, 100],
+        'Tags'             => [$tags,   255],
+        'Meta title'       => [$metaT,  255],
+    ];
+    foreach ($blogLimits as $fieldLabel => [$fieldValue, $fieldMax]) {
+        if (mb_strlen((string)$fieldValue) > $fieldMax) {
+            $errorMsg = $fieldLabel . ' is too long — keep it to ' . $fieldMax
+                      . ' characters or fewer. Nothing was saved.';
+            break;
+        }
+    }
+
+    if ($errorMsg === '') {
+        $slug = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $title), '-'));
+        if (!$slug) $slug = 'post-' . time();
+        // The slug column is UNIQUE, and nothing checked it before the write.
+        // Two articles sharing a title — "Autumn Edit", written a year apart —
+        // produced the same slug, so the second save died on a duplicate-key
+        // error that was printed verbatim to the author. A title made only of
+        // non-Latin characters is worse: every one of them reduces to the same
+        // 'post-<unix second>' fallback above, so two of them saved in the same
+        // second collide as well.
+        // Suffixing is the same approach roles_handler.php already uses when it
+        // derives a role slug, so both screens behave alike.
+        $slug = mb_substr($slug, 0, 240);
+        try {
+            $slugChk = $pdo->prepare(
+                "SELECT COUNT(*) FROM blog_posts WHERE slug = :s AND id <> :id"
+            );
+            $slugBase = $slug;
+            $slugN    = 2;
+            while (true) {
+                $slugChk->execute([':s' => $slug, ':id' => $postId]);
+                if ((int)$slugChk->fetchColumn() === 0) { break; }
+                $slug = $slugBase . '-' . $slugN++;
+                if ($slugN > 200) { $slug = $slugBase . '-' . bin2hex(random_bytes(3)); break; }
+            }
+        } catch (PDOException $eSlug) { /* pre-migration: keep the derived slug */ }
+    }
 
     // Superseded image, deleted only after the save commits.
     $blogStaleImage = '';
@@ -173,7 +227,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_post']) && !veri
     // that is worse than it sounds: this one statement writes the title,
     // category, image, excerpt, tags and SEO fields too, so every edit made in
     // the same submission was discarded silently alongside it.
-    if (!$title || !$content) {
+    if ($errorMsg === '' && (!$title || !$content)) {
         if ($title && $contentBefore !== '' && $content === '') {
             $errorMsg = 'Nothing was saved. The article body contained only formatting '
                       . '(no text), so there was nothing to publish.';
@@ -182,7 +236,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_post']) && !veri
         }
     }
 
-    if ($title && $content) {
+    // $errorMsg in the condition, so a field that failed the length check above
+    // does not go on to be written anyway.
+    if ($errorMsg === '' && $title && $content) {
         try {
             if ($postId > 0) {
                 // UPDATE
@@ -204,8 +260,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_post']) && !veri
                 $successMsg = "New blog article '{$title}' published successfully!";
             }
             $editPost = null;
+            logAdminAction($_SESSION['admin_id'] ?? 1,
+                $postId > 0 ? 'update_blog' : 'create_blog',
+                ($postId > 0 ? "Updated blog post ID $postId" : 'Created blog post')
+                . " ('{$title}', {$status})");
         } catch (PDOException $e) {
-            $errorMsg = "Error saving article: " . $e->getMessage();
+            // The driver's own words used to be printed straight to the page.
+            // They named the table and column on a length overflow and quoted the
+            // clashing value on a duplicate key — schema detail on a screen an
+            // Editor can open, and nothing an author could act on either way.
+            // Logged for whoever maintains the shop, summarised for whoever is
+            // writing the article.
+            error_log('blog save: ' . $e->getMessage());
+            $errorMsg = 'The article could not be saved. Nothing was changed — '
+                      . 'check the title and try again.';
         }
     }
 }
@@ -464,11 +532,27 @@ require_once __DIR__ . '/includes/header.php';
                             <td><span style="font-size:12px; font-weight:700; background:var(--bg-surface-soft); padding:4px 8px; border-radius:4px; color:var(--color-primary);"><?= htmlspecialchars($p['category']) ?></span></td>
                             <td style="font-size:12px; color:var(--text-muted);"><?= date('d M Y', strtotime($p['published_date'])) ?></td>
                             <td>
-                                <a href="blog.php?toggle=<?= $p['id'] ?>" style="text-decoration:none;">
-                                    <span class="badge-luxury" style="background:<?= $p['status']==='Published' ? '#ecfdf5' : '#fef2f2' ?>; color:<?= $p['status']==='Published' ? '#10b981' : '#ef4444' ?>; cursor:pointer;">
-                                        <?= $p['status'] ?>
-                                    </span>
-                                </a>
+                                <?php /* The same bug the Delete button below had, in the same table.
+                                         This was <a href="blog.php?toggle=ID">, and nothing in this
+                                         file reads $_GET['toggle'] — the only handler wants a POST
+                                         carrying action=toggle_blog and a CSRF token. So the badge
+                                         showed a pointer cursor, the page reloaded, and the article
+                                         stayed exactly as published as it was before. An owner
+                                         taking an article down believed they had.
+                                         A form for the same reason the delete is one: a URL that
+                                         changes what the public can see must not be fireable by
+                                         anything that merely follows links, and a link cannot carry
+                                         a CSRF token. */ ?>
+                                <form method="POST" style="display:inline;">
+                                    <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
+                                    <input type="hidden" name="action" value="toggle_blog">
+                                    <input type="hidden" name="blog_id" value="<?= (int)$p['id'] ?>">
+                                    <button type="submit" class="badge-luxury"
+                                            style="background:<?= $p['status']==='Published' ? '#ecfdf5' : '#fef2f2' ?>; color:<?= $p['status']==='Published' ? '#10b981' : '#ef4444' ?>; cursor:pointer; border:0; font:inherit;"
+                                            title="<?= $p['status']==='Published' ? 'Unpublish this article' : 'Publish this article' ?>">
+                                        <?= htmlspecialchars((string)$p['status']) ?>
+                                    </button>
+                                </form>
                             </td>
                             <td style="text-align:right;">
                                 <div class="admin-actions">

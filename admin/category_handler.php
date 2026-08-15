@@ -41,14 +41,40 @@ if ($action === 'add') {
     if (strlen($name) < 2) { echo json_encode(['success' => false, 'message' => 'Name too short.']); exit; }
 
     $maxOrder = $pdo->query("SELECT COALESCE(MAX(sort_order),0) FROM categories")->fetchColumn();
-    $stmt = $pdo->prepare("INSERT INTO categories (name, sort_order) VALUES (:name, :order)");
-    if ($stmt->execute(['name' => $name, 'order' => $maxOrder + 1])) {
+    /* The slug is set HERE, at creation, and not left for later.
+       ────────────────────────────────────────────────────────────────────────
+       This INSERT listed only (name, sort_order), so every category added
+       through the quick-add — the one on the product form, which is the fast
+       path an owner actually uses — was born with an empty slug. A category
+       with no slug never gets a /collections/<slug> address: categoryUrlByName()
+       skips it and falls back to ?category=<name> forever, and nothing in the
+       admin ever offers to fill it in. The main Categories page set a slug from
+       the day it was written; only this path did not. */
+    $stmt = $pdo->prepare("INSERT INTO categories (name, sort_order, slug) VALUES (:name, :order, :slug)");
+    if ($stmt->execute([
+        'name'  => $name,
+        'order' => $maxOrder + 1,
+        'slug'  => uniqueCategorySlug($pdo, $name),
+    ])) {
+        /* The new id is captured ONCE, before anything else writes.
+           ────────────────────────────────────────────────────────────────────
+           lastInsertId() answers for the most recent INSERT on the connection,
+           not for the statement above it — and the size-guide helper on the next
+           line performs its own INSERT. So the id returned to the caller
+           described the size_guide_charts row (or 0 when that insert did not
+           happen), never the category just created. The screen then held a
+           category whose id was wrong, so the very next edit or delete acted on
+           nothing, or on another table's row number.
+           categories.php documents fixing exactly this; the quick-add handler
+           kept the bug. */
+        $newCategoryId = (int)$pdo->lastInsertId();
+
         // The quick-add has no audience field, so the chart is cloned from the
         // women's default — the same template a category with no gender gets.
-        autoCreateSizeGuideChartForCategory($pdo, (int)$pdo->lastInsertId(), 'women');
+        autoCreateSizeGuideChartForCategory($pdo, $newCategoryId, 'women');
         echo json_encode([
             'success' => true,
-            'id' => $pdo->lastInsertId(),
+            'id' => $newCategoryId,
             'name' => $name,
             'sort_order' => $maxOrder + 1
         ]);
@@ -112,16 +138,41 @@ if ($action === 'delete') {
     $id = (int)($_POST['id'] ?? 0);
     if ($id <= 0) { echo json_encode(['success' => false, 'message' => 'Invalid ID.']); exit; }
 
-    // Check if any products use this category name
     $catName = $pdo->prepare("SELECT name FROM categories WHERE id = :id");
     $catName->execute(['id' => $id]);
     $cat = $catName->fetch();
     if (!$cat) { echo json_encode(['success' => false, 'message' => 'Not found.']); exit; }
 
-    $count = $pdo->prepare("SELECT COUNT(*) FROM products WHERE category = :cat");
-    $count->execute(['cat' => $cat['name']]);
+    /* A product references its category twice — category_id AND the plain-text
+       `category` — so both have to be checked, exactly as the delete on
+       categories.php does. Checking only the NAME let a category that was still
+       the fk target of a product (its text edited or imported without the name)
+       be deleted anyway, orphaning that category_id onto a row that no longer
+       exists. Matched on either so a product cannot be stranded whichever way it
+       points. */
+    $count = $pdo->prepare(
+        "SELECT COUNT(*) FROM products
+          WHERE (category_id = :id OR category = :cat)
+            AND (is_deleted = 0 OR is_deleted IS NULL)"
+    );
+    $count->execute(['id' => $id, 'cat' => $cat['name']]);
     if ($count->fetchColumn() > 0) {
         echo json_encode(['success' => false, 'message' => 'Cannot delete: products are using this category. Reassign them first.']);
+        exit;
+    }
+
+    /* A parent cannot be removed out from under its children.
+       ────────────────────────────────────────────────────────────────────────
+       This check was missing entirely, so deleting a parent left every
+       sub-category pointing at a parent_id that is now gone — the subtree is
+       stranded, its own collection page 404s, and the products beneath it drop
+       out of the parent's navigation with nothing on screen to explain it. The
+       delete on categories.php refuses this; this endpoint, reachable by a direct
+       POST, has to refuse it too. */
+    $childCount = $pdo->prepare("SELECT COUNT(*) FROM categories WHERE parent_id = :id");
+    $childCount->execute(['id' => $id]);
+    if ((int)$childCount->fetchColumn() > 0) {
+        echo json_encode(['success' => false, 'message' => 'Cannot delete: this category still has sub-categories. Delete or reassign those first.']);
         exit;
     }
 

@@ -630,12 +630,26 @@ require_once __DIR__ . '/../includes/header.php';
     // listing guidance.
     $schemaVariants = [];
     $variantRows = $productColors
-        ? array_merge(...array_map(fn($c) => array_map(fn($v) => $v + ['_color' => $c['color_name'], '_csku' => $c['sku'] ?? ''], $c['sizes'] ?? []), $productColors) ?: [[]])
+        ? array_merge(...array_map(fn($c) => array_map(fn($v) => $v + ['_color' => $c['color_name'], '_csku' => $c['sku'] ?? '', '_colorRow' => $c], $c['sizes'] ?? []), $productColors) ?: [[]])
         : $variants;
     foreach ($variantRows as $v) {
         $sz = trim(str_replace('Size:', '', (string)($v['size_code'] ?? $v['name'] ?? '')));
         if ($sz === '') { continue; }
-        $vPrice = (float)($v['price'] ?? 0) > 0 ? (float)$v['price'] : (float)$product['price'];
+        /* Resolved through effectiveVariantPrice(), like every other price on
+           this page.
+           ────────────────────────────────────────────────────────────────────
+           This was a second, hand-written copy of the ladder — "the size's price
+           if it has one, else the product's" — which knows nothing about a
+           colour's price_override or the sale clamp. So this block published
+           figures the shop refuses to charge, INSIDE the same document as a
+           correct one: the ProductGroup offer above resolves through
+           productPriceRange() and said ₹1,650 while this loop said ₹2,450 for
+           the same size, because Rose carries an override. On a sale product it
+           published the pre-clamp ₹2,450 against a page and bag charging ₹1,899.
+           Two contradictory prices for one size, in the format Google trusts
+           most, which is a Merchant policy problem and not merely untidy.
+           The colour row is carried through above so its override still wins. */
+        $vPrice = effectiveVariantPrice($product, $v, $v['_colorRow'] ?? null);
         $vStock = array_key_exists('stock_qty', $v) && $v['stock_qty'] !== null
             ? (int)$v['stock_qty'] > 0 : $schemaInStock;
         $entry = [
@@ -730,11 +744,23 @@ require_once __DIR__ . '/../includes/header.php';
 </script>
 
 <!-- ══ Product Hero ════════════════════════════ -->
+<?php /* Unlike every other page that uses .luxury-hero, this one is not the page's
+         only heading — the garment's real name is an <h1> a hundred pixels below,
+         inside the buy box. So this band is a <p>, not a second <h1>: two <h1>s on
+         one page give a crawler two candidate titles and make a screen reader's
+         heading list read the same product name twice in a row.
+
+         It is also hidden below 992px (.product-hero, style.css). On a phone it was
+         207px of the first 844 — a quarter of the opening screen — spent showing a
+         blurred copy of the photograph that appears sharp immediately underneath,
+         above a breadcrumb that repeats the category and a title that repeats the
+         name. Three statements of the same thing before the shopper reaches a size.
+         On a desktop it costs nothing and stays. */ ?>
 <?php if (!empty($product['image'])): ?>
-<section class="luxury-hero has-bg-image section-mb-sm" style="--hero-bg-image: url('<?= SITE_URL ?>/uploads/products/<?= htmlspecialchars($product['image']) ?>')">
+<section class="luxury-hero has-bg-image product-hero section-mb-sm" style="--hero-bg-image: url('<?= SITE_URL ?>/uploads/products/<?= htmlspecialchars($product['image']) ?>')">
     <div class="container">
         <span class="luxury-hero-eyebrow"><?= htmlspecialchars($product['category']) ?></span>
-        <h1><?= htmlspecialchars($product['name']) ?></h1>
+        <p class="product-hero-name"><?= htmlspecialchars($product['name']) ?></p>
     </div>
 </section>
 <?php endif; ?>
@@ -776,7 +802,20 @@ require_once __DIR__ . '/../includes/header.php';
                 ?>
                 <div class="product-gallery-grid" id="productGalleryGrid">
                     <?php foreach ($initialGallery as $gIndex => $gFile): ?>
-                    <div class="gallery-grid-item" onclick="openProductLightbox('<?= SITE_URL ?>/uploads/products/<?= htmlspecialchars($gFile) ?>')">
+                    <?php /* Operable by keyboard, not only by mouse.
+                             ────────────────────────────────────────────────────
+                             This was a bare <div onclick>: tabindex null, role
+                             null, no key handler — so the enlarged view of the
+                             garment was reachable by pointer alone. On a clothing
+                             shop the photographs ARE the product, and a keyboard
+                             or screen-reader user could not open a single one.
+                             WCAG 2.1.1. role + tabindex + Enter/Space is the
+                             standard retrofit when the element cannot become a
+                             real <button> without restyling the grid. */ ?>
+                    <div class="gallery-grid-item" role="button" tabindex="0"
+                         aria-label="View larger image<?= $gIndex === 0 ? '' : ' ' . ($gIndex + 1) ?>"
+                         onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}"
+                         onclick="openProductLightbox('<?= SITE_URL ?>/uploads/products/<?= htmlspecialchars($gFile) ?>')">
                         <?php if ($gIndex === 0 && !empty($product['badge'])): ?>
                             <span class="badge-luxury badge-product-page"><?= htmlspecialchars($product['badge']) ?></span>
                         <?php endif; ?>
@@ -821,11 +860,19 @@ require_once __DIR__ . '/../includes/header.php';
                     <span><?= htmlspecialchars($product['name']) ?></span>
                 </nav>
 
-                <?php if (empty($product['image'])): ?>
+                <?php /* Always rendered. This used to be `if (empty($product['image']))`,
+                         on the reasoning that a product WITH a photograph already had its
+                         name in the hero band above — so the buy box showed a breadcrumb
+                         and then jumped straight to a price, and the garment's name existed
+                         on the page exactly once, 200px away in a decorative band.
+
+                         That made the hero load-bearing for something it was never meant to
+                         carry. The name belongs here, beside the price, where a shopper
+                         reads it and where the page's single <h1> should be; the band above
+                         is decoration and now says so. */ ?>
                 <h1 class="product-title-heading">
                     <?= htmlspecialchars($product['name']) ?>
                 </h1>
-                <?php endif; ?>
 
                 <?php
                 // The price the page OPENS on, decided here rather than by JavaScript.
@@ -853,7 +900,18 @@ require_once __DIR__ . '/../includes/header.php';
                     : 0;
                 ?>
                 <?php if ($dvSoldInCountry): ?>
-                <div class="product-price-heading" id="productPriceDisplay">
+                <?php /* Announced, because choosing a size now MOVES this figure.
+                         ──────────────────────────────────────────────────────────
+                         Selecting a size is signalled to a sighted user by the
+                         heading changing; a screen-reader user got aria-pressed on
+                         the pill and silence about the price. That was tolerable
+                         while the heading never moved for a size — it moves now, so
+                         the one piece of information the interaction exists to
+                         convey was the piece not being conveyed. polite, so it waits
+                         for a pause rather than interrupting the pill's own label;
+                         atomic, so the amount, the MRP and the discount badge are
+                         read as one price rather than three loose numbers. */ ?>
+                <div class="product-price-heading" id="productPriceDisplay" role="status" aria-live="polite" aria-atomic="true">
                     <span class="price-current-amount" id="priceCurrentAmount"><?= formatPrice($openPrice) ?></span>
                     <span class="price-mrp-amount" id="priceMrpAmount" style="<?= $openHasDiscount ? '' : 'display:none;' ?>"><?= formatPrice($openMrp) ?></span>
                     <span class="price-off-badge" id="priceOffBadge" style="<?= $openHasDiscount ? '' : 'display:none;' ?>"><?= $openOffPercent ?>% OFF</span>
@@ -867,9 +925,21 @@ require_once __DIR__ . '/../includes/header.php';
                 </div>
                 <?php endif; ?>
 
-                <div class="product-description-text">
+                <?php /* The full description is always in the page — clamping is visual only,
+                         so a crawler and a screen reader still get every word, and the copy
+                         keeps its place directly under the price where it belongs for
+                         scanning. On a phone it was costing 450px between the price and the
+                         size picker, which pushed Add to Bag past two full screens. The
+                         toggle is added by JS and only when the text actually overflows, so a
+                         one-line description never grows a pointless "Read more". */ ?>
+                <div class="product-description-text" id="productDescriptionText">
                     <?= nl2br(htmlspecialchars($product['description'])) ?>
                 </div>
+                <button type="button" class="desc-read-more" id="descReadMoreBtn"
+                        aria-expanded="false" aria-controls="productDescriptionText" hidden>
+                    <span class="desc-read-more-label">Read more</span>
+                    <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+                </button>
 
                 <?php if (!empty($productColors)): ?>
                 <?php // The SWATCHES need two colours to be a choice; the size ladder below
@@ -1030,7 +1100,24 @@ require_once __DIR__ . '/../includes/header.php';
                                           // dearer size on a discounted product quoted a figure the
                                           // cart then capped — the page said ₹2,099 and the bag said
                                           // ₹1,899. Same function both sides now. ?>
-                                    onclick="selectProductVariant(<?= (int)$v['id'] ?>, '<?= addslashes($v['name']) ?>', <?= effectiveVariantPrice($product, $v) ?>, this)">
+                                    <?php /* htmlspecialchars, not addslashes — this is an HTML
+                                             attribute, not a JS string literal.
+                                             ────────────────────────────────────────────────
+                                             addslashes escapes quotes for JavaScript but HTML
+                                             attributes have no backslash escaping, so a double
+                                             quote in a size name CLOSED this onclick and
+                                             everything after it was parsed as further
+                                             attributes. Proven: a variant named
+                                             `M" onmouseover=...` produced a real, working
+                                             onmouseover handler that ran for every shopper.
+                                             Stored XSS, plantable by any catalogue-staff
+                                             account, firing on the storefront and on the
+                                             owner's own admin session.
+                                             ENT_QUOTES encodes both quote characters, so the
+                                             name can no longer leave the attribute; the JS
+                                             string sees the decoded text exactly as before,
+                                             and what reaches the cart is unchanged. */ ?>
+                                    onclick="selectProductVariant(<?= (int)$v['id'] ?>, '<?= htmlspecialchars(addslashes($v['name']), ENT_QUOTES, 'UTF-8') ?>', <?= effectiveVariantPrice($product, $v) ?>, this)">
                                 <?= htmlspecialchars($vLabel) ?>
                                 <?php if ($vOutOfStock): ?><span class="size-pill-low-stock">Out of stock</span>
                                 <?php elseif ($vLowStock): ?><span class="size-pill-low-stock">Only <?= $vStock ?> left</span>
@@ -1057,15 +1144,17 @@ require_once __DIR__ . '/../includes/header.php';
                       // works — validateSizeSelection() only demands a choice when a size
                       // grid is actually on the page. ?>
 
-                <!-- Express Delivery & Return Guarantee Badges -->
-                <div class="product-trust-badges">
-                    <div class="trust-badge-item">
-                        <i class="fa-solid fa-truck-fast"></i> <strong>Dispatched in 24 Hours</strong>
-                    </div>
-                    <div class="trust-badge-item trust-badge-return">
-                        <i class="fa-solid fa-rotate-left"></i> <strong>14-Day Return Eligible</strong>
-                    </div>
-                </div>
+                <?php /* The "Dispatched in 24 Hours / 14-Day Return Eligible" strip used to
+                         sit here, between the size ladder and the quantity stepper — 83px of
+                         reassurance interrupting the one place on the page where a shopper is
+                         mid-decision, on a phone where Add to Bag was already two screens
+                         down. Both claims were also printed again, word for word, 150px below
+                         the button in .product-benefits-row.
+
+                         They now appear once, in that strip, where every other delivery and
+                         returns promise already lives. Nothing was dropped; the return window
+                         there reads RETURN_WINDOW_DAYS rather than a hardcoded 14, so it can
+                         no longer disagree with the returns page. */ ?>
 
                 <!-- In-Bag Status Banner (Visible if item is in cart) -->
                 <div id="inBagStatusBanner" class="in-bag-status-banner" style="display: none;">
@@ -1156,6 +1245,17 @@ require_once __DIR__ . '/../includes/header.php';
                 $benefitCod     = function_exists('codAllowedInCurrentCountry')
                                 ? codAllowedInCurrentCountry() : true;
                 ?>
+                <?php /* The page's one trust strip. It used to be one of three, carrying ten
+                         claims between them of which four were the same claim twice: this row
+                         said "14-Day Easy Return/Exchange" while the strip above the button
+                         said "14-Day Return Eligible", and it said "Assured Quality" while
+                         Shop with Confidence said "Quality-Checked Before Dispatch". Repeating
+                         a promise does not make it more believable; it makes the page longer.
+
+                         "Assured Quality" is the one line that is gone rather than moved. Of
+                         the ten it was the only one that promises nothing checkable —
+                         "Quality-Checked Before Dispatch", now in the accordion below, says
+                         the same thing and says who does it and when. */ ?>
                 <div class="product-benefits-row">
                     <div class="benefit-item">
                         <i class="fa-solid fa-truck-fast"></i>
@@ -1164,12 +1264,12 @@ require_once __DIR__ . '/../includes/header.php';
                             : 'On all orders' ?></small></span>
                     </div>
                     <div class="benefit-item">
-                        <i class="fa-solid fa-rotate-left"></i>
-                        <span><?= (int)RETURN_WINDOW_DAYS ?>-Day Easy<br>Return/Exchange</span>
+                        <i class="fa-solid fa-box-open"></i>
+                        <span>Dispatched<br>in 24 Hours</span>
                     </div>
                     <div class="benefit-item">
-                        <i class="fa-solid fa-shield-halved"></i>
-                        <span>Assured<br>Quality</span>
+                        <i class="fa-solid fa-rotate-left"></i>
+                        <span><?= (int)RETURN_WINDOW_DAYS ?>-Day Easy<br>Return/Exchange</span>
                     </div>
                     <?php if ($benefitCod): ?>
                     <div class="benefit-item">
@@ -1239,21 +1339,12 @@ require_once __DIR__ . '/../includes/header.php';
                     <div id="deliveryStatus" class="delivery-status-msg"></div>
                 </div>
 
-                <!-- Shop with Confidence -->
-                <div class="shop-confidence-box">
-                    <!-- h2: this is a top-level section of the product page, sitting
-                         directly under the product's <h1>. As an h4 it left two levels
-                         missing from the outline. .shop-confidence-title carries every
-                         visible property, so this is a semantics-only change. -->
-                    <h2 class="shop-confidence-title">Shop with Confidence</h2>
-                    <ul class="shop-confidence-list">
-                        <li><i class="fa-solid fa-lock"></i> Secure Checkout &amp; Data Privacy</li>
-                        <li><i class="fa-solid fa-user-tie"></i> Styled by Our In-House Team</li>
-                        <li><i class="fa-solid fa-magnifying-glass"></i> Quality-Checked Before Dispatch</li>
-                        <li><i class="fa-solid fa-headset"></i> Dedicated Post-Purchase Support</li>
-                    </ul>
-                </div>
-
+                <?php /* "Shop with Confidence" moved into the accordion stack below, all four
+                         lines intact. It was 134px of always-open list standing between the
+                         delivery checker and the product's own detail panels, and none of what
+                         it says changes a purchase decision the way a delivery date or a return
+                         window does — it is brand assurance, which is exactly what a collapsed
+                         panel is for. Collapsed it costs 54px instead of 134. */ ?>
 
                 <!-- Product Detail Accordions -->
                 <div class="product-accordions">
@@ -1310,7 +1401,13 @@ require_once __DIR__ . '/../includes/header.php';
 
                     <div class="product-accordion">
                         <button type="button" class="product-accordion-header" aria-expanded="false" onclick="toggleProductAccordion(this)">
-                            Specifications <i class="fa-solid fa-plus toggle-icon" aria-hidden="true"></i>
+                            <?php /* Was "Specifications", which the stack already used 100 lines
+                                     below for SKU and package dimensions — two panels with the
+                                     same name, one above the other, and no way to tell from the
+                                     closed state which held what. This one is the garment:
+                                     colour, brand, fabric, sleeve, neck, pattern, occasion, fit
+                                     and the model reference. */ ?>
+                            Design &amp; Fit <i class="fa-solid fa-plus toggle-icon" aria-hidden="true"></i>
                         </button>
                         <div class="product-accordion-content">
                             <div class="specifications-grid">
@@ -1411,7 +1508,7 @@ require_once __DIR__ . '/../includes/header.php';
                     <!-- Product Specifications & Identifiers -->
                     <div class="product-accordion">
                         <button type="button" class="product-accordion-header" aria-expanded="false" onclick="toggleProductAccordion(this)">
-                            Specifications &amp; Logistics <i class="fa-solid fa-plus toggle-icon" aria-hidden="true"></i>
+                            Product Code &amp; Dimensions <i class="fa-solid fa-plus toggle-icon" aria-hidden="true"></i>
                         </button>
                         <div class="product-accordion-content">
                             <ul style="list-style: none; padding: 0; margin: 0; font-size: 13px; color: var(--text-secondary); line-height: 1.8;">
@@ -1447,6 +1544,25 @@ require_once __DIR__ . '/../includes/header.php';
                         </div>
                     </div>
                     <?php endif; ?>
+
+                    <?php /* Last in the stack on purpose. Every panel above it is about THIS
+                             garment — its details, its fabric, its measurements. This one is
+                             about the shop, and it is the same on every product page, so it
+                             follows rather than leads. It was an always-open 134px box between
+                             the delivery checker and these panels; collapsed it costs 54. */ ?>
+                    <div class="product-accordion">
+                        <button type="button" class="product-accordion-header" aria-expanded="false" onclick="toggleProductAccordion(this)">
+                            Shop with Confidence <i class="fa-solid fa-plus toggle-icon" aria-hidden="true"></i>
+                        </button>
+                        <div class="product-accordion-content">
+                            <ul class="shop-confidence-list">
+                                <li><i class="fa-solid fa-lock" aria-hidden="true"></i> Secure Checkout &amp; Data Privacy</li>
+                                <li><i class="fa-solid fa-user-tie" aria-hidden="true"></i> Styled by Our In-House Team</li>
+                                <li><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> Quality-Checked Before Dispatch</li>
+                                <li><i class="fa-solid fa-headset" aria-hidden="true"></i> Dedicated Post-Purchase Support</li>
+                            </ul>
+                        </div>
+                    </div>
 
                 </div>
 
@@ -1590,8 +1706,13 @@ require_once __DIR__ . '/../includes/header.php';
 </div>
 
 <!-- ══ Product Lightbox Zoom Modal ════════════════════════════ -->
-<div id="productLightboxModal" class="product-lightbox-modal" onclick="closeProductLightbox(event)">
-    <button type="button" class="product-lightbox-close" onclick="closeProductLightbox(event)">&times;</button>
+<?php /* Announced as a dialog, and named. It carried no role and no aria-modal,
+         so a screen reader treated the enlarged image as ordinary page content
+         appearing out of nowhere, with the rest of the page still readable
+         behind it. */ ?>
+<div id="productLightboxModal" class="product-lightbox-modal" role="dialog" aria-modal="true"
+     aria-label="Product image viewer" onclick="closeProductLightbox(event)">
+    <button type="button" class="product-lightbox-close" aria-label="Close image viewer" onclick="closeProductLightbox(event)">&times;</button>
     
     <div class="product-lightbox-container-wrapper">
         <!-- Vertical Thumbnails List on Left -->
@@ -1663,6 +1784,15 @@ function openProductLightbox(src) {
         requestAnimationFrame(() => requestAnimationFrame(() => modal.classList.add('is-visible')));
         document.body.style.overflow = 'hidden';
 
+        /* Focus moves in, and is remembered so it can be handed back.
+           Without this a keyboard user who opened the viewer was left with focus
+           still on the thumbnail behind it — Tab walked the page underneath while
+           the image covered the screen, and closing dropped them at the top of
+           the document rather than back at the photograph they were looking at. */
+        window.__lightboxReturnFocus = document.activeElement;
+        const closeBtn = modal.querySelector('.product-lightbox-close');
+        if (closeBtn) { setTimeout(() => closeBtn.focus(), 50); }
+
         const idx = galleryImagesList.indexOf(src);
         if (idx !== -1) currentGalleryIndex = idx;
 
@@ -1721,6 +1851,11 @@ function closeProductLightbox(e) {
         modal.classList.remove('is-visible');
         setTimeout(() => { modal.style.display = 'none'; }, 300);
         document.body.style.overflow = '';
+        // Back to the thumbnail that opened it, not the top of the page.
+        if (window.__lightboxReturnFocus && window.__lightboxReturnFocus.focus) {
+            try { window.__lightboxReturnFocus.focus({ preventScroll: true }); } catch (err) {}
+            window.__lightboxReturnFocus = null;
+        }
         lbResetZoom();
     }
 }
@@ -1982,7 +2117,35 @@ document.addEventListener('keydown', e => {
     </div>
 </section>
 
+<?php /* ══ Sticky buy bar (phones and tablets) ═══════════════════════════════
+         Even after 400px of repetition came off the top, Add to Bag lands at
+         1,420px on a 390px phone — the gallery and the size ladder are simply
+         that tall, and shrinking a fashion photograph to raise a button is the
+         wrong trade. So the button follows instead.
 
+         It replaces the bottom dock rather than stacking on it: two fixed bars
+         would take 121px of an 844px screen, and on a product page the primary
+         action is to buy, not to navigate — Home, Search and Login are all still
+         in the header. The swap is done in JS (see initPdpBuyBar), so if the
+         script never runs the shopper keeps the dock and loses nothing.
+
+         Deliberately OUTSIDE every .reveal-on-scroll section: those animate with
+         a transform, and a transformed ancestor makes position:fixed resolve
+         against the ancestor instead of the viewport, which would strand this at
+         a fixed point in the page.
+
+         The button calls the same handleAddToCartClick() as the real one, so
+         size validation, stock checks, the toast and the drawer are identical —
+         there is no second add-to-cart path to keep in step. */ ?>
+<div class="pdp-buy-bar" id="pdpBuyBar" hidden>
+    <div class="pdp-buy-bar-price">
+        <span class="pdp-buy-bar-price-label">Total</span>
+        <span class="pdp-buy-bar-price-amount" id="pdpBuyBarPrice"><?= formatPrice($openPrice ?? $product['price']) ?></span>
+    </div>
+    <button type="button" class="btn-luxury pdp-buy-bar-btn" onclick="handleAddToCartClick()">
+        <i class="fa-solid fa-bag-shopping" aria-hidden="true"></i> Add to Bag
+    </button>
+</div>
 
 <script>
     // Selected variant info
@@ -2025,7 +2188,7 @@ document.addEventListener('keydown', e => {
           //
           // $variants carries the same id/size_code/name/stock_qty keys, so the
           // shape below is unchanged. ?>
-    const DIEVON_COLORS = <?= json_encode(array_map(function($c) use ($product, $variants) {
+    const DIEVON_COLORS = <?= json_encode(array_map(function($c) use ($product, $variants, $dvAllowVariantOverrides) {
         $colourSizes = $c['sizes'] ?: array_values(array_filter(
             $variants,
             fn($v) => empty($v['color_id']) && trim((string)($v['size_code'] ?? '')) !== ''
@@ -2058,11 +2221,36 @@ document.addEventListener('keydown', e => {
                list on the same page left the identical case buyable, and
                checkout would have accepted it. Two renderers, one product, two
                answers. NULL travels through and the renderer decides. */
+            /* Each size carries the price the CART will charge for it.
+               ────────────────────────────────────────────────────────────────
+               This field did not exist, and renderSizeButtons() below therefore
+               drew pills that could not tell selectProductSizeCode() a price —
+               so choosing a size on a product sold by colour left the heading
+               showing the COLOUR's price for ever, while actions/cart_action.php
+               (line 192) priced the very same row through effectiveVariantPrice(),
+               which prefers a size's own price. Page and bag disagreed with
+               nothing on screen admitting it: the plain-size ladder a few
+               hundred lines up has passed its price since it was written, and
+               only the colour-scoped renderer was missed.
+
+               Resolved by CALLING effectiveVariantPrice() with this size AND its
+               colour, so the precedence that decides it — colour override, then
+               size price, then product price, then the sale clamp — is read from
+               the one function the cart, checkout and Quick View all read it
+               from, rather than restated here in a form that could drift.
+
+               Abroad the overrides do not apply at all: product_country_prices
+               is a flat per-product figure with no size or colour granularity,
+               so the guard mirrors $col['effective_price'] on line 229 exactly
+               rather than inventing a second rule for the same question. */
             'sizes' => array_map(fn($s) => [
                 'id'        => (int)$s['id'],
                 'size_code' => $s['size_code'],
                 'label'     => $s['name'],
                 'stock'     => $s['stock_qty'] === null ? null : (int)$s['stock_qty'],
+                'price'     => $dvAllowVariantOverrides
+                    ? effectiveVariantPrice($product, $s, $c)
+                    : (float)$c['effective_price'],
             ], $colourSizes),
         ];
     }, $productColors)) ?>;
@@ -2183,7 +2371,10 @@ document.addEventListener('keydown', e => {
                     // <picture> with the WebP source, matching how the same
                     // gallery is rendered server-side at line 748.
                     grid.innerHTML = imgsToDisplay.map((im, i) => `
-                        <div class="gallery-grid-item" onclick="openProductLightbox('${im.src}')">
+                        <div class="gallery-grid-item" role="button" tabindex="0"
+                             aria-label="View larger image"
+                             onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}"
+                             onclick="openProductLightbox('${im.src}')">
                             ${i === 0 ? badgeHtml : ''}
                             <picture>
                                 ${im.webp ? `<source srcset="${im.webp}" type="image/webp">` : ''}
@@ -2245,11 +2436,21 @@ document.addEventListener('keydown', e => {
             const tracked    = size.stock !== null && size.stock !== undefined;
             const outOfStock = tracked && size.stock <= 0;
             const lowStock   = tracked && size.stock > 0 && size.stock <= 5;
+            // The figure the bag will charge for THIS size, resolved server-side
+            // through effectiveVariantPrice(). A colour whose sizes are all priced
+            // like the product sends its price back unchanged, so the heading does
+            // not move — which is the correct outcome, not a missing one. The
+            // fallback covers a payload cached from before this field existed.
+            // null is checked explicitly: Number(null) is 0, and 0 is finite, so a
+            // null would price the size at nothing rather than falling back.
+            const sizePrice = (size.price !== null && size.price !== undefined && Number.isFinite(Number(size.price)))
+                ? Number(size.price)
+                : color.price;
             html += `
                 <button type="button" class="size-pill-btn ${outOfStock ? 'size-pill-disabled' : ''}"
                         ${outOfStock ? 'disabled aria-disabled="true"' : ''}
                         aria-pressed="false"
-                        onclick="selectProductSizeCode(${size.id}, '${escHtml(size.label)}', this)">
+                        onclick="selectProductSizeCode(${size.id}, '${escHtml(size.label)}', ${sizePrice}, this)">
                     ${escHtml(size.label)}
                     ${outOfStock ? '<span class="size-pill-low-stock">Out of stock</span>' : (lowStock ? `<span class="size-pill-low-stock">Only ${size.stock} left</span>` : '')}
                 </button>`;
@@ -2257,9 +2458,23 @@ document.addEventListener('keydown', e => {
         grid.innerHTML = html || '<p class="size-guide-empty-msg">No sizes configured for this colour yet.</p>';
     }
 
-    function selectProductSizeCode(variantId, label, element) {
+    function selectProductSizeCode(variantId, label, price, element) {
         selectedVariantId = variantId;
         selectedVariantName = label;
+
+        // The heading follows the chosen size, exactly as it does on the
+        // plain-size ladder via selectProductVariant(). Without this the price
+        // stayed on the colour's figure while the bag charged the size's own —
+        // see the 'price' field in DIEVON_COLORS for the full account.
+        //
+        // selectedVariantMrp is deliberately NOT touched: "was" is a property of
+        // the product (or the colourway that overrides it), not of a size, so a
+        // dearer size correctly shrinks the discount badge against the same MRP
+        // instead of inventing a new one to keep the percentage flattering.
+        if (price !== null && price !== undefined && Number.isFinite(Number(price))) {
+            selectedVariantPrice = Number(price);
+            updatePriceDisplay();
+        }
 
         // aria-pressed has to move with the class. Which size is chosen is shown
         // to a sighted user purely by .size-pill-selected restyling the pill —
@@ -2494,6 +2709,152 @@ document.addEventListener('keydown', e => {
         document.addEventListener('dievon:gallery-swapped', update);
     })();
 
+    /* Open the first accordion — Product Details — on arrival.
+       ────────────────────────────────────────────────────────────────────────
+       Done from JS rather than by shipping aria-expanded="true" in the markup,
+       because "open" here is an inline max-height measured from scrollHeight.
+       Hardcoding the attribute would leave max-height at 0: a panel that
+       announces itself as expanded to a screen reader while showing nothing,
+       which is worse than either state on its own. Reusing
+       toggleProductAccordion() means the default-open panel is built by exactly
+       the same path as a tapped one — same class, same aria, same icon — so
+       there is no second definition of "open" to drift.
+
+       Waits for `load`, not DOMContentLoaded: the measurement is a fixed pixel
+       height, and taking it before the webfont swaps means the panel is sized
+       for the fallback face and clips its last line once the real font lands.
+
+       Deliberately querySelector on the class rather than naming the panel.
+       Product Details only renders when the product HAS specs or components —
+       for a piece with neither, this opens whichever panel is genuinely first
+       instead of doing nothing. */
+    (function openFirstAccordion() {
+        function openFirst() {
+            const first = document.querySelector('.product-accordion .product-accordion-header');
+            // Respect a shopper who already opened something in the gap between
+            // DOM ready and fonts settling.
+            if (!first || document.querySelector('.product-accordion-header.open')) { return; }
+            toggleProductAccordion(first);
+        }
+        if (document.readyState === 'complete') { openFirst(); }
+        else { window.addEventListener('load', openFirst); }
+
+        // max-height is a fixed pixel value, so a rotate or a font-size change
+        // re-wraps the content and leaves the panel clipped or over-tall.
+        let t;
+        window.addEventListener('resize', () => {
+            clearTimeout(t);
+            t = setTimeout(() => {
+                document.querySelectorAll('.product-accordion-header.open').forEach(h => {
+                    const c = h.nextElementSibling;
+                    if (c) { c.style.maxHeight = c.scrollHeight + 40 + 'px'; }
+                });
+            }, 150);
+        });
+    })();
+
+    /* Sticky buy bar — visible only while the real button is not.
+       ────────────────────────────────────────────────────────────────────────
+       An IntersectionObserver on the in-page Add to Bag, rather than a scroll
+       listener comparing offsets: the page has a colour swap and a description
+       toggle that both change the button's position, and offsets cached on load
+       would be wrong after either. */
+    (function initPdpBuyBar() {
+        const bar    = document.getElementById('pdpBuyBar');
+        const anchor = document.querySelector('.product-action-buttons-group');
+        if (!bar || !anchor || !('IntersectionObserver' in window)) { return; }
+
+        const narrow = window.matchMedia('(max-width: 991px)');
+
+        // Hiding the dock is this script's job, so a browser that never gets
+        // here keeps its navigation instead of losing both bars.
+        function claimDock() {
+            document.body.classList.toggle('has-pdp-buy-bar', narrow.matches);
+            if (!narrow.matches) { bar.hidden = true; bar.classList.remove('is-visible'); }
+            else { bar.hidden = false; }
+        }
+
+        new IntersectionObserver(([entry]) => {
+            bar.classList.toggle('is-visible', narrow.matches && !entry.isIntersecting);
+        }, { rootMargin: '0px 0px -12px 0px' }).observe(anchor);
+
+        // The compare tray pins to the same edge and outranks this bar. Watch its
+        // class rather than polling — it is toggled from a click, not a scroll.
+        //
+        // Deferred to DOMContentLoaded because #compareBar is printed by
+        // includes/footer.php, which runs AFTER this script. Looking it up here
+        // returned null, the observer was never attached, and the tray covered
+        // the buy bar completely — 69px of overlap, measured.
+        function watchCompareTray() {
+            const cmp = document.getElementById('compareBar');
+            if (!cmp) { return; }
+            const sync = () => bar.classList.toggle('is-above-compare', cmp.classList.contains('is-visible'));
+            new MutationObserver(sync).observe(cmp, { attributes: true, attributeFilter: ['class'] });
+            sync();
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', watchCompareTray);
+        } else {
+            watchCompareTray();
+        }
+
+        claimDock();
+        narrow.addEventListener('change', claimDock);
+    })();
+
+    /* Clamp a long description on a phone.
+       ────────────────────────────────────────────────────────────────────────
+       Applied here rather than in CSS because it must be conditional on the text
+       ACTUALLY overflowing. A one-line description under a permanent "Read more"
+       that reveals nothing is worse than no toggle at all, and CSS cannot ask
+       whether four lines was enough.
+       The clamp is never the default state: if this script does not run, the
+       shopper reads the whole description. Failing open is the right way round
+       for the copy that sells the garment. */
+    (function initDescriptionClamp() {
+        const text = document.getElementById('productDescriptionText');
+        const btn  = document.getElementById('descReadMoreBtn');
+        if (!text || !btn) { return; }
+
+        const label = btn.querySelector('.desc-read-more-label');
+        const wide  = window.matchMedia('(min-width: 992px)');   // the two-column layout
+
+        function apply() {
+            // Desktop has a pinned gallery beside a scrolling column, so the full
+            // text costs nothing there. Undo any clamp on the way up.
+            if (wide.matches) {
+                text.classList.remove('is-clamped');
+                btn.hidden = true;
+                return;
+            }
+            // Measure against the UNCLAMPED element, then decide.
+            text.classList.remove('is-clamped');
+            const line = parseFloat(getComputedStyle(text).lineHeight) || 25;
+            const overflows = text.scrollHeight > line * 4 + 4;   // 4 lines, 4px slack
+            if (!overflows) { btn.hidden = true; return; }
+
+            btn.hidden = false;
+            if (btn.getAttribute('aria-expanded') !== 'true') {
+                text.classList.add('is-clamped');
+            }
+        }
+
+        btn.addEventListener('click', () => {
+            const open = btn.getAttribute('aria-expanded') === 'true';
+            btn.setAttribute('aria-expanded', open ? 'false' : 'true');
+            text.classList.toggle('is-clamped', open);
+            label.textContent = open ? 'Read more' : 'Read less';
+            // Collapsing from the bottom of a long description would otherwise
+            // leave the shopper looking at whatever the page scrolled to.
+            if (open) { text.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
+        });
+
+        apply();
+        // A rotate changes both the breakpoint and how many lines the text takes.
+        wide.addEventListener('change', apply);
+        window.addEventListener('resize', apply);
+    })();
+
     document.addEventListener('DOMContentLoaded', () => {
         // Sync wishlist state
         const wishlist = getWishlist();
@@ -2545,6 +2906,12 @@ document.addEventListener('keydown', e => {
         const offEl = document.getElementById('priceOffBadge');
 
         if (curEl) curEl.textContent = fmt(selectedVariantPrice);
+        // The sticky bar quotes the same figure through the same resolver, so a
+        // size change moves both at once. Written here rather than mirrored from
+        // the heading afterwards — reading one element's text to fill another is
+        // how the two drift apart the first time either is reformatted.
+        const stickyEl = document.getElementById('pdpBuyBarPrice');
+        if (stickyEl) stickyEl.textContent = fmt(selectedVariantPrice);
 
         const hasDiscount = selectedVariantMrp > selectedVariantPrice;
         if (mrpEl) {

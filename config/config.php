@@ -44,6 +44,27 @@ if (session_status() === PHP_SESSION_NONE) {
  */
 const TRUSTED_LOCAL_HOSTS = ['localhost:8888', '127.0.0.1:8888'];
 
+/** The one hostname this shop is meant to be indexed under. */
+const CANONICAL_SITE_HOST = 'dievon.com';
+
+/**
+ * Is this request being served under the host the shop should be indexed as?
+ *
+ * trustedSiteHost() accepts every *.dievon.com, which is right for deciding
+ * whether a Host header is FORGED — but wrong for deciding whether a crawler
+ * should be invited in. www.dievon.com and any staging subdomain were serving
+ * the whole catalogue with self-referencing canonicals and a robots.txt reading
+ * "Allow: /" plus their own Sitemap: line — a complete, self-endorsing duplicate
+ * of the shop, which is how a staging site ends up outranking production.
+ *
+ * Local development counts as canonical so robots.php behaves normally there.
+ */
+function isCanonicalSiteHost(?string $host = null): bool
+{
+    $host = strtolower(trim((string)($host ?? ($_SERVER['HTTP_HOST'] ?? ''))));
+    return $host === CANONICAL_SITE_HOST || in_array($host, TRUSTED_LOCAL_HOSTS, true);
+}
+
 /** Is this host the local MAMP machine? */
 function isLocalDevHost(string $host): bool
 {
@@ -75,12 +96,14 @@ function trustedSiteHost(?string $claimed): string
     }
 
     // Production: dievon.com and every subdomain (stage., testing., www., …).
-    if ($claimed === 'dievon.com' || str_ends_with($claimed, '.dievon.com')) {
+    // Accepting subdomains here is about rejecting a FORGED host, not about
+    // which host should be indexed — see isCanonicalSiteHost() for that.
+    if ($claimed === CANONICAL_SITE_HOST || str_ends_with($claimed, '.' . CANONICAL_SITE_HOST)) {
         return $claimed;
     }
 
     // A poisoned Host header. Fall back to the canonical production host.
-    return 'dievon.com';
+    return CANONICAL_SITE_HOST;
 }
 
 // ── Error display ───────────────────────────────────────────
@@ -301,8 +324,29 @@ if ($isLocal) {
     // LOCAL / MAMP Credentials
     define('SITE_URL', 'http://localhost:8888/DievonOrders');
 } else {
-    // LIVE / Hostinger Credentials (works dynamically for dievon.com, stage.dievon.com, testing.dievon.com, etc.)
-    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
+    /* LIVE. The protocol test must match the one used everywhere else in this file.
+       ────────────────────────────────────────────────────────────────────────────
+       This read $_SERVER['HTTPS'] alone. Behind a TLS-terminating proxy — which is
+       the standard Hostinger and Cloudflare arrangement — PHP never sees HTTPS
+       set, because TLS ends at the proxy and the request reaches PHP over plain
+       HTTP with the real protocol in X-Forwarded-Proto. So SITE_URL was built as
+       http:// on a site served entirely over https://, and SITE_URL is what every
+       canonical tag, every <loc> in sitemap.php, the Sitemap: line in robots.php
+       and every emailed link is made from.
+
+       The .htaccess rule below then 301s each of those http:// URLs to https://,
+       so the site declared a protocol it does not serve and pointed Google at a
+       redirect from every canonical it published. Reproduced here: with
+       X-Forwarded-Proto: https the canonical came back http://dievon.com/shop.
+
+       Three other places in this same file already get this right —  the session
+       cookie block at line 21, the secure-cookie test at 135, and
+       includes/remember_me.php:49 — all testing HTTPS, SERVER_PORT 443 and
+       X-Forwarded-Proto together. This is that same test, nothing new. */
+    $isHttpsRequest = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || (($_SERVER['SERVER_PORT'] ?? null) == 443)
+        || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
+    $protocol = $isHttpsRequest ? 'https://' : 'http://';
     define('SITE_URL', $protocol . $hostHeader);
 }
 
@@ -2002,6 +2046,39 @@ function priceForMachines($amountInINR) {
 
 // Turns "Aurelia Silk Kurti" into "aurelia-silk-kurti" — used to give uploaded
 // image files SEO-friendly names instead of random/generic ones.
+/**
+ * The extension an uploaded image may be SAVED with, decided by its content.
+ *
+ * The admin upload paths built the saved filename from
+ * pathinfo($_FILES[...]['name'], PATHINFO_EXTENSION) — the uploader's own
+ * string — and validated only the MIME type. finfo reads the magic bytes, and a
+ * file that begins "GIF89a" and continues with PHP is a valid GIF to finfo and
+ * a valid script to the interpreter. GIF also skips the re-encode that would
+ * otherwise destroy the payload. Proven in review: a .php uploaded through the
+ * product form landed in uploads/products/ and executed on request — full
+ * server compromise, reachable by any catalogue-staff account, which is exactly
+ * what the role system exists to prevent.
+ *
+ * Returning the extension for the DETECTED type closes it at the source: an
+ * uploaded name can no longer influence what the file is called on disk. An
+ * unrecognised type returns null and the caller must refuse the upload.
+ *
+ * actions/customer_action.php solved the same problem with an extension
+ * allowlist and was never vulnerable; this is the stricter form of that rule,
+ * put somewhere every handler can reach.
+ */
+function safeImageExtension(?string $detectedMime): ?string
+{
+    $map = [
+        'image/jpeg' => 'jpg',
+        'image/pjpeg' => 'jpg',
+        'image/png'  => 'png',
+        'image/webp' => 'webp',
+        'image/gif'  => 'gif',
+    ];
+    return $map[strtolower(trim((string)$detectedMime))] ?? null;
+}
+
 function slugify($text, $maxLength = 60) {
     $text = strtolower(trim((string)$text));
     // Drop apostrophes rather than letting them become separators, so
@@ -2015,6 +2092,34 @@ function slugify($text, $maxLength = 60) {
 }
 
 // Canonical SEO-friendly product URL, e.g. /product/aurelia-silk-kurti-1 — the trailing
+/**
+ * A category slug that no other category is already using.
+ *
+ * Lives here rather than in admin/categories.php, where it was defined, because
+ * the quick-add handler needs it too and could not reach it — including that
+ * page would have run the whole admin screen. That gap is why a category added
+ * through the quick-add had NO slug at all: `INSERT INTO categories (name,
+ * sort_order)` never set one, so it could never get a /collections/<slug>
+ * address and fell back to the older ?category= form for the rest of its life.
+ *
+ * Falls back to "collection" for a name that slugifies to nothing (an emoji, or
+ * CJK text), and gives up on a random suffix after 200 collisions rather than
+ * looping forever.
+ */
+function uniqueCategorySlug(PDO $pdo, string $base, int $ignoreId = 0): string {
+    $base = slugify($base, 100);
+    if ($base === '' || $base === 'image') { $base = 'collection'; }
+    $check = $pdo->prepare("SELECT COUNT(*) FROM categories WHERE slug = :s AND id <> :id");
+    $slug = $base;
+    $i = 2;
+    while (true) {
+        $check->execute(['s' => $slug, 'id' => $ignoreId]);
+        if ((int)$check->fetchColumn() === 0) { return $slug; }
+        $slug = $base . '-' . $i;
+        if (++$i > 200) { return $base . '-' . bin2hex(random_bytes(3)); }
+    }
+}
+
 // id is the real lookup key, so it stays a valid link even if the product is renamed later.
 function productUrl($id, $name, ?string $seoUrl = null) {
     // The owner's own slug wins, when they set one.
@@ -2810,7 +2915,31 @@ function productPriceRangePrime(array $products, ?PDO $pdo = null): void
 
     try {
         $ph = implode(',', array_fill(0, count($ids), '?'));
-        $vSt = $pdo->prepare("SELECT * FROM product_variants WHERE product_id IN ($ph) AND available = 1");
+        /* A size belonging to a DEACTIVATED colour is not on sale, so it cannot
+           set the price a card advertises.
+           ────────────────────────────────────────────────────────────────────
+           This selected every available variant by product_id alone, while
+           pages/product.php:217 loads colours with `AND is_active = 1`. Switch a
+           colourway off in admin and the two disagreed: the product page
+           correctly showed no colours, no size pills and "sold out", while the
+           card beside it in the grid went on advertising "From ₹1,500.00" —
+           the price of a size nobody can buy. Measured on a one-colour product:
+           card said From ₹1,500, the page offered nothing and quoted ₹1,900.
+
+           pages/product.php's own comment says deactivating a colour has to hide
+           its sizes with it. That reached the page and the merchant feed; the
+           shared range helper — which every card, the wishlist, the collection
+           meta description and the schema all read — was missed.
+
+           A colour-less variant (color_id IS NULL) is unaffected: it belongs to
+           the product, not to a colourway, and stays in the range. */
+        $vSt = $pdo->prepare(
+            "SELECT v.* FROM product_variants v
+               LEFT JOIN product_colors c ON c.id = v.color_id
+              WHERE v.product_id IN ($ph)
+                AND v.available = 1
+                AND (v.color_id IS NULL OR c.is_active = 1)"
+        );
         $vSt->execute($ids);
         $variants = $vSt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -3009,6 +3138,89 @@ function cartLineStockLimit(PDO $pdo, array $line): ?int {
  * reported back so the shopper is told what changed. Returns a list of
  * human-readable notices, empty when nothing needed adjusting.
  */
+/**
+ * Re-price every line in the bag against what the shop charges RIGHT NOW.
+ *
+ * The line price was frozen at add-to-bag and never revisited, while
+ * actions/checkout_action.php re-resolves it through effectiveVariantPrice() at
+ * order time. Nothing reconciled the two, so the bag, the checkout summary, the
+ * header badge, the promo evaluation and the Razorpay amount all quoted the
+ * stale figure and the ORDER was written at the live one. Reproduced end to end:
+ * a bag showing ₹2,650 with "Total Due ₹2,650" produced order DV-72280001 at
+ * ₹2,900. The customer approved one number and was billed another.
+ *
+ * That is the same defect effectiveVariantPrice() exists to close — one price,
+ * every surface — except across TIME rather than across files. Per-size editing
+ * makes it far easier to hit, because a shopkeeper correcting one size's price
+ * now moves a figure that bags in flight are still holding.
+ *
+ * Re-pricing rather than honouring the stale figure is the deliberate choice:
+ * the shop must never charge more than the screen last showed, and a bag left
+ * open for a fortnight must not buy at a fortnight-old price. The shopper is
+ * told either way — every change returns a notice, in the same shape
+ * cartRevalidateStock() uses for quantity, so both kinds of adjustment surface
+ * through one channel.
+ *
+ * Historical orders are untouched: order_items.price and orders.items_json are
+ * written once at checkout and no screen re-derives them.
+ *
+ * Returns human-readable notices, empty when nothing moved.
+ */
+function cartRepriceLive(PDO $pdo): array {
+    if (empty($_SESSION['cart']) || !is_array($_SESSION['cart'])) { return []; }
+
+    $notices = [];
+    foreach ($_SESSION['cart'] as $key => $line) {
+        $pid = (int)($line['product_id'] ?? 0);
+        if ($pid <= 0) { continue; }
+
+        try {
+            $pSt = $pdo->prepare("SELECT * FROM products WHERE id = :id");
+            $pSt->execute(['id' => $pid]);
+            $pRow = $pSt->fetch(PDO::FETCH_ASSOC);
+            if (!$pRow) { continue; }
+
+            $vRow = null;
+            if (!empty($line['variant_id'])) {
+                $vSt = $pdo->prepare("SELECT * FROM product_variants WHERE id = :vid AND product_id = :pid");
+                $vSt->execute(['vid' => (int)$line['variant_id'], 'pid' => $pid]);
+                $vRow = $vSt->fetch(PDO::FETCH_ASSOC) ?: null;
+            }
+            $cRow = null;
+            if (!empty($line['color_id'])) {
+                $cSt = $pdo->prepare("SELECT * FROM product_colors WHERE id = :cid AND product_id = :pid");
+                $cSt->execute(['cid' => (int)$line['color_id'], 'pid' => $pid]);
+                $cRow = $cSt->fetch(PDO::FETCH_ASSOC) ?: null;
+            }
+
+            $live = effectiveVariantPrice($pRow, $vRow, $cRow);
+            $was  = (float)($line['price'] ?? 0);
+
+            // Half a paisa of tolerance: DECIMAL round-tripping must not be
+            // reported to the shopper as a price change.
+            if (abs($live - $was) < 0.005) { continue; }
+
+            $_SESSION['cart'][$key]['price'] = $live;
+
+            $label = trim((string)($line['name'] ?? 'An item'));
+            $size  = trim(preg_replace('/^\s*size\s*:\s*/i', '', (string)($line['variant_name'] ?? '')));
+            if ($size !== '') { $label .= ' (' . $size . ')'; }
+
+            $notices[] = sprintf(
+                '%s is now %s (was %s). The new price is what will be charged.',
+                $label,
+                formatPrice($live),
+                formatPrice($was)
+            );
+        } catch (PDOException $e) {
+            // A line we cannot re-price keeps the figure it had rather than
+            // vanishing from the bag; checkout re-resolves it regardless.
+            continue;
+        }
+    }
+    return $notices;
+}
+
 function cartRevalidateStock(PDO $pdo): array {
     if (empty($_SESSION['cart']) || !is_array($_SESSION['cart'])) { return []; }
 
