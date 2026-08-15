@@ -41,7 +41,24 @@ $errorMsg   = '';
  * those historical rows without needing to rewrite the table. Keyed on the word
  * "code"/"OTP" so order numbers and amounts elsewhere in a subject stay legible.
  */
-function emailLogSafeSubject(?string $subject): string {
+function emailLogSafeSubject(?string $subject, ?string $type = null): string {
+    /* Keyed on the email TYPE first, matching services/EmailService.php.
+       ────────────────────────────────────────────────────────────────────────
+       The word-based pattern alone only masks a code sitting immediately after
+       the word "code" or "OTP". "Your sign-in code is 123456" slips through it,
+       because "is" sits between the two. That is survivable on the storage side,
+       where the phrasing is fixed and known — but THIS function is the only
+       protection the historical rows have, written before any masking existed
+       and in whatever wording the templates used at the time.
+
+       These four types exist solely to carry a one-time secret, so for them
+       every 4-8 digit run goes regardless of the sentence around it. Everything
+       else keeps the word-based pass, so order numbers, amounts and ticket
+       references stay legible. */
+    $secretTypes = ['admin_login_code', 'admin_password_reset', 'password_reset', 'email_verification'];
+    if ($type !== null && in_array($type, $secretTypes, true)) {
+        return (string)preg_replace('/\d{4,8}/', '••••••', (string)$subject);
+    }
     return (string)preg_replace('/\b(code|otp)\b([:\s#]*)\d{4,8}/i', '$1$2••••••', (string)$subject);
 }
 
@@ -227,7 +244,7 @@ require_once __DIR__ . '/includes/header.php';
                     </td>
                     <td style="font-size:12.5px;"><?= htmlspecialchars((string)$r['email_type']) ?></td>
                     <td style="font-size:12.5px;"><?= htmlspecialchars((string)$r['recipient']) ?></td>
-                    <td style="font-size:12.5px;"><?= htmlspecialchars(emailLogSafeSubject($r['subject'])) ?></td>
+                    <td style="font-size:12.5px;"><?= htmlspecialchars(emailLogSafeSubject($r["subject"], $r["email_type"] ?? null)) ?></td>
                     <td style="white-space:nowrap;">
                         <?php if ($r['status'] === 'sent'): ?>
                             <span style="color:var(--color-success); font-weight:600; font-size:12.5px;">
