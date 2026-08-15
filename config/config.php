@@ -2887,7 +2887,31 @@ function productPriceRangePrime(array $products, ?PDO $pdo = null): void
 
     try {
         $ph = implode(',', array_fill(0, count($ids), '?'));
-        $vSt = $pdo->prepare("SELECT * FROM product_variants WHERE product_id IN ($ph) AND available = 1");
+        /* A size belonging to a DEACTIVATED colour is not on sale, so it cannot
+           set the price a card advertises.
+           ────────────────────────────────────────────────────────────────────
+           This selected every available variant by product_id alone, while
+           pages/product.php:217 loads colours with `AND is_active = 1`. Switch a
+           colourway off in admin and the two disagreed: the product page
+           correctly showed no colours, no size pills and "sold out", while the
+           card beside it in the grid went on advertising "From ₹1,500.00" —
+           the price of a size nobody can buy. Measured on a one-colour product:
+           card said From ₹1,500, the page offered nothing and quoted ₹1,900.
+
+           pages/product.php's own comment says deactivating a colour has to hide
+           its sizes with it. That reached the page and the merchant feed; the
+           shared range helper — which every card, the wishlist, the collection
+           meta description and the schema all read — was missed.
+
+           A colour-less variant (color_id IS NULL) is unaffected: it belongs to
+           the product, not to a colourway, and stays in the range. */
+        $vSt = $pdo->prepare(
+            "SELECT v.* FROM product_variants v
+               LEFT JOIN product_colors c ON c.id = v.color_id
+              WHERE v.product_id IN ($ph)
+                AND v.available = 1
+                AND (v.color_id IS NULL OR c.is_active = 1)"
+        );
         $vSt->execute($ids);
         $variants = $vSt->fetchAll(PDO::FETCH_ASSOC);
 
