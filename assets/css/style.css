@@ -2446,6 +2446,14 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
     color: var(--color-accent-ink); cursor: pointer;
     margin-bottom: 20px;
 }
+/* Without this the button is visible on every product, at every width.
+   `hidden` hides an element by way of `display: none` in the BROWSER's default
+   stylesheet, and any author `display` beats it — so the `display: inline-flex`
+   above silently cancelled the attribute. The JS was measuring correctly and
+   setting hidden; the stylesheet ignored it, and a three-line description still
+   carried a "Read more" that expanded nothing. */
+.desc-read-more[hidden] { display: none; }
+
 .desc-read-more i { font-size: 10px; transition: transform 0.2s ease; }
 .desc-read-more[aria-expanded="true"] i { transform: rotate(180deg); }
 .desc-read-more:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; }
