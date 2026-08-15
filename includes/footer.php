@@ -152,6 +152,10 @@ $suppressWelcome = isset($_SESSION['customer_id'])
  */
 $minimalFooter = !empty($minimalFooter);
 ?>
+<?php /* Closes the <main> opened in includes/header.php, immediately before the
+         footer so the landmark wraps exactly the page's own content. */ ?>
+</main>
+
 <footer class="footer-enhanced<?= $minimalFooter ? ' footer-minimal' : '' ?>">
     <div class="container">
 

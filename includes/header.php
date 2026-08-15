@@ -454,6 +454,15 @@ $searchHint = $searchHintNames
 </head>
 <body>
 
+<?php /* Skip link — the first thing in the tab order on every page.
+         ────────────────────────────────────────────────────────────────────────
+         The header carries a search box, a mega menu and a full nav; without this
+         a keyboard or screen-reader user tabbed through all of it on every single
+         page before reaching the products. WCAG 2.4.1, and the cheapest
+         accessibility win in the codebase. Visually hidden until focused, so it
+         changes nothing for a mouse user. */ ?>
+<a href="#mainContent" class="skip-to-content">Skip to content</a>
+
 <!-- ══ Luxury Multi-Tier Header with Mega Menu ════════════════════════════ -->
 <header class="navbar-luxury">
     <!-- Main Header Bar -->
@@ -839,6 +848,13 @@ $searchHint = $searchHintNames
         </div>
     </div>
 </header>
+
+<?php /* The <main> landmark, opened here and closed in includes/footer.php.
+         Every page was header + divs + footer with no main region at all, so a
+         screen-reader user had no way to jump past the navigation to the page's
+         actual content, and axe reported every block of the page as outside a
+         landmark. This is the target the skip link above points at. */ ?>
+<main id="mainContent" tabindex="-1">
 
 <!-- ══ Luxury Mobile Navigation Full-Screen Overlay ════════════════════════ -->
 <div class="mobile-drawer" id="mobileDrawer">

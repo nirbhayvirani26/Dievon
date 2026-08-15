@@ -903,10 +903,31 @@ try {
     if (shopNeedsBuyablePrice($initMin, $initMax, $initSort)) {
         $initPaged       = shopBuyablePricedPage($pdo, $sqlInit, [], $initMin, $initMax, $initSort, 6, $initOffset);
         $initialProducts = $initPaged['rows'];
+        $shopTotalRows   = (int)($initPaged['total'] ?? count($initialProducts));
     } else {
         $initialProducts = $pdo->query($sqlInit . shopOrderBy($initSort) . " LIMIT 6 OFFSET " . (int)$initOffset)->fetchAll();
+        /* How many pages exist, so the grid can LINK to them.
+           ────────────────────────────────────────────────────────────────────
+           The grid renders six server-side and loads the rest over AJAX, and
+           nothing ever emitted an <a href="?page=N">. ?page=N works — it is
+           honoured a few lines above — but no link pointed at it, and
+           robots.php disallows the ajax endpoint, so a crawler could not reach
+           page two by any route. Measured by walking every internal link from
+           the homepage: 15 of 25 products reachable, 10 findable only by
+           knowing the URL. On a shop that is ten garments Google cannot rank.
+
+           COUNT over the same WHERE, with the SELECT list swapped out — the
+           filters are already baked into $sqlInit, so the count cannot drift
+           from the rows beneath it. */
+        try {
+            $countSql = preg_replace('/^SELECT \*/', 'SELECT COUNT(*)', $sqlInit, 1);
+            $shopTotalRows = (int)$pdo->query($countSql)->fetchColumn();
+        } catch (PDOException $e) { $shopTotalRows = count($initialProducts); }
     }
 } catch (PDOException $e) {}
+$shopTotalRows = $shopTotalRows ?? count($initialProducts ?? []);
+$shopTotalPages = max(1, (int)ceil($shopTotalRows / 6));
+$shopPageNo     = max(1, (int)($_GET['page'] ?? 1));
 
 
 // ── Empty collections ───────────────────────────────────────────────────────
@@ -1684,6 +1705,45 @@ if (function_exists('currentShopGender') && currentShopGender() === 'men') {
                 <?php $card = $p; include __DIR__ . '/../includes/product_card.php'; ?>
                 <?php endforeach; ?>
             </div>
+
+            <?php
+            /* Real links to every page of the grid.
+               ────────────────────────────────────────────────────────────────
+               The grid loads more over AJAX, which is fine for a shopper and
+               useless to a crawler: robots.php disallows the ajax endpoint, so
+               without these anchors pages 2..N were unreachable by any path and
+               most of the catalogue could not be indexed.
+
+               Kept out of the way visually — the Load More button remains the
+               control a person uses — but they are ordinary <a href> elements,
+               which is all a crawler needs. Every current filter is preserved in
+               each link, so paging inside a filtered view stays inside it.
+
+               rel prev/next are advisory to Google now, but still read by other
+               crawlers, and they cost nothing. */
+            if (!empty($shopTotalPages) && $shopTotalPages > 1):
+                $pgQuery = function (int $n): string {
+                    $qs = $_GET; $qs['page'] = $n;
+                    return htmlspecialchars('?' . http_build_query($qs), ENT_QUOTES);
+                };
+            ?>
+            <nav class="shop-pagination" aria-label="Catalogue pages"
+                 style="display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin:26px 0 6px;">
+                <?php if ($shopPageNo > 1): ?>
+                    <a class="shop-page-link" rel="prev" href="<?= $pgQuery($shopPageNo - 1) ?>">Previous</a>
+                <?php endif; ?>
+                <?php for ($n = 1; $n <= $shopTotalPages; $n++): ?>
+                    <?php if ($n === $shopPageNo): ?>
+                        <span class="shop-page-link shop-page-current" aria-current="page"><?= $n ?></span>
+                    <?php else: ?>
+                        <a class="shop-page-link" href="<?= $pgQuery($n) ?>"><?= $n ?></a>
+                    <?php endif; ?>
+                <?php endfor; ?>
+                <?php if ($shopPageNo < $shopTotalPages): ?>
+                    <a class="shop-page-link" rel="next" href="<?= $pgQuery($shopPageNo + 1) ?>">Next</a>
+                <?php endif; ?>
+            </nav>
+            <?php endif; ?>
 
             <?php
                 // Structured data belongs on the canonical page only. A filtered or

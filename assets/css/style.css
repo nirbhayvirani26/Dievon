@@ -8261,3 +8261,51 @@ body {
 .acc-intro   { color: var(--text-secondary); font-size: 13px; margin-bottom: 20px; }
 .acc-stack   { display: flex; flex-direction: column; gap: 12px; }
 .acc-btn-sm.acc-btn-sm { padding: 10px 24px; font-size: 12px; }
+
+/* ── Skip link ────────────────────────────────────────────────────────────
+   Off-screen until focused, then pinned top-left over everything. Not
+   display:none — a hidden element is removed from the tab order entirely,
+   which would defeat the point of the link. */
+.skip-to-content {
+    position: absolute;
+    left: -9999px;
+    top: 0;
+    z-index: 100000;
+    padding: 12px 20px;
+    background: #511126;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    border-radius: 0 0 4px 0;
+}
+.skip-to-content:focus {
+    left: 0;
+    outline: 3px solid #d4af37;
+    outline-offset: 2px;
+}
+
+/* Focusing <main> via the skip link must not draw a ring around the whole page. */
+main#mainContent:focus { outline: none; }
+
+/* ── Shop pagination ──────────────────────────────────────────────────────
+   Real anchors so the catalogue is crawlable; the Load More button remains
+   the control a person actually uses. */
+.shop-page-link {
+    display: inline-block;
+    min-width: 38px;
+    padding: 8px 12px;
+    text-align: center;
+    border: 1px solid var(--border-light, #e5e0d8);
+    border-radius: 4px;
+    color: var(--text-secondary, #6b5c47);
+    text-decoration: none;
+    font-size: 13px;
+}
+.shop-page-link:hover { border-color: var(--color-secondary, #511126); }
+.shop-page-current {
+    background: var(--color-secondary, #511126);
+    border-color: var(--color-secondary, #511126);
+    color: #fff;
+    font-weight: 700;
+}
