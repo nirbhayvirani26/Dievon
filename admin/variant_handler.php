@@ -121,6 +121,37 @@ function sizePriceClampNotice(PDO $pdo, int $productId, float $enteredPrice, ?in
     );
 }
 
+/**
+ * A negative price is a typo, and must not be read as an instruction.
+ *
+ * Blank and 0 both mean "this size follows the price above", and the branches
+ * below turn any figure of 0 or less into the product price to express that.
+ * A NEGATIVE number fell into the same branch — so a size selling at 2,000,
+ * mistyped as "-50" while correcting it, silently lost its 2,000 and went back
+ * to following the product. The row was rewritten, the answer was
+ * {"success":true}, and the box redrew blank on the next load: an override
+ * destroyed by a slipped keystroke, with nothing on screen having objected.
+ *
+ * The min="0" on the input does NOT prevent this. HTML constraint validation
+ * only runs when a FORM is submitted, and none of these boxes submit a form —
+ * every one saves itself through fetch() on its change event, which fires with
+ * the field in exactly this invalid state. Measured in a browser: value "-50",
+ * checkValidity() false, rangeUnderflow true, and the request sent regardless.
+ *
+ * So the refusal has to be here, where the write is. Nothing is written when
+ * this returns a message, which is the point — the price already stored stays
+ * stored, and the caller is told which figure was rejected.
+ */
+function rejectNegativePrice(bool $priceProvided, float $price): ?string
+{
+    if (!$priceProvided || $price >= 0) { return null; }
+    return sprintf(
+        'A price cannot be negative, so %s was not saved and nothing on this size was changed. '
+        . 'To make this size follow the price above, clear the box or enter 0.',
+        formatPrice($price)
+    );
+}
+
 // ── LIST all variants for a product (optionally filtered by colour) ──
 if ($action === 'list') {
     if ($productId <= 0) { echo json_encode(['success' => false]); exit; }
@@ -166,6 +197,12 @@ if ($action === 'add') {
 
     if ($productId <= 0 || strlen($name) < 1) {
         echo json_encode(['success' => false, 'message' => 'Size name is required.']);
+        exit;
+    }
+
+    // Refused before the INSERT, so a mistyped figure creates nothing.
+    if ($negMsg = rejectNegativePrice(array_key_exists('price', $_POST), $enteredPrice)) {
+        echo json_encode(['success' => false, 'message' => $negMsg]);
         exit;
     }
 
@@ -231,6 +268,22 @@ if ($action === 'update') {
 
     if ($id <= 0 || strlen($name) < 1) {
         echo json_encode(['success' => false, 'message' => 'Invalid data.']);
+        exit;
+    }
+
+    /* Refused before the UPDATE, so the stored price survives the typo.
+       The stored figure travels back with the refusal: the box on screen still
+       holds the rejected number, and a box showing one thing while the database
+       holds another is the fault this whole screen has been fixed for twice. */
+    if ($negMsg = rejectNegativePrice($priceProvided, $enteredPrice)) {
+        $cur = $pdo->prepare("SELECT price FROM product_variants WHERE id = :id AND product_id = :pid");
+        $cur->execute(['id' => $id, 'pid' => $productId]);
+        $stored = $cur->fetchColumn();
+        echo json_encode([
+            'success'       => false,
+            'message'       => $negMsg,
+            'stored_price'  => $stored === false || $stored === null ? '' : number_format((float)$stored, 2, '.', ''),
+        ]);
         exit;
     }
 

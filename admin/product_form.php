@@ -3245,7 +3245,7 @@ function savePlainSize(code) {
     })
     .then(r => r.json())
     .then(data => {
-        if (!data.success) { alert(data.message || 'Could not save this size.'); return; }
+        if (!data.success) { restorePriceBox(priceEl, data); alert(data.message || 'Could not save this size.'); return; }
         // This panel owns a price box too, and was the one saver that reported
         // neither the outline nor the clamp — so a price typed into the ladder
         // saved in complete silence, which is the fault being fixed everywhere
@@ -3347,6 +3347,26 @@ function showSizePriceNotice(message) {
    price lights the outline now and loses it on the next reload, and the screen
    contradicts itself over a number nobody changed. data-base-price carries the
    fallback figure so both sides can apply one rule. */
+/* Put a refused price box back to what the database actually holds.
+   ────────────────────────────────────────────────────────────────────────────
+   A rejected save leaves the typed figure sitting in the box, so the screen goes
+   on showing a number the shop is not charging — the same disagreement between
+   box and database that this screen has been fixed for twice already. The
+   handler sends the stored figure back with the refusal precisely so the box can
+   be corrected here rather than waiting for a reload nobody knows to do. Blank
+   is a real answer: it means the size follows the price above. */
+function restorePriceBox(priceEl, data) {
+    if (!priceEl || !data || data.stored_price === undefined) { return; }
+    const base = parseFloat(priceEl.dataset.basePrice || '0');
+    const stored = parseFloat(data.stored_price);
+    // A stored figure equal to the fallback IS "follows the price above", and
+    // this panel spells that as an empty box — same rule markPriceOverride uses.
+    priceEl.value = (!data.stored_price || !(stored > 0) || (base > 0 && Math.abs(stored - base) < 0.005))
+        ? ''
+        : data.stored_price;
+    markPriceOverride(priceEl);
+}
+
 function markPriceOverride(priceEl) {
     if (!priceEl) { return; }
     const typed = priceEl.value.trim();
@@ -3905,7 +3925,7 @@ function saveColorSize(colorId, code) {
     return fetch('variant_handler.php', { method: 'POST', body: fd })
         .then(r => r.json())
         .then(data => {
-            if (!data.success) { alert(data.message || 'Error saving this size.'); return data; }
+            if (!data.success) { restorePriceBox(priceEl, data); alert(data.message || 'Error saving this size.'); return data; }
             // The outline has to follow the number it describes, or a size that has
             // just been given its own price goes on looking like one that follows
             // the price above until the page is reloaded.
