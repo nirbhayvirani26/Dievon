@@ -1,10 +1,10 @@
 # Dievon — go-live plan
 
-Branch `claude/chat-session-875zz6`, 28 commits, 36 files. Rewritten 15 Aug 2026.
+Branch `claude/chat-session-875zz6`, 31 commits, 37 files. Rewritten 15 Aug 2026.
 
 > **This document replaced an earlier one that described a 4-file release.** That
 > version was written when the branch was 4 commits long and is no longer safe to
-> follow — uploading 4 of these 36 files lands you in exactly the broken half-state
+> follow — uploading 4 of these 37 files lands you in exactly the broken half-state
 > it warned about. If you have a copy of the old plan, discard it.
 
 ---
@@ -33,7 +33,7 @@ would silently revert them — stop and reconcile first.
 
 ---
 
-## 1. Upload these 36 files
+## 1. Upload these 37 files
 
 ```
 .htaccess                          ← read section 2 before uploading this one
@@ -64,6 +64,7 @@ services/RefundService.php
 admin/product_form.php
 admin/variant_handler.php          ← NOT in UPLOAD_LIST.txt. Easy to miss.
 admin/products.php
+admin/categories.php
 admin/category_handler.php
 admin/returns.php
 admin/suppliers.php
@@ -102,6 +103,9 @@ The whole set goes up together. The dependencies that bite hardest:
   most serious bug in this release; a partial upload reintroduces it.
 - **`header.php` without `footer.php`** → the page opens `<main>` and never closes
   it, and the two copies of `formatPriceJS()` disagree about thousands separators.
+- **`admin/categories.php` without `config/config.php`** → `uniqueCategorySlug()`
+  moved into config, and categories.php no longer defines it. Upload the page
+  without the config and adding any category is an immediate fatal error.
 - **`product.php` missing** → admin can set per-size prices the shop still will not
   display. Back to the original bug.
 
