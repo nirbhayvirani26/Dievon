@@ -1051,6 +1051,38 @@ $occIsMen = function_exists('currentShopGender') && currentShopGender() === 'men
             animateOut: false
         });
 
+        /* Owl clones the first and last slides to make the loop seamless, and a
+           clone of slide one is a clone of its <h1> — so the rendered page carried
+           TWO identical <h1>s even though the HTML has one. The markup already
+           takes care to print the heading on the first slide only (see the note
+           in the slide loop above); the duplicate arrives after Owl runs, which is
+           why it could not be fixed in PHP.
+
+           Demoted rather than removed: the clone is what a shopper sees for the
+           moment the loop wraps, so its text has to stay. .slide-content h1 and
+           .slide-content h2 are declared together in style.css with identical
+           rules, so this is invisible on screen — it only changes what a crawler
+           and a screen reader's heading list are handed.
+
+           Runs on initialized AND on refresh, because Owl rebuilds its clones
+           whenever the carousel is refreshed or the viewport crosses a
+           breakpoint, and a rebuilt clone is a fresh <h1> again. */
+        function demoteClonedHeadings() {
+            jQuery('#heroSlider .owl-item.cloned').find('h1').each(function () {
+                var h1 = this;
+                var h2 = document.createElement('h2');
+                h2.className = h1.className;
+                h2.innerHTML = h1.innerHTML;
+                // Belt and braces: the clone is decorative duplication, so keep it
+                // out of the accessibility tree entirely rather than only out of
+                // the heading level it was claiming.
+                h2.setAttribute('aria-hidden', 'true');
+                h1.parentNode.replaceChild(h2, h1);
+            });
+        }
+        $hero.on('initialized.owl.carousel refreshed.owl.carousel', demoteClonedHeadings);
+        demoteClonedHeadings();   // initialized has usually already fired by here
+
         markActive(0);
         $hero.on('changed.owl.carousel', function (e) {
             // Normalise to an index within the real items, not the clones.

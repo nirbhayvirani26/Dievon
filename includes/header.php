@@ -100,16 +100,30 @@ try {
     $categoryBadges    = [];
     $categoryPromos    = [];
     try {
+        /* All three of these look INSIDE the subcategories too.
+           ────────────────────────────────────────────────────────────────
+           The promo query below always did; these two did not, and the
+           inconsistency only shows on a parent whose products all live in its
+           children. Group the catalogue as "Indian Wear → Kurtis, Sarees" and
+           nothing sits in Indian Wear directly — so its menu lost the Shop by
+           Fabric and badge columns entirely and dropped to a single thin list,
+           while Kurtis, which does hold products, still looked full.
+
+           Measured before this: INDIAN WEAR → Sub-Categories [3] and nothing
+           else. The rollup is one clause, and it is the same clause the promo
+           images already use. */
         $fabricStmt = $pdo->prepare(
             "SELECT fabric, COUNT(*) AS n FROM products
-              WHERE (category_id = :cid OR category = :cname)
+              WHERE (category_id = :cid OR category = :cname
+                     OR category_id IN (SELECT id FROM categories WHERE parent_id = :pid))
                 AND available = 1 AND (is_deleted = 0 OR is_deleted IS NULL)
                 AND fabric IS NOT NULL AND fabric <> ''
               GROUP BY fabric ORDER BY n DESC, fabric ASC LIMIT 4"
         );
         $badgeStmt = $pdo->prepare(
             "SELECT DISTINCT badge FROM products
-              WHERE (category_id = :cid OR category = :cname)
+              WHERE (category_id = :cid OR category = :cname
+                     OR category_id IN (SELECT id FROM categories WHERE parent_id = :pid))
                 AND available = 1 AND (is_deleted = 0 OR is_deleted IS NULL)
                 AND badge IS NOT NULL AND badge <> ''
               ORDER BY badge ASC LIMIT 4"
@@ -142,7 +156,10 @@ try {
 
         foreach ($menuCategories as $mc) {
             if ((int)($mc['parent_id'] ?? 0) !== 0) { continue; }
-            $args = ['cid' => (int)$mc['id'], 'cname' => $mc['name']];
+            // :pid is the same value as :cid — named separately because all three
+            // statements now carry the subcategory clause and PDO wants one bound
+            // parameter per placeholder.
+            $args = ['cid' => (int)$mc['id'], 'cname' => $mc['name'], 'pid' => (int)$mc['id']];
             $fabricStmt->execute($args);
             $categoryEdits[(int)$mc['id']] = $fabricStmt->fetchAll(PDO::FETCH_COLUMN);
             $badgeStmt->execute($args);
@@ -150,7 +167,7 @@ try {
 
 
             try {
-                $promoStmt->execute($args + ['pid' => (int)$mc['id']]);
+                $promoStmt->execute($args);
                 $categoryPromos[(int)$mc['id']] = array_values(array_unique(
                     $promoStmt->fetchAll(PDO::FETCH_COLUMN)
                 ));

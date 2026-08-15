@@ -41,8 +41,21 @@ if ($action === 'add') {
     if (strlen($name) < 2) { echo json_encode(['success' => false, 'message' => 'Name too short.']); exit; }
 
     $maxOrder = $pdo->query("SELECT COALESCE(MAX(sort_order),0) FROM categories")->fetchColumn();
-    $stmt = $pdo->prepare("INSERT INTO categories (name, sort_order) VALUES (:name, :order)");
-    if ($stmt->execute(['name' => $name, 'order' => $maxOrder + 1])) {
+    /* The slug is set HERE, at creation, and not left for later.
+       ────────────────────────────────────────────────────────────────────────
+       This INSERT listed only (name, sort_order), so every category added
+       through the quick-add — the one on the product form, which is the fast
+       path an owner actually uses — was born with an empty slug. A category
+       with no slug never gets a /collections/<slug> address: categoryUrlByName()
+       skips it and falls back to ?category=<name> forever, and nothing in the
+       admin ever offers to fill it in. The main Categories page set a slug from
+       the day it was written; only this path did not. */
+    $stmt = $pdo->prepare("INSERT INTO categories (name, sort_order, slug) VALUES (:name, :order, :slug)");
+    if ($stmt->execute([
+        'name'  => $name,
+        'order' => $maxOrder + 1,
+        'slug'  => uniqueCategorySlug($pdo, $name),
+    ])) {
         /* The new id is captured ONCE, before anything else writes.
            ────────────────────────────────────────────────────────────────────
            lastInsertId() answers for the most recent INSERT on the connection,

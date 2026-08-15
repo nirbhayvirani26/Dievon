@@ -1401,7 +1401,13 @@ require_once __DIR__ . '/../includes/header.php';
 
                     <div class="product-accordion">
                         <button type="button" class="product-accordion-header" aria-expanded="false" onclick="toggleProductAccordion(this)">
-                            Specifications <i class="fa-solid fa-plus toggle-icon" aria-hidden="true"></i>
+                            <?php /* Was "Specifications", which the stack already used 100 lines
+                                     below for SKU and package dimensions — two panels with the
+                                     same name, one above the other, and no way to tell from the
+                                     closed state which held what. This one is the garment:
+                                     colour, brand, fabric, sleeve, neck, pattern, occasion, fit
+                                     and the model reference. */ ?>
+                            Design &amp; Fit <i class="fa-solid fa-plus toggle-icon" aria-hidden="true"></i>
                         </button>
                         <div class="product-accordion-content">
                             <div class="specifications-grid">
@@ -1502,7 +1508,7 @@ require_once __DIR__ . '/../includes/header.php';
                     <!-- Product Specifications & Identifiers -->
                     <div class="product-accordion">
                         <button type="button" class="product-accordion-header" aria-expanded="false" onclick="toggleProductAccordion(this)">
-                            Specifications &amp; Logistics <i class="fa-solid fa-plus toggle-icon" aria-hidden="true"></i>
+                            Product Code &amp; Dimensions <i class="fa-solid fa-plus toggle-icon" aria-hidden="true"></i>
                         </button>
                         <div class="product-accordion-content">
                             <ul style="list-style: none; padding: 0; margin: 0; font-size: 13px; color: var(--text-secondary); line-height: 1.8;">

@@ -2092,6 +2092,34 @@ function slugify($text, $maxLength = 60) {
 }
 
 // Canonical SEO-friendly product URL, e.g. /product/aurelia-silk-kurti-1 — the trailing
+/**
+ * A category slug that no other category is already using.
+ *
+ * Lives here rather than in admin/categories.php, where it was defined, because
+ * the quick-add handler needs it too and could not reach it — including that
+ * page would have run the whole admin screen. That gap is why a category added
+ * through the quick-add had NO slug at all: `INSERT INTO categories (name,
+ * sort_order)` never set one, so it could never get a /collections/<slug>
+ * address and fell back to the older ?category= form for the rest of its life.
+ *
+ * Falls back to "collection" for a name that slugifies to nothing (an emoji, or
+ * CJK text), and gives up on a random suffix after 200 collisions rather than
+ * looping forever.
+ */
+function uniqueCategorySlug(PDO $pdo, string $base, int $ignoreId = 0): string {
+    $base = slugify($base, 100);
+    if ($base === '' || $base === 'image') { $base = 'collection'; }
+    $check = $pdo->prepare("SELECT COUNT(*) FROM categories WHERE slug = :s AND id <> :id");
+    $slug = $base;
+    $i = 2;
+    while (true) {
+        $check->execute(['s' => $slug, 'id' => $ignoreId]);
+        if ((int)$check->fetchColumn() === 0) { return $slug; }
+        $slug = $base . '-' . $i;
+        if (++$i > 200) { return $base . '-' . bin2hex(random_bytes(3)); }
+    }
+}
+
 // id is the real lookup key, so it stays a valid link even if the product is renamed later.
 function productUrl($id, $name, ?string $seoUrl = null) {
     // The owner's own slug wins, when they set one.
