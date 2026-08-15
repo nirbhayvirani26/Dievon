@@ -265,13 +265,27 @@ if ($action === 'add') {
         exit;
     }
 
-    // If size price is 0 or empty, default to main product price
-    if ($price <= 0) {
-        $pStmt = $pdo->prepare("SELECT price FROM products WHERE id = :pid");
-        $pStmt->execute(['pid' => $productId]);
-        $basePrice = $pStmt->fetchColumn();
-        $price = (float)($basePrice ?: 0);
-    }
+    /* A blank price is stored AS ZERO — "follow the product" — not as today's
+       product price copied in.
+       ────────────────────────────────────────────────────────────────────────
+       This looked up products.price and wrote that figure into the row, so the
+       one state the column can express was the one state it could never hold.
+       Tick a size on a ₹1,899 product with the price box empty and the row
+       stored 1899.00; raise the product to ₹2,999 and that size stayed behind at
+       ₹1,899 — a per-size override the owner never set, on a size the form still
+       drew as "follows the product". Every size added this way silently detached
+       itself from the product price at the moment it was created.
+
+       effectiveVariantPrice() already resolves a stored 0 by falling through to
+       the product price (config/config.php), and the form already draws a 0 as
+       an empty box, so zero is the representation the rest of the system is
+       written for. Nothing downstream needed changing — only this substitution
+       had to stop.
+
+       Existing rows are left alone: they hold a real figure now and rewriting
+       them would be guessing which were deliberate. Clearing the price box on
+       such a size stores 0 and restores the link. */
+    $price = max(0.0, $price);
 
     $maxOrder = (int)$pdo->query("SELECT COALESCE(MAX(sort_order),0) FROM product_variants WHERE product_id = $productId")->fetchColumn();
 
@@ -346,13 +360,11 @@ if ($action === 'update') {
         exit;
     }
 
-    // If size price is 0 or empty, default to main product price
-    if ($priceProvided && $price <= 0) {
-        $pStmt = $pdo->prepare("SELECT price FROM products WHERE id = :pid");
-        $pStmt->execute(['pid' => $productId]);
-        $basePrice = $pStmt->fetchColumn();
-        $price = (float)($basePrice ?: 0);
-    }
+    // Same rule as the add branch: an empty box means "follow the product",
+    // which is stored as 0 rather than as a copy of today's product price.
+    // Clearing the box on a size that carries an override is how the link is
+    // restored, so this path has to be able to write a genuine zero.
+    if ($priceProvided) { $price = max(0.0, $price); }
 
     /* Built from the fields actually sent rather than as one statement per
        combination — with price and stock each optional that is four branches of
