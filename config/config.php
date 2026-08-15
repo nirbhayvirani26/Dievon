@@ -2002,6 +2002,39 @@ function priceForMachines($amountInINR) {
 
 // Turns "Aurelia Silk Kurti" into "aurelia-silk-kurti" — used to give uploaded
 // image files SEO-friendly names instead of random/generic ones.
+/**
+ * The extension an uploaded image may be SAVED with, decided by its content.
+ *
+ * The admin upload paths built the saved filename from
+ * pathinfo($_FILES[...]['name'], PATHINFO_EXTENSION) — the uploader's own
+ * string — and validated only the MIME type. finfo reads the magic bytes, and a
+ * file that begins "GIF89a" and continues with PHP is a valid GIF to finfo and
+ * a valid script to the interpreter. GIF also skips the re-encode that would
+ * otherwise destroy the payload. Proven in review: a .php uploaded through the
+ * product form landed in uploads/products/ and executed on request — full
+ * server compromise, reachable by any catalogue-staff account, which is exactly
+ * what the role system exists to prevent.
+ *
+ * Returning the extension for the DETECTED type closes it at the source: an
+ * uploaded name can no longer influence what the file is called on disk. An
+ * unrecognised type returns null and the caller must refuse the upload.
+ *
+ * actions/customer_action.php solved the same problem with an extension
+ * allowlist and was never vulnerable; this is the stricter form of that rule,
+ * put somewhere every handler can reach.
+ */
+function safeImageExtension(?string $detectedMime): ?string
+{
+    $map = [
+        'image/jpeg' => 'jpg',
+        'image/pjpeg' => 'jpg',
+        'image/png'  => 'png',
+        'image/webp' => 'webp',
+        'image/gif'  => 'gif',
+    ];
+    return $map[strtolower(trim((string)$detectedMime))] ?? null;
+}
+
 function slugify($text, $maxLength = 60) {
     $text = strtolower(trim((string)$text));
     // Drop apostrophes rather than letting them become separators, so
@@ -3009,6 +3042,89 @@ function cartLineStockLimit(PDO $pdo, array $line): ?int {
  * reported back so the shopper is told what changed. Returns a list of
  * human-readable notices, empty when nothing needed adjusting.
  */
+/**
+ * Re-price every line in the bag against what the shop charges RIGHT NOW.
+ *
+ * The line price was frozen at add-to-bag and never revisited, while
+ * actions/checkout_action.php re-resolves it through effectiveVariantPrice() at
+ * order time. Nothing reconciled the two, so the bag, the checkout summary, the
+ * header badge, the promo evaluation and the Razorpay amount all quoted the
+ * stale figure and the ORDER was written at the live one. Reproduced end to end:
+ * a bag showing ₹2,650 with "Total Due ₹2,650" produced order DV-72280001 at
+ * ₹2,900. The customer approved one number and was billed another.
+ *
+ * That is the same defect effectiveVariantPrice() exists to close — one price,
+ * every surface — except across TIME rather than across files. Per-size editing
+ * makes it far easier to hit, because a shopkeeper correcting one size's price
+ * now moves a figure that bags in flight are still holding.
+ *
+ * Re-pricing rather than honouring the stale figure is the deliberate choice:
+ * the shop must never charge more than the screen last showed, and a bag left
+ * open for a fortnight must not buy at a fortnight-old price. The shopper is
+ * told either way — every change returns a notice, in the same shape
+ * cartRevalidateStock() uses for quantity, so both kinds of adjustment surface
+ * through one channel.
+ *
+ * Historical orders are untouched: order_items.price and orders.items_json are
+ * written once at checkout and no screen re-derives them.
+ *
+ * Returns human-readable notices, empty when nothing moved.
+ */
+function cartRepriceLive(PDO $pdo): array {
+    if (empty($_SESSION['cart']) || !is_array($_SESSION['cart'])) { return []; }
+
+    $notices = [];
+    foreach ($_SESSION['cart'] as $key => $line) {
+        $pid = (int)($line['product_id'] ?? 0);
+        if ($pid <= 0) { continue; }
+
+        try {
+            $pSt = $pdo->prepare("SELECT * FROM products WHERE id = :id");
+            $pSt->execute(['id' => $pid]);
+            $pRow = $pSt->fetch(PDO::FETCH_ASSOC);
+            if (!$pRow) { continue; }
+
+            $vRow = null;
+            if (!empty($line['variant_id'])) {
+                $vSt = $pdo->prepare("SELECT * FROM product_variants WHERE id = :vid AND product_id = :pid");
+                $vSt->execute(['vid' => (int)$line['variant_id'], 'pid' => $pid]);
+                $vRow = $vSt->fetch(PDO::FETCH_ASSOC) ?: null;
+            }
+            $cRow = null;
+            if (!empty($line['color_id'])) {
+                $cSt = $pdo->prepare("SELECT * FROM product_colors WHERE id = :cid AND product_id = :pid");
+                $cSt->execute(['cid' => (int)$line['color_id'], 'pid' => $pid]);
+                $cRow = $cSt->fetch(PDO::FETCH_ASSOC) ?: null;
+            }
+
+            $live = effectiveVariantPrice($pRow, $vRow, $cRow);
+            $was  = (float)($line['price'] ?? 0);
+
+            // Half a paisa of tolerance: DECIMAL round-tripping must not be
+            // reported to the shopper as a price change.
+            if (abs($live - $was) < 0.005) { continue; }
+
+            $_SESSION['cart'][$key]['price'] = $live;
+
+            $label = trim((string)($line['name'] ?? 'An item'));
+            $size  = trim(preg_replace('/^\s*size\s*:\s*/i', '', (string)($line['variant_name'] ?? '')));
+            if ($size !== '') { $label .= ' (' . $size . ')'; }
+
+            $notices[] = sprintf(
+                '%s is now %s (was %s). The new price is what will be charged.',
+                $label,
+                formatPrice($live),
+                formatPrice($was)
+            );
+        } catch (PDOException $e) {
+            // A line we cannot re-price keeps the figure it had rather than
+            // vanishing from the bag; checkout re-resolves it regardless.
+            continue;
+        }
+    }
+    return $notices;
+}
+
 function cartRevalidateStock(PDO $pdo): array {
     if (empty($_SESSION['cart']) || !is_array($_SESSION['cart'])) { return []; }
 

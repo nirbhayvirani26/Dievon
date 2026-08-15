@@ -5,10 +5,22 @@ if (session_status() === PHP_SESSION_NONE) {
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../config/db.php';
 
+/* Re-priced BEFORE $cart is read, or this screen quotes figures the order will
+   not honour. The totals below sum the session line prices, frozen at
+   add-to-bag, while actions/checkout_action.php re-resolves every line through
+   effectiveVariantPrice() when it writes the order — so a price edited while a
+   bag was open produced a checkout reading ₹2,650 and an invoice for ₹2,900.
+   See cartRepriceLive(). Any change is surfaced to the shopper below rather
+   than applied silently. */
+$repriceNotices = ($pdo instanceof PDO) ? cartRepriceLive($pdo) : [];
+
 // Load cart
 $cart = $_SESSION['cart'] ?? [];
 $errors = $_SESSION['checkout_errors'] ?? [];
 unset($_SESSION['checkout_errors']);
+// Shown with the other checkout messages, so a price that moved under the
+// shopper is something they read, not something they discover on a statement.
+foreach ($repriceNotices as $rn) { $errors[] = $rn; }
 
 // Redirect if cart empty
 if (empty($cart)) {

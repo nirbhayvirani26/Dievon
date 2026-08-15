@@ -39,7 +39,12 @@ $action = $_POST['action'] ?? $_GET['action'] ?? 'get';
 function cartSummary(): array {
     global $pdo;
 
+    /* Price first, then stock. Both rewrite the session lines, and the shopper
+       needs to be told about either — a bag whose figures were frozen at
+       add-to-bag was showing one total while checkout billed another. */
+    $priceNotices = ($pdo instanceof PDO) ? cartRepriceLive($pdo) : [];
     $stockNotices = ($pdo instanceof PDO) ? cartRevalidateStock($pdo) : [];
+    $stockNotices = array_merge($priceNotices, $stockNotices);
 
     $items = $_SESSION['cart'] ?? [];
     $count = 0;

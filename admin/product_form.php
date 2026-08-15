@@ -500,10 +500,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errors[] = 'Image file too large (max 8MB).';
         } elseif ($ratioErr !== null) {
             $errors[] = $ratioErr;
+        } elseif (($ext = safeImageExtension($mime)) === null) {
+            // Unreachable while $allowed and the map agree — kept so a future
+            // widening of $allowed cannot silently reopen the filename path.
+            $errors[] = 'Image must be JPG, PNG, WebP, or GIF.';
         } else {
-            $ext      = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+            /* The extension comes from the DETECTED type, never from the
+               uploaded filename — see safeImageExtension(). This line read
+               pathinfo($file['name']), so "shell.php" carrying GIF magic bytes
+               was saved as .php and executed. */
             $filename = slugify($name) . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
             $destDir  = __DIR__ . '/../uploads/products/';
+            hardenUploadDir($destDir);
             if (!is_dir($destDir)) { mkdir($destDir, 0755, true); }
 
             if (move_uploaded_file($file['tmp_name'], $destDir . $filename)) {
@@ -618,8 +626,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     continue;
                 }
 
-                if (in_array($mime, $allowed) && $_FILES['additional_images']['size'][$key] <= 8 * 1024 * 1024) {
-                    $ext      = strtolower(pathinfo($filename_orig, PATHINFO_EXTENSION));
+                if (in_array($mime, $allowed)
+                    && $_FILES['additional_images']['size'][$key] <= 8 * 1024 * 1024
+                    && ($ext = safeImageExtension($mime)) !== null) {
+                    // From the detected type, not the uploaded name — the gallery
+                    // path had the identical hole as the cover image above.
                     /* Named from the file's CONTENT, not from chance.
                        ────────────────────────────────────────────────────────
                        This used bin2hex(random_bytes(4)), so the same photograph

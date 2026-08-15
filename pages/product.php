@@ -867,7 +867,18 @@ require_once __DIR__ . '/../includes/header.php';
                     : 0;
                 ?>
                 <?php if ($dvSoldInCountry): ?>
-                <div class="product-price-heading" id="productPriceDisplay">
+                <?php /* Announced, because choosing a size now MOVES this figure.
+                         ──────────────────────────────────────────────────────────
+                         Selecting a size is signalled to a sighted user by the
+                         heading changing; a screen-reader user got aria-pressed on
+                         the pill and silence about the price. That was tolerable
+                         while the heading never moved for a size — it moves now, so
+                         the one piece of information the interaction exists to
+                         convey was the piece not being conveyed. polite, so it waits
+                         for a pause rather than interrupting the pill's own label;
+                         atomic, so the amount, the MRP and the discount badge are
+                         read as one price rather than three loose numbers. */ ?>
+                <div class="product-price-heading" id="productPriceDisplay" role="status" aria-live="polite" aria-atomic="true">
                     <span class="price-current-amount" id="priceCurrentAmount"><?= formatPrice($openPrice) ?></span>
                     <span class="price-mrp-amount" id="priceMrpAmount" style="<?= $openHasDiscount ? '' : 'display:none;' ?>"><?= formatPrice($openMrp) ?></span>
                     <span class="price-off-badge" id="priceOffBadge" style="<?= $openHasDiscount ? '' : 'display:none;' ?>"><?= $openOffPercent ?>% OFF</span>
@@ -1044,7 +1055,24 @@ require_once __DIR__ . '/../includes/header.php';
                                           // dearer size on a discounted product quoted a figure the
                                           // cart then capped — the page said ₹2,099 and the bag said
                                           // ₹1,899. Same function both sides now. ?>
-                                    onclick="selectProductVariant(<?= (int)$v['id'] ?>, '<?= addslashes($v['name']) ?>', <?= effectiveVariantPrice($product, $v) ?>, this)">
+                                    <?php /* htmlspecialchars, not addslashes — this is an HTML
+                                             attribute, not a JS string literal.
+                                             ────────────────────────────────────────────────
+                                             addslashes escapes quotes for JavaScript but HTML
+                                             attributes have no backslash escaping, so a double
+                                             quote in a size name CLOSED this onclick and
+                                             everything after it was parsed as further
+                                             attributes. Proven: a variant named
+                                             `M" onmouseover=...` produced a real, working
+                                             onmouseover handler that ran for every shopper.
+                                             Stored XSS, plantable by any catalogue-staff
+                                             account, firing on the storefront and on the
+                                             owner's own admin session.
+                                             ENT_QUOTES encodes both quote characters, so the
+                                             name can no longer leave the attribute; the JS
+                                             string sees the decoded text exactly as before,
+                                             and what reaches the cart is unchanged. */ ?>
+                                    onclick="selectProductVariant(<?= (int)$v['id'] ?>, '<?= htmlspecialchars(addslashes($v['name']), ENT_QUOTES, 'UTF-8') ?>', <?= effectiveVariantPrice($product, $v) ?>, this)">
                                 <?= htmlspecialchars($vLabel) ?>
                                 <?php if ($vOutOfStock): ?><span class="size-pill-low-stock">Out of stock</span>
                                 <?php elseif ($vLowStock): ?><span class="size-pill-low-stock">Only <?= $vStock ?> left</span>

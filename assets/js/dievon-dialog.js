@@ -163,9 +163,25 @@
             ok.onclick = function () { close(true, resolve); };
             actions.appendChild(ok);
 
+            /* Enter must do what the FOCUSED button says, and nothing else.
+               ────────────────────────────────────────────────────────────────
+               This read "Enter, unless the OK button is focused, confirms" —
+               which is exactly backwards for anyone on a keyboard. Focus Cancel,
+               press Enter, and activeElement is not `ok`, so the branch fired,
+               preventDefault() suppressed Cancel's own native activation, and
+               the dialog resolved TRUE. Pressing Enter on Cancel performed the
+               destructive action.
+
+               Driven live with buttons ["Cancel","Delete"]: Shift+Tab to Cancel,
+               Enter, resolved true. This dialog guards permanent account
+               deletion (pages/account.php:1209), address deletion, order
+               cancellation and 58 admin call sites.
+
+               No replacement branch is needed: a focused <button> already
+               activates on Enter natively, and each button's own onclick
+               resolves with the right answer. Escape stays. */
             el._keyHandler = function (e) {
                 if (e.key === 'Escape') { close(false, resolve); }
-                if (e.key === 'Enter' && document.activeElement !== ok) { e.preventDefault(); close(true, resolve); }
             };
             document.addEventListener('keydown', el._keyHandler);
 

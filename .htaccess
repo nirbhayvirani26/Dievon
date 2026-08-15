@@ -24,7 +24,30 @@ Options -MultiViews -Indexes
 # Belt and braces: some hosts (LiteSpeed/nginx front-ends) do not always apply
 # FilesMatch to dotfiles, so refuse the request at the rewrite layer too.
 RewriteRule ^\.env - [F,L]
+
+# Let's Encrypt must still be able to answer its HTTP-01 challenge.
+# The dotfile rule below 403s every path segment beginning with a dot, which
+# includes /.well-known/acme-challenge/ — so certificate RENEWAL fails silently,
+# the certificate expires, and with Strict-Transport-Security below already sent
+# (max-age one year) every previous visitor is then locked out of the site with
+# no way to click through. The exception has to come first.
+RewriteRule ^\.well-known/ - [L]
 RewriteRule (^|/)\. - [F,L]
+
+# Nothing under uploads/ may ever be executed as a script.
+#
+# Every admin image handler names the saved file with the extension taken from
+# the UPLOADED filename, validating only the MIME type — and a GIF89a-header
+# polyglot satisfies finfo while still being run as PHP. Proven in review: a
+# .php file uploaded through the product form landed in uploads/products/ and
+# executed on request, which is full server compromise from a catalogue-staff
+# account. The handlers are being fixed to derive the extension from the
+# validated content type, but this rule is the one that does not depend on
+# remembering it in each of the five upload paths.
+#
+# uploads/ is gitignored and deliberately never deployed, so a .htaccess inside
+# it would not travel with the code. This lives in the tracked root file instead.
+RewriteRule ^uploads/.*\.(?i:php|phtml|phar|php3|php4|php5|php7|phps|cgi|pl|py|sh|exe|htaccess)$ - [F,L]
 
 # -1. Force HTTPS in production only — skips localhost/MAMP (matches the same host check
 # config.php uses for $isLocal) so local development keeps working over plain HTTP.
