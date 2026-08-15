@@ -1114,6 +1114,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
+    /* A slug has to be unique — for a draft as much as a published product.
+       ────────────────────────────────────────────────────────────────────────
+       resolveProductSeo() (run in the publish block above) supplies a slug but
+       has no database to check it against, and it runs only when publishing — so
+       a hand-typed slug that already belongs to another product, or two products
+       sharing a name, stored the same seo_url twice with nothing to stop it. The
+       router resolves on the trailing id, so no page ever loads the wrong
+       product, but the two then advertise the same canonical /product/<slug>
+       address — the exact duplicate-URL that generateProductSlug() and the
+       duplicate feature already guard everywhere else.
+
+       Deliberately OUTSIDE the publish block so a draft is deduped too: a
+       collision typed today must not wait until publish to be caught, and two
+       drafts must not share a slug either. Only a non-empty slug is touched — a
+       blank one is left for productUrl() to derive from the name at render time —
+       and this product's own row is excluded so a plain re-save of an
+       already-unique slug is never needlessly suffixed. */
+    if (function_exists('generateProductSlug') && trim((string)$seo_url) !== '') {
+        $seo_url = generateProductSlug($pdo, $seo_url, $productId ?: 0);
+    }
+
     // ── A plain Save with publish warnings saves as a DRAFT ──
     // The completeness and tax gaps above are worth telling the owner about, but
     // they are the owner's call: a real garment can be on sale before someone has

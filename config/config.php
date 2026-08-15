@@ -301,8 +301,29 @@ if ($isLocal) {
     // LOCAL / MAMP Credentials
     define('SITE_URL', 'http://localhost:8888/DievonOrders');
 } else {
-    // LIVE / Hostinger Credentials (works dynamically for dievon.com, stage.dievon.com, testing.dievon.com, etc.)
-    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
+    /* LIVE. The protocol test must match the one used everywhere else in this file.
+       ────────────────────────────────────────────────────────────────────────────
+       This read $_SERVER['HTTPS'] alone. Behind a TLS-terminating proxy — which is
+       the standard Hostinger and Cloudflare arrangement — PHP never sees HTTPS
+       set, because TLS ends at the proxy and the request reaches PHP over plain
+       HTTP with the real protocol in X-Forwarded-Proto. So SITE_URL was built as
+       http:// on a site served entirely over https://, and SITE_URL is what every
+       canonical tag, every <loc> in sitemap.php, the Sitemap: line in robots.php
+       and every emailed link is made from.
+
+       The .htaccess rule below then 301s each of those http:// URLs to https://,
+       so the site declared a protocol it does not serve and pointed Google at a
+       redirect from every canonical it published. Reproduced here: with
+       X-Forwarded-Proto: https the canonical came back http://dievon.com/shop.
+
+       Three other places in this same file already get this right —  the session
+       cookie block at line 21, the secure-cookie test at 135, and
+       includes/remember_me.php:49 — all testing HTTPS, SERVER_PORT 443 and
+       X-Forwarded-Proto together. This is that same test, nothing new. */
+    $isHttpsRequest = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || (($_SERVER['SERVER_PORT'] ?? null) == 443)
+        || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
+    $protocol = $isHttpsRequest ? 'https://' : 'http://';
     define('SITE_URL', $protocol . $hostHeader);
 }
 

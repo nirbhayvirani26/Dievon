@@ -112,16 +112,41 @@ if ($action === 'delete') {
     $id = (int)($_POST['id'] ?? 0);
     if ($id <= 0) { echo json_encode(['success' => false, 'message' => 'Invalid ID.']); exit; }
 
-    // Check if any products use this category name
     $catName = $pdo->prepare("SELECT name FROM categories WHERE id = :id");
     $catName->execute(['id' => $id]);
     $cat = $catName->fetch();
     if (!$cat) { echo json_encode(['success' => false, 'message' => 'Not found.']); exit; }
 
-    $count = $pdo->prepare("SELECT COUNT(*) FROM products WHERE category = :cat");
-    $count->execute(['cat' => $cat['name']]);
+    /* A product references its category twice — category_id AND the plain-text
+       `category` — so both have to be checked, exactly as the delete on
+       categories.php does. Checking only the NAME let a category that was still
+       the fk target of a product (its text edited or imported without the name)
+       be deleted anyway, orphaning that category_id onto a row that no longer
+       exists. Matched on either so a product cannot be stranded whichever way it
+       points. */
+    $count = $pdo->prepare(
+        "SELECT COUNT(*) FROM products
+          WHERE (category_id = :id OR category = :cat)
+            AND (is_deleted = 0 OR is_deleted IS NULL)"
+    );
+    $count->execute(['id' => $id, 'cat' => $cat['name']]);
     if ($count->fetchColumn() > 0) {
         echo json_encode(['success' => false, 'message' => 'Cannot delete: products are using this category. Reassign them first.']);
+        exit;
+    }
+
+    /* A parent cannot be removed out from under its children.
+       ────────────────────────────────────────────────────────────────────────
+       This check was missing entirely, so deleting a parent left every
+       sub-category pointing at a parent_id that is now gone — the subtree is
+       stranded, its own collection page 404s, and the products beneath it drop
+       out of the parent's navigation with nothing on screen to explain it. The
+       delete on categories.php refuses this; this endpoint, reachable by a direct
+       POST, has to refuse it too. */
+    $childCount = $pdo->prepare("SELECT COUNT(*) FROM categories WHERE parent_id = :id");
+    $childCount->execute(['id' => $id]);
+    if ((int)$childCount->fetchColumn() > 0) {
+        echo json_encode(['success' => false, 'message' => 'Cannot delete: this category still has sub-categories. Delete or reassign those first.']);
         exit;
     }
 

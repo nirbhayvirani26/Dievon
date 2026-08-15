@@ -157,7 +157,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
 
             switch (strtolower(trim($newStatus))) {
                 case 'completed':
-                    $syncTo = $isReturn ? 'Returned' : null;   // exchange stays Delivered
+                    if ($isReturn) {
+                        $syncTo = 'Returned';
+                        break;
+                    }
+                    /* A completed EXCHANGE has to be put BACK to Delivered.
+                       ────────────────────────────────────────────────────────
+                       The comment on the old line said "exchange stays
+                       Delivered", but null means "do not sync", and the order
+                       had not been left on Delivered at all: filing the request
+                       moved it to 'Return Requested'
+                       (actions/customer_action.php:376). Nothing then moved it
+                       back, so a finished exchange sat on 'Return Requested'
+                       for ever.
+
+                       Measured on order DV-75417242: RMA-36936D completed, the
+                       replacement arranged, and the order still reading
+                       'Return Requested' — the customer's own order history
+                       says a return is outstanding on an order that is closed,
+                       and the eligibility check in customer_action.php only
+                       accepts Delivered/Completed, so they can never file
+                       another RMA on it. That is precisely the lock-out this
+                       block's own comment above says it exists to prevent.
+
+                       Same conservatism as the reject branch below: only an
+                       order this request actually moved is moved back, and
+                       never one whose money has already gone out. */
+                    $exchangeRefunded = (float)($rma['refunded_amount'] ?? 0) > 0;
+                    $syncTo = (!$exchangeRefunded && (string)$rma['order_status'] === 'Return Requested')
+                        ? 'Delivered'
+                        : null;
                     break;
 
                 case 'rejected':

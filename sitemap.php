@@ -98,10 +98,30 @@ try {
 
 // ── Products ────────────────────────────────────────────────────────────────
 try {
-    // `is_deleted = 0` excluded rows where the column is NULL, which would
-    // silently drop every product predating that column from the sitemap.
+    /* updated_at is SELECTED ONLY IF IT EXISTS, and a failure here is no longer
+       silent.
+       ────────────────────────────────────────────────────────────────────────
+       products.updated_at is created by update_new_database.php, a migration
+       somebody has to remember to run. Where it had not been run this SELECT
+       threw "Unknown column 'updated_at'", the empty catch below swallowed it,
+       and the sitemap was published with every static page and NOT ONE PRODUCT —
+       a valid XML document, HTTP 200, no warning anywhere, and a catalogue
+       invisible to search. Measured on this install: 10 URLs emitted, 25
+       products available, zero of them listed.
+
+       Two changes. The column is probed rather than assumed, so a database
+       missing it still gets a complete sitemap with created_at as the fallback
+       date. And the catch records what went wrong instead of discarding it —
+       an XML comment a human will see when they look at the file, plus the
+       server error log. A sitemap that cannot list products must say so; that
+       is the whole failure here, not the missing column. */
+    $hasUpdatedAt = false;
+    try {
+        $hasUpdatedAt = (bool)$pdo->query("SHOW COLUMNS FROM `products` LIKE 'updated_at'")->fetch();
+    } catch (PDOException $e) { $hasUpdatedAt = false; }
+
     $products = $pdo->query(
-        "SELECT id, name, seo_url, created_at, updated_at FROM products
+        "SELECT id, name, seo_url, created_at" . ($hasUpdatedAt ? ", updated_at" : "") . " FROM products
           WHERE available = 1 AND (is_deleted = 0 OR is_deleted IS NULL)
           ORDER BY id DESC"
     )->fetchAll();
@@ -112,7 +132,12 @@ try {
         $lastmod = $stamp ? date('Y-m-d', strtotime($stamp)) : null;
         sm_url(productUrl($p['id'], $p['name'], $p['seo_url'] ?? null), '0.8', 'weekly', $lastmod);
     }
-} catch (PDOException $e) {}
+} catch (PDOException $e) {
+    // Visible in the file itself and in the log. A sitemap silently missing the
+    // entire catalogue is the worst possible way for this to fail.
+    error_log('sitemap.php: product listing FAILED — ' . $e->getMessage());
+    echo "  <!-- product listing failed; see the server error log -->\n";
+}
 
 // ── Journal ─────────────────────────────────────────────────────────────────
 try {

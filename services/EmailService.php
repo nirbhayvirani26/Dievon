@@ -205,7 +205,23 @@ class EmailService {
     private function logEmail(string $type, string $recipient, string $subject, string $status, ?string $error): void {
         try {
             if (!$this->pdo) return;
-            $safeSubject = preg_replace('/\b(code|otp)\b([:\s#]*)\d{4,8}/i', '$1$2••••••', $subject);
+
+            /* Keyed on the email TYPE first, and only then on the wording.
+               ────────────────────────────────────────────────────────────────
+               Matching the word "code" immediately before the digits works for
+               today's two subjects ("…reset code: 839066") but breaks the moment
+               anyone rephrases: "Your sign-in code is 123456" slips straight
+               through the pattern, because "is" sits between the word and the
+               number. A credential that survives a copy-edit is not contained.
+
+               These four types exist ONLY to carry a one-time secret, so for them
+               every 4-8 digit run in the subject goes, whatever the sentence looks
+               like. The word-based pass still runs for everything else, so order
+               numbers, amounts and ticket references stay readable. */
+            $secretTypes = ['admin_login_code', 'admin_password_reset', 'password_reset', 'email_verification'];
+            $safeSubject = in_array($type, $secretTypes, true)
+                ? preg_replace('/\d{4,8}/', '••••••', $subject)
+                : preg_replace('/\b(code|otp)\b([:\s#]*)\d{4,8}/i', '$1$2••••••', $subject);
             $stmt = $this->pdo->prepare("INSERT INTO email_logs (email_type, recipient, subject, status, error_message, test_mode, created_at) VALUES (:type, :rec, :subj, :status, :err, :test, NOW())");
             $stmt->execute([
                 'type'   => $type,
