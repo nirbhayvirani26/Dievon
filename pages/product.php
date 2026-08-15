@@ -2025,7 +2025,7 @@ document.addEventListener('keydown', e => {
           //
           // $variants carries the same id/size_code/name/stock_qty keys, so the
           // shape below is unchanged. ?>
-    const DIEVON_COLORS = <?= json_encode(array_map(function($c) use ($product, $variants) {
+    const DIEVON_COLORS = <?= json_encode(array_map(function($c) use ($product, $variants, $dvAllowVariantOverrides) {
         $colourSizes = $c['sizes'] ?: array_values(array_filter(
             $variants,
             fn($v) => empty($v['color_id']) && trim((string)($v['size_code'] ?? '')) !== ''
@@ -2058,11 +2058,36 @@ document.addEventListener('keydown', e => {
                list on the same page left the identical case buyable, and
                checkout would have accepted it. Two renderers, one product, two
                answers. NULL travels through and the renderer decides. */
+            /* Each size carries the price the CART will charge for it.
+               ────────────────────────────────────────────────────────────────
+               This field did not exist, and renderSizeButtons() below therefore
+               drew pills that could not tell selectProductSizeCode() a price —
+               so choosing a size on a product sold by colour left the heading
+               showing the COLOUR's price for ever, while actions/cart_action.php
+               (line 192) priced the very same row through effectiveVariantPrice(),
+               which prefers a size's own price. Page and bag disagreed with
+               nothing on screen admitting it: the plain-size ladder a few
+               hundred lines up has passed its price since it was written, and
+               only the colour-scoped renderer was missed.
+
+               Resolved by CALLING effectiveVariantPrice() with this size AND its
+               colour, so the precedence that decides it — colour override, then
+               size price, then product price, then the sale clamp — is read from
+               the one function the cart, checkout and Quick View all read it
+               from, rather than restated here in a form that could drift.
+
+               Abroad the overrides do not apply at all: product_country_prices
+               is a flat per-product figure with no size or colour granularity,
+               so the guard mirrors $col['effective_price'] on line 229 exactly
+               rather than inventing a second rule for the same question. */
             'sizes' => array_map(fn($s) => [
                 'id'        => (int)$s['id'],
                 'size_code' => $s['size_code'],
                 'label'     => $s['name'],
                 'stock'     => $s['stock_qty'] === null ? null : (int)$s['stock_qty'],
+                'price'     => $dvAllowVariantOverrides
+                    ? effectiveVariantPrice($product, $s, $c)
+                    : (float)$c['effective_price'],
             ], $colourSizes),
         ];
     }, $productColors)) ?>;
@@ -2245,11 +2270,21 @@ document.addEventListener('keydown', e => {
             const tracked    = size.stock !== null && size.stock !== undefined;
             const outOfStock = tracked && size.stock <= 0;
             const lowStock   = tracked && size.stock > 0 && size.stock <= 5;
+            // The figure the bag will charge for THIS size, resolved server-side
+            // through effectiveVariantPrice(). A colour whose sizes are all priced
+            // like the product sends its price back unchanged, so the heading does
+            // not move — which is the correct outcome, not a missing one. The
+            // fallback covers a payload cached from before this field existed.
+            // null is checked explicitly: Number(null) is 0, and 0 is finite, so a
+            // null would price the size at nothing rather than falling back.
+            const sizePrice = (size.price !== null && size.price !== undefined && Number.isFinite(Number(size.price)))
+                ? Number(size.price)
+                : color.price;
             html += `
                 <button type="button" class="size-pill-btn ${outOfStock ? 'size-pill-disabled' : ''}"
                         ${outOfStock ? 'disabled aria-disabled="true"' : ''}
                         aria-pressed="false"
-                        onclick="selectProductSizeCode(${size.id}, '${escHtml(size.label)}', this)">
+                        onclick="selectProductSizeCode(${size.id}, '${escHtml(size.label)}', ${sizePrice}, this)">
                     ${escHtml(size.label)}
                     ${outOfStock ? '<span class="size-pill-low-stock">Out of stock</span>' : (lowStock ? `<span class="size-pill-low-stock">Only ${size.stock} left</span>` : '')}
                 </button>`;
@@ -2257,9 +2292,23 @@ document.addEventListener('keydown', e => {
         grid.innerHTML = html || '<p class="size-guide-empty-msg">No sizes configured for this colour yet.</p>';
     }
 
-    function selectProductSizeCode(variantId, label, element) {
+    function selectProductSizeCode(variantId, label, price, element) {
         selectedVariantId = variantId;
         selectedVariantName = label;
+
+        // The heading follows the chosen size, exactly as it does on the
+        // plain-size ladder via selectProductVariant(). Without this the price
+        // stayed on the colour's figure while the bag charged the size's own —
+        // see the 'price' field in DIEVON_COLORS for the full account.
+        //
+        // selectedVariantMrp is deliberately NOT touched: "was" is a property of
+        // the product (or the colourway that overrides it), not of a size, so a
+        // dearer size correctly shrinks the discount badge against the same MRP
+        // instead of inventing a new one to keep the percentage flattering.
+        if (price !== null && price !== undefined && Number.isFinite(Number(price))) {
+            selectedVariantPrice = Number(price);
+            updatePriceDisplay();
+        }
 
         // aria-pressed has to move with the class. Which size is chosen is shown
         // to a sighted user purely by .size-pill-selected restyling the pill —

@@ -3226,8 +3226,33 @@ function addVariant(productId) {
         priceEl.value = '';
         if (stockEl) stockEl.value = '';
         nameEl.focus();
+        // The size saved, but the storefront may not charge the figure that was
+        // typed — see sizePriceClampNotice() in variant_handler.php. Shown after
+        // the row is drawn so the screen already agrees with the database before
+        // it explains what the shopper will actually be asked to pay.
+        showSizePriceNotice(data.warning);
     })
     .catch(() => alert('Network error. Please try again.'));
+}
+
+/* One place that tells the owner a size price will not reach the shop.
+   ────────────────────────────────────────────────────────────────────────────
+   Adding a size and editing one both hit the same clamp, and both used to end
+   with a green flash and nothing else — the row saved, the box kept the typed
+   figure, and the product page went on showing the product's price. This is the
+   only signal that the two disagree, so both call sites share it rather than
+   each wording it slightly differently.
+
+   dievonAlert is the shop's branded dialog (assets/js/dievon-dialog.js, loaded
+   by admin/includes/footer.php); the alert fallback keeps the message visible
+   on a page where that script has not loaded, rather than swallowing it. */
+function showSizePriceNotice(message) {
+    if (!message) { return; }
+    if (typeof window.dievonAlert === 'function') {
+        window.dievonAlert(message, { type: 'warning' });
+    } else {
+        alert(message);
+    }
 }
 
 let updateTimer = {};
@@ -3280,7 +3305,11 @@ function saveVariantRow(id) {
                 row.style.borderColor = data.success ? 'rgba(16,185,129,0.4)' : 'rgba(239,68,68,0.4)';
                 setTimeout(() => { row.style.borderColor = ''; }, 1200);
             }
-            if (!data.success) { alert(data.message || 'Could not save this size.'); }
+            if (!data.success) { alert(data.message || 'Could not save this size.'); return; }
+            // A green border means "stored", which is true — and used to be the
+            // whole story even when the figure stored was one the shop will never
+            // charge. See showSizePriceNotice().
+            showSizePriceNotice(data.warning);
         })
         .catch(() => alert('Network error. Please try again.'));
     }, 600);
@@ -3724,10 +3753,15 @@ async function toggleColorSize(colorId, code, label, checkbox) {
 // Saves one colour size — its label and its stock always travel together.
 //
 // The name has to be sent on every update because variant_handler.php rewrites
-// name, price, available and stock in a single statement; omitting the label
-// while saving stock would blank it. It used to read the label off the checkbox
+// name, available and stock in a single statement; omitting the label while
+// saving stock would blank it. It used to read the label off the checkbox
 // caption, which is the LADDER text — so any rename was silently overwritten by
 // "34/M" the next time the stock box was touched.
+//
+// price is deliberately NOT sent. These cards have no price box, and posting a
+// hard-coded 0 told the handler "follow the product price" — so saving a stock
+// figure quietly overwrote whatever price the size carried. The handler now
+// leaves the column alone when the field is absent; see $priceProvided there.
 function saveColorSize(colorId, code) {
     const checkbox  = document.getElementById('csize-' + colorId + '-' + code);
     const variantId = checkbox ? checkbox.dataset.variantId : '';
@@ -3746,7 +3780,6 @@ function saveColorSize(colorId, code) {
     fd.append('id', variantId);
     fd.append('product_id', <?= (int)($product['id'] ?? 0) ?>);
     fd.append('name', label);
-    fd.append('price', '0');
     fd.append('available', '1');
     fd.append('stock_qty', stockEl ? stockEl.value : '');
     fd.append('csrf_token', window.ADMIN_CSRF_TOKEN || '');

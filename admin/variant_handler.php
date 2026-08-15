@@ -41,6 +41,60 @@ if ($action !== 'list') {
 $sizeLadder = require __DIR__ . '/../config/size_ladder.php';
 $validSizeCodes = array_column($sizeLadder, 'code');
 
+/**
+ * Say so when a size price will not reach the storefront.
+ *
+ * effectiveVariantPrice() (config/config.php) clamps a size priced ABOVE the
+ * product's own price back down to it whenever the product is on sale — that
+ * is, whenever mrp_price is higher than price. The clamp is deliberate: it is
+ * what stops the product page quoting a figure the bag then refuses to charge.
+ *
+ * What was NOT deliberate is that it happened in silence. This handler accepted
+ * the number, wrote it to product_variants.price, and answered {"success":true}
+ * — so the row saved, the box redrew with the typed figure still in it, and the
+ * storefront went on showing the product price. Every visible signal said the
+ * edit had worked. The only way to find out otherwise was to compare the size
+ * box against the live page by eye, which is exactly the check nobody makes on
+ * a screen that has just told them it saved.
+ *
+ * The row is still written unchanged — the figure is kept so that clearing the
+ * MRP later brings it into effect with nothing to re-enter. This only returns
+ * the sentence the admin screen shows alongside the save.
+ *
+ * Returns null when the price will be charged as typed, which is the normal case.
+ */
+function sizePriceClampNotice(PDO $pdo, int $productId, float $enteredPrice): ?string
+{
+    // 0 is not a price, it is "follow the product" — nothing to warn about.
+    if ($enteredPrice <= 0 || $productId <= 0) { return null; }
+
+    $st = $pdo->prepare("SELECT price, mrp_price FROM products WHERE id = :pid");
+    $st->execute(['pid' => $productId]);
+    $row = $st->fetch(PDO::FETCH_ASSOC);
+    if (!$row) { return null; }
+
+    $base = (float)($row['price'] ?? 0);
+    $mrp  = (float)($row['mrp_price'] ?? 0);
+
+    // Same test as effectiveVariantPrice(), in the same order, so this cannot
+    // warn about a clamp that will not happen or stay quiet about one that will.
+    $onSale = $mrp > $base && $base > 0;
+    if (!$onSale || $enteredPrice <= $base) { return null; }
+
+    return sprintf(
+        'Saved — but this size will still sell at %s, not %s. This product is on sale '
+        . '(price %s against MRP %s), and a size dearer than the sale price is capped to it '
+        . 'so the product page, the bag and the invoice cannot quote three different figures. '
+        . 'To charge %s: raise the product price, or clear the MRP so the product is no longer on sale. '
+        . 'Your figure is kept either way and takes effect the moment the sale ends.',
+        formatPrice($base),
+        formatPrice($enteredPrice),
+        formatPrice($base),
+        formatPrice($mrp),
+        formatPrice($enteredPrice)
+    );
+}
+
 // ── LIST all variants for a product (optionally filtered by colour) ──
 if ($action === 'list') {
     if ($productId <= 0) { echo json_encode(['success' => false]); exit; }
@@ -61,6 +115,9 @@ if ($action === 'list') {
 if ($action === 'add') {
     $name  = trim($_POST['name']  ?? '');
     $price = (float)($_POST['price'] ?? 0);
+    // Kept before the "0 means follow the product" fallback below rewrites it —
+    // the notice has to speak about what was TYPED, not about what was stored.
+    $enteredPrice = $price;
 
     // Optional colour-scoped fields (NULL for legacy plain-size variants)
     $colorId  = trim($_POST['color_id'] ?? '') !== '' ? (int)$_POST['color_id'] : null;
@@ -101,7 +158,9 @@ if ($action === 'add') {
         'pid' => $productId, 'name' => $name, 'price' => $price, 'sort_order' => $maxOrder + 1,
         'color_id' => $colorId, 'size_code' => $sizeCode, 'stock_qty' => $stockQty,
     ]);
-    echo json_encode(['success' => true, 'id' => $pdo->lastInsertId(), 'name' => $name, 'price' => number_format($price, 2), 'stock_qty' => $stockQty]);
+    $response = ['success' => true, 'id' => $pdo->lastInsertId(), 'name' => $name, 'price' => number_format($price, 2), 'stock_qty' => $stockQty];
+    if ($notice = sizePriceClampNotice($pdo, $productId, $enteredPrice)) { $response['warning'] = $notice; }
+    echo json_encode($response);
     exit;
 }
 
@@ -110,6 +169,8 @@ if ($action === 'update') {
     $id    = (int)($_POST['id']    ?? 0);
     $name  = trim($_POST['name']   ?? '');
     $price = (float)($_POST['price'] ?? 0);
+    // See the add branch: captured before the fallback rewrites it.
+    $enteredPrice = $price;
     $avail = isset($_POST['available']) ? 1 : 0;
     /* Same rule as the add branch: a blank box is zero, not unlimited.
        $stockProvided stays as it is — a form that does not send the field at all
@@ -121,27 +182,54 @@ if ($action === 'update') {
         ? (trim((string)$_POST['stock_qty']) !== '' ? max(0, (int)$_POST['stock_qty']) : 0)
         : null;
 
+    /* Price follows the same "was the field sent?" rule as stock above.
+       ────────────────────────────────────────────────────────────────────────
+       It did not, and the statement below rewrote price unconditionally — so a
+       caller that had no price box to send still set one. saveColorSize() in
+       admin/product_form.php is exactly that caller: the colour-size cards carry
+       a label and a stock box and no price, so it posted a hard-coded price=0,
+       and 0 means "follow the product price". Editing a colour size's STOCK
+       therefore overwrote its price with the product's, every time, with no
+       price field anywhere on that screen to show what had been lost.
+
+       Harmless while colour-size prices were invisible; not harmless now that
+       the storefront reads them (see the 'price' field in DIEVON_COLORS in
+       pages/product.php). A duplicated product carries its source's size prices
+       across — admin/products.php:191 copies the column — so these rows do exist
+       in the wild, and one stock correction was enough to flatten them.
+
+       Omitting the field now means "leave it alone". The two callers that DO own
+       a price box, savePlainSize() and saveVariantRow(), send it on every save
+       and are unaffected. */
+    $priceProvided = array_key_exists('price', $_POST);
+
     if ($id <= 0 || strlen($name) < 1) {
         echo json_encode(['success' => false, 'message' => 'Invalid data.']);
         exit;
     }
 
     // If size price is 0 or empty, default to main product price
-    if ($price <= 0) {
+    if ($priceProvided && $price <= 0) {
         $pStmt = $pdo->prepare("SELECT price FROM products WHERE id = :pid");
         $pStmt->execute(['pid' => $productId]);
         $basePrice = $pStmt->fetchColumn();
         $price = (float)($basePrice ?: 0);
     }
 
-    if ($stockProvided) {
-        $pdo->prepare("UPDATE product_variants SET name=:name, price=:price, available=:available, stock_qty=:stock_qty WHERE id=:id AND product_id=:pid")
-            ->execute(['name' => $name, 'price' => $price, 'available' => $avail, 'stock_qty' => $stockQty, 'id' => $id, 'pid' => $productId]);
-    } else {
-        $pdo->prepare("UPDATE product_variants SET name=:name, price=:price, available=:available WHERE id=:id AND product_id=:pid")
-            ->execute(['name' => $name, 'price' => $price, 'available' => $avail, 'id' => $id, 'pid' => $productId]);
-    }
-    echo json_encode(['success' => true]);
+    /* Built from the fields actually sent rather than as one statement per
+       combination — with price and stock each optional that is four branches of
+       nearly identical SQL, which is how the two above drifted apart in the
+       first place. */
+    $sets   = ['name=:name', 'available=:available'];
+    $params = ['name' => $name, 'available' => $avail, 'id' => $id, 'pid' => $productId];
+    if ($priceProvided) { $sets[] = 'price=:price';         $params['price']     = $price; }
+    if ($stockProvided) { $sets[] = 'stock_qty=:stock_qty'; $params['stock_qty'] = $stockQty; }
+
+    $pdo->prepare('UPDATE product_variants SET ' . implode(', ', $sets) . ' WHERE id=:id AND product_id=:pid')
+        ->execute($params);
+    $response = ['success' => true];
+    if ($notice = sizePriceClampNotice($pdo, $productId, $enteredPrice)) { $response['warning'] = $notice; }
+    echo json_encode($response);
     exit;
 }
 
