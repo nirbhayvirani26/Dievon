@@ -100,16 +100,30 @@ try {
     $categoryBadges    = [];
     $categoryPromos    = [];
     try {
+        /* All three of these look INSIDE the subcategories too.
+           ────────────────────────────────────────────────────────────────
+           The promo query below always did; these two did not, and the
+           inconsistency only shows on a parent whose products all live in its
+           children. Group the catalogue as "Indian Wear → Kurtis, Sarees" and
+           nothing sits in Indian Wear directly — so its menu lost the Shop by
+           Fabric and badge columns entirely and dropped to a single thin list,
+           while Kurtis, which does hold products, still looked full.
+
+           Measured before this: INDIAN WEAR → Sub-Categories [3] and nothing
+           else. The rollup is one clause, and it is the same clause the promo
+           images already use. */
         $fabricStmt = $pdo->prepare(
             "SELECT fabric, COUNT(*) AS n FROM products
-              WHERE (category_id = :cid OR category = :cname)
+              WHERE (category_id = :cid OR category = :cname
+                     OR category_id IN (SELECT id FROM categories WHERE parent_id = :pid))
                 AND available = 1 AND (is_deleted = 0 OR is_deleted IS NULL)
                 AND fabric IS NOT NULL AND fabric <> ''
               GROUP BY fabric ORDER BY n DESC, fabric ASC LIMIT 4"
         );
         $badgeStmt = $pdo->prepare(
             "SELECT DISTINCT badge FROM products
-              WHERE (category_id = :cid OR category = :cname)
+              WHERE (category_id = :cid OR category = :cname
+                     OR category_id IN (SELECT id FROM categories WHERE parent_id = :pid))
                 AND available = 1 AND (is_deleted = 0 OR is_deleted IS NULL)
                 AND badge IS NOT NULL AND badge <> ''
               ORDER BY badge ASC LIMIT 4"
@@ -142,7 +156,10 @@ try {
 
         foreach ($menuCategories as $mc) {
             if ((int)($mc['parent_id'] ?? 0) !== 0) { continue; }
-            $args = ['cid' => (int)$mc['id'], 'cname' => $mc['name']];
+            // :pid is the same value as :cid — named separately because all three
+            // statements now carry the subcategory clause and PDO wants one bound
+            // parameter per placeholder.
+            $args = ['cid' => (int)$mc['id'], 'cname' => $mc['name'], 'pid' => (int)$mc['id']];
             $fabricStmt->execute($args);
             $categoryEdits[(int)$mc['id']] = $fabricStmt->fetchAll(PDO::FETCH_COLUMN);
             $badgeStmt->execute($args);
@@ -150,7 +167,7 @@ try {
 
 
             try {
-                $promoStmt->execute($args + ['pid' => (int)$mc['id']]);
+                $promoStmt->execute($args);
                 $categoryPromos[(int)$mc['id']] = array_values(array_unique(
                     $promoStmt->fetchAll(PDO::FETCH_COLUMN)
                 ));
@@ -297,8 +314,29 @@ $searchHint = $searchHintNames
     <meta name="twitter:image" content="<?= $image ?>">
 
     <!-- Canonical Link to prevent duplicate content SEO penalties -->
-    <?php $canonicalHref = isset($canonicalUrl) ? $canonicalUrl : strtok($currentUrl, '?'); ?>
+    <?php
+    /* An error response names no canonical at all.
+       ────────────────────────────────────────────────────────────────────────
+       pages/404.php sets $noindex but never $canonicalUrl, so the fallback below
+       used the REQUESTED url — and for a query-string 404 like
+       /shop?category=Nonexistent that resolves to /shop. The page then answered
+       404 with "noindex" and a canonical pointing at a live money page, which is
+       the one combination Google is documented to resolve badly: it may follow
+       the canonical and apply the noindex to the target. pages/shop.php:802
+       already documents guarding against exactly this on its own path; the error
+       path was left open, and /blog-single?id=1 aimed at /blog the same way.
+
+       Decided from the response code rather than patched into 404.php, so every
+       error path this template serves is covered — including the 410 Gone that
+       product.php issues for a withdrawn product. */
+    $dvStatus = function_exists('http_response_code') ? (int)http_response_code() : 200;
+    $canonicalHref = ($dvStatus >= 400)
+        ? null
+        : (isset($canonicalUrl) ? $canonicalUrl : strtok($currentUrl, '?'));
+    ?>
+    <?php if ($canonicalHref !== null): ?>
     <link rel="canonical" href="<?= htmlspecialchars($canonicalHref) ?>">
+    <?php endif; ?>
 
     <!-- Schema.org Organization Structured Data -->
     <script type="application/ld+json">
@@ -370,7 +408,28 @@ $searchHint = $searchHintNames
         // server-rendered price beside them reads "AED 80.00".
         const sym = window.DIEVON_CURRENT_SYMBOL || '₹';
         const gap = /\p{L}$/u.test(sym) ? ' ' : '';
-        return sym + gap + (parseFloat(amount) || 0).toFixed(2);
+
+        // The thousands separators matter for the same reason the space does.
+        // formatPrice() runs number_format(), so PHP writes "₹1,500.00"; this
+        // used to stop at toFixed() and write "₹1500.00" — and the two appear
+        // side by side, the drawer against the cart page, the checkout totals
+        // against the order summary that PHP rendered above them.
+        //
+        // Grouped in threes to match number_format(), NOT the Indian lakh
+        // grouping. toLocaleString('en-IN') would give "₹1,50,000.00" against
+        // PHP's "₹150,000.00" and simply move the disagreement. Done by hand
+        // rather than through Intl so the grouping cannot follow the visitor's
+        // system locale — a machine set to German would otherwise render
+        // "1.500,00", which reads as one and a half rupees.
+        const fixed = (parseFloat(amount) || 0).toFixed(2);
+        const neg   = fixed.charAt(0) === '-';
+        const body  = neg ? fixed.slice(1) : fixed;
+        const dot   = body.indexOf('.');
+        const grouped = body.slice(0, dot).replace(/\B(?=(\d{3})+(?!\d))/g, ',') + body.slice(dot);
+
+        // Sign inside the symbol, again because that is where number_format()
+        // leaves it: formatPrice() concatenates "₹" onto "-1,500.00".
+        return sym + gap + (neg ? '-' : '') + grouped;
     }
 
     // Real per-country selling: currentCountryCode() (config.php) reads this
@@ -433,6 +492,15 @@ $searchHint = $searchHintNames
 </head>
 <body>
 
+<?php /* Skip link — the first thing in the tab order on every page.
+         ────────────────────────────────────────────────────────────────────────
+         The header carries a search box, a mega menu and a full nav; without this
+         a keyboard or screen-reader user tabbed through all of it on every single
+         page before reaching the products. WCAG 2.4.1, and the cheapest
+         accessibility win in the codebase. Visually hidden until focused, so it
+         changes nothing for a mouse user. */ ?>
+<a href="#mainContent" class="skip-to-content">Skip to content</a>
+
 <!-- ══ Luxury Multi-Tier Header with Mega Menu ════════════════════════════ -->
 <header class="navbar-luxury">
     <!-- Main Header Bar -->
@@ -455,7 +523,15 @@ $searchHint = $searchHintNames
                       // dresses", neither of which the catalogue has ever stocked, and its
                       // mobile twin below listed different clothes again — the same search
                       // box disagreeing with itself about what the shop sells. ?>
-                <input type="text" id="inlineSearchInput" placeholder="<?= htmlspecialchars($searchHint) ?>" readonly>
+                <?php // This box never takes typing: it is a doorway that opens the real
+                      // search overlay, which is why it is readonly. Two consequences had
+                      // been missed. It carried no name, so it was announced as an unnamed
+                      // text field whose placeholder rotates with the hint. And the opener
+                      // lived on the wrapping div's onclick, so a mouse worked and a
+                      // keyboard did not — tab to it, press Enter, nothing happened. ?>
+                <input type="text" id="inlineSearchInput" aria-label="Search products" readonly
+                       placeholder="<?= htmlspecialchars($searchHint) ?>"
+                       onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openSearchOverlay(); }">
                 <button class="header-image-search-btn" type="button">
                     <i class="fa-solid fa-camera"></i> <span class="hide-mobile">Image Search</span>
                 </button>
@@ -819,6 +895,13 @@ $searchHint = $searchHintNames
     </div>
 </header>
 
+<?php /* The <main> landmark, opened here and closed in includes/footer.php.
+         Every page was header + divs + footer with no main region at all, so a
+         screen-reader user had no way to jump past the navigation to the page's
+         actual content, and axe reported every block of the page as outside a
+         landmark. This is the target the skip link above points at. */ ?>
+<main id="mainContent" tabindex="-1">
+
 <!-- ══ Luxury Mobile Navigation Full-Screen Overlay ════════════════════════ -->
 <div class="mobile-drawer" id="mobileDrawer">
     <div class="mobile-nav-panel">
@@ -984,7 +1067,8 @@ function toggleMobileCategoryMenu(el) {
     </div>
     <div class="search-container">
         <div class="search-input-wrapper">
-            <input type="text" class="search-input" id="searchInput" placeholder="Search for products, categories..." autocomplete="off">
+            <input type="text" class="search-input" id="searchInput" aria-label="Search for products or categories"
+                   placeholder="Search for products, categories..." autocomplete="off">
             <button class="voice-search-btn" id="voiceSearchBtn" title="Search by Voice">
                 <i class="fa-solid fa-microphone"></i>
             </button>

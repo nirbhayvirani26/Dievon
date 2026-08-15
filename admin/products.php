@@ -124,6 +124,29 @@ function dievonDuplicateProduct(PDO $pdo, int $sourceId, array $orig): int
         }
     }
 
+    /* A copy starts with no inventory of its own.
+       ────────────────────────────────────────────────────────────────────────
+       The products row was copied whole, which carried the source's stock across
+       with it: total_stock (goods RECEIVED for the ORIGINAL), the damage/offline/
+       online counters (that product's own audit history, one of which is filed
+       with the tax return), and the legacy product-level stock_qty. Per-size
+       stock is reset alongside the variants below. A clone is a new garment with
+       nothing received yet — inheriting the original's sellable units and its
+       past offline sales is exactly the phantom stock that oversells a piece that
+       does not physically exist. Zeroed here so the copy reads sold-out until real
+       stock is booked in, the same clean slate a hand-made product starts on. */
+    foreach (['total_stock', 'damage_stock', 'sold_offline', 'sold_online', 'stock_qty'] as $stockCol) {
+        if (array_key_exists($stockCol, $row)) { $row[$stockCol] = 0; }
+    }
+
+    /* A barcode is a GTIN — a globally unique identifier that ships as g:gtin in
+       the Merchant feed and gtin13 in the product schema. Two live products
+       sharing one is a duplicate-identifier disapproval waiting to happen, which
+       is the same reason the SKU above is regenerated rather than shared. There
+       is nothing to regenerate a barcode to, so the copy simply starts without
+       one until the owner assigns its own. */
+    if (array_key_exists('barcode', $row)) { $row['barcode'] = null; }
+
     $pdo->beginTransaction();
     try {
         $cols = array_keys($row);
@@ -137,7 +160,8 @@ function dievonDuplicateProduct(PDO $pdo, int $sourceId, array $orig): int
         $pdo->prepare("DELETE FROM product_color_images WHERE color_id IN (SELECT id FROM product_colors WHERE product_id = :id)")
             ->execute([':id' => $newId]);
         foreach (['product_variants', 'product_colors', 'product_images',
-                  'product_country_prices', 'product_specifications'] as $t) {
+                  'product_country_prices', 'product_specifications',
+                  'product_components', 'product_component_specifications'] as $t) {
             try { $pdo->prepare("DELETE FROM `$t` WHERE product_id = :id")->execute([':id' => $newId]); }
             catch (PDOException $e) { /* table absent on this install */ }
         }
@@ -187,12 +211,19 @@ function dievonDuplicateProduct(PDO $pdo, int $sourceId, array $orig): int
             $v['color_id'] = (!empty($v['color_id']) && isset($colorMap[(int)$v['color_id']]))
                 ? $colorMap[(int)$v['color_id']]
                 : null;
+            /* No stock travels with the copy — see the products-row reset above.
+               NULL is preserved so an untracked size stays untracked; a real
+               count resets to 0 so the clone cannot sell units the original
+               received. */
+            if (array_key_exists('stock_qty', $v) && $v['stock_qty'] !== null) {
+                $v['stock_qty'] = 0;
+            }
             $vc = array_keys($v);
             $pdo->prepare("INSERT INTO product_variants (" . implode(', ', $vc) . ") VALUES (:" . implode(', :', $vc) . ")")
                 ->execute($v);
         }
 
-        // ── Gallery, country prices, specifications ─────────────────────────
+        // ── Gallery, country prices, specifications, components ─────────────
         $gal = $pdo->prepare("SELECT image, sort_order FROM product_images WHERE product_id = :id ORDER BY sort_order, id");
         $gal->execute([':id' => $sourceId]);
         foreach ($gal->fetchAll(PDO::FETCH_ASSOC) as $g) {
@@ -205,6 +236,38 @@ function dievonDuplicateProduct(PDO $pdo, int $sourceId, array $orig): int
         foreach ($cp->fetchAll(PDO::FETCH_ASSOC) as $r) {
             $pdo->prepare("INSERT INTO product_country_prices (product_id, country_code, price, sale_price) VALUES (:p,:c,:pr,:s)")
                 ->execute([':p' => $newId, ':c' => $r['country_code'], ':pr' => $r['price'], ':s' => $r['sale_price']]);
+        }
+
+        /* General specification rows.
+           The descriptive `products` columns (fabric, neck, composition, …) were
+           copied whole with the row above, so the spec sheet that sits beside
+           them on the product page has to travel too — otherwise the copy
+           describes itself less fully than the original it was made from, and the
+           section header here has claimed to copy them all along while the code
+           did not. */
+        $sp = $pdo->prepare("SELECT label, value, unit, sort_order FROM product_specifications WHERE product_id = :id ORDER BY sort_order, id");
+        $sp->execute([':id' => $sourceId]);
+        foreach ($sp->fetchAll(PDO::FETCH_ASSOC) as $s) {
+            $pdo->prepare("INSERT INTO product_specifications (product_id, label, value, unit, sort_order) VALUES (:p,:l,:v,:u,:s)")
+                ->execute([':p' => $newId, ':l' => $s['label'], ':v' => $s['value'], ':u' => $s['unit'], ':s' => (int)$s['sort_order']]);
+        }
+
+        /* Components and their own specification rows. A component's specs carry
+           BOTH product_id and component_id, so each new component id has to be
+           mapped before its rows can be re-pointed — the same old→new discipline
+           the colours used above. */
+        $comps = $pdo->prepare("SELECT id, name, sort_order FROM product_components WHERE product_id = :id ORDER BY sort_order, id");
+        $comps->execute([':id' => $sourceId]);
+        foreach ($comps->fetchAll(PDO::FETCH_ASSOC) as $comp) {
+            $pdo->prepare("INSERT INTO product_components (product_id, name, sort_order) VALUES (:p,:n,:s)")
+                ->execute([':p' => $newId, ':n' => $comp['name'], ':s' => (int)$comp['sort_order']]);
+            $newCompId = (int)$pdo->lastInsertId();
+            $cs = $pdo->prepare("SELECT label, value, unit, sort_order FROM product_component_specifications WHERE component_id = :cid AND product_id = :pid ORDER BY sort_order, id");
+            $cs->execute([':cid' => (int)$comp['id'], ':pid' => $sourceId]);
+            foreach ($cs->fetchAll(PDO::FETCH_ASSOC) as $r) {
+                $pdo->prepare("INSERT INTO product_component_specifications (product_id, component_id, label, value, unit, sort_order) VALUES (:p,:c,:l,:v,:u,:s)")
+                    ->execute([':p' => $newId, ':c' => $newCompId, ':l' => $r['label'], ':v' => $r['value'], ':u' => $r['unit'], ':s' => (int)$r['sort_order']]);
+            }
         }
 
         /* Reviews and questions are deliberately NOT copied: they were written

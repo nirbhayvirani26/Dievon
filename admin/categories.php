@@ -45,25 +45,13 @@ $isSubTab = ($activeTab === 'subcategories');
 $successMsg = '';
 $errorMsg   = '';
 
-/**
- * A URL slug that is not already taken by another category.
- *
- * Two categories may legitimately share a name under different parents
- * ("Tops" under Women's and under Sets); one URL cannot serve both.
- */
-function uniqueCategorySlug(PDO $pdo, string $base, int $ignoreId = 0): string {
-    $base = slugify($base, 100);
-    if ($base === '' || $base === 'image') { $base = 'collection'; }
-    $check = $pdo->prepare("SELECT COUNT(*) FROM categories WHERE slug = :s AND id <> :id");
-    $slug = $base;
-    $i = 2;
-    while (true) {
-        $check->execute(['s' => $slug, 'id' => $ignoreId]);
-        if ((int)$check->fetchColumn() === 0) { return $slug; }
-        $slug = $base . '-' . $i;
-        if (++$i > 200) { return $base . '-' . bin2hex(random_bytes(3)); }
-    }
-}
+/* uniqueCategorySlug() moved to config/config.php.
+   ────────────────────────────────────────────────────────────────────────────
+   It was defined here, which meant admin/category_handler.php — the quick-add
+   that the product form uses — had no way to call it, and so inserted
+   categories with no slug at all. Two categories may legitimately share a name
+   under different parents ("Tops" under Women's and under Sets); one URL cannot
+   serve both, which is what the function is for. One definition, both callers. */
 
 // Handle POST Add Category / Subcategory
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_category'])) {

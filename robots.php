@@ -11,6 +11,22 @@
 require_once __DIR__ . '/config/config.php';
 
 header('Content-Type: text/plain; charset=utf-8');
+
+/* A non-canonical host invites nobody.
+   ────────────────────────────────────────────────────────────────────────────
+   Every *.dievon.com serves the full shop, and this file used to answer
+   "Allow: /" with its own Sitemap: line on all of them — so www.dievon.com and
+   any staging subdomain were complete, self-endorsing duplicates of the
+   catalogue, each advertising its own sitemap. That is how a staging site ends
+   up competing with production for its own products.
+
+   www is additionally 301'd to the apex in .htaccess. This is the second line of
+   defence, and the only one that covers a subdomain nobody remembered to
+   redirect. */
+if (!isCanonicalSiteHost()) {
+    echo "User-agent: *\nDisallow: /\n";
+    exit;
+}
 ?>
 User-agent: *
 Allow: /

@@ -163,9 +163,44 @@
             ok.onclick = function () { close(true, resolve); };
             actions.appendChild(ok);
 
+            /* Enter must do what the FOCUSED button says, and nothing else.
+               ────────────────────────────────────────────────────────────────
+               This read "Enter, unless the OK button is focused, confirms" —
+               which is exactly backwards for anyone on a keyboard. Focus Cancel,
+               press Enter, and activeElement is not `ok`, so the branch fired,
+               preventDefault() suppressed Cancel's own native activation, and
+               the dialog resolved TRUE. Pressing Enter on Cancel performed the
+               destructive action.
+
+               Driven live with buttons ["Cancel","Delete"]: Shift+Tab to Cancel,
+               Enter, resolved true. This dialog guards permanent account
+               deletion (pages/account.php:1209), address deletion, order
+               cancellation and 58 admin call sites.
+
+               No replacement branch is needed: a focused <button> already
+               activates on Enter natively, and each button's own onclick
+               resolves with the right answer. Escape stays. */
             el._keyHandler = function (e) {
                 if (e.key === 'Escape') { close(false, resolve); }
-                if (e.key === 'Enter' && document.activeElement !== ok) { e.preventDefault(); close(true, resolve); }
+                /* Tab must not leave an open modal.
+                   ────────────────────────────────────────────────────────────
+                   The overlay declares aria-modal="true", which tells a screen
+                   reader the rest of the page is inert — but nothing enforced
+                   it, so Tab walked straight out of the dialog into the header
+                   and footer behind it. The user then landed on controls their
+                   reader had just been told do not exist, with the dialog still
+                   open and no visible focus anywhere on screen.
+                   Cycling within the dialog is what aria-modal is promising. */
+                if (e.key === 'Tab') {
+                    var f = el.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+                    if (!f.length) { return; }
+                    var first = f[0], last = f[f.length - 1];
+                    if (e.shiftKey && document.activeElement === first) {
+                        e.preventDefault(); last.focus();
+                    } else if (!e.shiftKey && document.activeElement === last) {
+                        e.preventDefault(); first.focus();
+                    }
+                }
             };
             document.addEventListener('keydown', el._keyHandler);
 

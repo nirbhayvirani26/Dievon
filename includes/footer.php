@@ -152,6 +152,10 @@ $suppressWelcome = isset($_SESSION['customer_id'])
  */
 $minimalFooter = !empty($minimalFooter);
 ?>
+<?php /* Closes the <main> opened in includes/header.php, immediately before the
+         footer so the landmark wraps exactly the page's own content. */ ?>
+</main>
+
 <footer class="footer-enhanced<?= $minimalFooter ? ' footer-minimal' : '' ?>">
     <div class="container">
 
@@ -970,7 +974,12 @@ if (typeof formatPriceJS !== 'function') {
     function formatPriceJS(amount) {
         const sym = window.DIEVON_CURRENT_SYMBOL || '₹';
         const gap = /\p{L}$/u.test(sym) ? ' ' : '';
-        return sym + gap + (parseFloat(amount) || 0).toFixed(2);
+        const fixed = (parseFloat(amount) || 0).toFixed(2);
+        const neg   = fixed.charAt(0) === '-';
+        const body  = neg ? fixed.slice(1) : fixed;
+        const dot   = body.indexOf('.');
+        const grouped = body.slice(0, dot).replace(/\B(?=(\d{3})+(?!\d))/g, ',') + body.slice(dot);
+        return sym + gap + (neg ? '-' : '') + grouped;
     }
 }
 

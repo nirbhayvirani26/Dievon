@@ -428,9 +428,30 @@ require_once __DIR__ . '/includes/header.php';
                         <?php endif; ?>
                     </div>
 
+                    <?php /* Says what it does, because it did not do what it said.
+                             This field saves to seo_settings.meta_keywords and stops
+                             there: the four pages that read this table
+                             (pages/home.php, shop.php, about.php, contact.php) each
+                             SELECT meta_title, meta_description and og_image only, so
+                             $metaKeywords is never set and the <meta name="keywords">
+                             tag in includes/header.php never renders. Verified on all
+                             four live URLs — title, description and og:image arrive,
+                             keywords do not.
+                             Left in place rather than deleted, because it costs
+                             nothing and the words are the owner's own notes on what
+                             each page is for. What was wrong was the silence: a field
+                             on a screen called "SEO Manager" reads as a promise that
+                             something is published. (Even wired up it would change no
+                             ranking — Google dropped this tag as a signal in 2009 —
+                             which is why the fix here is honesty rather than plumbing.) */ ?>
                     <div class="form-group" style="margin-bottom:0;">
-                        <label class="form-label">Search Keywords (Comma Separated)</label>
+                        <label class="form-label">Search Keywords (Comma Separated) — your own notes</label>
                         <input type="text" name="seo[<?= $sp['page_slug'] ?>][meta_keywords]" class="form-control" value="<?= htmlspecialchars($sp['meta_keywords']) ?>" placeholder="e.g. silk kurtis, luxury fashion, dievon">
+                        <small style="display:block; margin-top:6px; color:var(--text-muted); font-size:12px;">
+                            Saved here for your reference only — this is not published to the page
+                            and search engines have ignored the keywords tag since 2009.
+                            The Title and Description above are the two that Google actually reads.
+                        </small>
                     </div>
                 </div>
             <?php endforeach; ?>

@@ -297,7 +297,7 @@ class RefundService
     private function markOrderRefundState(int $orderId): void
     {
         try {
-            $s = $this->pdo->prepare("SELECT total_price, refunded_amount, status FROM orders WHERE id = :id");
+            $s = $this->pdo->prepare("SELECT * FROM orders WHERE id = :id");
             $s->execute(['id' => $orderId]);
             $o = $s->fetch(PDO::FETCH_ASSOC);
             if (!$o) { return; }
@@ -306,10 +306,48 @@ class RefundService
             if (!$full) { return; }   // partial refunds leave the status alone
 
             $keep = ['Cancelled', 'Returned', 'Refunded'];
-            if (in_array((string)$o['status'], $keep, true)) { return; }
+            if (!in_array((string)$o['status'], $keep, true)) {
+                $this->pdo->prepare("UPDATE orders SET status = 'Refunded' WHERE id = :id")
+                          ->execute(['id' => $orderId]);
+            }
 
-            $this->pdo->prepare("UPDATE orders SET status = 'Refunded' WHERE id = :id")
-                      ->execute(['id' => $orderId]);
+            /* A fully refunded order puts its garments back on the shelf.
+               ────────────────────────────────────────────────────────────────
+               admin/update_order.php restores stock for exactly three statuses
+               — Cancelled, Refunded, Returned (update_order.php:468) — but
+               'Refunded' is deliberately NOT selectable from that dropdown:
+               isManuallySettableOrderStatus() rejects it and the screen answers
+               "Use the Refund panel to refund this order — that records the
+               money and sets this status itself."
+
+               So the Refund panel is the ONLY route to 'Refunded', and it wrote
+               the status with a bare UPDATE that never went past the restore.
+               Measured on order DV-26669785: refunded in full, status
+               'Refunded', and products 222/224 still carried sold_online 3 / 1
+               with variants 86/88 still down at 18 / 19 — three garments paid
+               back to the customer and still counted as sold, for ever. The
+               shop under-sells its own shelf on every refund, which is the
+               precise defect restoreOrderStock() was written to end.
+
+               restoreOrderStock() is the one shared implementation the Orders
+               screen, the Returns screen and the customer's own cancel button
+               all call. It is a no-op unless orders.stock_deducted is set and
+               clears that flag when it finishes, so an order already restored
+               by a cancellation or a completed RMA cannot be credited twice,
+               and neither can a second refund attempt.
+
+               Its own try: money has already left the building by the time this
+               runs, so a restock failure must be logged loudly and must never
+               propagate back into the refund result. */
+            if (function_exists('restoreOrderStock') && !empty($o['stock_deducted'])) {
+                try {
+                    $o['_restock_reason'] = 'refunded';
+                    restoreOrderStock($this->pdo, $o);
+                } catch (Throwable $eStock) {
+                    error_log('RESTOCK FAILED after full refund — order '
+                        . ($o['order_code'] ?? $orderId) . ' — stock NOT returned: ' . $eStock->getMessage());
+                }
+            }
         } catch (Throwable $e) {
             error_log('markOrderRefundState failed for order ' . $orderId . ': ' . $e->getMessage());
         }

@@ -21,12 +21,24 @@ if ($productId <= 0) {
 }
 
 try {
-    // available = 1 only: a hidden or archived product must not be reachable
-    // through Quick View just because someone kept the id.
-    $stmt = $pdo->prepare("SELECT id, name, description, price, mrp_price, category, image, emoji,
-                                  fabric, color, sleeve, neck, pattern, occasion, badge, available,
-                                  track_stock, stock_qty, seo_url
-                           FROM products WHERE id = :id AND available = 1 LIMIT 1");
+    /* Published AND not archived. The comment here already said "a hidden or
+       ARCHIVED product must not be reachable through Quick View just because
+       someone kept the id" — but the clause only tested available = 1, so it
+       enforced half of what it claimed. A row archived while still flagged
+       available (is_deleted = 1, available = 1) opened a full Quick View panel,
+       priced, with live size chips and a working Add to Bag, while the shop
+       grid, the search and the sitemap all correctly hid it. Every other read
+       of this table pairs the two conditions; this is the last one that did
+       not. category_id comes along for sizeLadderForCategory() below, which
+       was reading a column that was never selected. */
+    $stmt = $pdo->prepare("SELECT id, name, description, price, mrp_price, category, category_id,
+                                  image, emoji, fabric, color, sleeve, neck, pattern, occasion,
+                                  badge, available, track_stock, stock_qty, seo_url
+                           FROM products
+                          WHERE id = :id
+                            AND available = 1
+                            AND (is_deleted = 0 OR is_deleted IS NULL)
+                          LIMIT 1");
     $stmt->execute(['id' => $productId]);
     $p = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -212,9 +224,38 @@ try {
         }
     } catch (PDOException $e) {}
 
-    $mrp = (float)($p['mrp_price'] ?? 0);
+    /* The headline must be a price one of the chips below it will charge.
+       ────────────────────────────────────────────────────────────────────────
+       This printed products.price while every chip was already priced through
+       effectiveVariantPrice(), so the two halves of the same panel disagreed:
+
+         Aurora Silk Saree   headline ₹3,000   chips ₹1,500 / ₹2,600 / ₹2,600
+         Zephyr Palazzo      headline ₹1,250   chips ₹1,100 · Ivory (both)
+
+       ₹3,000 is not a price any size of that saree can be bought at, and the
+       shopper only found out by clicking a chip — qvPickSize() then rewrote the
+       headline underneath them. The card they opened it from said "From ₹1,500"
+       all along.
+
+       Resolved through productPriceRange(), which is the same ladder the chips,
+       the card and the cart use, so the headline is by construction the
+       cheapest chip. Abroad the flat country price already replaced $p['price']
+       above and overrides sizes entirely, so it is left exactly as it is.
+
+       The saving is then measured against the price actually shown, and
+       withdrawn when that price is only a floor — an MRP struck through beside
+       a "from" figure claims a discount that holds for one size only. */
+    $mrp   = (float)($p['mrp_price'] ?? 0);
     $price = (float)$p['price'];
-    $hasDiscount = $mrp > $price;
+    $varies = false;
+    if ($qvAllowOverrides) {
+        $qvRange = productPriceRange($p);
+        if ($qvRange['min'] > 0) {
+            $price  = (float)$qvRange['min'];
+            $varies = (bool)$qvRange['varies'];
+        }
+    }
+    $hasDiscount = !$varies && $mrp > $price && $price > 0;
 
     echo json_encode([
         'success' => true,
@@ -225,7 +266,10 @@ try {
             'category'    => $p['category'],
             'badge'       => $p['badge'],
             'emoji'       => $p['emoji'],
-            'price'       => formatPrice($price),
+            // "From" when the sizes are priced differently from one another, so
+            // the headline reads as a floor rather than as the price — matching
+            // the card the shopper opened this from.
+            'price'       => ($varies ? 'From ' : '') . formatPrice($price),
             'mrp'         => $hasDiscount ? formatPrice($mrp) : null,
             'discount'    => $hasDiscount ? (int)round((($mrp - $price) / $mrp) * 100) : 0,
             'images'      => array_values(array_unique($images)),

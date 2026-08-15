@@ -26,14 +26,32 @@ if (!$ids) {
 $ids = array_slice($ids, 0, COMPARE_MAX);
 
 try {
+    /* Published AND not archived.
+       ────────────────────────────────────────────────────────────────────────
+       This tested available = 1 alone, so a row archived while still flagged
+       available (is_deleted = 1, available = 1) could be pulled into the
+       comparison table by id — priced, sized, linked and presented beside two
+       live garments — while the shop grid, the search and the wishlist all
+       correctly refused it. Every other read of this table pairs the two.
+
+       seo_url is selected because productUrl() below reads it. Without it the
+       link was built from the product NAME instead of the stored slug, so the
+       compare table pointed at /product/aurora-silk-saree-244 while every card
+       on the site pointed at /product/qa5-aurora-silk-saree-244 — a needless
+       301 out of a drawer whose whole job is to be clicked. */
     $in = implode(',', array_fill(0, count($ids), '?'));
-    $stmt = $pdo->prepare("SELECT id, name, price, mrp_price, category, image, emoji, description,
+    $stmt = $pdo->prepare("SELECT id, name, seo_url, price, mrp_price, category, image, emoji, description,
                                   fabric, color, sleeve, neck, pattern, occasion, brand, badge,
                                   track_stock, stock_qty
                            FROM products
-                           WHERE id IN ($in) AND available = 1");
+                           WHERE id IN ($in)
+                             AND available = 1
+                             AND (is_deleted = 0 OR is_deleted IS NULL)");
     $stmt->execute($ids);
     $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // One pair of queries for the whole table — see productPriceRangePrime().
+    productPriceRangePrime($rows, $pdo);
 
     // Preserve the order the shopper picked them in, not the order MySQL returned.
     $byId = [];
@@ -78,9 +96,39 @@ try {
             $p['mrp_price'] = $cmpPricing['mrp'];
         }
 
-        $mrp   = (float)($p['mrp_price'] ?? 0);
-        $price = (float)$p['price'];
-        $disc  = $mrp > $price;
+        /* The comparable price is the one a shopper can actually pay.
+           ────────────────────────────────────────────────────────────────────
+           This read products.price, which broke the table's whole purpose in
+           two ways at once. It quoted figures nobody can buy at — a saree
+           priced 3000 whose sizes are 1500/2600/2600 was listed at ₹3,000
+           while every card on the site said "From ₹1,500" — and, because
+           dievon-compare.js picks the "Lowest price" badge with
+           Math.min(priceRaw), it put that badge on the WRONG garment.
+
+           Measured, comparing 244 / 245 / 243: the badge landed on the Élan
+           Été Jacket at ₹2,200, while the Aurora Silk Saree beside it was
+           buyable from ₹1,500. A table built to answer "which is cheaper"
+           answered it incorrectly.
+
+           productPriceRange() is the same ladder the card, Quick View and the
+           cart use, so priceRaw is now the figure the badge should rank on and
+           `price` is the figure the shopper will be charged. Country pricing
+           already replaced $p['price'] above and overrides sizes entirely, so
+           it is honoured by leaving the range out of that case. */
+        $mrp    = (float)($p['mrp_price'] ?? 0);
+        $price  = (float)$p['price'];
+        $varies = false;
+        if (strtoupper($cmpCountry) === $cmpHome) {
+            $range = productPriceRange($p);
+            if ($range['min'] > 0) {
+                $price  = (float)$range['min'];
+                $varies = (bool)$range['varies'];
+            }
+        }
+        // A struck-through MRP beside a "from" price claims a saving that holds
+        // for one size only, so it is withdrawn — the same rule the card and
+        // Quick View follow.
+        $disc  = !$varies && $mrp > $price && $price > 0;
 
         $out[] = [
             'id'        => (int)$p['id'],
@@ -89,7 +137,8 @@ try {
             'badge'     => $p['badge'],
             'image'     => !empty($p['image']) ? SITE_URL . '/uploads/products/' . $p['image'] : null,
             'emoji'     => $p['emoji'],
-            'price'     => formatPrice($price),
+            'price'     => ($varies ? 'From ' : '') . formatPrice($price),
+            // What the "Lowest price" badge ranks on — see dievon-compare.js.
             'priceRaw'  => $price,
             'mrp'       => $disc ? formatPrice($mrp) : null,
             'discount'  => $disc ? (int)round((($mrp - $price) / $mrp) * 100) : 0,

@@ -174,7 +174,39 @@ try {
 // ── Fetch Catalog Products for Wishlist Tab Rendering ────────────────
 $accountProducts = [];
 try {
-    $accountProducts = $pdo->query("SELECT id, name, price, category, image, emoji FROM products WHERE available = 1 ORDER BY id ASC")->fetchAll();
+    /* The price a shopper can ACTUALLY pay, not the raw column.
+       ────────────────────────────────────────────────────────────────────────
+       This selected products.price and the tile below printed it verbatim, so
+       this tab quoted a figure no size of the product might sell at. Measured
+       against the standalone /wishlist page, which renders through
+       includes/product_card.php and resolves properly: the same four saved
+       products read "From ₹1,500 / From ₹1,500 / ₹2,500→₹1,899 / ₹1,650" there
+       and a flat "₹1,899" on all four here. One of them had no size buyable at
+       ₹1,899 at all — its colour override makes every size ₹1,650.
+       Two wishlists, one account, two different prices for the same garment.
+
+       productPriceRange() is the same helper every card in the shop uses, so
+       the two lists can no longer disagree; priming it first keeps this to one
+       extra query for the whole tab rather than one per product.
+
+       Display only — the tile's Add to Bag is a link to the product page, so no
+       wrong figure ever reached the bag. It was still a price the shop does not
+       honour, shown to a signed-in customer looking at their own saved items. */
+    $accountProducts = $pdo->query(
+        "SELECT id, name, price, mrp_price, category, image, emoji
+           FROM products WHERE available = 1 ORDER BY id ASC"
+    )->fetchAll(PDO::FETCH_ASSOC);
+
+    if ($accountProducts && function_exists('productPriceRangePrime')) {
+        productPriceRangePrime($accountProducts, $pdo);
+        foreach ($accountProducts as &$ap) {
+            $range = productPriceRange($ap);
+            $ap['price']       = $range['min'] > 0 ? $range['min'] : (float)$ap['price'];
+            // The card says "From" when sizes differ; this tile now can too.
+            $ap['price_varies'] = !empty($range['varies']);
+        }
+        unset($ap);
+    }
 } catch (PDOException $e) {}
 
 $pageTitle = "My Account | Dievon VIP Portal";
@@ -1036,7 +1068,10 @@ function renderAccountWishlist() {
                 </a>
                 <span style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted);">${escHtml(p.category)}</span>
                 <strong style="font-size: 13px; margin: 4px 0; font-family: var(--font-heading); color: var(--text-primary); min-height: 36px; line-height: 1.3;">${escHtml(p.name)}</strong>
-                <div style="font-size: 12px; font-weight: 700; color: var(--color-secondary); margin-bottom: 12px;">${typeof formatPriceJS === 'function' ? formatPriceJS(p.price) : '<?= currencySymbol() ?>' + p.price}</div>
+                <?php /* "From" when the sizes are priced differently — the same word,
+                         on the same rule, that the card on /wishlist uses. Without it a
+                         product spanning ₹1,500-₹2,400 reads as a flat ₹1,500 here. */ ?>
+                <div style="font-size: 12px; font-weight: 700; color: var(--color-secondary); margin-bottom: 12px;">${p.price_varies ? 'From ' : ''}${typeof formatPriceJS === 'function' ? formatPriceJS(p.price) : '<?= currencySymbol() ?>' + p.price}</div>
                 
                 <div style="display: flex; flex-direction: column; gap: 6px; margin-top: auto;">
                     <?php // select_size=1 dropped — nothing has ever read it. ?>

@@ -103,13 +103,26 @@ require_once __DIR__ . '/../includes/header.php';
 // so all six queries below are byte-identical to before until menswear is live.
 $homeGenderSql = function_exists('shopGenderSqlFilter') ? shopGenderSqlFilter() : '';
 
+// Archived stock must not be merchandised.
+//
+// All six rails below tested `available = 1` and nothing else, while the shop
+// grid, the search, the sitemap and the Merchant feed all pair that with an
+// is_deleted guard. A row archived while still flagged available therefore
+// appeared ONLY here — on the shop's most-visited page — with a price, a badge,
+// a wishlist heart, Quick View and a Details link, and nowhere else on the site.
+// Measured: product 249 (available = 1, is_deleted = 1) rendered in New Arrivals
+// under a "New" badge while /shop, /search and every collection correctly hid it.
+//
+// One constant so the six queries cannot drift apart again.
+$homeLiveSql = " AND (is_deleted = 0 OR is_deleted IS NULL)";
+
 // Fetch products for New Arrivals (limit 8)
 $newArrivals = [];
 try {
-    $stmt = $pdo->query("SELECT * FROM products WHERE available = 1 AND badge = 'New'{$homeGenderSql} ORDER BY id DESC LIMIT 8");
+    $stmt = $pdo->query("SELECT * FROM products WHERE available = 1{$homeLiveSql} AND badge = 'New'{$homeGenderSql} ORDER BY id DESC LIMIT 8");
     $newArrivals = $stmt->fetchAll();
     if (count($newArrivals) < 8) {
-        $stmt = $pdo->query("SELECT * FROM products WHERE available = 1{$homeGenderSql} ORDER BY id DESC LIMIT 8");
+        $stmt = $pdo->query("SELECT * FROM products WHERE available = 1{$homeLiveSql}{$homeGenderSql} ORDER BY id DESC LIMIT 8");
         $newArrivals = $stmt->fetchAll();
     }
 } catch (PDOException $e) {}
@@ -137,10 +150,10 @@ try {
 // Fetch Best Sellers
 $bestSellers = [];
 try {
-    $stmt = $pdo->query("SELECT * FROM products WHERE available = 1 AND badge = 'Best Seller'{$homeGenderSql} ORDER BY id ASC LIMIT 4");
+    $stmt = $pdo->query("SELECT * FROM products WHERE available = 1{$homeLiveSql} AND badge = 'Best Seller'{$homeGenderSql} ORDER BY id ASC LIMIT 4");
     $bestSellers = $stmt->fetchAll();
     if (empty($bestSellers)) {
-        $stmt = $pdo->query("SELECT * FROM products WHERE available = 1{$homeGenderSql} ORDER BY price DESC LIMIT 4");
+        $stmt = $pdo->query("SELECT * FROM products WHERE available = 1{$homeLiveSql}{$homeGenderSql} ORDER BY price DESC LIMIT 4");
         $bestSellers = $stmt->fetchAll();
     }
 } catch (PDOException $e) {}
@@ -148,10 +161,10 @@ try {
 // Fetch Trending / Hot
 $trending = [];
 try {
-    $stmt = $pdo->query("SELECT * FROM products WHERE available = 1 AND badge = 'Hot'{$homeGenderSql} ORDER BY id ASC LIMIT 4");
+    $stmt = $pdo->query("SELECT * FROM products WHERE available = 1{$homeLiveSql} AND badge = 'Hot'{$homeGenderSql} ORDER BY id ASC LIMIT 4");
     $trending = $stmt->fetchAll();
     if (empty($trending)) {
-        $stmt = $pdo->query("SELECT * FROM products WHERE available = 1{$homeGenderSql} ORDER BY price ASC LIMIT 4");
+        $stmt = $pdo->query("SELECT * FROM products WHERE available = 1{$homeLiveSql}{$homeGenderSql} ORDER BY price ASC LIMIT 4");
         $trending = $stmt->fetchAll();
     }
 } catch (PDOException $e) {}
@@ -1037,6 +1050,38 @@ $occIsMen = function_exists('currentShopGender') && currentShopGender() === 'men
             autoHeight: false,
             animateOut: false
         });
+
+        /* Owl clones the first and last slides to make the loop seamless, and a
+           clone of slide one is a clone of its <h1> — so the rendered page carried
+           TWO identical <h1>s even though the HTML has one. The markup already
+           takes care to print the heading on the first slide only (see the note
+           in the slide loop above); the duplicate arrives after Owl runs, which is
+           why it could not be fixed in PHP.
+
+           Demoted rather than removed: the clone is what a shopper sees for the
+           moment the loop wraps, so its text has to stay. .slide-content h1 and
+           .slide-content h2 are declared together in style.css with identical
+           rules, so this is invisible on screen — it only changes what a crawler
+           and a screen reader's heading list are handed.
+
+           Runs on initialized AND on refresh, because Owl rebuilds its clones
+           whenever the carousel is refreshed or the viewport crosses a
+           breakpoint, and a rebuilt clone is a fresh <h1> again. */
+        function demoteClonedHeadings() {
+            jQuery('#heroSlider .owl-item.cloned').find('h1').each(function () {
+                var h1 = this;
+                var h2 = document.createElement('h2');
+                h2.className = h1.className;
+                h2.innerHTML = h1.innerHTML;
+                // Belt and braces: the clone is decorative duplication, so keep it
+                // out of the accessibility tree entirely rather than only out of
+                // the heading level it was claiming.
+                h2.setAttribute('aria-hidden', 'true');
+                h1.parentNode.replaceChild(h2, h1);
+            });
+        }
+        $hero.on('initialized.owl.carousel refreshed.owl.carousel', demoteClonedHeadings);
+        demoteClonedHeadings();   // initialized has usually already fired by here
 
         markActive(0);
         $hero.on('changed.owl.carousel', function (e) {

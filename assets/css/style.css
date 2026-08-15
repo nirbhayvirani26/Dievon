@@ -100,8 +100,24 @@
     --color-secondary:     #C59B4B; /* elegant gold */
     --color-secondary-bg:  #fbf8f3;
 
-    --color-accent:        #D4AF37; /* rich gold */
+    --color-accent:        #D4AF37; /* rich gold — decoration, and text on DARK grounds */
     --color-accent-bg:     #fcfaf6;
+    /* Gold dark enough to read as TEXT on a light ground.
+       ────────────────────────────────────────────────────────────────────────
+       #D4AF37 on white measures 2.09:1 against a 4.5:1 requirement, so gold
+       text on the pale pages — the "NEW" pill, editorial labels, category card
+       links, the luxury badge — is a WCAG AA failure wherever it appears.
+
+       It cannot be fixed by darkening --color-accent itself: that token is also
+       gold text on the dark footer (8.98:1) and on maroon (6.85:1), both of
+       which are comfortably passing today and would drop to 3.73:1 and 2.85:1
+       if the value moved. Changing one token fixes the light pages and breaks
+       the dark ones — measured, not assumed.
+
+       So the two cases get two tokens. This is the one to reach for when gold
+       sits on white or cream; --color-accent stays exactly as it is everywhere
+       else, and the brand colour is unchanged for every decorative use. */
+    --color-accent-ink:    #8a6a12; /* 5.06:1 on white, 4.90:1 on cream */
 
     --color-danger:        #a94442;
     --color-success:       #2e7d32;
@@ -109,7 +125,12 @@
     /* ── Text ─────────────────────────────────────────────── */
     --text-primary:   #3a0c1b; /* dark burgundy for text */
     --text-secondary: #511126;
-    --text-muted:     #8a765d;
+    /* 4.21:1 on the cream ground, against a 4.5:1 requirement — a fail by a
+       small margin, and this token carries breadcrumbs, the struck-through MRP,
+       the "From" prefix, card categories and the "Select Size" caption. Nudged
+       to 5.24:1. Verified as body text on light grounds only; no dark-background
+       rule uses it. */
+    --text-muted:     #7a674f;
     --text-on-primary: #ffffff;
 
     /* ── Borders ──────────────────────────────────────────── */
@@ -2017,6 +2038,75 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 .luxury-hero h1 { font-size: 48px; font-weight: var(--font-heading-weight); line-height: 1.2; color: var(--text-primary); margin-bottom: 15px; }
 .luxury-hero p { font-size: 16px; max-width: 600px; margin: 0 auto; color: var(--text-secondary); font-family: var(--font-heading); font-style: italic; }
 
+/* ── Product page hero ──────────────────────────────────────────────────────
+   The product page is the one page where this band is NOT the page heading:
+   the garment's real <h1> lives in the buy box below. So its name is a <p>
+   carrying the h1's typography rather than a second <h1> competing with it,
+   and it needs these two lines to escape the italic serif `.luxury-hero p`
+   treatment meant for a subtitle.
+
+   Hidden below 992px, where it was 207px of an 844px screen — a blurred copy
+   of the photograph that appears sharp immediately beneath it, above a
+   breadcrumb repeating the category and a title repeating the name. Removing
+   it takes Add to Bag from 1,531px to 1,312px on a 390px phone. */
+.luxury-hero .product-hero-name {
+    font-family: var(--font-heading); font-style: normal;
+    font-size: 48px; font-weight: var(--font-heading-weight); line-height: 1.2;
+    color: var(--text-primary); max-width: none; margin: 0 auto 15px;
+}
+@media (max-width: 991px) {
+    .luxury-hero.product-hero { display: none; }
+}
+
+/* ── Sticky buy bar, product page, phones and tablets ───────────────────────
+   Shown only while the real Add to Bag button is off screen, so a shopper
+   never sees two identical buttons at once. `hidden` is on the element in the
+   markup and JS clears it, which means a browser that never runs the script
+   shows nothing rather than a bar the page cannot control.
+
+   It REPLACES .mobile-bottom-dock here rather than stacking above it — see
+   .has-pdp-buy-bar below. The class goes on <body> from JS, so a failed script
+   leaves the dock exactly where it was. */
+.pdp-buy-bar {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 9400;
+    display: flex; align-items: center; gap: 14px;
+    padding: 10px 16px;
+    /* The home-indicator strip on a modern iPhone sits inside the viewport, so
+       without this the button's lower third is under it and taps land nowhere. */
+    padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    background: var(--bg-surface);
+    border-top: 1px solid var(--border-strong);
+    box-shadow: 0 -4px 18px rgba(20, 10, 14, 0.10);
+    transform: translateY(101%);
+    transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.pdp-buy-bar.is-visible { transform: translateY(0); }
+/* The compare tray also pins to the bottom and outranks this one. When it is
+   up, sit above it instead of underneath. */
+.pdp-buy-bar.is-above-compare { bottom: 78px; }
+.pdp-buy-bar-price { display: flex; flex-direction: column; line-height: 1.2; }
+.pdp-buy-bar-price-label {
+    font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--text-muted); font-weight: 600;
+}
+.pdp-buy-bar-price-amount { font-size: 17px; font-weight: 700; color: var(--color-primary); }
+.pdp-buy-bar-btn {
+    flex: 1; min-height: 48px; padding: 13px 18px;
+    font-size: 12px; letter-spacing: 0.1em; white-space: nowrap;
+}
+/* The swap. Scoped to the viewports where the dock exists at all. */
+@media (max-width: 991px) {
+    body.has-pdp-buy-bar .mobile-bottom-dock { display: none; }
+}
+@media (min-width: 992px) {
+    /* Desktop keeps the buy box in a column beside a pinned gallery — the real
+       button is a short scroll away and a fixed bar would be noise. */
+    .pdp-buy-bar { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .pdp-buy-bar { transition: none; }
+}
+
 /* ── Luxury Hero with background photo (set --hero-bg-image per page) ──
    Usage: <section class="luxury-hero has-bg-image" style="--hero-bg-image:url('...')"> */
 .luxury-hero.has-bg-image {
@@ -2036,7 +2126,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 .editorial-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 40px; align-items: center; }
 .editorial-img img { width: 100%; height: auto; border: 1px solid var(--border-light); }
 .editorial-content { padding-right: 40px; }
-.editorial-label { font-size: 12px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--color-accent); font-weight: 600; display: block; margin-bottom: 10px; }
+.editorial-label { font-size: 12px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--color-accent-ink); font-weight: 600; display: block; margin-bottom: 10px; }
 .editorial-title { font-family: var(--font-heading); font-size: 36px; font-weight: var(--font-heading-weight); margin-bottom: 20px; line-height: 1.3; }
 .editorial-text { color: var(--text-secondary); margin-bottom: 30px; font-size: 15px; line-height: 1.8; }
 .btn-luxury {
@@ -2095,7 +2185,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 .form-luxury-group label { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; font-weight: 600; color: var(--text-primary); }
 .form-luxury-input { width: 100%; padding: 12px; border: 1px solid var(--border-strong); background: var(--bg-surface); font-family: inherit; font-size: 14px; color: var(--text-primary); transition: var(--transition); }
 .form-luxury-input:focus { border-color: var(--color-primary); outline: none; }
-.badge-luxury { position: absolute; top: 15px; left: 15px; background: var(--color-accent); color: var(--text-on-primary); font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; padding: 4px 10px; font-weight: 600; z-index: 10; }
+.badge-luxury { position: absolute; top: 15px; left: 15px; background: var(--color-accent-ink); color: var(--text-on-primary); font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; padding: 4px 10px; font-weight: 600; z-index: 10; }
 .badge-luxury.badge-sale { background: var(--color-danger); color: #ffffff; }
 
 /* ═══════════════════════════════════════════════════════════
@@ -2325,6 +2415,43 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 .product-title-heading { font-family: var(--font-heading); font-size: 32px; font-weight: var(--font-heading-weight); text-transform: uppercase; line-height: 1.3; color: var(--text-primary); margin-bottom: 12px; word-break: break-word; }
 .product-price-heading { font-size: 22px; font-weight: 600; color: var(--color-primary); margin-bottom: 20px; }
 .product-description-text { font-size: 14px; line-height: 1.8; color: var(--text-secondary); margin-bottom: 25px; word-break: break-word; }
+
+/* ── Description clamp (phones and tablets only) ────────────────────────────
+   A real Dievon description runs three paragraphs. Rendered in full on a
+   390px screen that is ~450px of body copy sitting between the price and the
+   size picker, and it pushed Add to Bag down to 1,827px — past two entire
+   screens before a shopper can buy. Desktop keeps the full text: there it sits
+   in a column beside a pinned gallery and costs nothing.
+
+   The class is added by JS, and only after measuring that the text really
+   overflows, so a one-line description is left alone. Never applied by default:
+   if the script fails the shopper reads a long description rather than a
+   permanently truncated one. */
+.product-description-text.is-clamped {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 4;
+    line-clamp: 4;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+.desc-read-more {
+    display: inline-flex; align-items: center; gap: 7px;
+    background: none; border: 0; padding: 6px 0;
+    /* 44px of touch target without 44px of visible chrome — the row reads as a
+       text link and still meets the minimum tap size. */
+    min-height: 44px;
+    font-family: inherit; font-size: 12px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--color-accent-ink); cursor: pointer;
+    margin-bottom: 20px;
+}
+.desc-read-more i { font-size: 10px; transition: transform 0.2s ease; }
+.desc-read-more[aria-expanded="true"] i { transform: rotate(180deg); }
+.desc-read-more:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) {
+    .desc-read-more i { transition: none; }
+}
 
 
 /* ═══════════════════════════════════════════════════════════
@@ -2592,7 +2719,7 @@ body.admin-wrapper .product-form-grid {
 .category-card img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s ease; }
 .category-card-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 50%); display: flex; align-items: flex-end; padding: 30px; z-index: 2; }
 .category-card-overlay h3 { font-family: var(--font-heading); font-size: 26px; font-weight: var(--font-heading-weight); text-transform: uppercase; color: white; margin-bottom: 5px; }
-.category-card-link { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--color-accent); font-weight: 600; }
+.category-card-link { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--color-accent-ink); font-weight: 600; }
 
 .new-arrivals-section { background: var(--bg-surface); font-family: var(--font-body); position: relative; }
 .btn-carousel-arrow { width: 44px; height: 44px; border: 1px solid var(--border-strong); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-primary); background: transparent; transition: var(--transition); }
@@ -2784,8 +2911,8 @@ body.admin-wrapper .product-form-grid {
 .delivery-estimate-row i { color: var(--color-primary); }
 
 /* ── Shop with Confidence ───────────────────────────────────────────── */
-.shop-confidence-box { margin: 0 0 30px; }
-.shop-confidence-title { font-size: 11px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 12px; }
+/* .shop-confidence-box / -title went with the always-open box; the list now
+   lives inside a product accordion, which supplies its own heading and frame. */
 .shop-confidence-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; }
 .shop-confidence-list li { font-size: 12px; color: var(--text-secondary); display: flex; align-items: center; gap: 8px; }
 .shop-confidence-list i { color: var(--color-primary); width: 14px; text-align: center; }
@@ -3124,10 +3251,10 @@ body.admin-wrapper .product-form-grid {
 .size-select-header-row .variant-select-label { margin: 0; }
 .variant-select-label { font-size: 11px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.08em; color: var(--text-muted); display: block; margin-bottom: 8px; }
 
-.product-trust-badges { display: flex; gap: 15px; margin: 15px 0 20px; flex-wrap: wrap; }
-.trust-badge-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); background: var(--bg-surface-soft); padding: 6px 12px; border-radius: 4px; border: 1px solid var(--border-light); }
-.trust-badge-item i { color: var(--color-primary); }
-.trust-badge-item.trust-badge-return i { color: #10b981; }
+/* .product-trust-badges / .trust-badge-item removed with the strip they styled.
+   Both its claims — dispatch and the return window — now appear once each in
+   .product-benefits-row, which is where every other delivery promise already
+   was. Nothing else in the shop referenced these classes. */
 
 .product-section-header-row { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid var(--border-strong); padding-bottom: 15px; margin-bottom: 40px; flex-wrap: wrap; gap: 20px; }
 .product-section-header-row h2 { font-family: var(--font-heading); font-size: 28px; font-weight: var(--font-heading-weight); text-transform: uppercase; margin: 0; }
@@ -8261,3 +8388,51 @@ body {
 .acc-intro   { color: var(--text-secondary); font-size: 13px; margin-bottom: 20px; }
 .acc-stack   { display: flex; flex-direction: column; gap: 12px; }
 .acc-btn-sm.acc-btn-sm { padding: 10px 24px; font-size: 12px; }
+
+/* ── Skip link ────────────────────────────────────────────────────────────
+   Off-screen until focused, then pinned top-left over everything. Not
+   display:none — a hidden element is removed from the tab order entirely,
+   which would defeat the point of the link. */
+.skip-to-content {
+    position: absolute;
+    left: -9999px;
+    top: 0;
+    z-index: 100000;
+    padding: 12px 20px;
+    background: #511126;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    border-radius: 0 0 4px 0;
+}
+.skip-to-content:focus {
+    left: 0;
+    outline: 3px solid #d4af37;
+    outline-offset: 2px;
+}
+
+/* Focusing <main> via the skip link must not draw a ring around the whole page. */
+main#mainContent:focus { outline: none; }
+
+/* ── Shop pagination ──────────────────────────────────────────────────────
+   Real anchors so the catalogue is crawlable; the Load More button remains
+   the control a person actually uses. */
+.shop-page-link {
+    display: inline-block;
+    min-width: 38px;
+    padding: 8px 12px;
+    text-align: center;
+    border: 1px solid var(--border-light, #e5e0d8);
+    border-radius: 4px;
+    color: var(--text-secondary, #6b5c47);
+    text-decoration: none;
+    font-size: 13px;
+}
+.shop-page-link:hover { border-color: var(--color-secondary, #511126); }
+.shop-page-current {
+    background: var(--color-secondary, #511126);
+    border-color: var(--color-secondary, #511126);
+    color: #fff;
+    font-weight: 700;
+}

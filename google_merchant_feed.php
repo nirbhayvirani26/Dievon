@@ -34,16 +34,44 @@ try {
     )->fetchAll();
 } catch (PDOException $e) {}
 
-/** Size variants of a product, for one feed item per size. */
+/** Size variants of a product, for one feed item per size.
+ *
+ * Each row carries its colour with it (_colorRow / _colorName), because a size
+ * cannot be priced or identified without one:
+ *
+ *  - PRICE. A colour's price_override beats the size's own price, and only
+ *    effectiveVariantPrice() knows that. Without the colour this file could
+ *    only re-derive a price, which is exactly the bug it used to have.
+ *  - IDENTITY. g:id was code + size with nothing for the colour, so a garment
+ *    in three colourways emitted the SAME g:id three times with three different
+ *    prices. Merchant Center keeps one arbitrarily, so two colourways silently
+ *    vanished and the survivor could be advertised at another colour's price.
+ *
+ * A colour switched off in admin is excluded here too. product_colors.is_active
+ * is what the product page filters on (pages/product.php:217); the feed ignored
+ * it entirely and went on advertising a colourway the shop had withdrawn.
+ */
 function feedVariants(PDO $pdo, int $productId): array {
     try {
         $st = $pdo->prepare(
-            "SELECT * FROM product_variants
-              WHERE product_id = :id AND available = 1
-              ORDER BY sort_order ASC, id ASC"
+            "SELECT v.*, c.color_name AS _colorName, c.id AS _colorId,
+                    c.price_override AS _colorOverride, c.sku AS _colorSku
+               FROM product_variants v
+               LEFT JOIN product_colors c ON c.id = v.color_id
+              WHERE v.product_id = :id
+                AND v.available = 1
+                AND (v.color_id IS NULL OR c.is_active = 1)
+              ORDER BY v.sort_order ASC, v.id ASC"
         );
         $st->execute(['id' => $productId]);
-        return $st->fetchAll();
+        $rows = $st->fetchAll();
+        foreach ($rows as &$r) {
+            $r['_colorRow'] = $r['_colorId'] === null
+                ? null
+                : ['id' => $r['_colorId'], 'color_name' => $r['_colorName'], 'price_override' => $r['_colorOverride']];
+        }
+        unset($r);
+        return $rows;
     } catch (PDOException $e) { return []; }
 }
 
@@ -105,20 +133,41 @@ echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
     foreach ($variants as $v) {
         $size = trim(str_replace('Size:', '', (string)($v['size_code'] ?: $v['name'])));
         if ($size === '') { continue; }
+        $colourSlug = $v['_colorName'] !== null
+            ? '-' . strtoupper(preg_replace('/[^A-Za-z0-9]/', '', (string)$v['_colorName']))
+            : '';
         $rows[] = [
-            'id'    => $baseCode . '-' . strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $size)),
+            // Colour included, or three colourways collide on one g:id. See feedVariants().
+            'id'    => $baseCode . $colourSlug . '-' . strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $size)),
             'size'  => $size,
-            'price' => (float)($v['price'] ?? 0) > 0 ? (float)$v['price'] : $sellPrice,
+            // Resolved by the SAME function the page and the bag use, rather than
+            // re-derived here. This line was "the size's price if it has one, else
+            // the product's" — blind to a colour's price_override and to the sale
+            // clamp, so the feed advertised ₹2,400 for a size the shop sells at
+            // ₹1,650, and ₹2,400 for one clamped to ₹1,899. A feed price that
+            // disagrees with the landing page is a Merchant Center policy breach,
+            // which is precisely what this file's header says it was rewritten to
+            // prevent — the ladder simply had a second copy living here.
+            'price' => effectiveVariantPrice($p, $v, $v['_colorRow'] ?? null),
+            'colour'=> (string)($v['_colorName'] ?? ''),
             'stock' => array_key_exists('stock_qty', $v) && $v['stock_qty'] !== null
                 ? ((int)$v['stock_qty'] > 0) : productIsInStock($p),
         ];
     }
     if (!$rows) {
-        $rows[] = ['id' => $baseCode, 'size' => '', 'price' => $sellPrice, 'stock' => productIsInStock($p)];
+        $rows[] = ['id' => $baseCode, 'size' => '', 'price' => effectiveVariantPrice($p), 'colour' => '', 'stock' => productIsInStock($p)];
     }
 
     foreach ($rows as $row):
-        $rowRegular = $hasSale ? $mrp : $row['price'];
+        /* g:sale_price must be strictly BELOW g:price or Google rejects the item.
+           This paired the product's MRP with a raw variant price, so a size dearer
+           than the MRP emitted price 2500 / sale_price 2800 — a "sale" costing more
+           than the list price, which is an outright disapproval. Resolving the row
+           price through effectiveVariantPrice() above fixes the common case; this
+           guard covers the rest, and drops the sale pair rather than publishing a
+           contradiction. */
+        $rowOnSale  = $hasSale && $mrp > $row['price'];
+        $rowRegular = $rowOnSale ? $mrp : $row['price'];
 ?>
     <item>
 <?php
@@ -133,7 +182,7 @@ echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
 
         // Currency comes from the same source as the page and the JSON-LD.
         feedTag('g:price', priceForMachines($rowRegular) . ' ' . $currency);
-        if ($hasSale) {
+        if ($rowOnSale) {
             feedTag('g:sale_price', priceForMachines($row['price']) . ' ' . $currency);
         }
 
@@ -159,7 +208,13 @@ echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
         feedTag('g:gender', $genderMap[productGender($p)] ?? 'female');
         feedTag('g:age_group', 'adult');
         feedTag('g:size', $row['size']);
-        feedTag('g:color', $p['color_way'] ?: ($p['color'] ?? ''), true);
+        /* The colourway this item actually is, not the product's blanket one.
+           Every item of a three-colour garment advertised the same g:color, so
+           Shopping could not tell the colourways apart — and with the colour now
+           in g:id they are finally distinct items that deserve distinct colours.
+           Falls back to the product-level fields for a garment sold without
+           colourways. */
+        feedTag('g:color', $row['colour'] !== '' ? $row['colour'] : ($p['color_way'] ?: ($p['color'] ?? '')), true);
         feedTag('g:material', $material, true);
         feedTag('g:pattern', $p['pattern'] ?? '', true);
 ?>

@@ -157,6 +157,148 @@ function shopOrderBy(string $sortBy): string {
     }
 }
 
+/**
+ * Escape the three characters LIKE treats as syntax.
+ *
+ * Every search box on the shop wraps the shopper's term in %…% and hands it to
+ * LIKE, so a term that itself contains % or _ was not searched for — it was
+ * executed. "Aur%Saree" matched "Aurora Silk Saree", "Aurora_Silk" matched
+ * "Aurora Silk", and a lone "%" returned the whole catalogue under a heading
+ * announcing a search for it. Escaping widens nothing and blocks nothing that
+ * used to work; it only makes punctuation mean itself.
+ *
+ * Guarded because ajax_search.php defines the same helper and a future include
+ * order must not fatal on a redeclare.
+ */
+if (!function_exists('likeEscape')) {
+    function likeEscape(string $term): string {
+        return str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $term);
+    }
+}
+
+/**
+ * 'asc' / 'desc' when the shopper asked to sort by price, '' otherwise.
+ * Both vocabularies, matching shopOrderBy() above.
+ */
+function shopPriceSortDirection(string $sortBy): string {
+    switch ($sortBy) {
+        case 'price_asc':
+        case 'price_low':   return 'asc';
+        case 'price_desc':
+        case 'price_high':  return 'desc';
+        default:            return '';
+    }
+}
+
+/** Does this request need the buyable price rather than products.price? */
+function shopNeedsBuyablePrice(float $minPrice, float $maxPrice, string $sortBy): bool {
+    return $minPrice > 0 || $maxPrice > 0 || shopPriceSortDirection($sortBy) !== '';
+}
+
+/**
+ * A page of products filtered and ordered by the price a shopper can ACTUALLY pay.
+ *
+ * THE BUG THIS EXISTS TO CLOSE
+ * ────────────────────────────────────────────────────────────────────────────
+ * The price filter said `AND products.price BETWEEN ?` and the price sort said
+ * `ORDER BY products.price`, while the card standing next to them prints
+ * productPriceRange()['min'] — the cheapest size or colourway a shopper can
+ * actually buy. On any product whose sizes carry their own prices those are two
+ * different numbers, so the grid contradicted itself:
+ *
+ *   • A saree priced 3000 whose sizes are 1500 / 2600 / 2600 advertises
+ *     "From ₹1,500" on its card. Filtering ₹1,400–₹1,550 excluded it — the
+ *     shopper asked for what the card offered and was told there was nothing.
+ *   • Trousers priced 1250 whose only colourway overrides to 1100 advertise
+ *     "₹1,100". Filtering ₹1,000–₹1,200 returned an empty grid.
+ *   • Sorted High to Low, that saree landed between ₹2,499 and ₹2,501 showing
+ *     "From ₹1,500" — a visible break in the middle of the ordering.
+ *
+ * WHY IT IS RESOLVED IN PHP
+ * ────────────────────────────────────────────────────────────────────────────
+ * The cheapest buyable price is not a column and cannot honestly be made into
+ * one in SQL: the ladder runs colour price_override → size price → product
+ * price, a stored size price of 0 means "follow the product", and a size dearer
+ * than a product that is on sale is clamped back down. productPriceRange() is
+ * the one implementation of that ladder — the cart, the product page and the
+ * card all reach it — and config/config.php says in as many words that a second
+ * copy would drift from the first. So this CALLS it rather than re-expressing
+ * it, and the figure that filters and sorts is by construction the same figure
+ * the card prints.
+ *
+ * Cost is kept down by ranking on a slim projection — id, price, mrp_price is
+ * everything productPriceRange() reads — and fetching the full rows only for
+ * the six that survive. Three light queries instead of one, and only on
+ * requests that actually asked for a price filter or a price sort; ordinary
+ * browsing never enters this path.
+ *
+ * $sql must carry every NON-price filter and no ORDER BY / LIMIT.
+ * Returns ['rows' => array, 'has_more' => bool].
+ */
+function shopBuyablePricedPage(PDO $pdo, string $sql, array $params, float $minPrice,
+                               float $maxPrice, string $sortBy, int $limit, int $offset): array {
+    // Rank on the identifiers and the two price columns only.
+    $slimSql = preg_replace(
+        '/^\s*SELECT\s+\*\s+FROM\s+products\b/i',
+        'SELECT id, price, mrp_price FROM products',
+        $sql,
+        1
+    );
+    $st = $pdo->prepare($slimSql . ' ORDER BY id DESC');
+    $st->execute($params);
+    $slim = $st->fetchAll(PDO::FETCH_ASSOC);
+
+    // One pair of queries for the whole candidate set, not a pair per product.
+    productPriceRangePrime($slim, $pdo);
+
+    $ranked = [];
+    foreach ($slim as $seq => $r) {
+        $range = productPriceRange($r);
+        $buyable = $range['min'] > 0 ? (float)$range['min'] : (float)($r['price'] ?? 0);
+        if ($minPrice > 0 && $buyable < $minPrice - 0.005) { continue; }
+        if ($maxPrice > 0 && $buyable > $maxPrice + 0.005) { continue; }
+        $ranked[] = ['id' => (int)$r['id'], 'buyable' => $buyable, 'seq' => $seq];
+    }
+
+    $dir = shopPriceSortDirection($sortBy);
+    if ($dir !== '') {
+        usort($ranked, static function (array $a, array $b) use ($dir): int {
+            if (abs($a['buyable'] - $b['buyable']) > 0.005) {
+                return $dir === 'asc'
+                    ? $a['buyable'] <=> $b['buyable']
+                    : $b['buyable'] <=> $a['buyable'];
+            }
+            return $a['seq'] <=> $b['seq'];   // equal prices: newest first, as elsewhere
+        });
+    } elseif ($sortBy === 'name_asc' || $sortBy === 'name_desc') {
+        // Name sorts still belong to SQL; re-apply here because the scan above
+        // deliberately ordered by id so the price tiebreak is deterministic.
+        $ids = array_column($ranked, 'id');
+        if ($ids) {
+            $in = implode(',', array_map('intval', $ids));
+            $order = $pdo->query("SELECT id FROM products WHERE id IN ($in) ORDER BY name "
+                                 . ($sortBy === 'name_desc' ? 'DESC' : 'ASC'))->fetchAll(PDO::FETCH_COLUMN);
+            $pos = array_flip(array_map('intval', $order));
+            usort($ranked, static fn($a, $b) => ($pos[$a['id']] ?? PHP_INT_MAX) <=> ($pos[$b['id']] ?? PHP_INT_MAX));
+        }
+    }
+
+    $total    = count($ranked);
+    $hasMore  = ($offset + $limit) < $total;
+    $pageIds  = array_column(array_slice($ranked, $offset, $limit), 'id');
+    if (!$pageIds) { return ['rows' => [], 'has_more' => false]; }
+
+    // Full rows for the survivors only, put back into the ranked order.
+    $in   = implode(',', array_map('intval', $pageIds));
+    $rows = $pdo->query("SELECT * FROM products WHERE id IN ($in)")->fetchAll(PDO::FETCH_ASSOC);
+    $byId = [];
+    foreach ($rows as $r) { $byId[(int)$r['id']] = $r; }
+    $ordered = [];
+    foreach ($pageIds as $pid) { if (isset($byId[$pid])) { $ordered[] = $byId[$pid]; } }
+
+    return ['rows' => $ordered, 'has_more' => $hasMore];
+}
+
 // Handle AJAX load more request
 if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
     ob_start();
@@ -318,14 +460,8 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
         $params = array_merge($params, $occasionsList);
     }
     
-    if ($minPrice > 0) {
-        $sql .= " AND price >= ?";
-        $params[] = $minPrice;
-    }
-    if ($maxPrice > 0) {
-        $sql .= " AND price <= ?";
-        $params[] = $maxPrice;
-    }
+    // NOTE: no `AND price >= ?` here. The price range is applied against the
+    // BUYABLE price further down — see shopBuyablePricedPage().
 
     $saleOnly = !empty($_GET['sale']);
     if ($saleOnly) {
@@ -335,36 +471,47 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
     $activeSearch = isset($_GET['search']) ? trim($_GET['search']) : (isset($_GET['q']) ? trim($_GET['q']) : '');
     if ($activeSearch !== '') {
         $sql .= " AND (name LIKE ? OR description LIKE ? OR category LIKE ? OR fabric LIKE ? OR color LIKE ?)";
-        $sTerm = '%' . $activeSearch . '%';
+        // % and _ are LIKE wildcards, so a term containing either matched far
+        // more than it said: "50% off" behaved as "50<anything>off", and a bare
+        // "%" returned the entire catalogue under a heading claiming to be a
+        // search for it. Escaped, so a shopper's punctuation is searched for
+        // rather than executed.
+        $sTerm = '%' . likeEscape($activeSearch) . '%';
         $params[] = $sTerm;
         $params[] = $sTerm;
         $params[] = $sTerm;
         $params[] = $sTerm;
         $params[] = $sTerm;
     }
-    
-    $sql .= shopOrderBy($sortBy);
-    
-    // Fetch one extra row so we know whether there is another page without
-    // running a COUNT(*) as well.  LIMIT 7 / 6 keeps the extra invisible.
-    $sql .= " LIMIT ? OFFSET ?";
-    $params[] = $limit + 1;
-    $params[] = $offset;
-    
-    try {
-        $stmt = $pdo->prepare($sql);
-        foreach ($params as $i => $val) {
-            $type = is_int($val) ? PDO::PARAM_INT : PDO::PARAM_STR;
-            $stmt->bindValue($i + 1, $val, $type);
-        }
-        $stmt->execute();
-        $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        // Detect has_more and drop the extra row BEFORE the variant query —
-        // no sense looking up variant details for a row the client never sees.
-        $hasMore = count($products) > $limit;
-        if ($hasMore) {
-            array_pop($products);
+    try {
+        if (shopNeedsBuyablePrice($minPrice, $maxPrice, $sortBy)) {
+            $paged    = shopBuyablePricedPage($pdo, $sql, $params, $minPrice, $maxPrice, $sortBy, $limit, $offset);
+            $products = $paged['rows'];
+            $hasMore  = $paged['has_more'];
+        } else {
+            $pagedSql    = $sql . shopOrderBy($sortBy);
+            // Fetch one extra row so we know whether there is another page without
+            // running a COUNT(*) as well.  LIMIT 7 / 6 keeps the extra invisible.
+            $pagedSql   .= " LIMIT ? OFFSET ?";
+            $pagedParams = $params;
+            $pagedParams[] = $limit + 1;
+            $pagedParams[] = $offset;
+
+            $stmt = $pdo->prepare($pagedSql);
+            foreach ($pagedParams as $i => $val) {
+                $type = is_int($val) ? PDO::PARAM_INT : PDO::PARAM_STR;
+                $stmt->bindValue($i + 1, $val, $type);
+            }
+            $stmt->execute();
+            $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Detect has_more and drop the extra row BEFORE the variant query —
+            // no sense looking up variant details for a row the client never sees.
+            $hasMore = count($products) > $limit;
+            if ($hasMore) {
+                array_pop($products);
+            }
         }
 
         $variantsByProduct = [];
@@ -421,9 +568,19 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
             $p['price_varies']    = $pRange['varies'] ? 1 : 0;
             $p['formatted_price'] = $pNotSoldHere ? 'Not available in your country' : formatPrice($pShown);
             $pMrp = (float)($p['mrp_price'] ?? 0);
-            $pHasDiscount = !$pNotSoldHere && $pMrp > (float)$p['price'];
+            /* The saving is measured against the price actually shown, and is
+               withdrawn entirely once that price is a "From".
+               ────────────────────────────────────────────────────────────────
+               These three lines read products.price while formatted_price above
+               already carried the buyable figure, so a Load More card claimed
+               "22% OFF" over "₹1,600 ₹1,100" — a genuine 31% — and a card whose
+               price had become a floor still showed a strikethrough MRP that
+               only holds for one size. includes/product_card.php settles it the
+               same way; the two renderers of this grid have to agree. */
+            $pVaries      = (bool)$pRange['varies'];
+            $pHasDiscount = !$pNotSoldHere && !$pVaries && $pMrp > $pShown && $pShown > 0;
             $p['has_discount'] = $pHasDiscount;
-            $p['discount_percent'] = $pHasDiscount ? (int)round((($pMrp - (float)$p['price']) / $pMrp) * 100) : 0;
+            $p['discount_percent'] = $pHasDiscount ? (int)round((($pMrp - $pShown) / $pMrp) * 100) : 0;
             $p['formatted_mrp'] = $pHasDiscount ? formatPrice($pMrp) : '';
             // Same two things the server-rendered card uses (includes/product_card.php):
             // the WebP copy, and real alt text. Without them the cards appended by
@@ -645,7 +802,9 @@ try {
         }
     }
     if ($initSearch !== '') {
-        $sQuoted = $pdo->quote('%' . $initSearch . '%');
+        // Same LIKE-wildcard escaping as the AJAX branch, or the two paths would
+        // answer different result sets for a term containing % or _.
+        $sQuoted = $pdo->quote('%' . likeEscape($initSearch) . '%');
         $sqlInit .= " AND (name LIKE $sQuoted OR description LIKE $sQuoted OR category LIKE $sQuoted OR fabric LIKE $sQuoted OR color LIKE $sQuoted)";
     }
 
@@ -726,18 +885,49 @@ try {
                       )";
     }
 
-    $initMin = isset($_GET['min_price']) ? (float)$_GET['min_price'] : 0;
-    $initMax = isset($_GET['max_price']) ? (float)$_GET['max_price'] : 0;
-    if ($initMin > 0) { $sqlInit .= " AND price >= " . $pdo->quote($initMin); }
-    if ($initMax > 0) { $sqlInit .= " AND price <= " . $pdo->quote($initMax); }
-    $sqlInit .= shopOrderBy(isset($_GET['sort_by']) ? trim((string)$_GET['sort_by']) : '');
-    
+    $initMin  = isset($_GET['min_price']) ? (float)$_GET['min_price'] : 0;
+    $initMax  = isset($_GET['max_price']) ? (float)$_GET['max_price'] : 0;
+    $initSort = isset($_GET['sort_by']) ? trim((string)$_GET['sort_by']) : '';
+
     // Page numbers are honoured here as well as in the AJAX branch. Without this
     // every ?page=N returned the identical first six products at 200, so a crawler
     // following them saw one page of products under an unlimited number of addresses.
-    $initOffset = (max(1, (int)($_GET['page'] ?? 1)) - 1) * 6;
-    $initialProducts = $pdo->query($sqlInit . " LIMIT 6 OFFSET " . (int)$initOffset)->fetchAll();
+    $initPageNo = max(1, (int)($_GET['page'] ?? 1));
+    $initOffset = ($initPageNo - 1) * 6;
+
+    // The first page must apply the price range and the price sort to the same
+    // figure the card prints — see shopBuyablePricedPage(). Both branches of
+    // this file went through products.price, which is why /shop?min_price=1400
+    // could answer "no pieces" while a card on the unfiltered grid advertised
+    // "From ₹1,500".
+    if (shopNeedsBuyablePrice($initMin, $initMax, $initSort)) {
+        $initPaged       = shopBuyablePricedPage($pdo, $sqlInit, [], $initMin, $initMax, $initSort, 6, $initOffset);
+        $initialProducts = $initPaged['rows'];
+        $shopTotalRows   = (int)($initPaged['total'] ?? count($initialProducts));
+    } else {
+        $initialProducts = $pdo->query($sqlInit . shopOrderBy($initSort) . " LIMIT 6 OFFSET " . (int)$initOffset)->fetchAll();
+        /* How many pages exist, so the grid can LINK to them.
+           ────────────────────────────────────────────────────────────────────
+           The grid renders six server-side and loads the rest over AJAX, and
+           nothing ever emitted an <a href="?page=N">. ?page=N works — it is
+           honoured a few lines above — but no link pointed at it, and
+           robots.php disallows the ajax endpoint, so a crawler could not reach
+           page two by any route. Measured by walking every internal link from
+           the homepage: 15 of 25 products reachable, 10 findable only by
+           knowing the URL. On a shop that is ten garments Google cannot rank.
+
+           COUNT over the same WHERE, with the SELECT list swapped out — the
+           filters are already baked into $sqlInit, so the count cannot drift
+           from the rows beneath it. */
+        try {
+            $countSql = preg_replace('/^SELECT \*/', 'SELECT COUNT(*)', $sqlInit, 1);
+            $shopTotalRows = (int)$pdo->query($countSql)->fetchColumn();
+        } catch (PDOException $e) { $shopTotalRows = count($initialProducts); }
+    }
 } catch (PDOException $e) {}
+$shopTotalRows = $shopTotalRows ?? count($initialProducts ?? []);
+$shopTotalPages = max(1, (int)ceil($shopTotalRows / 6));
+$shopPageNo     = max(1, (int)($_GET['page'] ?? 1));
 
 
 // ── Empty collections ───────────────────────────────────────────────────────
@@ -821,6 +1011,14 @@ $sleeves    = [];
 $necks      = [];
 $patterns   = [];
 $occasions  = [];
+// Defined BEFORE the try, not inside it.
+//
+// This was assigned at the very END of the block below, so any query in between
+// that threw left it undefined — and the hero further down reads it. PHP 8 then
+// printed "Warning: Undefined variable $activeSearch" into the storefront HTML
+// and rendered the heading as Search: "" with the shopper's own term missing.
+// A value the page cannot render without does not belong behind a try.
+$activeSearch = trim((string)($_GET['search'] ?? $_GET['q'] ?? ''));
 
 try {
     $categories = $pdo->query("SELECT * FROM categories ORDER BY sort_order ASC, name ASC")->fetchAll();
@@ -942,28 +1140,63 @@ try {
     // rather than an empty result — and each was a crawlable URL returning 200
     // with nothing on it. And it never read product_colors, so a buyable
     // colourway was not offered at all (see the match clause above).
+    /* Three queries merged in PHP, NOT one UNION.
+       ────────────────────────────────────────────────────────────────────────
+       This was a single UNION across products.color / products.color_way and
+       product_colors.color_name. Those columns do not share a collation —
+       products is utf8mb4_general_ci and product_colors was created by
+       config/db.php as utf8mb4_unicode_ci — so MariaDB refused the statement
+       outright with SQLSTATE[HY000] 1271 "Illegal mix of collations for
+       operation 'UNION'". It is a metadata error, so it fired on every single
+       shop page load regardless of what was in the tables.
+
+       That exception was not caught here; it unwound to the catch at the end of
+       this whole block, which meant EVERY list built after this line was
+       silently abandoned. The shop shipped with only two working filters:
+
+         missing  colour, size, fabric, sleeve, neck, pattern, occasion
+         left     category, brand, price
+
+       Worse than absent: a URL still carrying one of them (?fabrics=Silk, a
+       shared link, the home page's occasion pills) rendered correctly on the
+       server-drawn first page, and then the first sort, filter click or Back
+       press rebuilt the grid from the sidebar — which has no box to read the
+       filter back off — so the filter silently evaporated, the address bar was
+       rewritten without it, and the whole catalogue appeared.
+
+       Merging in PHP removes the cross-table comparison entirely, so no future
+       collation drift on any of these three tables can take the sidebar down
+       again. Each source is also guarded on its own, below. */
     $colorGenderSql = shopGenderSqlFilter();
-    $liveColorStmt = $pdo->query(
+    $prodColors = [];
+    $colorSources = [
         "SELECT DISTINCT color AS c FROM products
           WHERE color IS NOT NULL AND color <> ''
             AND available = 1 AND (is_deleted = 0 OR is_deleted IS NULL)
-            $colorGenderSql
-         UNION
-         SELECT DISTINCT color_way AS c FROM products
+            $colorGenderSql",
+        "SELECT DISTINCT color_way AS c FROM products
           WHERE color_way IS NOT NULL AND color_way <> ''
             AND available = 1 AND (is_deleted = 0 OR is_deleted IS NULL)
-            $colorGenderSql
-         UNION
-         SELECT DISTINCT pc.color_name AS c
+            $colorGenderSql",
+        "SELECT DISTINCT pc.color_name AS c
            FROM product_colors pc
            JOIN products p ON p.id = pc.product_id
           WHERE pc.color_name IS NOT NULL AND pc.color_name <> ''
             AND pc.is_active = 1
             AND p.available = 1 AND (p.is_deleted = 0 OR p.is_deleted IS NULL)
-            " . shopGenderSqlFilter('p') . "
-         ORDER BY c ASC"
-    );
-    $prodColors = $liveColorStmt->fetchAll(PDO::FETCH_COLUMN);
+            " . shopGenderSqlFilter('p'),
+    ];
+    foreach ($colorSources as $colorSql) {
+        try {
+            foreach ($pdo->query($colorSql . " ORDER BY c ASC")->fetchAll(PDO::FETCH_COLUMN) as $cVal) {
+                $prodColors[] = $cVal;
+            }
+        } catch (PDOException $e) {
+            // One colour source failing must not cost the shop its other six
+            // filters — the whole point of the guard.
+        }
+    }
+    sort($prodColors, SORT_NATURAL | SORT_FLAG_CASE);
 
     $norm = fn($c) => ucwords(strtolower(trim((string)$c)));
     $liveSet = [];
@@ -1075,22 +1308,36 @@ try {
     // womenswear-only Boat Neck, Scoop Neck, Resort and Party — more than half
     // the sidebar answering an empty grid.
     $liveWhere = "available = 1 AND (is_deleted = 0 OR is_deleted IS NULL)" . shopGenderSqlFilter();
-    $rawFabrics = $pdo->query("SELECT DISTINCT fabric FROM products WHERE fabric != '' AND fabric IS NOT NULL AND $liveWhere ORDER BY fabric ASC")->fetchAll(PDO::FETCH_COLUMN);
-    $fabrics = array_values(array_unique(array_filter(array_map(function($f) { return ucwords(strtolower(trim($f))); }, $rawFabrics))));
 
-    $rawSleeves = $pdo->query("SELECT DISTINCT sleeve FROM products WHERE sleeve != '' AND sleeve IS NOT NULL AND $liveWhere ORDER BY sleeve ASC")->fetchAll(PDO::FETCH_COLUMN);
-    $sleeves = array_values(array_unique(array_filter(array_map(function($s) { return ucwords(strtolower(trim($s))); }, $rawSleeves))));
+    /* One helper, one guard per list.
+       ────────────────────────────────────────────────────────────────────────
+       These were five bare $pdo->query() calls sharing the single try/catch
+       that wraps this whole block, so ONE of them failing silently emptied
+       every list after it — which is exactly how a collation error in the
+       colour query above cost the shop seven of its ten filters. A filter that
+       cannot build must cost only itself. */
+    $attrOptions = static function (string $column) use ($pdo, $liveWhere): array {
+        try {
+            $rows = $pdo->query(
+                "SELECT DISTINCT `$column` FROM products
+                  WHERE `$column` != '' AND `$column` IS NOT NULL AND $liveWhere
+               ORDER BY `$column` ASC"
+            )->fetchAll(PDO::FETCH_COLUMN);
+        } catch (PDOException $e) {
+            return [];
+        }
+        return array_values(array_unique(array_filter(
+            array_map(static fn($v) => ucwords(strtolower(trim((string)$v))), $rows)
+        )));
+    };
 
-    $rawNecks = $pdo->query("SELECT DISTINCT neck FROM products WHERE neck != '' AND neck IS NOT NULL AND $liveWhere ORDER BY neck ASC")->fetchAll(PDO::FETCH_COLUMN);
-    $necks = array_values(array_unique(array_filter(array_map(function($n) { return ucwords(strtolower(trim($n))); }, $rawNecks))));
-
-    $rawPatterns = $pdo->query("SELECT DISTINCT pattern FROM products WHERE pattern != '' AND pattern IS NOT NULL AND $liveWhere ORDER BY pattern ASC")->fetchAll(PDO::FETCH_COLUMN);
-    $patterns = array_values(array_unique(array_filter(array_map(function($p) { return ucwords(strtolower(trim($p))); }, $rawPatterns))));
-
-    $rawOccasions = $pdo->query("SELECT DISTINCT occasion FROM products WHERE occasion != '' AND occasion IS NOT NULL AND $liveWhere ORDER BY occasion ASC")->fetchAll(PDO::FETCH_COLUMN);
-    $occasions = array_values(array_unique(array_filter(array_map(function($o) { return ucwords(strtolower(trim($o))); }, $rawOccasions))));
-
-    $activeSearch = isset($_GET['search']) ? trim($_GET['search']) : (isset($_GET['q']) ? trim($_GET['q']) : '');
+    // The column names are literals here, never request data — nothing a
+    // visitor sends can name a column.
+    $fabrics   = $attrOptions('fabric');
+    $sleeves   = $attrOptions('sleeve');
+    $necks     = $attrOptions('neck');
+    $patterns  = $attrOptions('pattern');
+    $occasions = $attrOptions('occasion');
 } catch (PDOException $e) {}
 ?>
 
@@ -1460,6 +1707,45 @@ if (function_exists('currentShopGender') && currentShopGender() === 'men') {
             </div>
 
             <?php
+            /* Real links to every page of the grid.
+               ────────────────────────────────────────────────────────────────
+               The grid loads more over AJAX, which is fine for a shopper and
+               useless to a crawler: robots.php disallows the ajax endpoint, so
+               without these anchors pages 2..N were unreachable by any path and
+               most of the catalogue could not be indexed.
+
+               Kept out of the way visually — the Load More button remains the
+               control a person uses — but they are ordinary <a href> elements,
+               which is all a crawler needs. Every current filter is preserved in
+               each link, so paging inside a filtered view stays inside it.
+
+               rel prev/next are advisory to Google now, but still read by other
+               crawlers, and they cost nothing. */
+            if (!empty($shopTotalPages) && $shopTotalPages > 1):
+                $pgQuery = function (int $n): string {
+                    $qs = $_GET; $qs['page'] = $n;
+                    return htmlspecialchars('?' . http_build_query($qs), ENT_QUOTES);
+                };
+            ?>
+            <nav class="shop-pagination" aria-label="Catalogue pages"
+                 style="display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin:26px 0 6px;">
+                <?php if ($shopPageNo > 1): ?>
+                    <a class="shop-page-link" rel="prev" href="<?= $pgQuery($shopPageNo - 1) ?>">Previous</a>
+                <?php endif; ?>
+                <?php for ($n = 1; $n <= $shopTotalPages; $n++): ?>
+                    <?php if ($n === $shopPageNo): ?>
+                        <span class="shop-page-link shop-page-current" aria-current="page"><?= $n ?></span>
+                    <?php else: ?>
+                        <a class="shop-page-link" href="<?= $pgQuery($n) ?>"><?= $n ?></a>
+                    <?php endif; ?>
+                <?php endfor; ?>
+                <?php if ($shopPageNo < $shopTotalPages): ?>
+                    <a class="shop-page-link" rel="next" href="<?= $pgQuery($shopPageNo + 1) ?>">Next</a>
+                <?php endif; ?>
+            </nav>
+            <?php endif; ?>
+
+            <?php
                 // Structured data belongs on the canonical page only. A filtered or
                 // paginated view used to publish CollectionPage naming the unfiltered
                 // URL, numberOfItems for the WHOLE category, and an itemListElement of
@@ -1588,7 +1874,16 @@ if (function_exists('currentShopGender') && currentShopGender() === 'men') {
 
         const initialCount = document.querySelectorAll('#shopProductsGrid .product-card').length;
         if (initialCount > 0) {
-            currentPage = 2;
+            /* Carry on from the page the SERVER actually drew, not from page 2.
+               ────────────────────────────────────────────────────────────────
+               The server honours ?page=N (see $initOffset), but this always set
+               the scroll cursor to 2, so the two disagreed the moment anyone
+               followed a paged address. Measured on /shop?page=3: the grid
+               opened on products 13–18, scrolling then appended 7–12 BELOW
+               them, and went on to re-append 13–18 a second time — six
+               products duplicated and the first six of the catalogue never
+               shown at all, under a URL a crawler is free to follow. */
+            currentPage = <?= (int)($initPageNo ?? 1) ?> + 1;
             hasMore = initialCount >= 6;
             document.getElementById('loaderSpinner').style.display = 'none';
             document.getElementById('loaderText').textContent = hasMore ? 'Scroll for more pieces' : 'End of Collections';

@@ -63,18 +63,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
         $retCarrier = trim((string)($_POST['return_carrier'] ?? ''));
         $retAwb     = trim((string)($_POST['return_awb'] ?? ''));
 
-        $stmt = $pdo->prepare(
-            "UPDATE customer_returns
-                SET status = :st, return_carrier = :rc, return_awb = :ra
-              WHERE id = :id"
-        );
-        $stmt->execute([
-            'st' => $newStatus,
-            'rc' => $retCarrier !== '' ? mb_substr($retCarrier, 0, 100) : null,
-            'ra' => $retAwb     !== '' ? mb_substr($retAwb, 0, 100)     : null,
-            'id' => $returnId,
-        ]);
+        /* The STATUS is the only column this screen must be able to write.
+           ────────────────────────────────────────────────────────────────────
+           return_carrier / return_awb were added to this handler, to the form
+           below, to pages/account.php and to EmailService — but nothing ever
+           creates them. config/db.php builds customer_returns without them
+           (config/db.php:367) and no migration adds them, so on any install
+           whose table came from db.php rather than from a production dump, this
+           single UPDATE threw "Unknown column 'return_carrier'".
+
+           The catch below then turned that into "Error updating RMA status."
+           and the whole returns workflow was dead: no RMA could be approved,
+           progressed or completed — which means a returned garment never came
+           back into stock, no refund was ever triggered, and the order sat on
+           'Return Requested' for ever. The customer could not even re-file,
+           because actions/customer_action.php refuses a second request while
+           one exists.
+
+           An optional note about the inbound courier must never be able to
+           block the state machine, so the columns are written only where they
+           exist. The real fix is the missing migration — see the report — but
+           this screen should degrade rather than die either way. */
+        static $rmaShipCols = null;
+        if ($rmaShipCols === null) {
+            $rmaShipCols = [];
+            try {
+                foreach ($pdo->query("SHOW COLUMNS FROM customer_returns")->fetchAll(PDO::FETCH_COLUMN) as $c) {
+                    if (in_array($c, ['return_carrier', 'return_awb'], true)) { $rmaShipCols[] = $c; }
+                }
+            } catch (PDOException $e) { $rmaShipCols = []; }
+        }
+
+        $sets   = ['status = :st'];
+        $params = ['st' => $newStatus, 'id' => $returnId];
+        if (in_array('return_carrier', $rmaShipCols, true)) {
+            $sets[] = 'return_carrier = :rc';
+            $params['rc'] = $retCarrier !== '' ? mb_substr($retCarrier, 0, 100) : null;
+        }
+        if (in_array('return_awb', $rmaShipCols, true)) {
+            $sets[] = 'return_awb = :ra';
+            $params['ra'] = $retAwb !== '' ? mb_substr($retAwb, 0, 100) : null;
+        }
+
+        $stmt = $pdo->prepare("UPDATE customer_returns SET " . implode(', ', $sets) . " WHERE id = :id");
+        $stmt->execute($params);
         $msg = "RMA Status updated to " . htmlspecialchars($newStatus) . " successfully.";
+        if (($retCarrier !== '' || $retAwb !== '') && count($rmaShipCols) < 2) {
+            // Said out loud rather than dropped: the owner typed a courier and an
+            // AWB and this install cannot store them.
+            $msg .= " (Return courier/AWB could not be saved — this database is missing the"
+                  . " customer_returns.return_carrier / return_awb columns.)";
+        }
 
         // This used to be the whole handler: one column, on one table.
         // Two consequences, both fixed below.
@@ -118,7 +157,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
 
             switch (strtolower(trim($newStatus))) {
                 case 'completed':
-                    $syncTo = $isReturn ? 'Returned' : null;   // exchange stays Delivered
+                    if ($isReturn) {
+                        $syncTo = 'Returned';
+                        break;
+                    }
+                    /* A completed EXCHANGE has to be put BACK to Delivered.
+                       ────────────────────────────────────────────────────────
+                       The comment on the old line said "exchange stays
+                       Delivered", but null means "do not sync", and the order
+                       had not been left on Delivered at all: filing the request
+                       moved it to 'Return Requested'
+                       (actions/customer_action.php:376). Nothing then moved it
+                       back, so a finished exchange sat on 'Return Requested'
+                       for ever.
+
+                       Measured on order DV-75417242: RMA-36936D completed, the
+                       replacement arranged, and the order still reading
+                       'Return Requested' — the customer's own order history
+                       says a return is outstanding on an order that is closed,
+                       and the eligibility check in customer_action.php only
+                       accepts Delivered/Completed, so they can never file
+                       another RMA on it. That is precisely the lock-out this
+                       block's own comment above says it exists to prevent.
+
+                       Same conservatism as the reject branch below: only an
+                       order this request actually moved is moved back, and
+                       never one whose money has already gone out. */
+                    $exchangeRefunded = (float)($rma['refunded_amount'] ?? 0) > 0;
+                    $syncTo = (!$exchangeRefunded && (string)$rma['order_status'] === 'Return Requested')
+                        ? 'Delivered'
+                        : null;
                     break;
 
                 case 'rejected':
@@ -170,7 +238,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
         }
         }   // end: valid id + allowed status
     } catch (PDOException $e) {
-        $msg = "Error updating RMA status.";
+        /* Logged, not swallowed. This handler failing is how the entire returns
+           workflow died silently for every install missing return_carrier /
+           return_awb: the screen said "Error updating RMA status." and there was
+           nothing anywhere naming the column. The message stays generic for the
+           browser — it is an admin screen, but the DB error text is still not
+           something to print — while the log now says exactly what broke. */
+        error_log('RMA status update failed (return ' . (int)$returnId . ' -> '
+            . (string)$newStatus . '): ' . $e->getMessage());
+        $msg = "Error updating RMA status. The reason was written to the error log.";
     }
 
     }   // end: CSRF token accepted

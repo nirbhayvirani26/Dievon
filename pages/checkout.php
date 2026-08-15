@@ -5,10 +5,22 @@ if (session_status() === PHP_SESSION_NONE) {
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../config/db.php';
 
+/* Re-priced BEFORE $cart is read, or this screen quotes figures the order will
+   not honour. The totals below sum the session line prices, frozen at
+   add-to-bag, while actions/checkout_action.php re-resolves every line through
+   effectiveVariantPrice() when it writes the order — so a price edited while a
+   bag was open produced a checkout reading ₹2,650 and an invoice for ₹2,900.
+   See cartRepriceLive(). Any change is surfaced to the shopper below rather
+   than applied silently. */
+$repriceNotices = ($pdo instanceof PDO) ? cartRepriceLive($pdo) : [];
+
 // Load cart
 $cart = $_SESSION['cart'] ?? [];
 $errors = $_SESSION['checkout_errors'] ?? [];
 unset($_SESSION['checkout_errors']);
+// Shown with the other checkout messages, so a price that moved under the
+// shopper is something they read, not something they discover on a statement.
+foreach ($repriceNotices as $rn) { $errors[] = $rn; }
 
 // Redirect if cart empty
 if (empty($cart)) {
@@ -77,7 +89,65 @@ $subtotalAfterDiscount = max(0, $cartTotal - $discountAmount);
 // switches it, and actions/checkout_action.php re-derives the fee server-side
 // either way, so this is a display value, not a trusted one.
 $domesticCost = shippingCostForZone('domestic', $subtotalAfterDiscount, $pdo);
-$grandTotal   = $subtotalAfterDiscount + $domesticCost;
+
+/* ── GST added on top (Store Setting `price_includes_gst` = No) ────────────
+   This page had NO tax term anywhere — not in $grandTotal, not in
+   recalcCheckoutTotal() below — while actions/checkout_action.php:403-430 adds
+   $gstAddedTotal to the total it charges whenever the setting is '0'. So the
+   moment the owner picks "No — GST is added on top at checkout" in Store
+   Settings, every checkout quotes a Total Due short by exactly the tax:
+   measured on a ₹2,650 basket with a 33% coupon, ₹99 delivery and the ₹49 COD
+   fee, this page said ₹1,923.50 and the order was written for ₹2,381.13 —
+   ₹457.63 more than the number the shopper pressed Place Order on, and on a
+   COD order that gap is cash a courier demands at the door.
+
+   Derived here exactly the way checkout_action.php derives it, and nowhere
+   else: the same productTaxSnapshot() walk, the same per-line round(), and the
+   same pre-discount base (that base is checkout_action.php's stated choice —
+   see its comment at line 415 — so this screen must show what is charged, not
+   what a different rule would charge).
+
+   Inclusive pricing — the default, and what this shop runs today — leaves
+   $chkGstAdded at 0.0 and every figure below is unchanged. */
+$chkGstExclusive = ((string)storeSetting($pdo, 'price_includes_gst', '1')) === '0';
+$chkGstAdded     = 0.0;
+$chkLineGst      = [];   // cart_key => resolved rate, so the JS can re-derive exactly
+if ($chkGstExclusive) {
+    $chkTaxProducts = [];
+    foreach ($cart as $item) {
+        $cKey  = (string)($item['cart_key'] ?? $item['product_id'] ?? '');
+        $cPid  = (int)($item['product_id'] ?? 0);
+        $cQty  = (int)($item['quantity'] ?? 1);
+        $cPrice = (float)($item['price'] ?? 0);
+        if ($cPid <= 0 || $cKey === '') { continue; }
+        if (!array_key_exists($cPid, $chkTaxProducts)) {
+            try {
+                $tStmt = $pdo->prepare("SELECT * FROM products WHERE id = :id");
+                $tStmt->execute(['id' => $cPid]);
+                $chkTaxProducts[$cPid] = $tStmt->fetch(PDO::FETCH_ASSOC) ?: null;
+            } catch (PDOException $e) { $chkTaxProducts[$cPid] = null; }
+        }
+        if (!$chkTaxProducts[$cPid]) { continue; }
+        // Rate resolved against the price THIS line sells at, because an
+        // "Apparel – Auto by Price" collection changes slab at ₹2,500.
+        $cRate = (float)productTaxSnapshot($pdo, $chkTaxProducts[$cPid], $cPrice)['gst_rate'];
+        // Zero-rated lines are recorded too. Leaving them out would make the JS
+        // below treat a legitimately untaxed piece as a line it has never seen
+        // and reload the page on every quantity change.
+        $chkLineGst[$cKey] = $cRate;
+        if ($cRate <= 0) { continue; }
+        $chkGstAdded += round($cPrice * $cQty * $cRate / 100, 2);
+    }
+    $chkGstAdded = round($chkGstAdded, 2);
+}
+
+/* Clamped exactly where actions/checkout_action.php:430 clamps it — around the
+   WHOLE sum, not around the subtotal on its own. The two differ only when a
+   discount exceeds the basket (a percentage over 100, which is now refused at
+   both promo endpoints), and there they gave three different answers for one
+   order: this page printed ₹99, the JS below printed ₹0 and the order was
+   written for ₹49. One clamp, in one place, on both sides. */
+$grandTotal   = max(0, $cartTotal - $discountAmount + $chkGstAdded + $domesticCost);
 
 // Fetch logged-in customer info and saved addresses if available
 $customer = null;
@@ -305,12 +375,12 @@ $storeCodMax       = (float)storeSetting($pdo, 'cod_max_order_value', COD_MAX_OR
                         <div class="form-row">
                             <div class="form-luxury-group">
                                 <label class="chk-field-label" for="customer_name">Full Name *</label>
-                                <input type="text" id="customer_name" name="customer_name" class="form-luxury-input" required 
+                                <input type="text" id="customer_name" name="customer_name" autocomplete="name" class="form-luxury-input" required 
                                        value="<?= htmlspecialchars($customer['name'] ?? $_POST['customer_name'] ?? '') ?>" placeholder="Priya Sharma" style="width: 100%; padding: 12px; font-size: 13px;">
                             </div>
                             <div class="form-luxury-group">
                                 <label class="chk-field-label" for="customer_email">Email Address *</label>
-                                <input type="email" id="customer_email" name="customer_email" class="form-luxury-input" required
+                                <input type="email" id="customer_email" name="customer_email" autocomplete="email" class="form-luxury-input" required
                                        value="<?= htmlspecialchars($customer['email'] ?? $_POST['customer_email'] ?? '') ?>" placeholder="jane@example.com" style="width: 100%; padding: 12px; font-size: 13px;">
                             </div>
                         </div>
@@ -318,19 +388,19 @@ $storeCodMax       = (float)storeSetting($pdo, 'cod_max_order_value', COD_MAX_OR
                         <div class="form-row">
                             <div class="form-luxury-group">
                                 <label class="chk-field-label" for="phone">Phone Number *</label>
-                                <input type="tel" id="phone" name="phone" class="form-luxury-input" required
+                                <input type="tel" id="phone" name="phone" autocomplete="tel" class="form-luxury-input" required
                                        value="<?= htmlspecialchars($customer['phone'] ?? $_POST['phone'] ?? '') ?>" placeholder="<?= htmlspecialchars(shopPhone()) ?>" style="width: 100%; padding: 12px; font-size: 13px;">
                             </div>
                             <div class="form-luxury-group">
                                 <label class="chk-field-label" for="delivery_postcode">Postcode / Zip *</label>
-                                <input type="text" id="delivery_postcode" name="delivery_postcode" class="form-luxury-input" required
+                                <input type="text" id="delivery_postcode" name="delivery_postcode" autocomplete="postal-code" class="form-luxury-input" required
                                        value="<?= htmlspecialchars($_POST['delivery_postcode'] ?? '') ?>" placeholder="e.g. 380001" oninput="applyShippingZone()" onchange="applyShippingZone()" style="width: 100%; padding: 12px; font-size: 13px;">
                             </div>
                         </div>
 
                         <div class="form-luxury-group" style="margin-bottom: 20px;">
                             <label class="chk-field-label" for="address">Delivery Street Address *</label>
-                            <textarea id="address" name="address" class="form-luxury-input chk-textarea" rows="3" required placeholder="House/Flat number, Street Name, Town/City"><?= htmlspecialchars($customer['address'] ?? $_POST['address'] ?? '') ?></textarea>
+                            <textarea id="address" name="address" autocomplete="street-address" class="form-luxury-input chk-textarea" rows="3" required placeholder="House/Flat number, Street Name, Town/City"><?= htmlspecialchars($customer['address'] ?? $_POST['address'] ?? '') ?></textarea>
                         </div>
 
                         <!-- Register Account Checkbox (For Guest) -->
@@ -341,7 +411,15 @@ $storeCodMax       = (float)storeSetting($pdo, 'cod_max_order_value', COD_MAX_OR
                                 Create a Dievon account for fast 1-click checkout &amp; order tracking
                             </label>
                             <div id="passwordGroup" style="display: none; margin-top: 12px;">
-                                <input type="password" name="new_password" placeholder="Create Password" class="form-luxury-input chk-input-sm">
+                                <?php // A placeholder is not a label: it is gone the moment the
+                                      // customer types, and a screen reader reaching this field
+                                      // announced only "edit text, blank". The field is also the
+                                      // one place on the site a new password is chosen, so it
+                                      // needs the autocomplete hint that tells a password manager
+                                      // to offer a generated one rather than the saved login. ?>
+                                <label for="new_password" class="chk-field-label">Choose a password</label>
+                                <input type="password" id="new_password" name="new_password" autocomplete="new-password"
+                                       placeholder="At least <?= PASSWORD_MIN_LENGTH ?> characters" class="form-luxury-input chk-input-sm">
                             </div>
                         </div>
                         <?php endif; ?>
@@ -443,8 +521,12 @@ $storeCodMax       = (float)storeSetting($pdo, 'cod_max_order_value', COD_MAX_OR
                             </label>
 
                             <div id="giftMessageWrap" style="display: none; margin-top: 15px;">
-                                <label class="chk-field-label">Personal Handwritten Gift Message</label>
-                                <textarea name="gift_message" rows="3" placeholder="Write your message to the recipient here..." class="form-luxury-input" style="width: 100%; padding: 10px; font-size: 13px; resize: none;"></textarea>
+                                <?php // The label was already on the page and already read correctly
+                                      // to a sighted customer; it just was not attached to anything,
+                                      // so assistive tech announced the box as unnamed and clicking
+                                      // the words did not focus it. `for`/`id` is the whole fix. ?>
+                                <label for="gift_message" class="chk-field-label">Personal Handwritten Gift Message</label>
+                                <textarea id="gift_message" name="gift_message" rows="3" placeholder="Write your message to the recipient here..." class="form-luxury-input" style="width: 100%; padding: 10px; font-size: 13px; resize: none;"></textarea>
                             </div>
                         </div>
 
@@ -516,7 +598,9 @@ $storeCodMax       = (float)storeSetting($pdo, 'cod_max_order_value', COD_MAX_OR
                             </label>
 
                             <div id="billingCustomWrap" style="display: none; margin-top: 12px;">
-                                <input type="text" name="billing_address" placeholder="Company Name / Custom Billing Address" class="form-luxury-input chk-input-sm">
+                                <label for="billing_address" class="chk-field-label">Billing name &amp; address</label>
+                                <input type="text" id="billing_address" name="billing_address" autocomplete="billing street-address"
+                                       placeholder="Company Name / Custom Billing Address" class="form-luxury-input chk-input-sm">
                             </div>
 
                             <label style="display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--text-muted); margin-top: 10px; cursor: pointer;">
@@ -580,8 +664,8 @@ $storeCodMax       = (float)storeSetting($pdo, 'cod_max_order_value', COD_MAX_OR
 
                     <!-- Promo Coupon Box Inside Checkout -->
                     <div style="margin-bottom: 20px; border-top: 1px solid var(--border-light); padding-top: 15px;">
-                        <label style="display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-primary); margin-bottom: 8px;">
-                            <i class="fa-solid fa-ticket"></i> Apply Coupon Code
+                        <label for="checkoutCouponInput" style="display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-primary); margin-bottom: 8px;">
+                            <i class="fa-solid fa-ticket" aria-hidden="true"></i> Apply Coupon Code
                         </label>
                         <div style="display: flex; gap: 8px;">
                             <input type="text" id="checkoutCouponInput" placeholder="COUPON" value="<?= htmlspecialchars($appliedPromo['code'] ?? '') ?>" style="flex: 1; padding: 8px 12px; font-size: 12px; text-transform: uppercase; border: 1px solid var(--border-strong); background: var(--bg-surface-soft);">
@@ -604,6 +688,14 @@ $storeCodMax       = (float)storeSetting($pdo, 'cod_max_order_value', COD_MAX_OR
                         <div id="chkDiscountRow" style="display: <?= $appliedPromo ? 'flex' : 'none' ?>; justify-content: space-between; margin-bottom: 8px; font-size: 13px; color: var(--color-success);">
                             <span>Discount</span>
                             <span id="chkDiscountAmount">-<?= formatPrice($discountAmount) ?></span>
+                        </div>
+
+                        <?php // Only rendered when GST is charged ON TOP. With inclusive
+                              // pricing the tax is already inside every line above, so a
+                              // separate row here would read as a second charge. ?>
+                        <div id="chkGstRow" style="display: <?= $chkGstExclusive && $chkGstAdded > 0 ? 'flex' : 'none' ?>; justify-content: space-between; margin-bottom: 8px; font-size: 13px; color: var(--text-secondary);">
+                            <span>GST</span>
+                            <span id="chkGstAmount">+<?= formatPrice($chkGstAdded) ?></span>
                         </div>
 
                         <div class="summary-row" style="display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 13px; color: var(--text-secondary);">
@@ -660,6 +752,14 @@ function syncSummaryPeek() {
 // qualified was still quoted ₹99.
 let cartTotalRaw = <?= (float)$cartTotal ?>;
 let chkDiscount  = <?= (float)$discountAmount ?>;
+/* GST added on top, and the per-line rates it was derived from.
+   The map is keyed by cart_key so a quantity change in the drawer can re-derive
+   the tax exactly — line by line, rounded per line — the way
+   actions/checkout_action.php does, rather than scaling one scalar and drifting.
+   Both are 0 / empty under inclusive pricing, which is the shop's default. */
+let chkGstAdded  = <?= (float)$chkGstAdded ?>;
+const CHK_GST_EXCLUSIVE = <?= $chkGstExclusive ? 'true' : 'false' ?>;
+const CHK_LINE_GST = <?= json_encode($chkLineGst, JSON_UNESCAPED_UNICODE) ?>;
 // Starts at the domestic rate, matching what the page has already printed.
 let selectedShippingCost = <?= (float)$domesticCost ?>;
 // COD handling fee (0 when disabled). Only added to the total while COD is the
@@ -815,11 +915,18 @@ function recalcCheckoutTotal() {
     // The COD handling fee joins the total only while cash is being collected;
     // switching back to online or bank wire drops it again.
     const codFeeAdd = currentPaymentMode === 'cod' ? selectedCodFee : 0;
-    const total = Math.max(0, cartTotalRaw - chkDiscount + selectedShippingCost + codFeeAdd);
+    // The COD fee sits OUTSIDE the clamp, matching actions/checkout_action.php:
+    // it clamps the goods-and-delivery sum at zero first and only then adds the
+    // handling fee, so a fully-discounted basket still owes the fee.
+    const total = Math.max(0, cartTotalRaw - chkDiscount + chkGstAdded + selectedShippingCost) + codFeeAdd;
     const sub = document.getElementById('chkSubtotal');
     if (sub) { sub.textContent = formatPriceJS(cartTotalRaw); }
     const disc = document.getElementById('chkDiscountAmount');
     if (disc) { disc.textContent = '-' + formatPriceJS(chkDiscount); }
+    const gstRow = document.getElementById('chkGstRow');
+    const gstEl  = document.getElementById('chkGstAmount');
+    if (gstRow) { gstRow.style.display = (CHK_GST_EXCLUSIVE && chkGstAdded > 0) ? 'flex' : 'none'; }
+    if (gstEl)  { gstEl.textContent = '+' + formatPriceJS(chkGstAdded); }
     const ship = document.getElementById('chkShippingText');
     if (ship) { ship.textContent = selectedShippingCost === 0 ? 'Complimentary' : formatPriceJS(selectedShippingCost); }
     const feeRow = document.getElementById('chkCodFeeRow');
@@ -845,6 +952,23 @@ function onCartUpdated(cart) {
         // form sitting above an empty bag.
         window.location.href = window.SITE_URL + '/cart';
         return;
+    }
+    // GST-on-top has to follow the bag, or the Total Due goes stale the moment a
+    // quantity changes in the drawer. Re-derived per line from the rates the
+    // server resolved, exactly as actions/checkout_action.php sums them. A line
+    // the server never priced (something added from the drawer after this page
+    // loaded) has no rate here, so the page is reloaded rather than guessed at —
+    // a Total Due must never be an estimate.
+    if (CHK_GST_EXCLUSIVE) {
+        let gst = 0, unknown = false;
+        cart.items.forEach(function (it) {
+            const key = String(it.cart_key || it.product_id || '');
+            if (!Object.prototype.hasOwnProperty.call(CHK_LINE_GST, key)) { unknown = true; return; }
+            const rate = parseFloat(CHK_LINE_GST[key]) || 0;
+            gst += Math.round(parseFloat(it.price) * parseInt(it.quantity, 10) * rate) / 100;
+        });
+        if (unknown) { window.location.reload(); return; }
+        chkGstAdded = Math.round(gst * 100) / 100;
     }
     recalcCheckoutTotal();
 }
