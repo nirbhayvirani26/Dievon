@@ -167,6 +167,19 @@ if (empty($_SESSION['admin_logged_in'])) {
     exit;
 }
 
+/* Signed in is not the same as allowed to price.
+   ────────────────────────────────────────────────────────────────────────────
+   This checked only that SOMEBODY was signed in, while the screen these actions
+   belong to (admin/promo.php) and its own handler (admin/promo_handler.php:19)
+   both require `pricing.manage`. Real roles exist without it — Catalogue
+   manager and Order staff are shipped presets — so a member of staff who cannot
+   open the Promo Codes page could still POST here and create, edit, disable or
+   delete any coupon in the shop. The nav hiding a link is not a permission.
+
+   Same capability, same JSON refusal shape as the admin handler, so the two
+   endpoints that write to promo_codes can no longer disagree about who may. */
+requireAdminCapability('pricing.manage', true);
+
 // Every admin action below must carry a valid CSRF token. The admin UI
 // (admin/promo.php) already sends one; this is what stops a malicious page
 // from silently creating or deleting promo codes on behalf of a signed-in admin.
@@ -183,12 +196,33 @@ if ($action === 'create') {
     $type        = $_POST['discount_type']                  ?? 'percentage';
     $value       = (float)($_POST['discount_value']         ?? 0);
     $minOrder    = (float)($_POST['min_order']              ?? 0);
-    $maxUses     = $_POST['max_uses'] !== '' ? (int)$_POST['max_uses'] : null;
+    /* `?? ''`, like every other field here and like the update branch below.
+       Without it a POST that simply omits max_uses — which means "unlimited",
+       the commonest case — raised an "Undefined array key" warning, and because
+       this endpoint has already sent `Content-Type: application/json` the
+       warning HTML was printed BEFORE the JSON body. The reply stopped being
+       JSON at all, so the admin screen's `res.json()` threw and the coupon
+       appeared not to have been created even though it had been. */
+    $maxUses     = ($_POST['max_uses'] ?? '') !== '' ? (int)$_POST['max_uses'] : null;
     $active      = isset($_POST['active']) ? 1 : 0;
     $expires     = !empty($_POST['expires_at']) ? $_POST['expires_at'] : null;
 
     if ($code === '' || $value <= 0) {
         echo json_encode(['success' => false, 'message' => 'Code and discount value are required.']);
+        exit;
+    }
+    /* A percentage above 100 is not a discount, it is a payment to the customer.
+       ────────────────────────────────────────────────────────────────────────
+       admin/promo_handler.php refuses one; this endpoint did not, and both write
+       to the same table. Measured: a 250% code created here took ₹2,500 off a
+       ₹1,000 basket, and because resolveCartDiscount() does not cap a percentage
+       at the basket the order was written for ₹49 — the COD fee alone — with a
+       ₹2,500 discount recorded against a ₹1,000 sale, ₹99 of delivery given
+       away, and an invoice whose Discount line is larger than its Subtotal.
+       The three screens disagreed as well, because the max(0,…) clamp lands in a
+       different place on each. */
+    if ($type === 'percentage' && $value > 100) {
+        echo json_encode(['success' => false, 'message' => 'Percentage discount cannot exceed 100.']);
         exit;
     }
     try {
@@ -212,6 +246,16 @@ if ($action === 'update') {
     $maxUses     = ($_POST['max_uses'] ?? '') !== '' ? (int)$_POST['max_uses'] : null;
     $active      = isset($_POST['active']) ? 1 : 0;
     $expires     = !empty($_POST['expires_at']) ? $_POST['expires_at'] : null;
+
+    // Same rule as create, or an existing code could simply be edited past 100%.
+    if ($value <= 0) {
+        echo json_encode(['success' => false, 'message' => 'Discount value must be greater than 0.']);
+        exit;
+    }
+    if ($type === 'percentage' && $value > 100) {
+        echo json_encode(['success' => false, 'message' => 'Percentage discount cannot exceed 100.']);
+        exit;
+    }
 
     $pdo->prepare("UPDATE promo_codes SET description=:desc,discount_type=:type,discount_value=:value,min_order=:min,max_uses=:max,active=:active,expires_at=:expires WHERE id=:id")
         ->execute(['desc'=>$description,'type'=>$type,'value'=>$value,'min'=>$minOrder,'max'=>$maxUses,'active'=>$active,'expires'=>$expires,'id'=>$id]);

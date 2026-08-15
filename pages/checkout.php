@@ -141,7 +141,13 @@ if ($chkGstExclusive) {
     $chkGstAdded = round($chkGstAdded, 2);
 }
 
-$grandTotal   = $subtotalAfterDiscount + $chkGstAdded + $domesticCost;
+/* Clamped exactly where actions/checkout_action.php:430 clamps it — around the
+   WHOLE sum, not around the subtotal on its own. The two differ only when a
+   discount exceeds the basket (a percentage over 100, which is now refused at
+   both promo endpoints), and there they gave three different answers for one
+   order: this page printed ₹99, the JS below printed ₹0 and the order was
+   written for ₹49. One clamp, in one place, on both sides. */
+$grandTotal   = max(0, $cartTotal - $discountAmount + $chkGstAdded + $domesticCost);
 
 // Fetch logged-in customer info and saved addresses if available
 $customer = null;
@@ -895,7 +901,10 @@ function recalcCheckoutTotal() {
     // The COD handling fee joins the total only while cash is being collected;
     // switching back to online or bank wire drops it again.
     const codFeeAdd = currentPaymentMode === 'cod' ? selectedCodFee : 0;
-    const total = Math.max(0, cartTotalRaw - chkDiscount + chkGstAdded + selectedShippingCost + codFeeAdd);
+    // The COD fee sits OUTSIDE the clamp, matching actions/checkout_action.php:
+    // it clamps the goods-and-delivery sum at zero first and only then adds the
+    // handling fee, so a fully-discounted basket still owes the fee.
+    const total = Math.max(0, cartTotalRaw - chkDiscount + chkGstAdded + selectedShippingCost) + codFeeAdd;
     const sub = document.getElementById('chkSubtotal');
     if (sub) { sub.textContent = formatPriceJS(cartTotalRaw); }
     const disc = document.getElementById('chkDiscountAmount');
