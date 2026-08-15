@@ -19,17 +19,30 @@ if (!empty($_SESSION['admin_logged_in'])) {
 const RESET_MAX_ATTEMPTS = 5;   // wrong codes per session before a 15-minute pause
 const RESET_LOCK_MINUTES = 15;
 
+/**
+ * Throttle key for the shared `login_attempts` table.
+ *
+ * Prefixed on purpose: wrong codes here must not spend the account's SIGN-IN
+ * budget and lock the owner out of admin/login.php as a side effect. The row
+ * still carries the source address, and loginLockRemaining() counts by address
+ * whatever the key is, so the per-IP ceiling spans both pages.
+ */
+function adminResetThrottleKey(string $identifier): string {
+    return 'admin-reset:' . mb_strtolower(trim($identifier));
+}
+
 $error  = '';
 $ok     = false;
 $locked = false;
 
-// A simple wrong-code counter, kept in the session. The code itself is already
-// 6 digits, single-use and 10 minutes old at most — this just stops someone
-// grinding through combinations on this page.
+// Two counters guard this form, and only one of them is a defence.
 //
-// The lock is time-boxed, not permanent: the timer is stored alongside the
-// counter, so a person who mistyped five times is genuinely back in after
-// RESET_LOCK_MINUTES rather than locked out for the life of the session.
+// The session counter is the courtesy one: it tells somebody who mistyped to
+// pause, without a database round trip, and the timer is stored beside the
+// count so five fat-fingered tries genuinely clear after RESET_LOCK_MINUTES
+// rather than for the life of the session. It cannot be the limit, because the
+// session cookie belongs to whoever is calling — delete it and the count is
+// zero again. On its own it stops honest typos and nothing else.
 $fails       = (int)($_SESSION['pw_reset_fails'] ?? 0);
 $lockedUntil = (int)($_SESSION['pw_reset_locked_until'] ?? 0);
 if ($lockedUntil > time()) {
@@ -47,6 +60,25 @@ if ($lockedUntil > time()) {
         $locked = true;
         $error  = 'Too many incorrect attempts. Please wait ' . RESET_LOCK_MINUTES . ' minutes and try again.';
     }
+}
+
+// The binding limit is the one below: `login_attempts`, keyed on the account
+// AND the source address, exactly as admin/login.php uses it. A fresh cookie
+// buys nothing here, so a caller cycling sessions to grind the 6-digit code
+// still runs into a wall — after LOGIN_MAX_PER_IDENTIFIER tries at one account,
+// or LOGIN_MAX_PER_IP from one address whatever names they try.
+//
+// A GET has no account to key on yet, so the empty key checks the address
+// ceiling alone — which is why the form can still render enabled to somebody
+// who has already burned an account's ten tries. Nothing is lost by that: the
+// POST carries the identifier and is refused on the way in. It only means the
+// warning appears when they submit rather than before they type.
+$throttleWait = loginLockRemaining($pdo, adminResetThrottleKey(
+    $_SERVER['REQUEST_METHOD'] === 'POST' ? (string)($_POST['identifier'] ?? '') : ''
+));
+if ($throttleWait > 0) {
+    $locked = true;
+    $error  = 'Too many incorrect attempts. Please wait ' . humaniseSeconds($throttleWait) . ' and try again.';
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset_submit']) && !$locked) {
@@ -77,16 +109,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset_submit']) && !$
 
             if (!$account) {
                 // Same wording for a wrong identifier as a wrong code — nothing
-                // here may reveal whether an account exists.
-                $error = 'That code was not correct, or it has expired. Request a new one and try again.';
-                $_SESSION['pw_reset_fails'] = $fails + 1;
-                unset($_SESSION['pw_reset_locked_until']);
+                // here may reveal whether an account exists. That has to include
+                // the password rules: checking strength only for real accounts
+                // would turn "too short" into a yes/no answer about whether the
+                // username exists, so an unknown identifier is held to the same
+                // rules, with no account details to compare the password against.
+                $pwError = validatePasswordStrength($pw1);
+                if ($pwError !== null) {
+                    $error = $pwError;
+                } else {
+                    $error = 'That code was not correct, or it has expired. Request a new one and try again.';
+                    recordFailedLogin($pdo, adminResetThrottleKey($identifier));
+                    $_SESSION['pw_reset_fails'] = $fails + 1;
+                    unset($_SESSION['pw_reset_locked_until']);
+                }
             } else {
                 $pwError = validatePasswordStrength($pw1, (string)($account['email'] ?? ''), (string)($account['full_name'] ?? ''));
                 if ($pwError !== null) {
                     $error = $pwError;
                 } elseif (!verifyAdminLoginCode($pdo, (int)$account['id'], $code, 'password_reset')) {
                     $error = 'That code was not correct, or it has expired. Request a new one and try again.';
+                    recordFailedLogin($pdo, adminResetThrottleKey($identifier));
                     $_SESSION['pw_reset_fails'] = $fails + 1;
                     unset($_SESSION['pw_reset_locked_until']);
                 } else {
@@ -94,9 +137,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset_submit']) && !$
                         $pdo->prepare("UPDATE admin_users SET password_hash = :h, must_change_password = 0 WHERE id = :id")
                             ->execute(['h' => password_hash($pw1, PASSWORD_DEFAULT), 'id' => (int)$account['id']]);
 
-                        // Clear any sign-in throttling this account had built up.
+                        // Clear any sign-in throttling this account had built up,
+                        // and the reset counter that the correct code just proved
+                        // was the owner's — keyed on what they actually typed,
+                        // since that is the key the failures accumulated under.
                         $pdo->prepare("DELETE FROM login_attempts WHERE identifier = :i")
                             ->execute(['i' => 'admin:' . mb_strtolower(trim((string)$account['username']))]);
+                        clearFailedLogins($pdo, adminResetThrottleKey($identifier));
 
                         logAdminAction((int)$account['id'], 'admin_password_reset', "Password reset via emailed code for {$account['username']}");
                     } catch (PDOException $e) {
