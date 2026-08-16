@@ -105,7 +105,7 @@ function dievonDuplicateProduct(PDO $pdo, int $sourceId, array $orig): int
     /* A fresh code in the shop's own shape, not a suffix on someone else's.
        generateProductSku() is the same function the product form uses when
        publishing a product with an empty SKU box. */
-    $row['sku'] = generateProductSku($pdo, $row['name']);
+    $row['sku'] = generateProductSku($pdo, $row['name'], 0, $row['category'] ?? null);
 
     // Its own address. Copying seo_url verbatim gave two products one URL.
     if (array_key_exists('seo_url', $row)) {

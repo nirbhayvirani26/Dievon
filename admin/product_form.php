@@ -969,7 +969,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
            could not use it and grew its own "-COPY" scheme instead. Moved to
            generateProductSku() in config.php; the behaviour is unchanged. */
         if ($sku === '') {
-            $sku = generateProductSku($pdo, $name, $productId ?: 0);
+            // The category is what the code is built from now, so it has to be
+            // handed over — without it every product would land under GEN.
+            $sku = generateProductSku($pdo, $name, $productId ?: 0, $category);
         }
 
         // ── Brand ──
