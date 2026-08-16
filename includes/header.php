@@ -1069,7 +1069,10 @@ function toggleMobileCategoryMenu(el) {
         <div class="search-input-wrapper">
             <input type="text" class="search-input" id="searchInput" aria-label="Search for products or categories"
                    placeholder="Search for products, categories..." autocomplete="off">
-            <button class="voice-search-btn" id="voiceSearchBtn" title="Search by Voice">
+            <?php /* title alone is not a reliable accessible name and shows nothing on
+                     touch, where this button mostly lives. Every other icon-only control
+                     in this header carries aria-label; this one was the exception. */ ?>
+            <button class="voice-search-btn" id="voiceSearchBtn" title="Search by Voice" aria-label="Search by voice">
                 <i class="fa-solid fa-microphone"></i>
             </button>
         </div>

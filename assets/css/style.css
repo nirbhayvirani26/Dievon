@@ -3366,7 +3366,13 @@ body.dievon-sg-open { overflow: hidden; }
     .dievon-sg-illustration { width: 120px; }
 }
 
-.product-quantity-row { display: flex; align-items: center; gap: 14px; margin-top: 20px; }
+/* justify-content pushes the wishlist button to the right edge.
+   The row is already the same 580px as the Add to Bag / Buy Now row beneath it,
+   but the stepper and the heart huddled at the left and left roughly half of it
+   empty — so the block read as two small controls floating above two large ones
+   rather than as one panel. Aligning the heart with the right edge of Buy Now
+   below gives the four controls a shared rectangle. */
+.product-quantity-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: 20px; }
 .product-qty-controls { height: 50px; box-sizing: border-box; border: 1px solid var(--border-strong); border-radius: 4px; padding: 0 14px; gap: 16px; }
 .product-qty-controls .qty-btn { width: 30px; height: 30px; font-size: 15px; }
 .product-qty-controls .qty-value { font-size: 15px; min-width: 22px; }
@@ -8316,12 +8322,27 @@ body {
 /* "From" on a card whose sizes are priced individually — see
    productPriceRange(). Quieter than the figure it qualifies, because the
    number is what the shopper is scanning for. */
+/* "From ₹300.00" should read as one price, not a grey label stuck to a maroon
+   number. It was changing four things at once against the price beside it —
+   28% smaller, 200 lighter, wide letter-spacing, and a neutral grey against the
+   brand maroon — so the eye separated them and "FROM" looked like it belonged
+   to something else.
+
+   Now it changes two: a little smaller and a little lighter. The colour comes
+   from the price itself at reduced opacity, so the pair always harmonises even
+   if the price colour changes, and opacity is used rather than color-mix()
+   because this shop serves plenty of older Android browsers.
+
+   Uppercase is kept — it matches SELECT SIZE, SIZE GUIDE and ADD TO BAG, and
+   dropping it here would make this the one lowercase label on the page. */
 .price-from-label {
-    font-size: 0.72em;
-    font-weight: 500;
-    letter-spacing: 0.06em;
+    font-size: 0.8em;
+    font-weight: 600;
+    letter-spacing: 0.03em;
     text-transform: uppercase;
-    color: var(--text-muted);
+    color: inherit;
+    opacity: 0.62;
+    margin-right: 1px;
 }
 
 /* ── Checkout ──────────────────────────────────────────────────────────────
@@ -8443,4 +8464,102 @@ main#mainContent:focus { outline: none; }
     border-color: var(--color-secondary, #511126);
     color: #fff;
     font-weight: 700;
+}
+
+/* ── Product page: fit help ────────────────────────────────────────────────
+   Was a third outlined button beside Add to Bag and Buy Now, at equal weight.
+   This is a question asked instead of buying, so it reads as a sentence and
+   sits below the two actions that complete a sale.
+
+   Styled as a button element rather than an <a> because it opens a modal and
+   goes nowhere — a link that does not navigate is a lie to anyone using a
+   screen reader or middle-clicking it. */
+.product-fit-help {
+    margin: 14px 0 0;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+.product-fit-help-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    /* 44px of target without 44px of visible chrome: the padding does the work
+       while the row still reads as text beside the question. */
+    min-height: 44px;
+    padding: 0 2px;
+    background: none;
+    border: 0;
+    font: inherit;
+    color: var(--color-primary);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+}
+.product-fit-help-link:hover { opacity: 0.75; }
+.product-fit-help-link i { font-size: 12px; }
+
+/* ── Product details: tabs on desktop, stacked on a phone ──────────────────
+   The tab row asked a shopper to click through About / Shirt / Palazzo to read
+   three short spec lists — on a screen they are already scrolling, where each
+   list is a handful of lines. Tapping to reveal a paragraph is a cost with no
+   saving: the content is short, so hiding it only hides it.
+
+   Desktop keeps the tabs, where the panels sit beside a pinned gallery and
+   horizontal space is worth rationing.
+
+   `!important` is deliberate and narrow. switchProductDetailsTab() writes
+   style="display:none" directly onto the inactive panels, and an inline style
+   beats any normal rule — so a phone would otherwise show only whichever panel
+   the JS last left visible. This is the case where overriding it is correct: the
+   layout mode has changed, not the tab state. */
+.product-details-panel-title { display: none; }
+
+@media (max-width: 991px) {
+    .product-details-tabs { display: none; }
+
+    .product-details-tab-panel {
+        display: block !important;
+        padding-top: 4px;
+    }
+    /* A rule between sections, so three stacked spec lists do not read as one. */
+    .product-details-tab-panel + .product-details-tab-panel {
+        margin-top: 22px;
+        padding-top: 22px;
+        border-top: 1px solid var(--border-light);
+    }
+    .product-details-panel-title {
+        display: block;
+        margin: 0 0 12px;
+        font-family: var(--font-heading);
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+}
+
+/* ── Product page: Design & Fit as a static section ────────────────────────
+   Matches the closed accordion headers around it, so the stack still reads as
+   one list — the only difference a shopper should notice is that this one is
+   already open and has no +/- to press.
+
+   No cursor:pointer and no hover colour: it is a heading, not a control, and
+   suggesting otherwise invites a click that does nothing. */
+.product-detail-static {
+    border-bottom: 1px solid var(--border-light);
+    padding-bottom: 4px;
+}
+.product-detail-static-title {
+    margin: 0;
+    padding: 18px 0;
+    font-family: var(--font-heading);
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-primary-dark, #3a0c1b);
+}
+.product-detail-static-content { padding-bottom: 18px; }
+
+@media (max-width: 991px) {
+    .product-detail-static-title { padding: 15px 0; font-size: 14px; }
 }

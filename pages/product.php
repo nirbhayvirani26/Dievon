@@ -1216,10 +1216,29 @@ require_once __DIR__ . '/../includes/header.php';
                     </button>
                     <?php endif; ?>
 
-                    <button onclick="document.getElementById('productEnquiryModal').style.display='flex'" class="btn-luxury-outline" style="padding: 12px 18px; font-size: 13px;" title="Inquire About Fit / Customization">
-                        <i class="fa-regular fa-envelope"></i> Fitting Enquiry
-                    </button>
                 </div>
+
+                <?php /* A link, not a third button in the row above.
+                         ────────────────────────────────────────────────────────────────
+                         It used to sit beside Add to Bag and Buy Now in the same outlined
+                         box, at the same weight — so the three read as equal choices when
+                         they are not. Add to Bag and Buy Now are the two ways to purchase;
+                         this is a question asked INSTEAD of purchasing, by someone unsure
+                         of their size. Given equal prominence it takes a third of the
+                         decision space from the two actions that complete a sale, and a
+                         shopper who has decided has to read all three to find theirs.
+
+                         Demoted, not removed: the person who needs it is the one who would
+                         otherwise leave, so it stays directly under the buttons where that
+                         doubt occurs, phrased as the question they are actually asking. */ ?>
+                <p class="product-fit-help">
+                    Not sure of your size?
+                    <button type="button" class="product-fit-help-link"
+                            onclick="document.getElementById('productEnquiryModal').style.display='flex'">
+                        <i class="fa-regular fa-envelope" aria-hidden="true"></i>
+                        Ask us about the fit
+                    </button>
+                </p>
                 </div>
 
                 <!-- Compact Purchase Benefits -->
@@ -1312,39 +1331,6 @@ require_once __DIR__ . '/../includes/header.php';
                             . htmlspecialchars($c['code']) . '</button> ' . htmlspecialchars($discountLabel . $minOrderNote);
                     }
                 ?>
-                <?php /* Built BEFORE the wrapper, because a shop with coupons that
-                         none of them can be honoured in this country would otherwise
-                         render an empty line with a lonely tag icon in it. */ ?>
-                <?php if (!empty($offerBits)): ?>
-                <!-- Available offers sit just ABOVE the delivery box, as its own line —
-                     grouped with the "what it costs / when it arrives" details, but not
-                     boxed in with them. -->
-                <p class="product-offers-line">
-                    <i class="fa-solid fa-tag"></i>
-                    <?= implode(' <span class="offer-sep">·</span> ', $offerBits) ?>
-                </p>
-                <?php endif; ?>
-
-                <!-- COD Availability Checker -->
-                <div class="delivery-checker-box">
-                    <div class="delivery-estimate-row">
-                        <i class="fa-solid fa-truck-fast"></i>
-                        <span>Standard delivery by <strong><?= htmlspecialchars($estimatedDeliveryDate) ?></strong></span>
-                    </div>
-                    <span class="delivery-checker-label">Check Exact Delivery Date / COD Availability:</span>
-                    <div class="delivery-checker-input-wrap">
-                        <input type="text" id="zipCode" placeholder="Enter Zip / Postal Code">
-                        <button onclick="checkDelivery()" class="btn-luxury-outline">Check</button>
-                    </div>
-                    <div id="deliveryStatus" class="delivery-status-msg"></div>
-                </div>
-
-                <?php /* "Shop with Confidence" moved into the accordion stack below, all four
-                         lines intact. It was 134px of always-open list standing between the
-                         delivery checker and the product's own detail panels, and none of what
-                         it says changes a purchase decision the way a delivery date or a return
-                         window does — it is brand assurance, which is exactly what a collapsed
-                         panel is for. Collapsed it costs 54px instead of 134. */ ?>
 
                 <!-- Product Detail Accordions -->
                 <div class="product-accordions">
@@ -1374,7 +1360,14 @@ require_once __DIR__ . '/../includes/header.php';
                             </div>
                             <?php endif; ?>
 
+                            <?php /* Each panel carries its own heading, hidden on desktop where the
+                                     tab button already names it. On a phone the tabs are hidden and
+                                     every panel is shown at once, so the heading is what tells the
+                                     shopper which garment's measurements they are reading. A real
+                                     heading, not CSS ::before text, so it is in the accessibility
+                                     tree and can be navigated to. */ ?>
                             <div class="product-details-tab-panel" data-panel="about">
+                                <h4 class="product-details-panel-title">About</h4>
                                 <div class="specifications-grid">
                                     <?php if (!empty($productComponents)): ?>
                                     <div><strong>No. of Components:</strong> <?= count($productComponents) ?></div>
@@ -1388,6 +1381,7 @@ require_once __DIR__ . '/../includes/header.php';
 
                             <?php foreach ($productComponents as $comp): ?>
                             <div class="product-details-tab-panel" data-panel="comp-<?= $comp['id'] ?>" style="display:none;">
+                                <h4 class="product-details-panel-title"><?= htmlspecialchars($comp['name']) ?></h4>
                                 <div class="specifications-grid">
                                     <?php foreach ($comp['specs'] as $spec): ?>
                                     <div><strong><?= htmlspecialchars($spec['label']) ?>:</strong> <?= htmlspecialchars($spec['value']) ?><?= !empty($spec['unit']) ? ' ' . htmlspecialchars($spec['unit']) : '' ?></div>
@@ -1399,17 +1393,29 @@ require_once __DIR__ . '/../includes/header.php';
                     </div>
                     <?php endif; ?>
 
-                    <div class="product-accordion">
-                        <button type="button" class="product-accordion-header" aria-expanded="false" onclick="toggleProductAccordion(this)">
-                            <?php /* Was "Specifications", which the stack already used 100 lines
-                                     below for SKU and package dimensions — two panels with the
-                                     same name, one above the other, and no way to tell from the
-                                     closed state which held what. This one is the garment:
-                                     colour, brand, fabric, sleeve, neck, pattern, occasion, fit
-                                     and the model reference. */ ?>
-                            Design &amp; Fit <i class="fa-solid fa-plus toggle-icon" aria-hidden="true"></i>
-                        </button>
-                        <div class="product-accordion-content">
+                    <?php /* Design & Fit is NOT an accordion. It is the one panel here that
+                             describes the garment being sold — colour, fabric, sleeve, neck,
+                             pattern, occasion, fit, and what size the model wears — which is
+                             what a shopper is deciding on. Everything else in this stack
+                             (shipping, returns, product code, the confidence strip) is the
+                             same on every product and can stay behind a tap.
+
+                             It began life collapsed, below the fold, in a stack that only
+                             permits one open panel at a time. So the most useful content on
+                             the page cost a scroll and a click to reach.
+
+                             Made static rather than "open by default": toggleProductAccordion()
+                             closes every other panel before opening one, so a default-open
+                             accordion is closed again the moment a shopper taps any other
+                             heading. A plain section cannot be closed by accident and does not
+                             compete with the single-open rule the rest of the stack relies on.
+
+                             Was named "Specifications", which the stack already used further
+                             down for SKU and package dimensions — two panels with the same
+                             name and no way to tell them apart while closed. */ ?>
+                    <div class="product-detail-static">
+                        <h3 class="product-detail-static-title">Design &amp; Fit</h3>
+                        <div class="product-detail-static-content">
                             <div class="specifications-grid">
                                 <?php // Only when the owner actually entered one. This used to invent
                                       // "MD-" . id whenever the field was blank — which is every product
@@ -1565,6 +1571,41 @@ require_once __DIR__ . '/../includes/header.php';
                     </div>
 
                 </div>
+
+                <?php /* Built BEFORE the wrapper, because a shop with coupons that
+                         none of them can be honoured in this country would otherwise
+                         render an empty line with a lonely tag icon in it. */ ?>
+
+                <!-- COD Availability Checker -->
+                <div class="delivery-checker-box">
+                    <div class="delivery-estimate-row">
+                        <i class="fa-solid fa-truck-fast"></i>
+                        <span>Standard delivery by <strong><?= htmlspecialchars($estimatedDeliveryDate) ?></strong></span>
+                    </div>
+                    <span class="delivery-checker-label">Check Exact Delivery Date / COD Availability:</span>
+                    <div class="delivery-checker-input-wrap">
+                        <input type="text" id="zipCode" placeholder="Enter Zip / Postal Code">
+                        <button onclick="checkDelivery()" class="btn-luxury-outline">Check</button>
+                    </div>
+                    <div id="deliveryStatus" class="delivery-status-msg"></div>
+                </div>
+
+                 <?php if (!empty($offerBits)): ?>
+                <!-- Available offers sit just ABOVE the delivery box, as its own line —
+                     grouped with the "what it costs / when it arrives" details, but not
+                     boxed in with them. -->
+                <p class="product-offers-line">
+                    <i class="fa-solid fa-tag"></i>
+                    <?= implode(' <span class="offer-sep">·</span> ', $offerBits) ?>
+                </p>
+                <?php endif; ?>
+
+                <?php /* "Shop with Confidence" moved into the accordion stack below, all four
+                         lines intact. It was 134px of always-open list standing between the
+                         delivery checker and the product's own detail panels, and none of what
+                         it says changes a purchase decision the way a delivery date or a return
+                         window does — it is brand assurance, which is exactly what a collapsed
+                         panel is for. Collapsed it costs 54px instead of 134. */ ?>
 
             </div>
 
@@ -2729,6 +2770,12 @@ document.addEventListener('keydown', e => {
        for a piece with neither, this opens whichever panel is genuinely first
        instead of doing nothing. */
     (function openFirstAccordion() {
+        /* One panel, not two — and that is a constraint, not a preference.
+           toggleProductAccordion() closes every other open panel before opening
+           the one it was given, so calling it twice on arrival opened the second
+           and closed the first. Opening more than one here would mean changing
+           that single-open rule, which changes what every tap does afterwards.
+           Left alone deliberately. */
         function openFirst() {
             const first = document.querySelector('.product-accordion .product-accordion-header');
             // Respect a shopper who already opened something in the gap between
