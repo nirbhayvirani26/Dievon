@@ -411,6 +411,19 @@ $heroSlideCount = !empty($heroBanners)
                 return true;
             }));
 
+            /* One row, and a way to the rest.
+               ────────────────────────────────────────────────────────────────
+               The grid is five across, so showing every collection makes the
+               section as tall as the catalogue is wide — six collections became
+               two rows where the second held one tile and a gap. Capping at the
+               row length keeps this section a fixed height whatever the shop
+               grows to, and the button below carries anyone who wants more.
+
+               Counted BEFORE the slice: the button has to know how many were
+               held back, and asking after the cut would always say none. */
+            $catTotalCount = count($allCategories);
+            $allCategories = array_slice($allCategories, 0, 5);
+
             foreach($allCategories as $cat):
                 // The collection's OWN image first, then a product photo, then the
                 // placeholder.
@@ -464,6 +477,30 @@ $heroSlideCount = !empty($heroBanners)
             </a>
             <?php endforeach; ?>
         </div>
+
+        <?php /* Only when collections were genuinely held back. A permanent
+                 "View All" under a row that already shows everything promises
+                 more than the shop has, which is the same fault as a Read more
+                 that reveals nothing. */ ?>
+        <?php /* Arrows for the collections rail. The scrollbar is hidden, so on a
+                 trackpad or a narrow desktop window there was no way to move it at
+                 all — a rail you can only reach by touch is a rail half your
+                 visitors cannot use. Hidden above 768px, where all five sit in one
+                 row and there is nothing to scroll to. */ ?>
+        <div class="cat-rail-nav">
+            <button type="button" class="cat-rail-arrow" aria-label="Previous collections"
+                    onclick="scrollCatRail(-1)"><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></button>
+            <button type="button" class="cat-rail-arrow" aria-label="Next collections"
+                    onclick="scrollCatRail(1)"><i class="fa-solid fa-chevron-right" aria-hidden="true"></i></button>
+        </div>
+
+        <?php if ($catTotalCount > count($allCategories)): ?>
+        <div class="home-categories-more">
+            <a href="<?= SITE_URL ?>/shop" class="btn-luxury-outline">
+                View All <?= (int)$catTotalCount ?> Collections
+            </a>
+        </div>
+        <?php endif; ?>
     </div>
 </section>
 
@@ -1068,16 +1105,34 @@ $occIsMen = function_exists('currentShopGender') && currentShopGender() === 'men
            whenever the carousel is refreshed or the viewport crosses a
            breakpoint, and a rebuilt clone is a fresh <h1> again. */
         function demoteClonedHeadings() {
-            jQuery('#heroSlider .owl-item.cloned').find('h1').each(function () {
-                var h1 = this;
-                var h2 = document.createElement('h2');
-                h2.className = h1.className;
-                h2.innerHTML = h1.innerHTML;
-                // Belt and braces: the clone is decorative duplication, so keep it
-                // out of the accessibility tree entirely rather than only out of
-                // the heading level it was claiming.
-                h2.setAttribute('aria-hidden', 'true');
-                h1.parentNode.replaceChild(h2, h1);
+            jQuery('#heroSlider .owl-item.cloned').each(function () {
+                var clone = this;
+
+                /* The <h1> is only on slide one, so this used to fix slide one and
+                   leave slides two, three and four duplicated: their headings are
+                   <h2>, which the h1-only selector never saw. Measured on the live
+                   homepage — "Grace, Woven in Every Detail" was correctly hidden
+                   while "Floral Kurta Sets", "Timeless Lehengas" and "The Art of
+                   Effortless Style" each appeared twice in the heading list. */
+                jQuery(clone).find('h1').each(function () {
+                    var h1 = this;
+                    var h2 = document.createElement('h2');
+                    h2.className = h1.className;
+                    h2.innerHTML = h1.innerHTML;
+                    h1.parentNode.replaceChild(h2, h1);
+                });
+
+                /* Hide the WHOLE clone, not just its heading. A clone duplicates
+                   the slide's link and button too, so a keyboard user tabbing
+                   through the hero met the same "Shop Now" two or three times with
+                   no way to tell them apart. aria-hidden takes the subtree out of
+                   the accessibility tree; tabindex -1 takes it out of the tab
+                   order, which aria-hidden alone does not do.
+
+                   Purely additive to what a shopper sees: the clone is what shows
+                   for the moment the loop wraps, so it stays on screen. */
+                clone.setAttribute('aria-hidden', 'true');
+                jQuery(clone).find('a, button, input, [tabindex]').attr('tabindex', '-1');
             });
         }
         $hero.on('initialized.owl.carousel refreshed.owl.carousel', demoteClonedHeadings);
@@ -1133,6 +1188,43 @@ $occIsMen = function_exists('currentShopGender') && currentShopGender() === 'men
     }
 
     // ── New Arrivals Carousel Arrow Scroll ──────────────────
+    /* Sits beside scrollCarousel, in the same scope, because that one is reached
+       from an inline onclick and therefore demonstrably global here. An earlier
+       attempt placed this inside a wrapper and the arrows threw
+       "scrollCatRail is not defined" on every press — a dead control that looked
+       live. One tile per press, gap included, so a press lands a whole tile at
+       the edge rather than half of one. */
+    /* Hide the rail arrows when the rail cannot move.
+       ────────────────────────────────────────────────────────────────────
+       Two collections at 42% each fit inside the viewport, so there is
+       nothing to scroll to — and a pair of arrows that do nothing is the
+       same fault as a Read more that reveals nothing: a control offering a
+       result it cannot produce.
+
+       Measured, not counted. Whether a rail scrolls depends on tile width,
+       gap and viewport together, so scrollWidth against clientWidth is the
+       only honest test; counting tiles would be right at one width and
+       wrong at the next. Re-run on resize for the same reason. */
+    function syncCatRailArrows() {
+        const rail = document.querySelector(".home-categories-grid");
+        const nav  = document.querySelector(".cat-rail-nav");
+        if (!rail || !nav) { return; }
+        const scrolls = rail.scrollWidth > rail.clientWidth + 2;
+        nav.hidden = !scrolls;
+    }
+    window.addEventListener("load", syncCatRailArrows);
+    window.addEventListener("resize", syncCatRailArrows);
+    document.addEventListener("DOMContentLoaded", syncCatRailArrows);
+
+    function scrollCatRail(dir) {
+        const rail = document.querySelector(".home-categories-grid");
+        if (!rail) { return; }
+        const tile = rail.querySelector(".category-card");
+        const gap  = parseFloat(getComputedStyle(rail).columnGap) || 12;
+        const step = tile ? tile.getBoundingClientRect().width + gap : 200;
+        rail.scrollBy({ left: dir * step, behavior: "smooth" });
+    }
+
     function scrollCarousel(dir) {
         const carousel = document.getElementById('newArrivalsCarousel');
         if (!carousel) return;

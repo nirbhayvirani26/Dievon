@@ -209,7 +209,15 @@ try {
             $bi = $ladderPos[$b['code']] ?? PHP_INT_MAX;
             return $ai <=> $bi;
         });
-        foreach ($sizes as &$__s) { unset($__s['_cs'], $__s['_cn']); }
+        /* The colour name survives as 'color' so the panel can group the chips
+           under it and strike the heading when that whole colour has gone.
+           Without it the only trace of colour was inside the caption text, and
+           a shopper had to read all 24 chips to work out that pink was over.
+           Empty string on a colourless product, which renders no heading. */
+        foreach ($sizes as &$__s) {
+            $__s['color'] = $__s['_cn'];
+            unset($__s['_cs'], $__s['_cn']);
+        }
         unset($__s);
     }
 

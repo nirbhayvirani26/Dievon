@@ -256,7 +256,52 @@ require_once 'includes/header.php';
                                             $adminItRef = [];
                                             if (!empty($it['sku']))          { $adminItRef[] = htmlspecialchars($it['sku']); }
                                             if (!empty($it['supplier']))     { $adminItRef[] = htmlspecialchars($it['supplier']); }
-                                            if (!empty($it['supplier_ref'])) { $adminItRef[] = htmlspecialchars($it['supplier_ref']); }
+
+                                            /* The supplier's own design number — and a warning when
+                                               there isn't one.
+                                               ────────────────────────────────────────────────────
+                                               A line reading "DV-GEN-0001 · Dwarkesh" looks complete
+                                               and is not: DV-GEN-0001 is OUR sku, generated here, and
+                                               the supplier has never seen it. Reordering that garment
+                                               needs THEIR number, so a line missing it cannot be
+                                               fulfilled — and nothing on the page said so.
+
+                                               When the snapshot has no number, the product is asked
+                                               for its current one before anything is called missing.
+                                               Otherwise filling the field in afterwards would leave
+                                               this order warning forever about something already
+                                               fixed, and a warning that cannot be cleared stops being
+                                               read. Same live-lookup reasoning as the phone above.
+
+                                               Only ever a fallback: a number frozen at order time
+                                               still wins, so a product moved to a new supplier cannot
+                                               rewrite what the old one called it. */
+                                            $dvRefMissing = false;
+                                            if (!empty($it['supplier_ref'])) {
+                                                $adminItRef[] = htmlspecialchars($it['supplier_ref']);
+                                            } elseif (!empty($it['supplier'])) {
+                                                $dvProdRefs = $dvProdRefs ?? [];
+                                                $dvPid = (int)($it['product_id'] ?? 0);
+                                                $dvNowRef = '';
+                                                if ($dvPid > 0) {
+                                                    if (!array_key_exists($dvPid, $dvProdRefs)) {
+                                                        try {
+                                                            $dvRq = $pdo->prepare("SELECT supplier_ref FROM products WHERE id = :id");
+                                                            $dvRq->execute([':id' => $dvPid]);
+                                                            $dvProdRefs[$dvPid] = (string)($dvRq->fetchColumn() ?: '');
+                                                        } catch (PDOException $e) { $dvProdRefs[$dvPid] = ''; }
+                                                    }
+                                                    $dvNowRef = trim($dvProdRefs[$dvPid]);
+                                                }
+                                                if ($dvNowRef !== '') {
+                                                    // Flagged as today's value, not the order's: it was
+                                                    // added after this sale, so it describes the product
+                                                    // now rather than what was recorded at the time.
+                                                    $adminItRef[] = htmlspecialchars($dvNowRef) . ' <span class="order-ref-late">(added later)</span>';
+                                                } else {
+                                                    $dvRefMissing = true;
+                                                }
+                                            }
 
                                             /* The supplier's CURRENT phone, looked up live — deliberately
                                                not frozen with the name beside it.
@@ -289,6 +334,18 @@ require_once 'includes/header.php';
                                             <td style="padding:8px; font-size:14px;"><?= htmlspecialchars($it['emoji'] ?? '✨') ?> <?= htmlspecialchars($it['name']) ?><?= $adminItBits ? ' <span style="font-size:11px;color:var(--text-muted);">('.implode(' · ', $adminItBits).')</span>' : '' ?>
                                                 <?php if ($adminItRef): ?>
                                                     <span class="order-item-ref"><?= implode(' · ', $adminItRef) ?></span>
+                                                <?php endif; ?>
+                                                <?php if ($dvRefMissing): ?>
+                                                    <?php /* The supplier is named on screen. "1 item needs a
+                                                             design no." would send you hunting through the
+                                                             order to find which one. */ ?>
+                                                    <span class="order-ref-warn">
+                                                        <i class="fa-solid fa-triangle-exclamation"></i>
+                                                        No design no. for <?= htmlspecialchars($it['supplier']) ?> — you cannot reorder this from them without it.
+                                                        <?php if ((int)($it['product_id'] ?? 0) > 0): ?>
+                                                            <a href="product_form.php?id=<?= (int)$it['product_id'] ?>">Add it</a>
+                                                        <?php endif; ?>
+                                                    </span>
                                                 <?php endif; ?>
                                             </td>
                                             <td style="padding:8px; text-align:center; color:var(--text-secondary);">× <?= (int)$it['quantity'] ?></td>

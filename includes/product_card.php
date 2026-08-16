@@ -68,22 +68,41 @@ if (function_exists('countrySelectorEnabled') && countrySelectorEnabled()) {
    only applies where the product's own columns are the ones in play. */
 $cardRange  = $cardCountryPricing ?? null;
 $cardVaries = false;
+$cardDearest = $cardPrice;   // the priciest size, needed to keep a "From" saving honest
 if ($cardRange === null && !$cardNotSoldHere) {
     $r = productPriceRange($cardProduct);
     if ($r['varies'] || $r['min'] < $cardPrice - 0.005) {
         $cardPrice  = $r['min'];
         $cardVaries = $r['varies'];
     }
+    $cardDearest = max((float)($r['max'] ?? $cardPrice), $cardPrice);
 }
 
 // A "discount" is only real when the compare-at price is genuinely higher.
 // Equal values would render as "0% OFF", which reads as a bug.
-$cardHasDiscount    = $cardMrp > $cardPrice && $cardPrice > 0;
-// A "from" price and a strikethrough MRP together claim a discount that only
-// holds for the cheapest size, so the strike is dropped once the price is a
-// floor rather than the price.
-$cardHasDiscount    = $cardHasDiscount && !$cardVaries;
-$cardDiscountPercent = $cardHasDiscount ? (int)round((($cardMrp - $cardPrice) / $cardMrp) * 100) : 0;
+$cardHasDiscount = $cardMrp > $cardPrice && $cardPrice > 0;
+
+/* On a "From" card the saving is measured against the DEAREST size, not the
+   cheapest.
+   ────────────────────────────────────────────────────────────────────────────
+   A product carries one MRP but its sizes can be priced apart. Struck beside
+   the lowest of them, "₹2,200 · From ₹1,200" advertises a ₹1,000 saving that
+   only exists on the smallest size — buy the ₹2,000 one and you saved ₹200.
+   The strike used to be dropped entirely for that reason, which meant a
+   genuinely discounted product looked full price.
+
+   Comparing against the top of the range fixes both halves: the strike appears
+   whenever every size really is below the MRP, and stays hidden when the claim
+   would only hold for the cheapest. The percentage follows the same figure, so
+   it states the saving the shopper is guaranteed on ANY size rather than the
+   best case they might not be able to buy. */
+if ($cardVaries) {
+    $cardHasDiscount = $cardHasDiscount && $cardDearest > 0 && $cardMrp > $cardDearest;
+}
+$cardDiscountBasis   = $cardVaries ? $cardDearest : $cardPrice;
+$cardDiscountPercent = $cardHasDiscount
+    ? (int)round((($cardMrp - $cardDiscountBasis) / $cardMrp) * 100)
+    : 0;
 
 // ── Sold-out state ──────────────────────────────────────────
 // The card had no stock awareness at all, so a sold-out garment still showed

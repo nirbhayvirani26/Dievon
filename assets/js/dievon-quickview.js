@@ -54,6 +54,61 @@
             });
     };
 
+    function qvChip(s, heading) {
+        var out = s.stock <= 0;
+        // The caption arrives as "30/XS · pink". Under a heading that already
+        // says PINK it would say it twice and stretch every chip, so the colour
+        // half comes off — but only when a heading is actually shown, and only
+        // when it really is the suffix. Caption only: the cart matches on
+        // s.value, which is never touched.
+        var caption = s.label;
+        if (heading) {
+            var suffix = ' · ' + heading;
+            if (caption.slice(-suffix.length) === suffix) {
+                caption = caption.slice(0, -suffix.length);
+            }
+        }
+        // data-variant-id is what cart_action.php actually keys on; data-size is
+        // the stored variant name ("Size: M") it falls back to. The caption shows
+        // the short form ("M") so a 46px chip is not asked to render "Size: M".
+        // data-price is the figure the cart will actually charge for
+        // THIS chip — a colourway can carry its own price_override,
+        // and the panel used to show only the product's base price,
+        // so the bag came back dearer than the panel said.
+        return '<button type="button" class="qv-size' + (out ? ' is-out' : '') + '"' +
+               (out ? ' disabled title="Out of stock"' : '') +
+               ' data-variant-id="' + esc(s.id || '') + '"' +
+               ' data-price="' + esc(s.price || '') + '"' +
+               ' data-size="' + esc(s.value || s.label) + '" onclick="qvPickSize(this)">' +
+               esc(caption) + '</button>';
+    }
+
+    /* Walk the chips into one group per colour, in the order the endpoint sent
+     * them — it already sorts colour-first then up the size ladder, so a single
+     * pass keeps that order without re-sorting and without needing a map.
+     *
+     * A group is sold out when EVERY chip in it is. That is the same test the
+     * full product page runs on a colour swatch, so the two screens cannot
+     * disagree about whether a colour can be bought.
+     *
+     * A colourless product yields one group with an empty name, which renders
+     * no heading — the flat row of chips it has always been.
+     */
+    function qvColourGroups(list) {
+        var groups = [];
+        var current = null;
+        list.forEach(function (s) {
+            var name = s.color || '';
+            if (!current || current.name !== name) {
+                current = { name: name, chips: '', soldOut: true };
+                groups.push(current);
+            }
+            current.chips += qvChip(s, name);
+            if (!(s.stock <= 0)) { current.soldOut = false; }
+        });
+        return groups;
+    }
+
     function render(p) {
         var img = p.images && p.images.length
             ? '<img src="' + esc(p.images[0]) + '" alt="' + esc(p.name) + '" class="qv-img">'
@@ -77,24 +132,27 @@
         // matching the rule on the full product page.
         var sizes = '';
         if (p.sizes && p.sizes.length) {
-            sizes = '<div class="qv-sizes"><span class="qv-label">Select Size</span><div class="qv-size-row">' +
-                p.sizes.map(function (s) {
-                    var out = s.stock <= 0;
-                    // data-variant-id is what cart_action.php actually keys on; data-size is
-                    // the stored variant name ("Size: M") it falls back to. The caption shows
-                    // the short form ("M") so a 46px chip is not asked to render "Size: M".
-                    // data-price is the figure the cart will actually charge for
-                    // THIS chip — a colourway can carry its own price_override,
-                    // and the panel used to show only the product's base price,
-                    // so the bag came back dearer than the panel said.
-                    return '<button type="button" class="qv-size' + (out ? ' is-out' : '') + '"' +
-                           (out ? ' disabled title="Out of stock"' : '') +
-                           ' data-variant-id="' + esc(s.id || '') + '"' +
-                           ' data-price="' + esc(s.price || '') + '"' +
-                           ' data-size="' + esc(s.value || s.label) + '" onclick="qvPickSize(this)">' +
-                           esc(s.label) + '</button>';
-                }).join('') + '</div></div>';
+            sizes = '<div class="qv-sizes"><span class="qv-label">Select Size</span>' +
+                qvColourGroups(p.sizes).map(function (g) {
+                    // A colour whose every chip is gone is called out once, at the
+                    // heading, instead of leaving the shopper to read four struck
+                    // chips and infer it. Same signal as the swatches on the full
+                    // product page. A colourless product has one nameless group,
+                    // so it renders exactly the flat row it always did.
+                    // Only the colour name carries the strike; the words beside it
+                    // stay upright, because struck-through text saying "out of
+                    // stock" is the one label you least want hard to read.
+                    var head = g.name
+                        ? '<span class="qv-colour-head' + (g.soldOut ? ' is-out' : '') + '">' +
+                              '<span class="qv-colour-name">' + esc(g.name) + '</span>' +
+                              (g.soldOut ? '<span class="qv-colour-gone">Out of stock</span>' : '') +
+                          '</span>'
+                        : '';
+                    return '<div class="qv-colour-group' + (g.soldOut ? ' is-out' : '') + '">' + head +
+                           '<div class="qv-size-row">' + g.chips + '</div></div>';
+                }).join('') + '</div>';
         }
+
 
         var attrs = '';
         if (p.attributes && Object.keys(p.attributes).length) {

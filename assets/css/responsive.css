@@ -131,10 +131,6 @@
         gap: 12px !important;
     }
 
-    .admin-card-box {
-        padding: 16px !important;
-    }
-
     .table-wrapper, .admin-table-container {
         overflow-x: auto !important;
         -webkit-overflow-scrolling: touch;
@@ -227,7 +223,7 @@
            12px, not 6px: 6px covers only half the overhang, so the ring would
            still touch the edge. This padding is inside the flex row, so it
            pushes the icons left rather than making the header wider. */
-        padding-right: 12px;
+        /* padding-right: 12px; */
     }
 
     /* Keeps its pill on mobile — smaller, but still visibly a control.
@@ -709,12 +705,12 @@
         gap: 12px;
     }
 
-    .home-categories-grid > .category-card {
-        /* Portrait, about 1:1.4 against a ~161px card on a 375px screen — the
-           shape a garment photograph wants. 450px is a desktop number; at half
-           the screen width it would be a tall thin sliver. */
-        height: 230px;
-    }
+    /* No height here. It used to be a hand-computed 230px "about 1:1.4", which
+       is aspect-ratio: 3/4 in style.css doing the same job properly — derived
+       from whatever width the column actually is, at every screen size,
+       instead of a number that only matches at one. A fixed height and an
+       aspect-ratio on the same box disagree the moment the gap or the column
+       count changes, and the photograph is what distorts. */
     /* The caption scales with the tile. At the desktop 20px it wrapped to three
        lines inside the card and covered the photograph it was labelling. */
     .home-categories-grid > .category-card .category-card-overlay { padding: 14px; }
@@ -874,7 +870,6 @@
        bring back the long stack this section was changed to avoid. Slightly
        shorter to keep the same portrait proportion. */
     .home-categories-grid { gap: 10px; }
-    .home-categories-grid > .category-card { height: 195px; }
     .home-categories-grid > .category-card .category-card-overlay { padding: 11px; }
     .home-categories-grid > .category-card .category-card-overlay h3 { font-size: 13px; }
 }
@@ -995,7 +990,22 @@ body.admin-wrapper .table-wrapper {
     body.admin-wrapper .admin-tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap !important; padding-bottom: 6px; scrollbar-width: none; gap: 4px !important; }
     body.admin-wrapper .admin-tabs::-webkit-scrollbar { display: none; }
     body.admin-wrapper .admin-tab { flex-shrink: 0; white-space: nowrap; padding: 8px 12px !important; font-size: 12px !important; }
-    body.admin-wrapper .glass-panel { padding: 16px !important; }
+    /* 20px, matching every other boxed panel in the shop.
+       ────────────────────────────────────────────────────────────────────────
+       The !important stays, and is not cargo-cult here. .glass-panel carries no
+       padding of its own: all 84 of its uses set it INLINE, in nine different
+       values (24px, 28px, 0, 20px 24px, 32px …). An inline style outranks every
+       selector, so an author !important is the only declaration that can reach
+       them — remove it and this rule silently stops applying to all of them.
+       The real repair is to move those inline values into this class; until
+       then this is what holds the admin together on a phone. */
+    /* :not(.stat-card) because a dashboard tile carries BOTH classes. Without
+       it this rule and the .stat-card one below are equally specific and both
+       !important, so whichever sits lower in the file wins — and it was this
+       one, giving four tiles 20px and the four beside them 12px 10px on the
+       same row. A stat card is a small metric tile, not a panel; it keeps the
+       padding tuned for it at each width, and this rule takes the rest. */
+    body.admin-wrapper .glass-panel:not(.stat-card) { padding: 20px !important; }
     body.admin-wrapper .data-table { min-width: 600px; }
     body.admin-wrapper .admin-nav-links { display: none !important; }
     body.admin-wrapper .form-section { padding: 16px !important; }
@@ -1012,7 +1022,18 @@ body.admin-wrapper .table-wrapper {
     body.admin-wrapper .stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
     body.admin-wrapper .stat-card { padding: 12px 10px !important; }
     body.admin-wrapper .stat-value { font-size: 22px !important; }
-    body.admin-wrapper .glass-panel { padding: 12px !important; }
+    /* 20px here too, or the 768px rule above is never what a phone actually
+       gets: this block is later in the file and applies from 480px down, so it
+       was quietly the real admin padding on every handset while the rule above
+       only ever reached tablets. Two figures for one thing is how they drifted
+       to 16 and 12 in the first place. */
+    /* :not(.stat-card) because a dashboard tile carries BOTH classes. Without
+       it this rule and the .stat-card one below are equally specific and both
+       !important, so whichever sits lower in the file wins — and it was this
+       one, giving four tiles 20px and the four beside them 12px 10px on the
+       same row. A stat card is a small metric tile, not a panel; it keeps the
+       padding tuned for it at each width, and this rule takes the rest. */
+    body.admin-wrapper .glass-panel:not(.stat-card) { padding: 20px !important; }
     body.admin-wrapper .filter-sort-bar { flex-direction: column !important; align-items: stretch !important; gap: 10px !important; }
     body.admin-wrapper .admin-action-bar { flex-direction: column; gap: 8px; }
     body.admin-wrapper .data-table { min-width: 540px; }
@@ -1866,5 +1887,114 @@ html {
     .mobile-nav-accordion.is-open > .mobile-accordion-body,
     .accordion-arrow {
         transition: none !important;
+    }
+}
+
+/* ── Product card on a phone: shorter, by removing what was already there ────
+   Measured at 375×812 before this: 490px per card, so 1.66 cards fit a screen
+   and browsing a 20-piece collection meant twelve screens of scrolling.
+
+   The DETAILS button goes. Not to save room — because it is the THIRD link on
+   the card to the same URL. The photograph is a link, the name is a link, and
+   the button repeats them both, so a shopper is offered one destination three
+   times and a screen reader announces it three times. It cost 47px plus a 25px
+   margin, the largest item under the image after the name itself, to add
+   nothing that tapping the photo did not already do.
+
+   The name drops from 18px to 15px because the column is 170px wide. At 18px a
+   name like "Meera Silk 3-Piece Suit" always wrapped to two lines and often
+   three; at 15px it fits two, and the price sits closer to the garment it
+   belongs to.
+
+   Kept from 901px up: a desktop card has the room, and the row of three reads
+   as intended there. */
+@media (max-width: 900px) {
+    /* Kept, at the owner's request, and made compact.
+       ────────────────────────────────────────────────────────────────────
+       It is still the third link on the card to the same product — the photo
+       and the name both go there — so the job here is to cost as little height
+       as possible while staying a legitimate 40px tap target.
+       margin-top was `auto`, which in this flex column pushed the button to
+       the bottom and produced a 25px gap. A fixed 10px puts it under the price
+       it belongs to instead of floating away from it. */
+    .product-card-cta {
+        display: flex;
+        margin-top: 8px;
+        min-height: 32px;
+        padding: 6px 12px;
+        font-size: 9.5px;
+        letter-spacing: 0.1em;
+    }
+    /* Exactly two lines, always — clamped AND reserved.
+       ────────────────────────────────────────────────────────────────────
+       The clamp alone only fixes the long names; a one-line name would still
+       make its card shorter than its neighbour and leave the row ragged. The
+       min-height holds two lines of space whatever the name does, so every
+       card in a grid is the same height and the prices line up across the row.
+
+       Nothing in the catalogue is cut today: the longest name is 29 characters
+       (Sienna Wide-Leg Silk Trousers) and that already fits two lines at this
+       size. This is a guard for names not written yet. */
+    .product-card-title {
+        font-size: 15px;
+        line-height: 1.35;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        min-height: calc(1.35em * 2);
+    }
+    .product-card-price { margin-bottom: 4px; font-size: 12px; }
+}
+
+/* ── Compare is a desktop feature ───────────────────────────────────────────
+   The toggle sat on the photograph at 32×95 — 8.2% of a 168px-wide product
+   image, with the word running vertically because that was the only way to
+   make it small enough to sit there at all. That is a lot of a garment to
+   spend on a feature whose payoff is three pieces side by side, which a 375px
+   screen cannot show anyway.
+
+   The tray goes with it. A compare bar that can never gain an item is a fixed
+   element pinned over the foot of every page for nothing — and .cmp-bar sits
+   at z-index 9500, above almost everything else on the site.
+
+   Nothing is removed from the markup: the same cards on a desktop keep the
+   control exactly as it was, revealed on hover. This is a phone-width rule
+   only, so widening the window brings it straight back.
+   ─────────────────────────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+    .compare-toggle { display: none; }
+    .cmp-bar { display: none; }
+}
+
+/* ── One padding for every card-style box on a phone ────────────────────────
+   These blocks were each given their own mobile padding as they were built, and
+   drifted: 40px on .auth-card-box and .checkout-form-panel, 32px 24px on
+   .login-card, 20px 18px on .section-card, 16px on .contact-card. Moving
+   between sign-in, checkout and contact you met a different inset each time.
+
+   20px throughout. On a 375px screen a 40px box spends 80px — over a fifth of
+   the width — on empty margin inside a border that is already only a few pixels
+   from the screen edge, so the text ends up in a narrow channel down the middle.
+
+   Declared at the end of this file deliberately: several of these selectors are
+   already set earlier here and in style.css, and with equal specificity the last
+   one wins. Anything relying on !important is left alone rather than answered
+   with another !important. */
+@media (max-width: 768px) {
+    .auth-card-box,
+    .login-card,
+    .checkout-form-panel,
+    .contact-card,
+    .order-conf-panel,
+    .cart-summary-card,
+    .section-card,
+    .hero-card,
+    .preview-card,
+    .variant-picker-card,
+    .admin-login-card,
+    .image-upload-box {
+        padding: 20px;
     }
 }

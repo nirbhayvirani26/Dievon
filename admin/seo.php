@@ -62,6 +62,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_seo'])) {
                        ON DUPLICATE KEY UPDATE setting_value = :v2")
             ->execute(['k' => 'google_site_verification', 'v' => $gsc, 'v2' => $gsc]);
 
+        /* GA4 measurement ID, stored the same way and for the same reason: the
+           owner should never have to edit a PHP file to point the shop at a new
+           analytics property.
+           Accepts the whole gtag snippet as well as the bare ID, because pasting
+           what Google hands you is the obvious thing to do — the same courtesy
+           the verification field above already extends.
+           Then narrowed to the G-XXXXXXX shape and nothing else. This value is
+           printed into a <script> block, so anything that is not a measurement
+           ID must not survive to reach the page. */
+        $ga = trim((string)($_POST['google_analytics_id'] ?? ''));
+        if (preg_match('/\b(G-[A-Z0-9]{4,20})\b/i', $ga, $gm)) { $ga = strtoupper($gm[1]); }
+        elseif ($ga !== '') { $ga = ''; }
+        $pdo->prepare("INSERT INTO store_settings (setting_key, setting_value) VALUES (:k, :v)
+                       ON DUPLICATE KEY UPDATE setting_value = :v2")
+            ->execute(['k' => 'google_analytics_id', 'v' => $ga, 'v2' => $ga]);
+
         foreach ($_POST['seo'] as $slug => $data) {
             $title = trim($data['meta_title'] ?? '');
             $desc = trim($data['meta_description'] ?? '');
@@ -88,6 +104,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_seo'])) {
 }
 
 $gscToken = (string)storeSetting($pdo, 'google_site_verification', '');
+$gaId     = (string)storeSetting($pdo, 'google_analytics_id', '');
 
 // ── Indexing readiness ──────────────────────────────────────────────────────
 // "Is the site ready for Google?" is otherwise a question nobody can answer
@@ -341,6 +358,20 @@ require_once __DIR__ . '/includes/header.php';
                     what Google gives you here — the whole <code>&lt;meta&gt;</code> tag is fine, the token
                     is taken out of it. Save, then press Verify in Search Console.
                     Leave blank once verified through DNS instead.
+                </p>
+            </div>
+
+            <div class="form-group seo-field">
+                <label class="form-label">Google Analytics measurement ID</label>
+                <input type="text" name="google_analytics_id" class="form-control"
+                       value="<?= htmlspecialchars($gaId) ?>"
+                       placeholder="e.g. G-XXXXXXXXXX">
+                <p class="form-hint">
+                    From Analytics › Admin › Data streams. Paste the ID, or the whole
+                    <code>gtag</code> snippet — the ID is taken out of it. Leave blank and no
+                    tracking script is loaded at all, so the shop stays free of it until you
+                    want it. Analytics sets cookies in the visitor's browser: if you sell into
+                    the EU or UK, that needs a consent banner before it may run.
                 </p>
             </div>
             <p class="form-hint">

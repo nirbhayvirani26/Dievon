@@ -1,64 +1,70 @@
-DIEVON — files changed this session (10 Aug 2026 22:26)
-Upload with ADD / OVERWRITE mode. Never mirror or sync.
-Do NOT upload: .env, uploads/, assets/images/, database/
+DIEVON — UPLOAD LIST  (16 Aug 2026)
+====================================
 
-config/config.php
-includes/header.php
-includes/footer.php
-pages/home.php
-pages/account.php
-pages/product.php
-pages/wishlist.php
-pages/checkout.php
-pages/returns.php
-pages/verify_email.php
-pages/reset_password.php
-assets/css/style.css
-assets/css/responsive.css
-admin/orders.php
-admin/update_order.php
-admin/settings.php
-admin/returns.php
-admin/products.php
-admin/gst_report.php
-admin/stock_handler.php
-admin/includes/header.php
-admin/assets/css/style.css
-admin/assets/js/admin.js
-services/EmailService.php
-services/RefundService.php
-update_new_database.php
-pages/shop.php
-includes/product_card.php
-pages/cart.php
-actions/cart_action.php
-actions/checkout_action.php
-actions/customer_action.php
-admin/product_form.php
-actions/promo_action.php
-admin/promo.php
-admin/promo_handler.php
-actions/razorpay_order.php
-assets/vendor/jquery.min.js
-assets/vendor/owlcarousel/owl.carousel.min.js
-assets/vendor/owlcarousel/owl.carousel.min.css
-pages/login.php
-pages/forgot_password.php
-pages/register.php
-pages/orders.php
-admin/attributes.php
-admin/logs.php
-admin/banners.php
-admin/seo.php
-admin/size_guide_cleanup.php
-admin/blog.php
-admin/repair_category_tree.php
-admin/categories.php
-admin/customers.php
-admin/email_logs.php
-admin/backfill_size_codes.php
-admin/repair_orphan_media.php
-assets/js/dievon-dialog.js
-admin/media.php
-admin/includes/footer.php
-admin/size_guide.php
+MODE: ADD / OVERWRITE only.  NEVER mirror or sync.
+      Mirror mode deletes uploads/ and assets/images/ on the live server.
+
+DO NOT UPLOAD:
+  .env
+  uploads/
+  assets/images/
+  database/
+  reset_admin_password.php
+  admin/setup_database.php
+
+ALREADY DONE:  database migration has been run on live.
+BEFORE UPLOAD: take a backup —
+  https://dievon.com/admin/auto_backup.php?token=YOUR_TOKEN
+ALSO IN .env:  MAIL_TEST_MODE=false   (customers get no email until this is set)
+
+FILES (18)
+----------
+
+(root)/
+  google_merchant_feed.php
+
+actions/
+  actions/quick_view_action.php
+
+admin/
+  admin/orders.php
+  admin/products.php
+  admin/seo.php
+  admin/suppliers.php
+
+admin/assets/css/
+  admin/assets/css/style.css
+
+assets/css/
+  assets/css/responsive.css
+  assets/css/style.css
+
+assets/js/
+  assets/js/dievon-quickview.js
+
+config/
+  config/config.php
+
+includes/
+  includes/footer.php
+  includes/header.php
+  includes/product_card.php
+
+pages/
+  pages/home.php
+  pages/product.php
+  pages/returns.php
+  pages/shipping.php
+
+AFTER UPLOAD — CHECK
+--------------------
+  1. Product page on your PHONE: TOTAL bar appears when the price
+     scrolls off the top.  (Unverified by me — please confirm.)
+  2. admin/orders.php loads.
+  3. Any product page: clicking and scrolling still work.
+
+THEN RE-ENTER (lost in the 10 Aug rollback)
+-------------------------------------------
+  admin > Suppliers          — the three supplier records
+  each product              — supplier design no. (look for the warning badge)
+  admin > Settings          — min_order_value, Search Console token, shipping rates

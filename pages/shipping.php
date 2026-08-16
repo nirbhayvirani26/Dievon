@@ -38,21 +38,21 @@ $shipsAbroad = shipsInternationally($pdo);
 </section>
 
 <section class="section-space">
-    <div class="container" style="max-width: 900px; margin: 0 auto; color: var(--text-secondary); line-height: 1.8; font-size: 15px;">
-        <div class="reveal-on-scroll" style="background: var(--bg-surface); padding: 40px; border: 1px solid var(--border-light); border-radius: 8px;">
-            <h2 style="color: var(--text-primary); font-family: var(--font-heading); margin-bottom: 16px; font-size: 24px;">1. Shipping Timelines &amp; Dispatch</h2>
-            <p style="margin-bottom: 24px;">Orders placed before 2:00 PM IST are dispatched on the same business day. Standard delivery within India takes 3–5 business days, with metro cities usually arriving sooner.<?php if ($shipsAbroad): ?> International orders arrive within 5–8 business days.<?php endif; ?></p>
+    <div class="container">
+        <div class="reveal-on-scroll legal-page">
+            <h2 class="legal-heading">1. Shipping Timelines &amp; Dispatch</h2>
+            <p class="legal-text">Orders placed before 2:00 PM IST are dispatched on the same business day. Standard delivery within India takes 3–5 business days, with metro cities usually arriving sooner.<?php if ($shipsAbroad): ?> International orders arrive within 5–8 business days.<?php endif; ?></p>
             <?php if (!$shipsAbroad): ?>
-            <p style="margin-bottom: 24px;">We currently deliver within India only. If you would like a piece sent
-               to an address outside India, <a href="<?= SITE_URL ?>/contact" style="color: var(--color-primary); font-weight: 600;">get in touch</a>
+            <p class="legal-text">We currently deliver within India only. If you would like a piece sent
+               to an address outside India, <a href="<?= SITE_URL ?>/contact" class="legal-link">get in touch</a>
                and we will tell you whether we can arrange it.</p>
             <?php endif; ?>
 
-            <h2 style="color: var(--text-primary); font-family: var(--font-heading); margin-bottom: 16px; font-size: 24px;">2. Shipping Rates &amp; Free Delivery</h2>
-            <p style="margin-bottom: 24px;">Complimentary shipping is automatically applied to all orders over <?= formatPrice($shipFreeMin) ?>. Orders below <?= formatPrice($shipFreeMin) ?> are subject to a flat <?= formatPrice($shipFee) ?> delivery charge.<?php if ($shipsAbroad): ?> International orders are charged a flat <?= formatPrice($shipIntlFee) ?>, and the free-delivery threshold does not apply to them.<?php endif; ?></p>
+            <h2 class="legal-heading">2. Shipping Rates &amp; Free Delivery</h2>
+            <p class="legal-text">Complimentary shipping is automatically applied to all orders over <?= formatPrice($shipFreeMin) ?>. Orders below <?= formatPrice($shipFreeMin) ?> are subject to a flat <?= formatPrice($shipFee) ?> delivery charge.<?php if ($shipsAbroad): ?> International orders are charged a flat <?= formatPrice($shipIntlFee) ?>, and the free-delivery threshold does not apply to them.<?php endif; ?></p>
 
-            <h2 style="color: var(--text-primary); font-family: var(--font-heading); margin-bottom: 16px; font-size: 24px;">3. Order Tracking</h2>
-            <p style="margin-bottom: 0;">Once your order is packed and dispatched, a shipping confirmation email containing your tracking code and printable thermal shipping label link will be sent to your registered email.</p>
+            <h2 class="legal-heading">3. Order Tracking</h2>
+            <p class="legal-text-last">Once your order is packed and dispatched, a shipping confirmation email containing your tracking code and printable thermal shipping label link will be sent to your registered email.</p>
         </div>
     </div>
 </section>

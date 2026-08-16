@@ -3429,10 +3429,27 @@ function effectiveVariantPrice(array $product, ?array $variant = null, ?array $c
         ? (float)$variant['price']
         : $productPrice;
 
-    $mrp    = (float)($product['mrp_price'] ?? 0);
-    $onSale = $mrp > $productPrice && $productPrice > 0;
-    if ($onSale && $price > $productPrice) {
-        $price = $productPrice;
+    /* A size may never be sold above the printed MRP — but the MRP is the
+       ceiling, not the base price.
+       ────────────────────────────────────────────────────────────────────────
+       This clamped to $productPrice, so the moment a product carried an MRP,
+       EVERY size priced above the base was reset to the base. Measured on a
+       product with a base of ₹10 and a size of ₹2,000: setting any MRP at all
+       dropped that size to ₹10, and this function is what the cart, checkout,
+       product page and Quick View all charge from — so the shop would have sold
+       it for ₹10. On a real garment it silently wipes out a larger size's
+       upcharge the instant that product goes on sale.
+
+       Selling above the printed MRP is what the rule exists to prevent, and
+       $mrp is that figure. Clamping there keeps the protection and leaves a
+       legitimate size upcharge alone: a ₹2,000 size under a ₹2,500 MRP stays
+       ₹2,000, and under a ₹1,500 MRP becomes ₹1,500 rather than collapsing.
+
+       Guarded on $productPrice > 0 as before, so a product with no price set
+       cannot make every variant free. */
+    $mrp = (float)($product['mrp_price'] ?? 0);
+    if ($mrp > 0 && $productPrice > 0 && $price > $mrp) {
+        $price = $mrp;
     }
 
     return $price;

@@ -847,6 +847,26 @@ require_once __DIR__ . '/../includes/header.php';
                 <button type="button" class="gallery-nav gallery-nav-prev" onclick="navGallerySlide(-1)" aria-label="Previous photo"><i class="fa-solid fa-chevron-left"></i></button>
                 <button type="button" class="gallery-nav gallery-nav-next" onclick="navGallerySlide(1)" aria-label="Next photo"><i class="fa-solid fa-chevron-right"></i></button>
                 <div class="product-gallery-slide-counter" id="gallerySlideCounter" aria-hidden="true"></div>
+                <?php /* Every detail this page holds, one tap from the photograph.
+                         ──────────────────────────────────────────────────────────
+                         The details are all on the page already, but only reachable
+                         by scrolling past the colour picker, the size ladder, the
+                         quantity stepper and both buy buttons. Someone still
+                         deciding whether they want the garment had to travel past
+                         everything meant for someone who already had.
+
+                         Labelled, not icon-only: a hanger glyph alone does not say
+                         whether it opens sizing, care or the fabric. */ ?>
+                <?php /* Icon only, so it takes as little of the photograph as it can.
+                         The word is gone from the screen but NOT from the button: with
+                         the label removed, aria-label is the only thing left naming it,
+                         and without one a screen reader announces "button" and nothing
+                         else. title gives the same word back on hover. */ ?>
+                <button type="button" class="gallery-details-btn" onclick="openProductDetails()"
+                        aria-haspopup="dialog" aria-controls="productDetailsSheet"
+                        aria-label="Product details" title="Product details">
+                    <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+                </button>
                 </div>
             </div>
 
@@ -941,6 +961,7 @@ require_once __DIR__ . '/../includes/header.php';
                     <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
                 </button>
 
+
                 <?php if (!empty($productColors)): ?>
                 <?php // The SWATCHES need two colours to be a choice; the size ladder below
                       // is needed for one colour just as much as for five, and it lives in
@@ -1008,14 +1029,30 @@ require_once __DIR__ . '/../includes/header.php';
                         ?>
                         <?php foreach ($productColors as $idx => $c):
                             $thumbSrc = $swatchSrc($c);
+                              /* Sold out when the colour HAS sizes and none of them can be bought.
+                                 ────────────────────────────────────────────────────────────────
+                                 A shopper had to click each swatch to discover the colour was gone —
+                                 the size pills below say OUT OF STOCK plainly while the swatch that
+                                 leads to them looked identical to one with stock.
+                              
+                                 stock_qty === null means the size is not tracked, which is available,
+                                 NOT zero. Treating null as empty would strike out every colour on a
+                                 product that deliberately does not count stock.
+                              
+                                 A colour with no sizes at all is left alone: that is a product still
+                                 being set up, not one that has sold out. */
+                              $cSizes   = is_array($c['sizes'] ?? null) ? $c['sizes'] : [];
+                              $cSoldOut = $cSizes && !array_filter($cSizes, function ($s) {
+                                  return $s['stock_qty'] === null || (int)$s['stock_qty'] > 0;
+                              });
                         ?>
                         <button type="button"
-                                class="color-swatch-btn <?= $idx === 0 ? 'color-swatch-selected' : '' ?>"
+                                class="color-swatch-btn <?= $idx === 0 ? 'color-swatch-selected' : '' ?> <?= $cSoldOut ? 'color-swatch-soldout' : '' ?>"
                                 data-color-id="<?= $c['id'] ?>"
                                 onclick="selectProductColor(<?= $c['id'] ?>, this)"
                                 role="radio"
                                 aria-checked="<?= $idx === 0 ? 'true' : 'false' ?>"
-                                aria-label="Colour: <?= htmlspecialchars($c['color_name'], ENT_QUOTES) ?>">
+                                aria-label="Colour: <?= htmlspecialchars($c['color_name'], ENT_QUOTES) ?><?= $cSoldOut ? " — out of stock" : "" ?>">
                             <span class="color-swatch-ring">
                                 <?php if ($thumbSrc): ?>
                                 <img src="<?= $thumbSrc ?>" alt="<?= htmlspecialchars(productImageAlt($product, $c['color_name'])) ?>">
@@ -1090,9 +1127,19 @@ require_once __DIR__ . '/../includes/header.php';
                             // heading already saying Select Size. The stored name still goes to
                             // the cart untouched, so older orders keep matching.
                             $vLabel = preg_replace('/^\s*size\s*:\s*/i', '', (string)$v['name']);
+                              // A price on the pill only where this size differs from the product's own.
+                              // Same rule as the colour ladder below, and the same reason: 1 of 42
+                              // variants in this catalogue is priced differently, so printing a figure
+                              // on every pill would bury the one that matters under forty-one that
+                              // simply repeat the heading.
+                              // effectiveVariantPrice() both sides, never $v['price'] — the raw column
+                              // ignores the sale clamp, which is how this page once quoted a figure the
+                              // cart then capped.
+                              $vPrice     = (float)effectiveVariantPrice($product, $v);
+                              $vHasOwn    = abs($vPrice - (float)$product['price']) > 0.009;
                             ?>
                             <button type="button"
-                                    class="size-pill-btn <?= $vOutOfStock ? 'size-pill-disabled' : '' ?>"
+                                    class="size-pill-btn <?= $vOutOfStock ? 'size-pill-disabled' : '' ?> <?= $vHasOwn ? 'size-pill-has-price' : '' ?>"
                                     <?= $vOutOfStock ? 'disabled aria-disabled="true"' : '' ?>
                                     aria-pressed="false"
                                     <?php // The price the cart will actually charge, not the raw
@@ -1119,6 +1166,7 @@ require_once __DIR__ . '/../includes/header.php';
                                              and what reaches the cart is unchanged. */ ?>
                                     onclick="selectProductVariant(<?= (int)$v['id'] ?>, '<?= htmlspecialchars(addslashes($v['name']), ENT_QUOTES, 'UTF-8') ?>', <?= effectiveVariantPrice($product, $v) ?>, this)">
                                 <?= htmlspecialchars($vLabel) ?>
+                                  <?php if ($vHasOwn): ?><span class="size-pill-price"><?= formatPrice($vPrice) ?></span><?php endif; ?>
                                 <?php if ($vOutOfStock): ?><span class="size-pill-low-stock">Out of stock</span>
                                 <?php elseif ($vLowStock): ?><span class="size-pill-low-stock">Only <?= $vStock ?> left</span>
                                 <?php endif; ?>
@@ -1751,6 +1799,109 @@ require_once __DIR__ . '/../includes/header.php';
          so a screen reader treated the enlarged image as ordinary page content
          appearing out of nowhere, with the rest of the page still readable
          behind it. */ ?>
+<?php
+/* Every fact this page knows about the garment, in one sheet.
+   ────────────────────────────────────────────────────────────────────────────
+   Built from $product, the same array the Design & Fit section below reads, so
+   the two cannot drift into disagreeing about the same garment. Rendered
+   server-side rather than cloned out of the DOM — cloning would duplicate every
+   id inside it, and this page has plenty.
+
+   Every row is conditional and none invents a default. A pair of trousers used
+   to publish "Sleeve: Standard" because a row filled its own blank; a sheet
+   whose purpose is answering questions must not answer one it has not been
+   told. A row with nothing behind it simply does not appear. */
+$dvSheetRows = [];
+$dvAdd = function (string $label, $value) use (&$dvSheetRows) {
+    $value = trim((string)$value);
+    if ($value !== '') { $dvSheetRows[] = [$label, $value]; }
+};
+$dvAdd('Fabric',      $product['fabric']);
+$dvAdd('Composition', $product['composition']);
+$dvAdd('Colour',      $product['color'] ?: ($product['color_way'] ?? ''));
+$dvAdd('Pattern',     $product['pattern']);
+$dvAdd('Sleeve',      $product['sleeve']);
+$dvAdd('Neck',        $product['neck']);
+$dvAdd('Occasion',    $product['occasion']);
+$dvAdd('Brand',       $product['brand']);
+$dvAdd('Sourcing',    $product['sourcing'] ?? '');
+$dvAdd('Fit',         $product['fit_description'] ?? '');
+$dvAdd('Model wears', trim(trim((string)($product['model_height'] ?? '')) . ' · ' . trim((string)($product['model_size_worn'] ?? '')), ' ·'));
+$dvAdd('Care',        $product['wash_care']);
+?>
+<div id="productDetailsSheet" class="pd-sheet" role="dialog" aria-modal="true"
+     aria-labelledby="pdSheetTitle" hidden onclick="closeProductDetails(event)">
+    <div class="pd-sheet-panel" role="document" onclick="event.stopPropagation()">
+        <div class="pd-sheet-head">
+            <h2 class="pd-sheet-title" id="pdSheetTitle">Details</h2>
+            <button type="button" class="pd-sheet-close" aria-label="Close details"
+                    onclick="closeProductDetails(event)">&times;</button>
+        </div>
+
+        <?php if ($productComponents): ?>
+        <?php /* The pieces lead, as a row of chips — on a set, "what do I actually
+                 receive" outranks every specification under it.
+                 Read from $productComponents, the same product_components rows the
+                 Product Details accordion below already uses, so the sheet and the
+                 page cannot end up naming different pieces for one garment. */ ?>
+        <ul class="pd-sheet-chips">
+            <?php foreach ($productComponents as $dvComp): ?>
+            <li class="pd-sheet-chip"><?= htmlspecialchars($dvComp['name']) ?></li>
+            <?php endforeach; ?>
+        </ul>
+
+        <?php /* Each piece keeps its own measurements under its own name. A suit's
+                 top and its trousers both have a length, and merging them into one
+                 list would produce two rows called "Length" with no way to tell
+                 which garment either belongs to. */ ?>
+        <?php foreach ($productComponents as $dvComp): ?>
+            <?php if (!empty($dvComp['specs'])): ?>
+            <div class="pd-sheet-group">
+                <h3 class="pd-sheet-group-title"><?= htmlspecialchars($dvComp['name']) ?></h3>
+                <dl class="pd-sheet-rows">
+                    <?php foreach ($dvComp['specs'] as $dvSpec): ?>
+                    <div class="pd-sheet-row">
+                        <dt><?= htmlspecialchars($dvSpec['label']) ?></dt>
+                        <dd>
+                            <?= htmlspecialchars($dvSpec['value']) ?><?php
+                            // "42 inch", not "42" — a measurement without its unit
+                            // is not a measurement.
+                            if (!empty($dvSpec['unit'])) { echo ' ' . htmlspecialchars($dvSpec['unit']); }
+                            ?>
+                        </dd>
+                    </div>
+                    <?php endforeach; ?>
+                </dl>
+            </div>
+            <?php endif; ?>
+        <?php endforeach; ?>
+        <?php endif; ?>
+
+        <?php if ($dvSheetRows): ?>
+        <div class="pd-sheet-group">
+            <?php /* Headed only when per-piece groups sit above it — otherwise there
+                     is nothing to tell it apart from and the heading is noise. */ ?>
+            <?php if ($productComponents): ?>
+            <h3 class="pd-sheet-group-title">The garment</h3>
+            <?php endif; ?>
+            <dl class="pd-sheet-rows">
+                <?php foreach ($dvSheetRows as [$dvLabel, $dvValue]): ?>
+                <div class="pd-sheet-row">
+                    <dt><?= htmlspecialchars($dvLabel) ?></dt>
+                    <dd><?= nl2br(htmlspecialchars($dvValue)) ?></dd>
+                </div>
+                <?php endforeach; ?>
+            </dl>
+        </div>
+        <?php elseif (!$productComponents): ?>
+        <?php /* Says which garment has nothing recorded, rather than a bare
+                 "No details" that reads as a broken page. Only when the component
+                 groups are empty too — otherwise the sheet has plenty to show. */ ?>
+        <p class="pd-sheet-empty">No details have been recorded for <?= htmlspecialchars($product['name']) ?> yet.</p>
+        <?php endif; ?>
+    </div>
+</div>
+
 <div id="productLightboxModal" class="product-lightbox-modal" role="dialog" aria-modal="true"
      aria-label="Product image viewer" onclick="closeProductLightbox(event)">
     <button type="button" class="product-lightbox-close" aria-label="Close image viewer" onclick="closeProductLightbox(event)">&times;</button>
@@ -1823,7 +1974,7 @@ function openProductLightbox(src) {
         lbImg.src = src;
         modal.style.display = 'flex';
         requestAnimationFrame(() => requestAnimationFrame(() => modal.classList.add('is-visible')));
-        document.body.style.overflow = 'hidden';
+        dievonScrollLock.lock('lightbox');
 
         /* Focus moves in, and is remembered so it can be handed back.
            Without this a keyboard user who opened the viewer was left with focus
@@ -1885,13 +2036,60 @@ function selectLightboxImage(idx) {
     lbResetZoom();
 }
 
+/* Details sheet — open, close, and give the page back.
+   ────────────────────────────────────────────────────────────────────────────
+   Follows closeProductLightbox below rather than inventing a second convention:
+   a class drives the transition, the scroll lock is released on the way out,
+   and focus returns to the control that opened it instead of the top of the
+   document. `hidden` is dropped before the class goes on, because the browser
+   will not transition an element it has not laid out yet. */
+function openProductDetails() {
+    const sheet = document.getElementById('productDetailsSheet');
+    if (!sheet) { return; }
+    window.__pdSheetReturnFocus = document.activeElement;
+    sheet.hidden = false;
+    /* Read offsetHeight to force layout between dropping `hidden` and adding the
+       class. Without a layout in between the browser sees one style change and
+       the sheet appears instantly instead of sliding.
+       A requestAnimationFrame would also do it, but rAF is throttled in
+       background tabs and does not fire at all in some embedded webviews — and
+       when it does not, the class is never added and the sheet never appears.
+       A forced reflow has no such dependency. */
+    void sheet.offsetHeight;
+    sheet.classList.add('is-open');
+    dievonScrollLock.lock('details');
+    const close = sheet.querySelector('.pd-sheet-close');
+    if (close) { try { close.focus({ preventScroll: true }); } catch (err) {} }
+}
+
+function closeProductDetails(e) {
+    if (e) { e.stopPropagation(); }
+    const sheet = document.getElementById('productDetailsSheet');
+    if (!sheet) { return; }
+    sheet.classList.remove('is-open');
+    dievonScrollLock.unlock('details');
+    // Matches the 300ms in the stylesheet; hiding sooner cuts the slide short.
+    setTimeout(() => { sheet.hidden = true; }, 300);
+    if (window.__pdSheetReturnFocus && window.__pdSheetReturnFocus.focus) {
+        try { window.__pdSheetReturnFocus.focus({ preventScroll: true }); } catch (err) {}
+        window.__pdSheetReturnFocus = null;
+    }
+}
+
+// Escape closes it, as it does every other overlay on this page.
+document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') { return; }
+    const sheet = document.getElementById('productDetailsSheet');
+    if (sheet && !sheet.hidden) { closeProductDetails(); }
+});
+
 function closeProductLightbox(e) {
     if (e) e.stopPropagation();
     const modal = document.getElementById('productLightboxModal');
     if (modal) {
         modal.classList.remove('is-visible');
         setTimeout(() => { modal.style.display = 'none'; }, 300);
-        document.body.style.overflow = '';
+        dievonScrollLock.unlock('lightbox');
         // Back to the thumbnail that opened it, not the top of the page.
         if (window.__lightboxReturnFocus && window.__lightboxReturnFocus.focus) {
             try { window.__lightboxReturnFocus.focus({ preventScroll: true }); } catch (err) {}
@@ -2487,12 +2685,31 @@ document.addEventListener('keydown', e => {
             const sizePrice = (size.price !== null && size.price !== undefined && Number.isFinite(Number(size.price)))
                 ? Number(size.price)
                 : color.price;
+              /* A price on the pill ONLY where this size costs something other than the
+                 rest of its colour.
+                 ────────────────────────────────────────────────────────────────────
+                 Measured across this catalogue: 1 of 42 variants is priced differently.
+                 Printing a figure on all 42 would add forty-one labels repeating what
+                 the heading already says, and bury the one that matters — an exception
+                 stops being visible when everything around it says the same thing.
+                 Compared against the COLOUR price, not the product price: a colourway
+                 override is what the other sizes here actually sell at, so measuring
+                 against the product would light up every pill on an overridden colour. */
+              const pillFmt = typeof formatPriceJS === 'function'
+                  ? formatPriceJS
+                  : (v => '<?= currencySymbol() ?>' + Number(v).toLocaleString('en-IN'));
+              const priceDiffers = Number.isFinite(Number(color.price))
+                  && Math.abs(Number(sizePrice) - Number(color.price)) > 0.009;
+              const pillPrice = priceDiffers
+                  ? '<span class="size-pill-price">' + pillFmt(sizePrice) + '</span>'
+                  : '';
             html += `
-                <button type="button" class="size-pill-btn ${outOfStock ? 'size-pill-disabled' : ''}"
+                <button type="button" class="size-pill-btn ${outOfStock ? 'size-pill-disabled' : ''} ${priceDiffers ? 'size-pill-has-price' : ''}"
                         ${outOfStock ? 'disabled aria-disabled="true"' : ''}
                         aria-pressed="false"
                         onclick="selectProductSizeCode(${size.id}, '${escHtml(size.label)}', ${sizePrice}, this)">
                     ${escHtml(size.label)}
+                      ${pillPrice}
                     ${outOfStock ? '<span class="size-pill-low-stock">Out of stock</span>' : (lowStock ? `<span class="size-pill-low-stock">Only ${size.stock} left</span>` : '')}
                 </button>`;
         });
@@ -2821,9 +3038,43 @@ document.addEventListener('keydown', e => {
             else { bar.hidden = false; }
         }
 
+        /* The bar follows the PRICE, not just the Add to Bag button.
+           ────────────────────────────────────────────────────────────────────
+           Anchored on the buttons alone, the bar appeared only after you had
+           scrolled past Add to Bag — but the price heading leaves the top of a
+           phone screen well before that. Measured on a 375×812 screen: at
+           scrollY 780 the price was at −107 (gone), the size pills at 184 and
+           Add to Bag at 313 (both on screen), and the bar was hidden. So the one
+           moment the shopper is changing the price — picking a size or a colour —
+           was the one moment no price was visible anywhere, and checking it meant
+           scrolling up, back down to change, and up again.
+
+           Two separate questions, because they have different answers:
+             priceGone   → is the heading price off screen? Then the bar must
+                           show, so a figure is always somewhere on screen.
+             buttonsGone → is the real Add to Bag off screen? Only then may the
+                           bar offer its own, or the page shows two Add to Bag
+                           buttons at once. That duplication is why the bar was
+                           anchored here in the first place; hiding just the
+                           button keeps that right while freeing the price. */
+        let priceGone = false, buttonsGone = false;
+        const priceAnchor = document.getElementById('priceCurrentAmount') || anchor;
+
+        function syncBar() {
+            bar.classList.toggle('is-visible', narrow.matches && (priceGone || buttonsGone));
+            // Price-only while the real button is still reachable.
+            bar.classList.toggle('is-price-only', !buttonsGone);
+        }
+
         new IntersectionObserver(([entry]) => {
-            bar.classList.toggle('is-visible', narrow.matches && !entry.isIntersecting);
+            buttonsGone = !entry.isIntersecting;
+            syncBar();
         }, { rootMargin: '0px 0px -12px 0px' }).observe(anchor);
+
+        new IntersectionObserver(([entry]) => {
+            priceGone = !entry.isIntersecting;
+            syncBar();
+        }, { rootMargin: '0px 0px -12px 0px' }).observe(priceAnchor);
 
         // The compare tray pins to the same edge and outranks this bar. Watch its
         // class rather than polling — it is toggled from a click, not a scroll.

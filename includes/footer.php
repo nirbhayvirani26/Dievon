@@ -468,12 +468,12 @@ let cartState = { items: [], cart_count: 0, cart_total: '0.00' };
 function openCart() { 
     document.getElementById('cartSidebar').classList.add('open'); 
     document.getElementById('cartOverlay').classList.add('open'); 
-    document.body.style.overflow = 'hidden'; 
+    dievonScrollLock.lock('cart'); 
 }
 function closeCart() { 
     document.getElementById('cartSidebar').classList.remove('open'); 
     document.getElementById('cartOverlay').classList.remove('open'); 
-    document.body.style.overflow = ''; 
+    dievonScrollLock.unlock('cart'); 
 }
 
 // ── Add to Cart AJAX helper ──────────────────────────────────
@@ -791,8 +791,8 @@ function escHtml(str) {
 const ham = document.getElementById('navHamburger');
 const drawer = document.getElementById('mobileDrawer');
 const drawerClose = document.getElementById('mobileDrawerClose');
-function openMobileMenu()  { ham.classList.add('open'); drawer.classList.add('open'); document.body.style.overflow='hidden'; }
-function closeMobileMenu() { ham.classList.remove('open'); drawer.classList.remove('open'); document.body.style.overflow=''; }
+function openMobileMenu()  { ham.classList.add('open'); drawer.classList.add('open'); dievonScrollLock.lock('menu'); }
+function closeMobileMenu() { ham.classList.remove('open'); drawer.classList.remove('open'); dievonScrollLock.unlock('menu'); }
 if (ham) ham.addEventListener('click', openMobileMenu);
 if (drawerClose) drawerClose.addEventListener('click', closeMobileMenu);
 if (drawer) drawer.addEventListener('click', e => { if (e.target === drawer) closeMobileMenu(); });

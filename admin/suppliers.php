@@ -90,7 +90,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $suppliers = [];
 try {
     $suppliers = $pdo->query(
-        "SELECT s.*, (SELECT COUNT(*) FROM products WHERE supplier_id = s.id) AS product_count
+        /* Alongside the headcount, how many of this supplier's garments carry no
+           design number of theirs.
+           ────────────────────────────────────────────────────────────────────
+           Our SKU is generated here and they have never seen it, so a product
+           without their number cannot be reordered from them. admin/products.php
+           badges this one product at a time; on this screen the question is the
+           other way round — "is anything I buy from Anjali unorderable?" — and
+           answering it meant opening every product to find out.
+
+           Matched on supplier_id OR the stored name: the name is what older
+           products carry and what admin/orders.php looks suppliers up by, so an
+           id-only test would report zero missing on a supplier whose products
+           predate the id column.
+
+           Archived products are excluded — they are off the shop and are not
+           being reordered, the same rule the badge in the product list follows.
+           The existing product_count is deliberately left as it was. */
+        "SELECT s.*,
+                (SELECT COUNT(*) FROM products WHERE supplier_id = s.id) AS product_count,
+                (SELECT COUNT(*) FROM products p
+                   WHERE (p.supplier_id = s.id
+                          OR (TRIM(COALESCE(p.supplier_name,'')) <> '' AND p.supplier_name = s.name COLLATE utf8mb4_unicode_ci))
+                     AND COALESCE(p.is_deleted,0) = 0
+                     AND TRIM(COALESCE(p.supplier_ref,'')) = '') AS missing_design_count,
+                (SELECT GROUP_CONCAT(p.name ORDER BY p.name SEPARATOR ', ') FROM products p
+                   WHERE (p.supplier_id = s.id
+                          OR (TRIM(COALESCE(p.supplier_name,'')) <> '' AND p.supplier_name = s.name COLLATE utf8mb4_unicode_ci))
+                     AND COALESCE(p.is_deleted,0) = 0
+                     AND TRIM(COALESCE(p.supplier_ref,'')) = '') AS missing_design_names
            FROM suppliers s ORDER BY s.name"
     )->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
@@ -163,7 +191,24 @@ require_once __DIR__ . '/includes/header.php';
                 <td><input type="text" name="name" class="form-control" value="<?= htmlspecialchars($s['name']) ?>"></td>
                 <td><input type="text" name="owner_name" class="form-control" value="<?= htmlspecialchars($s['owner_name'] ?? '') ?>"></td>
                 <td><input type="text" name="phone" class="form-control" value="<?= htmlspecialchars($s['phone'] ?? '') ?>"></td>
-                <td class="admin-cell-center"><?= (int)$s['product_count'] ?></td>
+                <td class="admin-cell-center">
+                    <?= (int)$s['product_count'] ?>
+                    <?php
+                    $sMissing = (int)($s['missing_design_count'] ?? 0);
+                    if ($sMissing > 0):
+                        /* The garments are named in the tooltip, not just counted.
+                           "2 without design no." beside a supplier tells you there
+                           is a problem and nothing about where to go next — you
+                           would have to open the product list and check them one
+                           by one, which is the work this badge is meant to save. */
+                        $sNames = trim((string)($s['missing_design_names'] ?? ''));
+                    ?>
+                        <span class="prod-badge prod-badge--nodesign supplier-nodesign"
+                              title="No design no. recorded for <?= $sMissing === 1 ? 'this garment' : 'these garments' ?>, so <?= htmlspecialchars($s['name']) ?> cannot be reordered for <?= $sMissing === 1 ? 'it' : 'them' ?>: <?= htmlspecialchars($sNames) ?>">
+                            ⚠ <?= $sMissing ?> without design no.
+                        </span>
+                    <?php endif; ?>
+                </td>
                 <td class="admin-cell-actions">
                     <button type="submit" class="btn-primary btn-row">Save</button>
                 </form>

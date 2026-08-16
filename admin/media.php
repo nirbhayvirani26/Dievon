@@ -85,6 +85,62 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delet
     }
 }
 
+/* ── Delete every unused file in one go ─────────────────────────────────────
+   Deleting them one tile at a time was the only way this screen offered, and a
+   shop that has been trading a while accumulates hundreds — every replaced
+   product photograph, every abandoned upload.
+
+   Each file goes through deleteUploadedFileIfUnused(), the same check the
+   single-file button uses, rather than trusting the "Unused" badge on its tile.
+   That badge was worked out when the page was drawn; a product could have been
+   given that photograph in another tab since. The helper re-reads all 17
+   file-naming columns at the moment of deletion, so the worst case is that a
+   file is KEPT, never that a live image is destroyed. Files the CODE depends on
+   — the logo, favicons, lookbook slots — are refused by it too, even though no
+   database row names them.
+
+   This is permanent. media_cleanup.php quarantines instead, and remains the
+   safer route; this exists because deleting 200 files one at a time is not a
+   real option. The confirmation says so plainly.
+
+   What was KEPT is reported next to what went: "42 deleted" alone does not say
+   whether the other eight were a problem or simply still in use. */
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'purge_unused_media') {
+    if (!verifyCsrfToken($_POST['csrf_token'] ?? '')) {
+        $errorMsg = 'Security validation failed (Invalid CSRF token).';
+    } else {
+        $deleted = 0; $kept = 0; $freed = 0;
+        foreach ($FOLDERS as $folder) {
+            $dir = __DIR__ . '/../uploads/' . $folder;
+            if (!is_dir($dir)) { continue; }
+            foreach ((array)scandir($dir) as $entry) {
+                if ($entry === '.' || $entry === '..') { continue; }
+                $full = $dir . '/' . $entry;
+                if (!is_file($full)) { continue; }
+                /* A .webp is never considered on its own: the database stores
+                   photo.jpg and never photo.webp, so every twin would read as
+                   unused and be stripped from photographs still in use. The
+                   helper removes each twin along with its parent instead. */
+                if (strtolower(pathinfo($entry, PATHINFO_EXTENSION)) === 'webp') { continue; }
+                $size = (int)@filesize($full);
+                if (deleteUploadedFileIfUnused($pdo, $entry, $dir)) { $deleted++; $freed += $size; }
+                else { $kept++; }
+            }
+        }
+        if ($deleted > 0) {
+            logAdminAction($_SESSION['admin_id'] ?? 1, 'purge_unused_media',
+                "Deleted $deleted unused media file(s), freeing $freed bytes");
+        }
+        $successMsg = $deleted === 0
+            ? 'Nothing removed — every file on disk is still in use.'
+            : "Deleted $deleted unused file" . ($deleted === 1 ? '' : 's')
+              . ' (' . formatBytes($freed) . ' freed, WebP copies included).'
+              . ($kept > 0
+                  ? ' ' . $kept . ' file' . ($kept === 1 ? ' was' : 's were') . ' kept — still in use.'
+                  : '');
+    }
+}
+
 // ── Handle upload (goes to uploads/gallery/ — the shared folder used by
 // banners and blog posts) ────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'upload_media') {
@@ -231,6 +287,28 @@ require_once __DIR__ . '/includes/header.php';
     <div class="stat-card glass-panel">
         <div class="stat-label">Unused Files</div>
         <div class="stat-value" style="font-size:22px; <?= $unusedCount > 0 ? 'color:#f59e0b;' : '' ?>"><?= $unusedCount ?></div>
+        <?php /* On the card that states the number, so the count and the thing
+                 that acts on it are never in two places. Hidden entirely at zero
+                 rather than shown disabled — a button that cannot do anything
+                 still invites a click and a moment spent working out why nothing
+                 happened. The confirmation names the count and says plainly that
+                 Storage Cleanup is the reversible alternative. */ ?>
+        <?php if ($unusedCount > 0): ?>
+        <form method="POST" style="margin:10px 0 0;"
+              onsubmit="return dvConfirmForm(this, 'Permanently delete <?= (int)$unusedCount ?> unused file<?= $unusedCount === 1 ? '' : 's' ?>? Anything still used by a product, article or banner is kept automatically. This cannot be undone — use Storage Cleanup instead if you want it reversible.')">
+            <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
+            <input type="hidden" name="action" value="purge_unused_media">
+            <?php /* .btn-sm .btn-sm-danger — the admin's own small destructive
+                     button, used by every other delete on these screens. Writing
+                     a bespoke one meant this button would drift the first time
+                     the shared pair was restyled, and it would be the only red
+                     button in the panel that looked slightly different. */ ?>
+            <button type="submit" class="btn-sm btn-sm-danger">
+                <i class="fa-solid fa-trash" aria-hidden="true"></i>
+                Delete all unused
+            </button>
+        </form>
+        <?php endif; ?>
     </div>
 </div>
 

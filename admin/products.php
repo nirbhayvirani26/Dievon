@@ -283,11 +283,75 @@ function dievonDuplicateProduct(PDO $pdo, int $sourceId, array $orig): int
 }
 
 function dievonPurgeProduct(PDO $pdo, int $pid): void {
+    /* product_component_specifications was missing from this list.
+       ────────────────────────────────────────────────────────────────────────
+       It carries product_id like the rest, so it was purgeable all along — it
+       simply was not named, and the measurements attached to every deleted
+       product's pieces stayed behind. Found four such rows still describing a
+       product 29 that no longer existed, alongside its two product_components
+       rows: "Top — Length 42 inch", for a garment nobody could open.
+
+       That is not merely untidy. MySQL reissues ids, so the next product to be
+       given 29 would have inherited a previous garment's pieces and their
+       measurements, and the product page would have shown them as its own.
+
+       Listed immediately after product_components because it hangs off it —
+       deleting the parent without the child is what created the orphans. */
     $children = [
         'product_variants', 'product_colors', 'product_images',
-        'product_components', 'product_specifications', 'product_questions',
+        'product_components', 'product_component_specifications',
+        'product_specifications', 'product_questions',
         'product_reviews', 'product_country_prices', 'size_guide_charts',
+        // Undo history for the charts on the line above. Once those are gone the
+        // snapshots restore nothing, so leaving them behind keeps rows that
+        // cannot be acted on.
+        'size_guide_snapshots',
     ];
+
+    /* The photographs, gathered BEFORE the rows that name them are deleted.
+       ────────────────────────────────────────────────────────────────────────
+       Purging removed every database row and left every JPEG on disk, for ever.
+       Ten deleted products meant ten sets of orphaned photographs nobody could
+       see, find or account for — which is what fills the media library with
+       files no screen will ever show again.
+
+       Read first, delete after: once the rows are gone the filenames are gone
+       with them, and nothing is left to look the files up by.
+
+       products.image_alt is deliberately NOT read. It is alt TEXT, not a
+       filename; handing it to a file deleter asks the disk for a file named
+       after a sentence.
+
+       The unlinking itself happens after the commit, through
+       deleteUploadedFileIfUnused(), which re-checks every file-naming column in
+       the database first. uploads/products/ is shared with blog posts, banners
+       and size guides, so a photograph this product used may still belong to
+       one of those — that check is what stops a purge here blanking an image on
+       the blog. It removes the .webp twin as well. */
+    $doomedFiles = [];
+    foreach ([['products', 'id'], ['product_images', 'product_id']] as [$tbl, $key]) {
+        try {
+            $q = $pdo->prepare("SELECT image FROM `$tbl` WHERE `$key` = :id AND image IS NOT NULL AND image <> ''");
+            $q->execute([':id' => $pid]);
+            foreach ($q->fetchAll(PDO::FETCH_COLUMN) as $fn) { $doomedFiles[basename($fn)] = true; }
+        } catch (PDOException $e) { /* table absent on this install */ }
+    }
+    // Colour galleries hang off the COLOUR, so they are reached through it.
+    try {
+        $q = $pdo->prepare("SELECT ci.image FROM product_color_images ci
+                             JOIN product_colors c ON c.id = ci.color_id
+                            WHERE c.product_id = :id AND ci.image IS NOT NULL AND ci.image <> ''");
+        $q->execute([':id' => $pid]);
+        foreach ($q->fetchAll(PDO::FETCH_COLUMN) as $fn) { $doomedFiles[basename($fn)] = true; }
+    } catch (PDOException $e) { /* table absent on this install */ }
+    /* order_items and stock_movements are deliberately NOT here, and must not be
+       added. Both are historical records that happen to name a product rather
+       than belonging to one: order_items holds real line items on real orders —
+       41 of them currently point at products already deleted — and purging those
+       would rewrite what a customer was actually sold and charged, taking the
+       revenue and GST reports with it. stock_movements is the same argument for
+       the stock ledger. A deleted product must lose its description, not its
+       trading history. */
     $pdo->beginTransaction();
     try {
         /* Colour galleries hang off the COLOUR, not the product.
@@ -324,6 +388,25 @@ function dievonPurgeProduct(PDO $pdo, int $pid): void {
     } catch (PDOException $e) {
         $pdo->rollBack();
         throw $e;
+    }
+
+    /* Only now, and deliberately outside the transaction.
+       ────────────────────────────────────────────────────────────────────────
+       Unlinking cannot be rolled back. Inside the transaction a later failure
+       would undo the rows and leave the photographs already destroyed — a
+       product restored to its listing with every image gone. After the commit
+       the rows are certainly gone, so the files are certainly unreferenced.
+
+       A file that refuses to delete is logged, not raised: the product IS
+       deleted by this point, and failing the request over a leftover JPEG would
+       tell the owner the purge broke when it did not. The media library's
+       unused-file sweep will catch anything left behind. */
+    foreach (array_keys($doomedFiles) as $fn) {
+        try {
+            deleteUploadedFileIfUnused($pdo, $fn, __DIR__ . '/../uploads/products');
+        } catch (Throwable $e) {
+            error_log("Purge: could not remove image $fn for product $pid: " . $e->getMessage());
+        }
     }
 }
 
@@ -665,6 +748,33 @@ require_once __DIR__ . '/includes/header.php';
                                  exists to prevent; this screen was the one place still
                                  answering it separately. */ ?>
                         <span style="font-size:12px; color:var(--text-muted);">SKU: <code><?= htmlspecialchars(productDisplayCode($p)) ?></code></span>
+                        <?php
+                        /* Named supplier, no design number of theirs.
+                           ────────────────────────────────────────────
+                           The SKU above is OURS — generated here, and the supplier
+                           has never seen it. Reordering needs THEIR number, so a
+                           product in this state cannot be restocked from the person
+                           who made it, and the row gave no sign of that until the
+                           piece had already sold. admin/orders.php says the same
+                           thing on a line that has already gone out; this is the
+                           same fact early enough to act on.
+
+                           Only when a supplier IS named: with nobody recorded there
+                           is no one to get a number from, which is a different gap
+                           and not one this badge can help with.
+
+                           Not on archived rows — those are off the shop and are not
+                           being reordered, so the badge would be pure noise. */
+                        $pNeedsDesignNo = empty($p['is_deleted'])
+                            && trim((string)($p['supplier_name'] ?? '')) !== ''
+                            && trim((string)($p['supplier_ref']  ?? '')) === '';
+                        ?>
+                        <?php if ($pNeedsDesignNo): ?>
+                            <span class="prod-badge prod-badge--nodesign"
+                                  title="No design no. recorded for <?= htmlspecialchars($p['supplier_name']) ?> — you cannot reorder this from them. Add it under Supplier's design no.">
+                                ⚠ No design no.
+                            </span>
+                        <?php endif; ?>
                     </td>
                     <td>
                         <span style="font-size:12px; font-weight:700; background:var(--bg-surface-soft); padding:4px 8px; border-radius:4px; color:var(--color-primary);"><?= htmlspecialchars($p['category']) ?></span>

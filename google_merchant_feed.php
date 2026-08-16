@@ -98,6 +98,17 @@ echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
     $baseCode = productDisplayCode($p);
     $variants = feedVariants($pdo, (int)$p['id']);
 
+    /* The product's live colourways, used only as the last resort for g:color
+       further down. Read once per product rather than once per size. */
+    $soleColourway = [];
+    try {
+        $cwSt = $pdo->prepare("SELECT color_name FROM product_colors
+                                WHERE product_id = :id AND is_active = 1
+                                  AND TRIM(COALESCE(color_name,'')) <> ''");
+        $cwSt->execute(['id' => (int)$p['id']]);
+        $soleColourway = array_values(array_unique(array_map('trim', $cwSt->fetchAll(PDO::FETCH_COLUMN))));
+    } catch (PDOException $e) { $soleColourway = []; }
+
     // Sale pricing: g:price is the regular price and g:sale_price the current one,
     // so Merchant Center can show the strike-through the site already shows.
     $mrp        = (float)($p['mrp_price'] ?? 0);
@@ -214,7 +225,25 @@ echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
            in g:id they are finally distinct items that deserve distinct colours.
            Falls back to the product-level fields for a garment sold without
            colourways. */
-        feedTag('g:color', $row['colour'] !== '' ? $row['colour'] : ($p['color_way'] ?: ($p['color'] ?? '')), true);
+        /* Third fallback: the product's own single colourway.
+           ────────────────────────────────────────────────────────────────────
+           A garment can have one active colourway and size variants that were
+           never linked to it — color_id NULL on every row — and then neither of
+           the two sources above has anything. Measured: Iris Straight Crepe
+           Pants has a live "Bone Ivory" colourway and emitted four items with
+           no g:color at all, which Google disapproves for apparel. The owner
+           would have had to notice that and retype a colour the shop already
+           knew, in a second place.
+
+           ONLY when there is exactly one. With two or more and nothing linking
+           the sizes to either, which colour this item is cannot be known, and
+           inventing one is worse than omitting it — a wrong colour on a live
+           listing is a returned parcel. */
+        $feedColour = $row['colour'] !== '' ? $row['colour'] : ($p['color_way'] ?: ($p['color'] ?? ''));
+        if (trim((string)$feedColour) === '' && count($soleColourway) === 1) {
+            $feedColour = $soleColourway[0];
+        }
+        feedTag('g:color', $feedColour, true);
         feedTag('g:material', $material, true);
         feedTag('g:pattern', $p['pattern'] ?? '', true);
 ?>

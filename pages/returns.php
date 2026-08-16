@@ -35,8 +35,16 @@ require_once __DIR__ . '/../includes/header.php';
              repeating those same values by hand — so the four legal pages could
              drift apart, and none of them could be restyled or made responsive
              without editing markup. The rendered result is identical. */ ?>
-    <div class="container legal-container">
-        <div class="reveal-on-scroll legal-panel">
+    <?php /* .legal-page, the same wrapper privacy.php and terms.php use, rather
+             than the boxed .legal-panel this page had to itself.
+             ────────────────────────────────────────────────────────────────
+             Four pages sit behind one "Customer Service" list in the footer and
+             a reader moves between them, so meeting a bordered card on two of
+             them and plain text on the other two reads as two different sites.
+             The box also cost 40px of padding on every side, which on a phone
+             is most of the reading width spent on a border. */ ?>
+    <div class="container">
+        <div class="reveal-on-scroll legal-page">
             <?php /* Named for what this section actually covers, not for the page.
                      It read "<?= (int)RETURN_WINDOW_DAYS ?>-Day Return Policy" directly beneath the
                      page title "Returns & Refunds Policy", so the first thing a reader

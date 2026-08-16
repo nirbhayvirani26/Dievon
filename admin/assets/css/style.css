@@ -1783,6 +1783,18 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
    archived product has been taken off it. */
 .prod-badge--archived { background: var(--color-danger); }
 .prod-badge--draft    { background: #8a6d1f; }
+/* Archived and Draft describe where the product stands with shoppers. This one
+   is about a gap in YOUR records — the supplier's design number is missing, so
+   the piece cannot be reordered from them. Outlined rather than filled so it
+   reads as a note against the row instead of a third status competing with the
+   two above, and gold to match the same warning on admin/orders.php. */
+.prod-badge--nodesign {
+    background: var(--color-secondary-bg);
+    color: var(--color-secondary);
+    border: 1px solid var(--color-secondary);
+    letter-spacing: .04em;
+    cursor: help;
+}
 
 .prod-audience {
     display: inline-block;
@@ -3357,3 +3369,45 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 @media (max-width: 600px)  { .size-stock-grid { grid-template-columns: minmax(0, 1fr); } }
 
 .size-stock-grid--spaced { margin-bottom: 22px; }
+
+/* ── A sold garment with no supplier design number ──────────────────────────
+   Sits under .order-item-ref, which prints "DV-GEN-0001 · Dwarkesh" and reads
+   as a complete fulfilment reference. It is not: DV-GEN-0001 is our own SKU
+   and the supplier has never seen it, so that line cannot be used to reorder.
+
+   Gold, matching .size-price-warning above — this is work still to be done,
+   not an error, and red is kept for things that have actually gone wrong.
+   Out of the mono face of the reference strip, because it is a sentence to be
+   read rather than a code to be typed accurately. */
+.order-ref-warn {
+    display: block;
+    margin-top: 4px;
+    font-size: 11.5px;
+    line-height: 1.5;
+    color: var(--text-secondary);
+    background: var(--color-secondary-bg);
+    border-left: 3px solid var(--color-secondary);
+    padding: 5px 9px;
+    border-radius: 0 3px 3px 0;
+}
+.order-ref-warn i { color: var(--color-secondary); margin-right: 5px; }
+.order-ref-warn a { color: var(--color-primary); font-weight: 600; text-decoration: underline; }
+
+/* Shown when the number was added to the product AFTER this order was placed,
+   so the figure beside it is today's value and not what the order recorded. */
+.order-ref-late { font-family: inherit; font-style: italic; opacity: 0.75; }
+
+/* The same badge on the suppliers table, where it carries a count and sits
+   under a centred number rather than beside a SKU. Given its own line so the
+   product count stays readable as a number, and left in sentence case because
+   "2 WITHOUT DESIGN NO." shouts at a glance-value column. */
+.supplier-nodesign {
+    display: block;
+    margin: 4px auto 0;
+    width: fit-content;
+    text-transform: none;
+    letter-spacing: 0;
+    font-size: 10.5px;
+    white-space: nowrap;
+}
+

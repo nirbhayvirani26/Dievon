@@ -258,6 +258,32 @@ $searchHint = $searchHintNames
     ?>
     <meta name="google-site-verification" content="<?= htmlspecialchars($gscToken) ?>">
     <?php endif; ?>
+
+    <?php
+        /* Google Analytics 4, and only when an ID has actually been saved.
+           ────────────────────────────────────────────────────────────────────
+           Same arrangement as the verification token above: pasted into admin ›
+           SEO, kept in store_settings, so pointing the shop at a different
+           property never needs a deploy. With the field empty NOTHING is
+           emitted — no script tag, no request to google-analytics.com, no
+           cookie — so the shop carries no tracking until the owner asks for it.
+
+           The ID is narrowed to the G-XXXXXXX shape when it is saved, because
+           it is interpolated into a <script> block here; rawurlencode on the
+           src and json_encode on the config argument close the same door from
+           this side, so a bad value stored by any other route still cannot
+           break out into executable JavaScript. */
+        $gaId = storeSetting($pdo ?? null, 'google_analytics_id', '');
+        if ($gaId && preg_match('/^G-[A-Z0-9]{4,20}$/i', $gaId)):
+    ?>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=<?= rawurlencode($gaId) ?>"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', <?= json_encode($gaId) ?>);
+    </script>
+    <?php endif; ?>
     <title><?= $title ?></title>
     <meta name="description" content="<?= $desc ?>">
     <?php if (!empty($metaKeywords)): ?>
@@ -1019,6 +1045,40 @@ $searchHint = $searchHintNames
 
 
 <script>
+/* One owner for the page's scroll lock.
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Five separate overlays used to write document.body.style.overflow directly —
+ * the cart drawer, the mobile menu, the search overlay, the image lightbox and
+ * the product details sheet — and every close set it back to '' unconditionally,
+ * no matter what else was still open.
+ *
+ * That is where "sometimes the page will not scroll, sometimes it scrolls when
+ * it should not" came from. Measured: open the cart, open the details sheet,
+ * close the details sheet — the lock was released while the cart was still open.
+ * The mirror image is worse: two overlays open, only one closed, and the lock
+ * stays on for ever. The page then looks frozen, which is exactly what it was.
+ *
+ * Keyed rather than counted, so it cannot drift out of step: locking twice with
+ * the same name is harmless, and unlocking something that never locked does
+ * nothing. Scroll returns only when the last holder lets go.
+ *
+ * Still the same body.style.overflow underneath, so footer.php's scroll-direction
+ * check, which reads that property, goes on working unchanged.
+ */
+window.dievonScrollLock = window.dievonScrollLock || (function () {
+    var holders = {};
+    function apply() {
+        var any = false;
+        for (var k in holders) { if (Object.prototype.hasOwnProperty.call(holders, k)) { any = true; break; } }
+        document.body.style.overflow = any ? 'hidden' : '';
+    }
+    return {
+        lock:   function (key) { holders[key] = true; apply(); },
+        unlock: function (key) { delete holders[key]; apply(); },
+        held:   function () { return Object.keys(holders); }
+    };
+})();
+
 /* Open/close a mobile category row.
  *
  * The old version set body.style.display to 'block' / 'none'. `display` cannot be
@@ -1115,7 +1175,7 @@ function toggleMobileCategoryMenu(el) {
             overlay.style.opacity = '1';
             document.getElementById('searchInput').focus();
         }, 10);
-        document.body.style.overflow = 'hidden';
+        dievonScrollLock.lock('search');
     }
     function closeSearchOverlay() {
         const overlay = document.getElementById('searchOverlay');
@@ -1123,6 +1183,6 @@ function toggleMobileCategoryMenu(el) {
         setTimeout(() => {
             overlay.style.display = 'none';
         }, 300);
-        document.body.style.overflow = '';
+        dievonScrollLock.unlock('search');
     }
 </script>
