@@ -89,8 +89,16 @@ if (!defined('SITE_URL')) { http_response_code(404); exit; }
  * than it wins. The "seen" flag lives in localStorage so it survives across
  * sessions without needing a cookie banner.
  */
+/* 'product' added to the list above. The rule this list encodes is "do not
+   interrupt someone mid-purchase", and the product page is where the purchase is
+   actually decided — a shopper reading a garment's fabric and fit is further into
+   buying than one still on the cart page, which was already excluded.
+   Observed: the modal covered the photograph and the size picker a few seconds
+   after arrival, twice in a row, on the page the shopper came for.
+   It still shows on the homepage, the shop grid, the journal and the rest, so the
+   email capture keeps working where it costs nothing. */
 $suppressWelcome = isset($_SESSION['customer_id'])
-    || in_array(($path ?? ''), ['login', 'register', 'checkout', 'cart'], true);
+    || in_array(($path ?? ''), ['login', 'register', 'checkout', 'cart', 'product'], true);
 ?>
 <?php if (!$suppressWelcome): ?>
 <div class="welcome-overlay" id="welcomeOverlay" role="dialog" aria-modal="true"
