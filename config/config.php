@@ -2933,12 +2933,31 @@ function productPriceRangePrime(array $products, ?PDO $pdo = null): void
 
            A colour-less variant (color_id IS NULL) is unaffected: it belongs to
            the product, not to a colourway, and stays in the range. */
+        /* A SOLD OUT size cannot set the price a card advertises either.
+           ────────────────────────────────────────────────────────────────────
+           The same argument as the colour rule above, one door further along.
+           A size with no stock is drawn on the product page greyed out and
+           labelled "Out of stock" — nobody can buy it — yet it went on setting
+           the cheapest figure in the grid. Measured on a saree whose smallest
+           size was sold out: the card advertised "From ₹300.00" while the page
+           quoted ₹3,000 and offered nothing at ₹300 in any colour or size.
+
+           That is worse than untidy. The card is a price advertisement for
+           something the shop will not sell at that price.
+
+           The test matches pages/product.php exactly (both the server-rendered
+           ladder at :1087 and the colour-swap one at :2437): stock_qty NULL
+           means this size is NOT COUNTED, which is not the same as none left,
+           so a NULL row stays in the range. Only a real number at or below zero
+           is out. Getting that backwards would drop every untracked product to
+           its bare product price. */
         $vSt = $pdo->prepare(
             "SELECT v.* FROM product_variants v
                LEFT JOIN product_colors c ON c.id = v.color_id
               WHERE v.product_id IN ($ph)
                 AND v.available = 1
-                AND (v.color_id IS NULL OR c.is_active = 1)"
+                AND (v.color_id IS NULL OR c.is_active = 1)
+                AND (v.stock_qty IS NULL OR v.stock_qty > 0)"
         );
         $vSt->execute($ids);
         $variants = $vSt->fetchAll(PDO::FETCH_ASSOC);
@@ -3007,24 +3026,67 @@ function productPriceRangePrime(array $products, ?PDO $pdo = null): void
  * @param int $excludeId Product whose own SKU should not count as a collision
  *                       (a product being edited is allowed to keep its code).
  */
-function generateProductSku(PDO $pdo, string $name, int $excludeId = 0): string
+function generateProductSku(PDO $pdo, string $name, int $excludeId = 0, ?string $category = null): string
 {
-    $base = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $name) ?? '');
-    $base = $base === '' ? 'ITEM' : substr($base, 0, 8);
-    $candidate = 'DV-' . $base;
+    /* DV-KUR-0001, not DV-WOMENSLE-2.
+       ────────────────────────────────────────────────────────────────────────
+       The old rule took the first eight alphanumerics of the product NAME. It
+       worked, but what it produced was unreadable and collided constantly:
+       "Women's Leaf Print Co-ord Set" and "Women's Leather Belt" both flatten
+       to WOMENSLE, so the second one became DV-WOMENSLE-2 — a code that tells
+       nobody anything and whose suffix records an accident of naming.
+
+       This is not a private key. It is printed on the product page under
+       Product Code & Dimensions, and published as the `sku` in the Product
+       schema and the Google Merchant feed. It should read like an inventory
+       code, because that is what it is.
+
+       Three letters of the category, then a number that counts within that
+       category. Sequence is per-category rather than global so the numbers stay
+       small and mean something: DV-KUR-0007 is the seventh kurti.
+
+       EXISTING SKUS ARE NOT TOUCHED. This only runs for a new product whose SKU
+       box was left blank — a stored code is always kept (admin/product_form.php
+       keeps it on edit, and refuses to change it at all once the product has
+       sold), and anything typed by hand always wins. */
+    $prefix = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', (string)$category) ?? '');
+    $prefix = $prefix === '' ? 'GEN' : substr($prefix, 0, 3);
+    $stem   = 'DV-' . $prefix . '-';
 
     try {
+        /* The next number is read from the SKUs already issued under this
+           prefix, not from a counter column — there is no counter to drift, and
+           a product deleted from the middle does not make the next one reuse
+           its code. CAST is needed because the suffix is text: without it
+           '10' sorts below '9' and the sequence would stall at 10. */
+        $seqSt = $pdo->prepare(
+            "SELECT COALESCE(MAX(CAST(SUBSTRING(sku, :len) AS UNSIGNED)), 0)
+               FROM products
+              WHERE sku LIKE :like AND SUBSTRING(sku, :len2) REGEXP '^[0-9]+$'"
+        );
+        $seqSt->execute([
+            ':len'  => strlen($stem) + 1,
+            ':len2' => strlen($stem) + 1,
+            ':like' => $stem . '%',
+        ]);
+        $next = (int)$seqSt->fetchColumn() + 1;
+
+        /* Still checked for a clash, and still bounded.
+           Sequential numbering should make a collision impossible, but two
+           admins saving at the same moment would both read the same MAX. The
+           loop walks forward rather than failing. */
         $chk = $pdo->prepare("SELECT COUNT(*) FROM products WHERE sku = :s AND id <> :id");
         for ($i = 0; $i < 50; $i++) {
-            $try = $i === 0 ? $candidate : $candidate . '-' . $i;
+            $try = $stem . str_pad((string)($next + $i), 4, '0', STR_PAD_LEFT);
             $chk->execute([':s' => $try, ':id' => $excludeId]);
             if ((int)$chk->fetchColumn() === 0) { return $try; }
         }
     } catch (PDOException $e) {
-        // Fall through to the unguessable form rather than block the caller.
+        // Fall through rather than block the save. A product without a code is
+        // worse than one with an ugly code.
     }
-    // Bounded loop exhausted, or the check itself failed: this cannot clash.
-    return $candidate . '-' . substr(uniqid(), -5);
+    // The check itself failed, or fifty in a row were taken: this cannot clash.
+    return $stem . strtoupper(substr(uniqid(), -5));
 }
 
 /**
