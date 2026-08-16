@@ -2542,7 +2542,7 @@ require_once __DIR__ . '/includes/header.php';
                 price is outlined below.
             </p>
 
-            <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(260px,1fr)); gap:10px; margin-bottom:22px;">
+            <div class="size-stock-grid size-stock-grid--spaced">
                 <?php foreach ($sizeLadder as $sz):
                     $existing = $plainByCode[$sz['code']] ?? null;
                     $ePrice   = $existing ? (float)$existing['price'] : 0.0;
@@ -2916,7 +2916,7 @@ require_once __DIR__ . '/includes/header.php';
                             figure and the price boxes below have no effect until the override is cleared.
                         </p>
                         <?php endif; ?>
-                        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(230px,1fr)); gap:10px;">
+                        <div class="size-stock-grid">
                             <?php foreach ($sizeLadder as $sz):
                                 $existing = $sizesByCode[$sz['code']] ?? null;
                                 // Mirrors the plain-size card: a stored price that differs

@@ -2050,6 +2050,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
    breadcrumb repeating the category and a title repeating the name. Removing
    it takes Add to Bag from 1,531px to 1,312px on a 390px phone. */
 .luxury-hero .product-hero-name {
+    max-width: 670px; margin: 0 auto;
     font-family: var(--font-heading); font-style: normal;
     font-size: 48px; font-weight: var(--font-heading-weight); line-height: 1.2;
     color: var(--text-primary); max-width: none; margin: 0 auto 15px;

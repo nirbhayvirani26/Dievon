@@ -3320,3 +3320,40 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
     border-left-color: #a8202e;
     color: #8d1a26;
 }
+
+/* ── Product form: the size / stock / price grid ───────────────────────────
+   Was two inline style="" attributes with different minimums — 260px on the
+   product's own sizes and 230px inside a colour — so the two grids that show
+   the same nine cards wrapped at different points for no reason anyone reading
+   the form could see.
+
+   200px fits four across at the width the form actually renders at, which is
+   what was asked for. auto-fill rather than repeat(4, 1fr) on purpose: a colour
+   panel is narrower than the product panel, and a laptop is narrower than a
+   desktop — a hard four would force a horizontal scroll or squash the price box
+   until the figure in it is unreadable. This drops to three, then two, then one,
+   on its own. */
+/* An explicit count, not auto-fill.
+   ────────────────────────────────────────────────────────────────────────
+   auto-fill counts columns from each container's OWN width, and a colour card
+   is wider than the Sizes panel — so the same rule produced four across in one
+   block and five in the other. Independently optimal, jointly wrong: these two
+   grids show the identical nine cards and should wrap identically.
+
+   minmax(0, 1fr) rather than 1fr: a bare 1fr floors at the content's minimum
+   width, so a long "Shown as…" placeholder would push the track wider than its
+   share and overflow the row instead of ellipsing inside it.
+
+   The breakpoints are viewport-based on purpose. Both grids then step down
+   together — the alternative, container queries, would put them back out of
+   step at exactly the widths where the difference is visible. */
+.size-stock-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 10px;
+}
+@media (max-width: 1200px) { .size-stock-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 900px)  { .size-stock-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px)  { .size-stock-grid { grid-template-columns: minmax(0, 1fr); } }
+
+.size-stock-grid--spaced { margin-bottom: 22px; }
