@@ -275,7 +275,35 @@ switch ($action) {
 
                 $variantId   = (int)$matchedVar['id'];
                 $variantName = $matchedVar['name'];
-                $price       = (float)$matchedVar['price'];
+
+                /* Priced through effectiveVariantPrice(), like every other branch.
+                   ────────────────────────────────────────────────────────────────
+                   This read $matchedVar['price'] raw and cast it. The column holds
+                   0 on a size that simply inherits the product's price — 6 of the
+                   74 variants here — and (float)0 is £0, so the line entered the
+                   bag priced at nothing. cartRepriceLive() corrects it on the next
+                   view, which is why it survived: the shopper is charged properly,
+                   but anything reading the line before that reprice sees zero.
+
+                   The colour is resolved here too. It is only looked up in the
+                   variant_id branch above, so a colourway carrying a price_override
+                   was ignored whenever the size arrived as TEXT rather than an id —
+                   the same request, priced two different ways depending on which
+                   form it took.
+
+                   From the variant row's own color_id, never a client-submitted
+                   one, and only while the colourway is still active — the identical
+                   rule the other branch states at line 164. */
+                $matchedColor = null;
+                if (!empty($matchedVar['color_id'])) {
+                    $mcStmt = $pdo->prepare(
+                        "SELECT * FROM product_colors
+                          WHERE id = :cid AND product_id = :pid AND is_active = 1"
+                    );
+                    $mcStmt->execute(['cid' => $matchedVar['color_id'], 'pid' => $productId]);
+                    $matchedColor = $mcStmt->fetch() ?: null;
+                }
+                $price       = effectiveVariantPrice($product, $matchedVar, $matchedColor);
             } else {
                 // This product has no variants, so the only value that belongs
                 // here is the 'Standard' placeholder assigned further up for a
