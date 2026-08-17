@@ -182,10 +182,41 @@ try {
 $repeatPhoneSet = array_flip($repeatPhones);
 $repeatCustomerCount = count($repeatPhones);
 
-// ── Load orders ───────────────────────────────────────────
-// Archived (soft-deleted) orders are hidden here but still exist, so their
-// tax invoice can be reproduced if it is ever needed.
-$orders = $pdo->query("SELECT * FROM orders WHERE COALESCE(is_deleted,0) = 0 ORDER BY created_at DESC")->fetchAll();
+/* ── The five page lists this file used to load, and no longer does ──────────
+   $orders, $products, $catList, $promoCodes and $inquiries were all SELECT *
+   with no LIMIT, run here on EVERY admin page load. Measured before removing
+   them: 18 SELECTs and 185 rows fetched per page load, on all 35 admin screens.
+
+   Five of those 35 screens referenced any of the lists, and only ONE needed this
+   file to supply it:
+
+     admin/orders.php        $orders      — now loads it itself, just below its
+                                            own role check
+     admin/customers.php     $inquiries   — already loaded its own, before this
+                                            include
+     admin/size_guide.php    $products    — already loaded its own (ORDER BY
+                                            name, which this file's id DESC list
+                                            was overwriting, so its "Product
+                                            Override" picker was never
+                                            alphabetical)
+     admin/gst_report.php    $orders      — already loads its own, AFTER this
+                                            include, so this copy was fetched and
+                                            then thrown away
+     admin/promo.php         $promoCodes  — same: loads its own afterwards
+
+   $catList and $unreadInquiries were read by NOTHING, anywhere in the codebase.
+   Two queries per admin page load whose results were never looked at.
+
+   The remaining 30 screens used none of it. So this was 185 rows fetched to serve
+   one page, and it grows with the shop: at 5,000 orders every admin screen would
+   have pulled 5,000 full rows before drawing anything.
+
+   A page that needs a list now runs its own query, which also lets it choose its
+   own columns, filter and order. If you came here looking for where $orders is
+   set, that is why it is not here. */
+
+// ── Load stock data (for Stock tab) ───────────────────────
+// Every one of the three queries below is filtered to non-archived products.
 
 // ── Load stock data (for Stock tab) ───────────────────────
 // Every one of the three queries below is filtered to non-archived products.
@@ -245,22 +276,10 @@ try {
 }
 
 
-// ── Load products ─────────────────────────────────────────
-// Archived rows excluded here too. admin/products.php deliberately ignores this
-// variable and runs its own view-filtered query into $productList (see the note
-// there), so nothing on that screen changes — but any screen that does read
-// $products was getting archived products silently mixed into a "products" list.
-$products = $pdo->query("SELECT * FROM products WHERE (is_deleted = 0 OR is_deleted IS NULL) ORDER BY id DESC")->fetchAll();
-
 // ── Load gallery (removed) ──────────────────────────────────
 
-// ── Load categories ───────────────────────────────────────
-$catList = [];
-try { $catList = $pdo->query("SELECT * FROM categories ORDER BY sort_order ASC, name ASC")->fetchAll(); } catch (PDOException $e) {}
-
-// ── Load promo codes ───────────────────────────────
-$promoCodes = [];
-try { $promoCodes = $pdo->query("SELECT * FROM promo_codes ORDER BY created_at DESC")->fetchAll(); } catch (PDOException $e) {}
+// $products, $catList and $promoCodes were loaded here. See the note above the
+// stock block for where they went and why.
 
 // ── Active tab ────────────────────────────────────────────
 if (!isset($activeTab)) $activeTab = $_GET['tab'] ?? 'orders';
@@ -279,9 +298,15 @@ $validTabs = [
 ];
 if (!in_array($activeTab, $validTabs)) $activeTab = 'orders';
 
-// ── Load inquiries ──────────────────────────────────────
-$inquiries        = [];
-$unreadInquiries  = 0;
+// ── Inquiries: the table, and marking them read ─────────────
+// The SELECT * that used to be here is gone — admin/customers.php loads its own,
+// and it was the only reader. The $unreadInquiries COUNT is gone too: nothing in
+// the codebase ever read it.
+//
+// What stays are the two things with real effects. The table creation is the
+// house pattern (config/db.php does the same for its tables), and the
+// mark-as-read has to run when the tab is opened whatever any page has fetched
+// for itself.
 try {
     // Auto-create table if it doesn't exist
     $pdo->exec("CREATE TABLE IF NOT EXISTS `inquiries` (
@@ -297,8 +322,6 @@ try {
     if ($activeTab === 'inquiries') {
         $pdo->exec("UPDATE inquiries SET is_read = 1 WHERE is_read = 0");
     }
-    $inquiries       = $pdo->query("SELECT * FROM inquiries ORDER BY created_at DESC")->fetchAll();
-    $unreadInquiries = (int)$pdo->query("SELECT COUNT(*) FROM inquiries WHERE is_read = 0")->fetchColumn();
 } catch (PDOException $e) {}
 
 // ── Revenue tab data ──────────────────────────────────

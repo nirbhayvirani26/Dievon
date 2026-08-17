@@ -9,6 +9,19 @@ require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../config/db.php';
 if (session_status() === PHP_SESSION_NONE) { session_start(); }
 requireAdminCapability('orders.view');
+
+/* The orders this screen lists. includes/header.php used to load this for every
+   admin page, whether the page wanted it or not; this was the one screen that
+   actually read it, so the query lives here now.
+
+   Same query as before, deliberately: archived (soft-deleted) orders are hidden
+   but still exist, so their tax invoice can be reproduced if it is ever needed.
+   The page renders every row and counts them by status, so there is no LIMIT to
+   add without changing what it shows. */
+$orders = $pdo->query(
+    "SELECT * FROM orders WHERE COALESCE(is_deleted,0) = 0 ORDER BY created_at DESC"
+)->fetchAll();
+
 require_once 'includes/header.php';
 
 ?>
