@@ -76,8 +76,25 @@ class EmailService {
      * Core PHPMailer Factory & Dispatch Engine
      */
     private function sendMail(string $toEmail, string $toName, string $subject, string $htmlContent, string $emailType): bool {
-        global $_phpmailerReady;
-        if (!$_phpmailerReady) {
+        /* Ask the class loader, not a global set at the top of this file.
+           ────────────────────────────────────────────────────────────────────
+           $_phpmailerReady is assigned at file scope, and require_once runs in
+           the SCOPE OF THE CALLER — so a file included from inside a function
+           makes that assignment function-local and leaves the global unset.
+           This read then saw null and refused to send with "PHPMailer library
+           not found" while PHPMailer sat loaded and working.
+
+           require_once compounds it: only the first include of the request runs
+           those lines at all, so whether mail worked depended on which call
+           site happened to come first.
+
+           All twelve current includes are at top level, so this cannot fire
+           today — I checked each with the tokeniser rather than by eye, because
+           indentation does not decide it; PHP scope is function-level, and a
+           require nested ten blocks deep is still global if no function
+           encloses it. The point of asking class_exists() is that it stays
+           true whoever includes this file and from where. */
+        if (!class_exists('PHPMailer\\PHPMailer\\PHPMailer')) {
             $this->logEmail($emailType, $toEmail, $subject, 'failed', 'PHPMailer library not found');
             return false;
         }

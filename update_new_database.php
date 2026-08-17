@@ -113,6 +113,61 @@ function buildSteps(PDO $pdo, string $db): array {
         ];
     }
 
+    /* ── The mail alarm's own table ──────────────────────────────────────────
+       email_logs and inquiries were created by database/email_migrations.php,
+       which nothing calls — runEmailSystemMigrations() has no callers anywhere
+       in the codebase. Both tables exist on the installs that have been running
+       a while, because something created them once; a fresh install, or a
+       restore from a backup older than they are, gets neither.
+
+       That failure is silent by design, which is what makes it worth closing.
+       EmailService::logEmail() writes inside a catch, the dashboard's failed-
+       email count catches PDOException and shows 0, and the header's "mail is
+       broken" banner catches Throwable and sets $mailBroken = 0. So with the
+       table absent every screen reports that mail is fine — which is precisely
+       the state the dashboard comment says that block exists to detect.
+
+       The DDL below is taken from the live tables with SHOW CREATE TABLE, not
+       written from the readers' expectations, so a table created here matches
+       the one already in service rather than a plausible guess at it.
+
+       password_resets, the third table in that orphan file, is left alone: it
+       is also created by config/db.php, so it already has a live owner. */
+    $steps[] = [
+        'group' => 'Email system',
+        'label' => 'email_logs table (the failed-mail alarm reads this)',
+        'done'  => tableExists($pdo, $db, 'email_logs'),
+        'sql'   => "CREATE TABLE IF NOT EXISTS `email_logs` (
+                        `id` INT(11) NOT NULL AUTO_INCREMENT,
+                        `email_type` VARCHAR(50) NOT NULL,
+                        `recipient` VARCHAR(150) NOT NULL,
+                        `subject` VARCHAR(255) NOT NULL,
+                        `status` ENUM('sent','failed') NOT NULL DEFAULT 'sent',
+                        `error_message` TEXT NULL,
+                        `test_mode` TINYINT(1) DEFAULT 0,
+                        `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        PRIMARY KEY (`id`),
+                        KEY `email_type` (`email_type`),
+                        KEY `recipient` (`recipient`),
+                        KEY `status` (`status`)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+    ];
+    $steps[] = [
+        'group' => 'Email system',
+        'label' => 'inquiries table (contact form submissions)',
+        'done'  => tableExists($pdo, $db, 'inquiries'),
+        'sql'   => "CREATE TABLE IF NOT EXISTS `inquiries` (
+                        `id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+                        `name` VARCHAR(120) NOT NULL,
+                        `email` VARCHAR(180) NOT NULL,
+                        `phone` VARCHAR(30) NOT NULL DEFAULT '',
+                        `message` TEXT NOT NULL,
+                        `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        `is_read` TINYINT(1) NOT NULL DEFAULT 0,
+                        PRIMARY KEY (`id`)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+    ];
+
     // ── 2. Size guide undo snapshots ──
     $steps[] = [
         'group' => 'Size guide — undo history',
