@@ -42,7 +42,7 @@ try {
     $in = implode(',', array_fill(0, count($ids), '?'));
     $stmt = $pdo->prepare("SELECT id, name, seo_url, price, mrp_price, category, image, emoji, description,
                                   fabric, color, sleeve, neck, pattern, occasion, brand, badge,
-                                  track_stock, stock_qty
+                                  track_stock, stock_qty, created_at
                            FROM products
                            WHERE id IN ($in)
                              AND available = 1
@@ -134,7 +134,7 @@ try {
             'id'        => (int)$p['id'],
             'name'      => $p['name'],
             'category'  => $p['category'],
-            'badge'     => $p['badge'],
+            'badge'     => productBadge($p),
             'image'     => !empty($p['image']) ? SITE_URL . '/uploads/products/' . $p['image'] : null,
             'emoji'     => $p['emoji'],
             'price'     => ($varies ? 'From ' : '') . formatPrice($price),

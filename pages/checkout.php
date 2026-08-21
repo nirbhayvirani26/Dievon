@@ -395,6 +395,13 @@ $storeCodMax       = (float)storeSetting($pdo, 'cod_max_order_value', COD_MAX_OR
                                 <label class="chk-field-label" for="delivery_postcode">Postcode / Zip *</label>
                                 <input type="text" id="delivery_postcode" name="delivery_postcode" autocomplete="postal-code" class="form-luxury-input" required
                                        value="<?= htmlspecialchars($_POST['delivery_postcode'] ?? '') ?>" placeholder="e.g. 380001" oninput="applyShippingZone()" onchange="applyShippingZone()" style="width: 100%; padding: 12px; font-size: 13px;">
+                                <?php /* Shown the moment a postcode we cannot deliver to is typed, rather
+                                         than waiting for Continue. role="alert" so a screen reader announces
+                                         it when it appears; aria-live is not enough for something that turns
+                                         up mid-typing. */ ?>
+                                <p class="chk-field-error" id="postcodeError" role="alert" hidden>
+                                    We deliver within India only at the moment. Please enter an Indian PIN code &mdash; for example 380001.
+                                </p>
                             </div>
                         </div>
 
@@ -783,6 +790,19 @@ const DIEVON_SHIPPING = {
     internationalFreeOver: <?= (float)($intlFreeShipMin ?? 0) ?>
 };
 
+/* Does this shop sell abroad at all?
+   ────────────────────────────────────────────────────────────────────────────
+   detectZoneFromPostcode() below only reads the shape of the postcode, so
+   anything that is not a six-digit PIN came back "international" — even with
+   every country except India switched off. The page then announced "express
+   international shipping applied" and hid the only delivery method it had,
+   leaving nothing selectable, on an address the server refuses at Place Order.
+   The shopper was walked to the end of a road that has no exit.
+
+   Same test the Shipping section uses to decide whether to print the
+   international option at all, so the note and the options cannot disagree. */
+const DIEVON_SHIPS_ABROAD = <?= shipsInternationally($pdo) ? 'true' : 'false' ?>;
+
 function detectZoneFromPostcode(pc) {
     const clean = String(pc || '').toUpperCase().replace(/\s+/g, '');
     if (!clean) return null;                       // nothing typed yet
@@ -800,11 +820,32 @@ function applyShippingZone() {
     const codRadio  = document.getElementById('pmCodRadio');
 
     if (!zone) {                                   // no postcode yet — leave as-is
+        if (pcErr) { pcErr.hidden = true; }
+        if (pcEl)  { pcEl.classList.remove('chk-input-error'); }
         if (note) { note.textContent = 'Enter your postcode and we will work out delivery automatically.'; note.className = 'shipping-zone-note'; }
         return;
     }
 
     const domestic = zone === 'domestic';
+
+    /* The error under the postcode field, on every keystroke.
+       ────────────────────────────────────────────────────────────────────────
+       The amber note below explains the delivery METHOD; this one belongs to
+       the field that is wrong, and appears as it is typed. Waiting for Continue
+       meant filling in a whole address before being told the first line of it
+       could never work. */
+    const pcErr = document.getElementById('postcodeError');
+
+    /* Not a foreign order — an address we cannot serve. The controls stay in
+       their normal domestic state so the page is never left with nothing to
+       choose, and the note says plainly what is wrong instead of promising a
+       service that does not exist. checkout_action.php refuses the same
+       postcode on submit, so the two agree. */
+    const undeliverable = !domestic && !DIEVON_SHIPS_ABROAD;
+    const domesticUi    = domestic || undeliverable;
+
+    if (pcErr) { pcErr.hidden = !undeliverable; }
+    if (pcEl)  { pcEl.classList.toggle('chk-input-error', undeliverable); }
 
     // Free shipping is judged on the total AFTER any coupon — the same basis the
     // server charges on.
@@ -817,14 +858,14 @@ function applyShippingZone() {
     const cartTotalBeforeDiscount = typeof cartTotalRaw !== 'undefined' ? (parseFloat(cartTotalRaw) || 0) : 0;
     const cartTotal = Math.max(0, cartTotalBeforeDiscount - (parseFloat(typeof chkDiscount !== 'undefined' ? chkDiscount : 0) || 0));
     // Both zones honour their own threshold, matching shippingCostForZone().
-    const cost = domestic
+    const cost = domesticUi
         ? (DIEVON_SHIPPING.freeOver > 0 && cartTotal >= DIEVON_SHIPPING.freeOver ? 0 : DIEVON_SHIPPING.domesticFee)
         : (DIEVON_SHIPPING.internationalFreeOver > 0 && cartTotal >= DIEVON_SHIPPING.internationalFreeOver
               ? 0 : DIEVON_SHIPPING.internationalFee);
 
     // Select the matching method and stop the other being chosen by hand.
-    if (stdRadio)  { stdRadio.checked  = domestic;  stdRadio.disabled  = !domestic; stdRadio.closest('.shipping-option-card')?.classList.toggle('shipping-option-disabled', !domestic); }
-    if (intlRadio) { intlRadio.checked = !domestic; intlRadio.disabled = domestic;  intlRadio.closest('.shipping-option-card')?.classList.toggle('shipping-option-disabled', domestic); }
+    if (stdRadio)  { stdRadio.checked  = domesticUi;  stdRadio.disabled  = !domesticUi; stdRadio.closest('.shipping-option-card')?.classList.toggle('shipping-option-disabled', !domesticUi); }
+    if (intlRadio) { intlRadio.checked = !domesticUi; intlRadio.disabled = domesticUi;  intlRadio.closest('.shipping-option-card')?.classList.toggle('shipping-option-disabled', domesticUi); }
 
     // Was updateShipping(cost) — no such function. The real one is
     // updateShippingCost(), so applyShippingZone() threw a ReferenceError on every
@@ -837,16 +878,18 @@ function applyShippingZone() {
 
     // COD cannot be collected abroad — hide it and move the selection off it.
     if (codLabel && codRadio) {
-        codLabel.style.display = domestic ? '' : 'none';
-        codRadio.disabled = !domestic;
-        if (!domestic && codRadio.checked) {
+        codLabel.style.display = domesticUi ? '' : 'none';
+        codRadio.disabled = !domesticUi;
+        if (!domesticUi && codRadio.checked) {
             const online = document.getElementById('pmOnlineRadio');
             if (online) { online.checked = true; if (typeof selectPaymentMode === 'function') selectPaymentMode('online'); }
         }
     }
 
     if (note) {
-        note.textContent = domestic
+        note.textContent = undeliverable
+            ? 'We deliver within India only at the moment — please check the postcode.'
+            : domestic
             ? 'Delivering within India — standard tracked courier applied.'
             : 'International address detected — express international shipping applied. Cash on Delivery is not available outside India.';
         note.className = 'shipping-zone-note ' + (domestic ? 'shipping-zone-note--domestic' : 'shipping-zone-note--intl');
@@ -1103,6 +1146,33 @@ function advanceTo(n) {
     showSection(n);
 }
 
+/* Can this shop actually deliver to what has been typed?
+   ────────────────────────────────────────────────────────────────────────────
+   The note under Delivery Method said "We deliver within India only" and the
+   journey carried on regardless: Continue to Payment, choose a card, Place
+   Secure Order — and only then does the server refuse the postcode. Telling
+   someone the answer is no and then letting them walk to the end anyway is
+   worse than not telling them, because they have committed by the time it
+   stops them.
+
+   checkout_action.php still refuses it server-side; this is not the security
+   boundary and must not be treated as one. It is the difference between being
+   stopped at the door and being stopped at the till. */
+function postcodeIsServiceable(value) {
+    const zone = detectZoneFromPostcode(value);
+    if (!zone) { return true; }              // empty — the `required` check owns that
+    return zone === 'domestic' || DIEVON_SHIPS_ABROAD;
+}
+
+function refusePostcode(field) {
+    // setCustomValidity puts it in the browser's own bubble, which is where
+    // every other error on this form appears — and it focuses and scrolls the
+    // field, so on a phone the shopper is taken to the thing that is wrong.
+    field.setCustomValidity('We deliver within India only at the moment. Please enter an Indian PIN code — for example 380001.');
+    field.reportValidity();
+    field.setCustomValidity('');             // cleared, or the field stays invalid for ever
+}
+
 function validateSection(section) {
     const fields = section.querySelectorAll('[required]');
     for (const f of fields) {
@@ -1111,6 +1181,10 @@ function validateSection(section) {
             return false;
         }
     }
+
+    const pc = section.querySelector('#delivery_postcode');
+    if (pc && !postcodeIsServiceable(pc.value)) { refusePostcode(pc); return false; }
+
     return true;
 }
 
@@ -1149,6 +1223,13 @@ function handleCheckout() {
     if (typeof form.reportValidity === 'function' && !form.reportValidity()) {
         return;
     }
+
+    /* Checked again here, not only on the way past the address step: a saved
+       address can be applied straight into a later section, and the sections
+       are all on one page now, so there is no guarantee the shopper walked
+       through them in order. */
+    const pcField = document.getElementById('delivery_postcode');
+    if (pcField && !postcodeIsServiceable(pcField.value)) { refusePostcode(pcField); return; }
 
     const checkedMethod = form.querySelector('input[name="payment_method"]:checked');
     const paymentMethod = checkedMethod ? checkedMethod.value : 'later';

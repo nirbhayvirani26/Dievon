@@ -33,7 +33,7 @@ try {
        was reading a column that was never selected. */
     $stmt = $pdo->prepare("SELECT id, name, description, price, mrp_price, category, category_id,
                                   image, emoji, fabric, color, sleeve, neck, pattern, occasion,
-                                  badge, available, track_stock, stock_qty, seo_url
+                                  badge, available, track_stock, stock_qty, seo_url, created_at
                            FROM products
                           WHERE id = :id
                             AND available = 1
@@ -227,7 +227,12 @@ try {
     try {
         $iStmt = $pdo->prepare("SELECT image FROM product_images WHERE product_id = :id ORDER BY sort_order ASC, id ASC LIMIT 4");
         $iStmt->execute(['id' => $productId]);
+        // Same rule as the full product page: a row whose file is not on disk
+        // is skipped, not shown as a broken thumbnail and not deleted. The file
+        // may be in the media quarantine waiting to be restored.
+        $imgDir = __DIR__ . '/../uploads/products/';
         foreach ($iStmt->fetchAll(PDO::FETCH_COLUMN) as $img) {
+            if (trim((string)$img) === '' || !is_file($imgDir . $img)) { continue; }
             $images[] = SITE_URL . '/uploads/products/' . $img;
         }
     } catch (PDOException $e) {}
@@ -272,7 +277,8 @@ try {
             'name'        => $p['name'],
             'description' => mb_strimwidth(strip_tags((string)$p['description']), 0, 220, '…'),
             'category'    => $p['category'],
-            'badge'       => $p['badge'],
+            // productBadge(): an expired "New" is not sent to the panel at all.
+            'badge'       => productBadge($p),
             'emoji'       => $p['emoji'],
             // "From" when the sizes are priced differently from one another, so
             // the headline reads as a floor rather than as the price — matching

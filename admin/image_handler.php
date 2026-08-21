@@ -28,6 +28,55 @@ if (!function_exists('verifyCsrfToken') || !verifyCsrfToken($_POST['csrf_token']
 $action = $_POST['action'] ?? '';
 $id     = (int)($_POST['id'] ?? 0);
 
+/* Store the gallery order the owner just arranged.
+   ────────────────────────────────────────────────────────────────────────────
+   sort_order already existed and was already what pages/product.php orders by —
+   it was simply never written, so every row sat at 0 and the gallery fell back
+   to id order, which is upload order. That is why a photo uploaded last could
+   never be moved to the front.
+
+   Only rows belonging to ONE product are touched, and that product is taken
+   from the FIRST id given rather than from anything the browser claims. A
+   request naming ids from two products writes the ones that match and ignores
+   the rest, so this cannot be used to renumber another product's gallery.
+
+   One transaction: a half-applied order is worse than none, because the page
+   would then show an arrangement the owner never chose. */
+if ($action === 'reorder') {
+    $ids = array_values(array_filter(array_map('intval', explode(',', (string)($_POST['ids'] ?? '')))));
+    if (!$ids) {
+        echo json_encode(['success' => false, 'message' => 'no images given']);
+        exit;
+    }
+    try {
+        $own = $pdo->prepare("SELECT product_id FROM product_images WHERE id = :id");
+        $own->execute([':id' => $ids[0]]);
+        $pid = (int)$own->fetchColumn();
+        if ($pid <= 0) {
+            echo json_encode(['success' => false, 'message' => 'those images no longer exist']);
+            exit;
+        }
+
+        $pdo->beginTransaction();
+        $upd = $pdo->prepare("UPDATE product_images SET sort_order = :pos WHERE id = :id AND product_id = :pid");
+        $n = 0;
+        foreach ($ids as $pos => $imgId) {
+            $upd->execute([':pos' => $pos + 1, ':id' => $imgId, ':pid' => $pid]);
+            $n += $upd->rowCount();
+        }
+        $pdo->commit();
+
+        logAdminAction($_SESSION['admin_id'] ?? 1, 'reorder_gallery',
+            "Reordered $n gallery image(s) for product $pid");
+        echo json_encode(['success' => true, 'reordered' => $n]);
+    } catch (PDOException $e) {
+        if ($pdo->inTransaction()) { $pdo->rollBack(); }
+        error_log('Gallery reorder failed: ' . $e->getMessage());
+        echo json_encode(['success' => false, 'message' => 'could not save the order']);
+    }
+    exit;
+}
+
 if ($action === 'delete' && $id > 0) {
     try {
         // Fetch image filename to delete from disk

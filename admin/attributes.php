@@ -83,7 +83,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete'])) {
 $attributes = [];
 try {
     $targetType = $type === 'sizes' ? 'size' : 'color';
-    $stmt = $pdo->prepare("SELECT * FROM product_attributes WHERE attr_type = :type ORDER BY id DESC");
+
+    /* Alphabetical. This was id DESC, so the list was in the order the colours
+       happened to be typed, backwards — and a colour list exists to be looked up
+       by name. No sort_order column on this table, so nothing manual is being
+       overridden.
+
+       Only ever colours: $type is fixed above and the Sizes tab was deliberately
+       removed (see the note at the top of this file). Sorting by name would be
+       wrong for sizes — S, M, L, XL is a ladder, not an alphabet — but that
+       branch would be dead code here, so it is not written. If sizes ever return
+       to this page, they need id order, not this. */
+    $stmt = $pdo->prepare("SELECT * FROM product_attributes WHERE attr_type = :type ORDER BY name ASC, id ASC");
     $stmt->execute(['type' => $targetType]);
     $attributes = $stmt->fetchAll();
 } catch (PDOException $e) {}

@@ -177,11 +177,43 @@
             '</div>';
     }
 
+    /* Swap the main photograph, without the snap.
+       ────────────────────────────────────────────────────────────────────────
+       This was `main.src = url`, which does two visible things wrong: the
+       change is instant, and the OLD photograph stays on screen until the new
+       file has downloaded — so on a slow connection the picture sits still
+       after the tap, then jumps. Nothing tells the shopper the tap registered.
+
+       So: mark the thumbnail immediately, because that is the feedback that the
+       tap landed and it must not wait for a network round trip. Then preload
+       the new file, and only once it is decoded fade the old one out and the
+       new one in. The fade covers a swap that is already complete, so there is
+       never a blank frame or a half-drawn image.
+
+       If the preload fails — a missing file, a dead connection — the src is set
+       anyway. A broken-image icon is a worse outcome than an unfaded one, but
+       silently doing nothing is the worst of the three. */
     window.qvSwapImage = function (thumb, url) {
-        var main = document.querySelector('.qv-img');
-        if (main) { main.src = url; }
         document.querySelectorAll('.qv-thumb').forEach(function (t) { t.classList.remove('is-active'); });
-        thumb.classList.add('is-active');
+        if (thumb) { thumb.classList.add('is-active'); }
+
+        var main = document.querySelector('.qv-img');
+        if (!main || main.getAttribute('src') === url) { return; }
+
+        // Honour the system setting rather than animating over it.
+        var still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        var next = new Image();
+        next.onload = function () {
+            if (still) { main.src = url; return; }
+            main.classList.add('is-swapping');
+            window.setTimeout(function () {
+                main.src = url;
+                main.classList.remove('is-swapping');
+            }, 160);                        // matches the .18s transition in style.css
+        };
+        next.onerror = function () { main.src = url; };
+        next.src = url;
     };
 
     window.qvPickSize = function (btn) {

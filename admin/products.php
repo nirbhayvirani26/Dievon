@@ -543,6 +543,22 @@ try {
 
     $productList = $pdo->query("SELECT * FROM products $whereView ORDER BY id DESC")->fetchAll();
 
+    /* Supplier names, once for the page.
+       ────────────────────────────────────────────────────────────────────────
+       products.supplier_name is kept in step by admin/suppliers.php, which
+       rewrites it on every product when a supplier is renamed — so it is right
+       nearly always. This map only covers the row that was linked by id before
+       that copy was ever filled in. One query for the page rather than one per
+       row, which at 200 products is 200 round trips for a caption. */
+    $supplierNames = [];
+    try {
+        foreach ($pdo->query("SELECT id, name FROM suppliers") as $sRow) {
+            $supplierNames[(int)$sRow['id']] = (string)$sRow['name'];
+        }
+    } catch (PDOException $e) {
+        // No suppliers table on this install — the stored name still shows.
+    }
+
     $cnt = fn(string $w) => (int)$pdo->query("SELECT COUNT(*) FROM products WHERE $w")->fetchColumn();
     $activeCount    = $cnt($notArchived);
     $publishedCount = $cnt("available = 1 AND $notArchived");
@@ -682,11 +698,16 @@ require_once __DIR__ . '/includes/header.php';
         <div style="display:flex; align-items:center; gap:8px;">
             <label for="prodSort" style="font-size:12px; font-weight:700; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.5px;">Sort By:</label>
             <select id="prodSort" class="form-control" style="font-size:13px; padding:6px 12px; height:auto; width:auto; min-width:160px;" onchange="filterAndSortProducts()">
-                <option value="default">Default (Newest)</option>
+                <option value="default">Default (Newest first)</option>
+                <option value="added_asc">Added (Oldest first — 1, 2, 3…)</option>
                 <option value="name_asc">Name (A-Z)</option>
                 <option value="name_desc">Name (Z-A)</option>
+                <option value="category_asc">Category (A-Z)</option>
+                <option value="category_desc">Category (Z-A)</option>
                 <option value="price_asc">Price (Low to High)</option>
                 <option value="price_desc">Price (High to Low)</option>
+                <option value="stock_asc">Stock (Lowest first)</option>
+                <option value="stock_desc">Stock (Highest first)</option>
             </select>
         </div>
     </div>
@@ -694,17 +715,37 @@ require_once __DIR__ . '/includes/header.php';
     <div class="table-wrapper">
         <table class="data-table prod-table" id="productsTable">
             <thead>
+                <?php /* Clicking a heading sorts by it; clicking it again turns the order
+                         around. It drives the SAME dropdown below rather than a sort of its
+                         own — one engine, so the two controls can never disagree about how
+                         the table is ordered, and the dropdown always shows what a click on
+                         a heading just did. Image and Actions hold no value to order by. */ ?>
                 <tr>
                     <th style="width:70px;">Image</th>
-                    <th>Product Name &amp; Details</th>
-                    <th>Category</th>
-                    <th>Price</th>
-                    <th>Stock Status</th>
+                    <th class="prod-sort-th" data-sort-key="name"     tabindex="0" role="button" title="Sort by name">Product Name &amp; Details</th>
+                    <th class="prod-sort-th" data-sort-key="category" tabindex="0" role="button" title="Sort by category">Category</th>
+                    <th class="prod-sort-th" data-sort-key="price"    tabindex="0" role="button" title="Sort by price">Price</th>
+                    <th class="prod-sort-th" data-sort-key="stock"    tabindex="0" role="button" title="Sort by stock — lowest first, so what needs reordering comes to the top">Stock Status</th>
                     <th style="width:180px; text-align:right;">Actions</th>
                 </tr>
             </thead>
             <tbody>
-                <?php foreach ($productList as $p): 
+                <?php foreach ($productList as $rowSeq => $p): 
+                    /* Sellable stock, worked out once for the row.
+                       ──────────────────────────────────────────────────────
+                       It is wanted twice: as the badge in the Stock Status
+                       cell, and as the number the sort reads off data-stock.
+                       Computing it here lets the row tag carry it, and costs
+                       one call instead of two.
+
+                       A product that does not track stock sorts as the largest
+                       value there is, because "∞ Available" genuinely has no
+                       ceiling — so ascending puts the pieces you need to
+                       reorder at the top and the ones you never have to think
+                       about at the bottom. */
+                    $sellableStock = !empty($p['track_stock']) ? productSellableStock($pdo, $p) : null;
+                    $stockSort     = $sellableStock === null ? PHP_INT_MAX : (int)$sellableStock;
+
                     $imgSrc = '';
                     if (!empty($p['image'])) {
                         if (file_exists(__DIR__ . '/../uploads/products/' . $p['image'])) {
@@ -714,7 +755,10 @@ require_once __DIR__ . '/includes/header.php';
                         }
                     }
                 ?>
-                <tr data-category="<?= htmlspecialchars($p['category']) ?>" data-name="<?= htmlspecialchars(strtolower($p['name'])) ?>" data-price="<?= $p['price'] ?>">
+                <?php /* data-seq is the order the database gave us — newest first. Without
+                         it "Default (Newest)" could not be got back to once a column had been
+                         sorted, because the rows had already been moved in the DOM. */ ?>
+                <tr data-category="<?= htmlspecialchars($p['category']) ?>" data-name="<?= htmlspecialchars(strtolower($p['name'])) ?>" data-price="<?= $p['price'] ?>" data-stock="<?= $stockSort ?>" data-seq="<?= (int)$rowSeq ?>" data-id="<?= (int)$p['id'] ?>">
                     <td>
                         <?php if ($imgSrc): ?>
                             <img src="<?= $imgSrc ?>" style="width:55px; height:65px; object-fit:cover; border-radius:4px; border:1px solid var(--border-light);">
@@ -748,6 +792,31 @@ require_once __DIR__ . '/includes/header.php';
                                  exists to prevent; this screen was the one place still
                                  answering it separately. */ ?>
                         <span style="font-size:12px; color:var(--text-muted);">SKU: <code><?= htmlspecialchars(productDisplayCode($p)) ?></code></span>
+                        <?php
+                        /* Who made it, and THEIR number for it.
+                           ────────────────────────────────────────────────────
+                           The SKU above is ours; the supplier has never seen it.
+                           Reordering needs their design number and their name,
+                           and neither appeared anywhere on this screen — the only
+                           way to find out who to ring was to open the product.
+                           The badge below already warns when the number is
+                           missing; this shows the answer when it is there. */
+                        $pSupplierName = trim((string)($p['supplier_name'] ?? ''));
+                        if ($pSupplierName === '' && !empty($p['supplier_id'])) {
+                            $pSupplierName = trim((string)($supplierNames[(int)$p['supplier_id']] ?? ''));
+                        }
+                        $pDesignNo = trim((string)($p['supplier_ref'] ?? ''));
+                        ?>
+                        <?php if ($pSupplierName !== '' || $pDesignNo !== ''): ?>
+                            <span class="prod-supply" title="Supplier and their design number — what you need to reorder this piece">
+                                <?php if ($pSupplierName !== ''): ?>
+                                    <i class="fa-solid fa-industry"></i><?= htmlspecialchars($pSupplierName) ?>
+                                <?php endif; ?>
+                                <?php if ($pDesignNo !== ''): ?>
+                                    <span class="prod-supply-no">Design no. <?= htmlspecialchars($pDesignNo) ?></span>
+                                <?php endif; ?>
+                            </span>
+                        <?php endif; ?>
                         <?php
                         /* Named supplier, no design number of theirs.
                            ────────────────────────────────────────────
@@ -803,28 +872,32 @@ require_once __DIR__ . '/includes/header.php';
                     </td>
                     <td>
                         <?php
-                        // Sellable stock is what checkout actually enforces — for
-                        // tracked products: variant stock when size variants exist,
-                        // otherwise total_stock − damage_stock − sold_offline − sold_online.
-                        // The legacy stock_qty column is dead here and misled the listing
-                        // into "Out of Stock" for products with plenty left.
-                        $sellableStock = null;
-                        if (!empty($p['track_stock'])) {
-                            $sellableStock = productSellableStock($pdo, $p);
-                        }
+                        // $sellableStock was worked out at the top of this loop, where the
+                        // row tag needed it for data-stock. Sellable stock is what checkout
+                        // actually enforces — for tracked products: variant stock when size
+                        // variants exist, otherwise total_stock − damage_stock −
+                        // sold_offline − sold_online. The legacy stock_qty column is dead
+                        // here and misled the listing into "Out of Stock" for products with
+                        // plenty left.
                         ?>
+                        <?php /* These were drawn at 10px in #10b981 on #ecfdf5 — a contrast
+                                 ratio of 2.41:1, against the 4.5:1 text needs to be legible.
+                                 Measured, not guessed. The badge was present in the HTML the
+                                 whole time and simply could not be seen, which is why this
+                                 column read as empty. Same shapes and same words, in colours
+                                 that clear 6:1, at a size a person can actually read. */ ?>
                         <?php if (!empty($p['track_stock'])): ?>
                             <?php if ($sellableStock >= 1000000): ?>
-                                <span class="badge-luxury" style="background:#ecfdf5; color:#10b981;" title="Size-level stock not tracked — treated as unlimited">🟢 In Stock</span>
+                                <span class="stock-pill stock-pill--ok" title="Size-level stock not tracked — treated as unlimited">🟢 In Stock</span>
                             <?php elseif ($sellableStock > 5): ?>
-                                <span class="badge-luxury" style="background:#ecfdf5; color:#10b981;">🟢 In Stock (<?= $sellableStock ?>)</span>
+                                <span class="stock-pill stock-pill--ok">🟢 In Stock (<?= $sellableStock ?>)</span>
                             <?php elseif ($sellableStock > 0): ?>
-                                <span class="badge-luxury" style="background:#fffbeb; color:#f59e0b;">⚠️ Low Stock (<?= $sellableStock ?>)</span>
+                                <span class="stock-pill stock-pill--low">⚠️ Low Stock (<?= $sellableStock ?>)</span>
                             <?php else: ?>
-                                <span class="badge-luxury" style="background:#fef2f2; color:#ef4444;">🔴 Out of Stock</span>
+                                <span class="stock-pill stock-pill--out">🔴 Out of Stock</span>
                             <?php endif; ?>
                         <?php else: ?>
-                            <span style="font-size:11px; color:var(--text-muted);">∞ Available</span>
+                            <span class="stock-pill stock-pill--free" title="Stock is not tracked for this product, so it never runs out">∞ Not tracked</span>
                         <?php endif; ?>
                     </td>
                     <td style="text-align:right;">
@@ -886,37 +959,88 @@ require_once __DIR__ . '/includes/header.php';
 </div>
 
 <script>
+/* Filtering and ordering for the product table.
+   ────────────────────────────────────────────────────────────────────────────
+   Everything happens in the browser on rows already on the page, so the
+   category filter, the ordering and anything typed above all survive together —
+   a sort that reloaded the page would throw the other two away.
+
+   The column headings and the dropdown are two ways into THIS function, never
+   two sorts: a heading click writes the dropdown's value and calls it, so the
+   dropdown always reports what the table is actually doing. */
 function filterAndSortProducts() {
-    const cat = document.getElementById('prodFilterCategory').value;
+    const cat  = document.getElementById('prodFilterCategory').value;
     const sort = document.getElementById('prodSort').value;
     const rows = Array.from(document.querySelectorAll('#productsTable tbody tr'));
 
     rows.forEach(row => {
         const rowCat = row.getAttribute('data-category');
-        if (cat === 'all' || rowCat === cat) {
-            row.style.display = '';
-        } else {
-            row.style.display = 'none';
-        }
+        row.style.display = (cat === 'all' || rowCat === cat) ? '' : 'none';
     });
 
-    if (sort !== 'default') {
-        const tbody = document.querySelector('#productsTable tbody');
-        rows.sort((a, b) => {
-            const nameA = a.getAttribute('data-name');
-            const nameB = b.getAttribute('data-name');
-            const priceA = parseFloat(a.getAttribute('data-price'));
-            const priceB = parseFloat(b.getAttribute('data-price'));
+    const num  = (row, attr) => parseFloat(row.getAttribute(attr)) || 0;
+    const text = (row, attr) => (row.getAttribute(attr) || '').toLowerCase();
 
-            if (sort === 'name_asc') return nameA.localeCompare(nameB);
-            if (sort === 'name_desc') return nameB.localeCompare(nameA);
-            if (sort === 'price_asc') return priceA - priceB;
-            if (sort === 'price_desc') return priceB - priceA;
-            return 0;
-        });
-        rows.forEach(row => tbody.appendChild(row));
-    }
+    const ORDER = {
+        // Default is the order the database gave us — newest first. It reads
+        // data-seq rather than doing nothing, because once a column has been
+        // sorted the rows have already moved and "do nothing" could not get
+        // that original order back.
+        default:       (a, b) => num(a, 'data-seq')   - num(b, 'data-seq'),
+        // The order the products were actually added, counting up: product 1,
+        // then 2, then 3. data-id, not data-seq — the id IS the number the
+        // shopkeeper means by "the order I put them in", and it keeps counting
+        // correctly however the list has been filtered or sorted beforehand.
+        added_asc:     (a, b) => num(a, 'data-id')    - num(b, 'data-id'),
+        name_asc:      (a, b) => text(a, 'data-name').localeCompare(text(b, 'data-name')),
+        name_desc:     (a, b) => text(b, 'data-name').localeCompare(text(a, 'data-name')),
+        category_asc:  (a, b) => text(a, 'data-category').localeCompare(text(b, 'data-category')),
+        category_desc: (a, b) => text(b, 'data-category').localeCompare(text(a, 'data-category')),
+        price_asc:     (a, b) => num(a, 'data-price') - num(b, 'data-price'),
+        price_desc:    (a, b) => num(b, 'data-price') - num(a, 'data-price'),
+        // Lowest first, so out-of-stock and low-stock pieces rise to the top —
+        // untracked products carry a huge data-stock and settle at the bottom,
+        // which is right: they have no ceiling to run out of.
+        stock_asc:     (a, b) => num(a, 'data-stock') - num(b, 'data-stock'),
+        stock_desc:    (a, b) => num(b, 'data-stock') - num(a, 'data-stock')
+    };
+
+    const compare = ORDER[sort] || ORDER.default;
+    const tbody   = document.querySelector('#productsTable tbody');
+    rows.sort(compare).forEach(row => tbody.appendChild(row));
+
+    markSortedColumn(sort);
 }
+
+/* Which heading is doing the work, and which way round. */
+function markSortedColumn(sort) {
+    document.querySelectorAll('#productsTable thead th[data-sort-key]').forEach(th => {
+        const key = th.getAttribute('data-sort-key');
+        const on  = (sort === key + '_asc' || sort === key + '_desc');
+        th.classList.toggle('is-sorted', on);
+        th.setAttribute('data-dir', sort === key + '_desc' ? 'desc' : 'asc');
+    });
+}
+
+/* A heading was clicked. Same column again turns the order around; a new column
+   starts ascending, which for names and categories is A-Z and for stock is the
+   emptiest first — the useful end in each case. */
+function sortProductsBy(key) {
+    const select = document.getElementById('prodSort');
+    if (!select) { return; }
+    select.value = (select.value === key + '_asc') ? key + '_desc' : key + '_asc';
+    filterAndSortProducts();
+}
+
+document.querySelectorAll('#productsTable thead th[data-sort-key]').forEach(th => {
+    const key = th.getAttribute('data-sort-key');
+    th.addEventListener('click', () => sortProductsBy(key));
+    // Reachable without a mouse: the heading is exposed as a button, so Enter
+    // and Space have to do what a click does.
+    th.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sortProductsBy(key); }
+    });
+});
 </script>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

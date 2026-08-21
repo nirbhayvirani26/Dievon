@@ -116,15 +116,48 @@ $homeGenderSql = function_exists('shopGenderSqlFilter') ? shopGenderSqlFilter() 
 // One constant so the six queries cannot drift apart again.
 $homeLiveSql = " AND (is_deleted = 0 OR is_deleted IS NULL)";
 
-// Fetch products for New Arrivals (limit 8)
+/* The homepage's product picks — one garment, one section.
+   ────────────────────────────────────────────────────────────────────────────
+   Each of the three sections used to fall back to "any live product" when its
+   badge found nothing: newest 8 for New Arrivals, dearest 4 for Best Sellers,
+   cheapest 4 for Trending. Across a full catalogue those three sets barely
+   overlap. Across the handful of products a shop actually has on opening day
+   they returned THE SAME garments, so scrolling the homepage meant meeting the
+   same few pieces three times under three different headings — which reads as a
+   shop with nothing in it, the exact opposite of what the sections are for.
+
+   So the badge picks are claimed first, in the order the sections appear, since
+   those are choices somebody made deliberately. Then each section tops up from
+   whatever no other section has taken. A section left with nothing is not drawn
+   at all — see the guards further down. One fewer band beats a titled empty one.
+
+   As the catalogue grows the sections fill up on their own and this stops having
+   anything to do. */
+$homeSeen = [];
+
+/** Take up to $limit rows nobody has used yet, and mark them used. */
+$homeClaim = function (array $rows, int $limit) use (&$homeSeen): array {
+    $kept = [];
+    if ($limit <= 0) { return $kept; }
+    foreach ($rows as $row) {
+        if (count($kept) >= $limit) { break; }
+        $id = (int)($row['id'] ?? 0);
+        if ($id <= 0 || isset($homeSeen[$id])) { continue; }
+        $homeSeen[$id] = true;
+        $kept[] = $row;
+    }
+    return $kept;
+};
+
+// Everything this page may draw on, fetched once instead of three times.
+$homePool = [];
+try {
+    $homePool = $pdo->query("SELECT * FROM products WHERE available = 1{$homeLiveSql}{$homeGenderSql} ORDER BY id DESC LIMIT 40")->fetchAll();
+} catch (PDOException $e) {}
+
 $newArrivals = [];
 try {
-    $stmt = $pdo->query("SELECT * FROM products WHERE available = 1{$homeLiveSql} AND badge = 'New'{$homeGenderSql} ORDER BY id DESC LIMIT 8");
-    $newArrivals = $stmt->fetchAll();
-    if (count($newArrivals) < 8) {
-        $stmt = $pdo->query("SELECT * FROM products WHERE available = 1{$homeLiveSql}{$homeGenderSql} ORDER BY id DESC LIMIT 8");
-        $newArrivals = $stmt->fetchAll();
-    }
+    $newArrivals = $pdo->query("SELECT * FROM products WHERE available = 1{$homeLiveSql} AND badge = 'New'{$homeGenderSql} ORDER BY id DESC LIMIT 8")->fetchAll();
 } catch (PDOException $e) {}
 
 // Latest Chronicles — the three newest published articles.
@@ -147,27 +180,29 @@ try {
     )->fetchAll();
 } catch (PDOException $e) {}
 
-// Fetch Best Sellers
 $bestSellers = [];
+$trending    = [];
 try {
-    $stmt = $pdo->query("SELECT * FROM products WHERE available = 1{$homeLiveSql} AND badge = 'Best Seller'{$homeGenderSql} ORDER BY id ASC LIMIT 4");
-    $bestSellers = $stmt->fetchAll();
-    if (empty($bestSellers)) {
-        $stmt = $pdo->query("SELECT * FROM products WHERE available = 1{$homeLiveSql}{$homeGenderSql} ORDER BY price DESC LIMIT 4");
-        $bestSellers = $stmt->fetchAll();
-    }
+    $bestSellers = $pdo->query("SELECT * FROM products WHERE available = 1{$homeLiveSql} AND badge = 'Best Seller'{$homeGenderSql} ORDER BY id ASC LIMIT 4")->fetchAll();
+    $trending    = $pdo->query("SELECT * FROM products WHERE available = 1{$homeLiveSql} AND badge = 'Hot'{$homeGenderSql} ORDER BY id ASC LIMIT 4")->fetchAll();
 } catch (PDOException $e) {}
 
-// Fetch Trending / Hot
-$trending = [];
-try {
-    $stmt = $pdo->query("SELECT * FROM products WHERE available = 1{$homeLiveSql} AND badge = 'Hot'{$homeGenderSql} ORDER BY id ASC LIMIT 4");
-    $trending = $stmt->fetchAll();
-    if (empty($trending)) {
-        $stmt = $pdo->query("SELECT * FROM products WHERE available = 1{$homeLiveSql}{$homeGenderSql} ORDER BY price ASC LIMIT 4");
-        $trending = $stmt->fetchAll();
-    }
-} catch (PDOException $e) {}
+/* Claim the deliberate picks in page order, then top each section up from what
+   is left — newest for arrivals, dearest for best sellers, keenest for trending,
+   which is the ordering each section had before. Nothing is drawn twice. */
+$newArrivals = $homeClaim($newArrivals, 8);
+$bestSellers = $homeClaim($bestSellers, 4);
+$trending    = $homeClaim($trending,    4);
+
+$byNewest = $homePool;                                          // already id DESC
+$byDearest = $homePool;
+usort($byDearest, fn($a, $b) => (float)($b['price'] ?? 0) <=> (float)($a['price'] ?? 0));
+$byKeenest = $homePool;
+usort($byKeenest, fn($a, $b) => (float)($a['price'] ?? 0) <=> (float)($b['price'] ?? 0));
+
+$newArrivals = array_merge($newArrivals, $homeClaim($byNewest,  8 - count($newArrivals)));
+$bestSellers = array_merge($bestSellers, $homeClaim($byDearest, 4 - count($bestSellers)));
+$trending    = array_merge($trending,    $homeClaim($byKeenest, 4 - count($trending)));
 
 // Fetch dynamic hero slider banners
 $heroBanners = [];
@@ -505,6 +540,11 @@ $heroSlideCount = !empty($heroBanners)
 </section>
 
 <!-- ==================== 3. NEW ARRIVALS ==================== -->
+<?php /* Nothing to show, nothing drawn. The heading, the carousel arrows and the
+         section's own vertical space used to print whatever happened — so a shop
+         with no products served a tall empty band titled "New Arrivals", which is
+         the same mistake Shop by Occasion below already had fixed. */ ?>
+<?php if (!empty($newArrivals)): ?>
 <section class="new-arrivals-section section-space">
     <div class="container">
         <div class="home-section-header reveal-on-scroll">
@@ -533,17 +573,31 @@ $heroSlideCount = !empty($heroBanners)
     </div>
 </section>
 
+<?php endif; ?>
+
 <!-- ==================== 4. TRENDING / BEST SELLERS ==================== -->
+<?php
+/* Two tabs are only worth having when both of them lead somewhere. With one list
+   empty the pair became a button that opened a blank grid, so the toggle is
+   replaced by a plain heading naming whichever half has stock — and when neither
+   has any, the section does not appear. */
+$homeHasBoth = !empty($bestSellers) && !empty($trending);
+?>
+<?php if (!empty($bestSellers) || !empty($trending)): ?>
 <section class="trending-section section-space">
     <div class="container">
         <div class="tab-toggle-container">
+            <?php if ($homeHasBoth): ?>
             <div class="tab-toggle-wrapper">
                 <button id="btnTabBest" onclick="toggleTabs('best')" class="btn-luxury">Best Sellers</button>
                 <button id="btnTabTrend" onclick="toggleTabs('trend')" class="btn-luxury-outline">Trending Now</button>
             </div>
+            <?php else: ?>
+            <h2 class="section-title"><?= !empty($bestSellers) ? 'Best Sellers' : 'Trending Now' ?></h2>
+            <?php endif; ?>
         </div>
 
-        <div id="gridBestSellers" class="home-best-sellers-grid">
+        <div id="gridBestSellers" class="home-best-sellers-grid<?= empty($bestSellers) ? ' is-hidden' : '' ?>">
             <?php // Shared partial — see includes/product_card.php. Each of these grids
                   // carried its own copy of the card markup, so none served the WebP image,
                   // offered Compare, or used the product's own alt text. ?>
@@ -552,7 +606,9 @@ $heroSlideCount = !empty($heroBanners)
             <?php endforeach; ?>
         </div>
 
-        <div id="gridTrending" class="home-best-sellers-grid is-hidden">
+        <?php /* Hidden only when Best Sellers is the one being shown. If that list is
+                 empty this grid is what the section is FOR, so it opens visible. */ ?>
+        <div id="gridTrending" class="home-best-sellers-grid<?= !empty($bestSellers) ? ' is-hidden' : '' ?>">
             <?php // Shared partial — see includes/product_card.php. Each of these grids
                   // carried its own copy of the card markup, so none served the WebP image,
                   // offered Compare, or used the product's own alt text. ?>
@@ -562,6 +618,7 @@ $heroSlideCount = !empty($heroBanners)
         </div>
     </div>
 </section>
+<?php endif; ?>
 
 <?php
 // ==================== 5. SHOP BY OCCASION ====================
@@ -582,12 +639,33 @@ try {
     // pills counted from womenswear, and clicking one returned a grid the
     // shopper had just been told was menswear.
     $occasions = $pdo->query(
-        "SELECT occasion, COUNT(*) n FROM products
+        "SELECT occasion FROM products
           WHERE occasion IS NOT NULL AND occasion <> ''
             AND available = 1 AND (is_deleted = 0 OR is_deleted IS NULL)
-            {$homeGenderSql}
-          GROUP BY occasion ORDER BY n DESC LIMIT 12"
+            {$homeGenderSql}"
     )->fetchAll(PDO::FETCH_COLUMN);
+
+    /* Counted per OCCASION, not per stored string.
+       ────────────────────────────────────────────────────────────────────────
+       This was GROUP BY occasion, which groups by the whole field — and the
+       field is a list. On the live shop that produced nine tiles for nine
+       products: "Casual / Everyday / Day Out / Travel" beside "Casual /
+       Workwear / Everyday / Day Out", each one a sentence, each leading to a
+       single garment. A section meant to offer four or five ways in was
+       offering the catalogue back one product at a time.
+
+       Splitting first gives the handful of real occasions the shop actually
+       sells for — Casual, Everyday, Workwear, Festive — each covering every
+       garment that names it. The commonest come first, which is what the
+       LIMIT was always trying to do. */
+    $occCounts = [];
+    foreach ($occasions as $occRaw) {
+        foreach (dievonSplitOccasions($occRaw) as $occOne) {
+            $occCounts[$occOne] = ($occCounts[$occOne] ?? 0) + 1;
+        }
+    }
+    arsort($occCounts);
+    $occasions = array_slice(array_keys($occCounts), 0, 12);
 } catch (PDOException $e) {}
 
 // Fall back to this side's real categories rather than printing nothing at all.
@@ -615,26 +693,86 @@ if (!$occasions) {
 $occasionCovers = [];
 if ($occasions) {
     try {
-        $occPh   = implode(',', array_fill(0, count($occasions), '?'));
+        $occPh = implode(',', array_fill(0, count($occasions), '?'));
+        /* occasion is a LIST, so IN() cannot find "Casual" inside
+           "Casual / Everyday / Day Out". One LIKE per tile against the
+           normalised, slash-wrapped field does — and without dragging in
+           "Smart Casual" the way a bare %Casual% would. */
+        $occLike = implode(' OR ', array_fill(0, count($occasions),
+                    OCCASION_MATCH_SQL . " LIKE ?"));
         $occCovSt = $pdo->prepare(
             "SELECT occasion, category, image FROM products
               WHERE image IS NOT NULL AND image <> ''
                 AND available = 1 AND (is_deleted = 0 OR is_deleted IS NULL)
-                AND (occasion IN ({$occPh}) OR category IN ({$occPh}))
+                AND (({$occLike}) OR category IN ({$occPh}))
                 {$homeGenderSql}
               ORDER BY id DESC"
         );
-        $occCovSt->execute(array_merge($occasions, $occasions));
-        foreach ($occCovSt->fetchAll(PDO::FETCH_ASSOC) as $occRow) {
-            // Newest first, so the first row to claim a name keeps it.
-            foreach (['occasion', 'category'] as $occCol) {
-                $occName = (string)($occRow[$occCol] ?? '');
-                if ($occName !== '' && !isset($occasionCovers[$occName])
-                    && in_array($occName, $occasions, true)) {
-                    $occasionCovers[$occName] = (string)$occRow['image'];
+        $occCovSt->execute(array_merge(
+            array_map(fn($o) => '%/' . $o . '/%', $occasions),
+            $occasions
+        ));
+        /* One garment, one tile — as far as the catalogue allows.
+           ────────────────────────────────────────────────────────────────────
+           This gave a product's photograph to EVERY occasion it named, and an
+           occasion field is a list: one kurti tagged "Casual / Everyday / Day
+           Out / Travel" filled four tiles with the same picture. On the live
+           shop five tiles showed two photographs between them, so a row meant to
+           show the range of the collection showed the same dress over and over.
+
+           Two passes fix it. The first lets each product furnish ONE tile and
+           each photograph appear once, which spreads the row across as many
+           different garments as there are. The second fills whatever is still
+           empty, reusing pictures only where there is genuinely nothing else —
+           a tile with a repeated photograph still beats a blank one.
+
+           Rows arrive newest first, so the newest stock claims tiles first. */
+        $occRows     = $occCovSt->fetchAll(PDO::FETCH_ASSOC);
+        $occUsedImgs = [];
+
+        $occClaimsOf = static function (array $row) use ($occasions): array {
+            // A product's occasion field is a list, so it can supply the
+            // photograph for any occasion named inside it. Category matches
+            // whole, because a category name is a single value.
+            $claims = array_merge(
+                dievonSplitOccasions((string)($row['occasion'] ?? '')),
+                [(string)($row['category'] ?? '')]
+            );
+            return array_values(array_filter($claims, static fn($c) =>
+                $c !== '' && in_array($c, $occasions, true)));
+        };
+
+        foreach ($occRows as $occRow) {                 // pass 1 — spread them out
+            $img = (string)($occRow['image'] ?? '');
+            if ($img === '' || isset($occUsedImgs[$img])) { continue; }
+            foreach ($occClaimsOf($occRow) as $occName) {
+                if (!isset($occasionCovers[$occName])) {
+                    $occasionCovers[$occName] = $img;
+                    $occUsedImgs[$img] = true;
+                    break;                              // this garment fills ONE tile
                 }
             }
         }
+
+        /* An occasion that cannot have a photograph of its own is not shown.
+           ────────────────────────────────────────────────────────────────────
+           Spreading the pictures was not enough on its own. Only one garment in
+           the shop is tagged Festive, Traditional, Wedding Guest and
+           Celebration — so those four tiles could only ever show that same
+           dress, four times in a row, whatever order they were assigned in.
+
+           So the row is built from the occasions the catalogue can genuinely
+           illustrate: twelve tiles showing seven photographs becomes seven
+           tiles, each a different garment. A visitor reads it as a range; the
+           old row read as a shop with two dresses in it.
+
+           Nothing is lost permanently — the dropped occasions still work as
+           filters, they just do not get a tile until a second garment is tagged
+           with them. Add stock and they return by themselves. */
+        $occasions = array_values(array_filter(
+            $occasions,
+            static fn($occName) => isset($occasionCovers[$occName])
+        ));
     } catch (PDOException $e) {}
 }
 ?>
@@ -1071,6 +1209,12 @@ $occIsMen = function_exists('currentShopGender') && currentShopGender() === 'men
                             .css('background', on ? 'white' : 'transparent');
             });
         }
+
+        // Same reason as the rails in includes/footer.php: a slide is a link
+        // around a photograph, and the browser's own drag-and-drop eats the
+        // mouse events Owl needs. Firefox ignores the CSS user-drag property,
+        // so the attribute has to say it as well.
+        $hero.find('a, img').attr('draggable', 'false');
 
         $hero.owlCarousel({
             items: 1,

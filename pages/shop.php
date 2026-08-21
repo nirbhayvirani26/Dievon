@@ -370,6 +370,18 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
         $in = str_repeat('?,', count($badgesList) - 1) . '?';
         $sql .= " AND badge IN ($in)";
         $params = array_merge($params, $badgesList);
+
+        /* The NEW link in the main navigation has to mean the same thing the
+           badge means. Without this the badge came off the card after
+           NEW_BADGE_DAYS while ?badges=New still listed the product — a page
+           headed NEW showing garments with no New badge on any of them.
+
+           A row with no created_at is kept, matching productBadge(), which
+           leaves the badge alone when there is no date to judge it by. */
+        if (in_array('New', $badgesList, true)) {
+            $sql .= " AND (badge <> 'New' OR created_at IS NULL"
+                  . " OR created_at >= DATE_SUB(NOW(), INTERVAL " . (int)NEW_BADGE_DAYS . " DAY))";
+        }
     }
 
     if (!empty($colorsList)) {
@@ -455,9 +467,15 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
     }
 
     if (!empty($occasionsList)) {
-        $in = str_repeat('?,', count($occasionsList) - 1) . '?';
-        $sql .= " AND occasion IN ($in)";
-        $params = array_merge($params, $occasionsList);
+        /* occasion holds a LIST — "Casual / Everyday / Day Out" — so IN() only
+           ever matched a product whose whole field equalled the tick box. Every
+           filter here returned one garment or none, and the homepage's occasion
+           tiles (which link straight to this) did the same. Matching INSIDE the
+           list is the whole point of the field. */
+        $occWhere = implode(' OR ', array_fill(0, count($occasionsList),
+                     OCCASION_MATCH_SQL . " LIKE ?"));
+        $sql .= " AND ($occWhere)";
+        foreach ($occasionsList as $occOne) { $params[] = '%/' . trim($occOne) . '/%'; }
     }
     
     // NOTE: no `AND price >= ?` here. The price range is applied against the
@@ -616,6 +634,12 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
                 'is_sold_out', 'not_sold_here',
             ];
             $card = array_intersect_key($p, array_flip($cardFields));
+
+            // "New" expires — see productBadge() in config/config.php. Applied
+            // here, at the encode boundary, so the cards that arrive from Load
+            // More and from every filter say exactly what the server-rendered
+            // ones say. createProductCard() needed no change for it.
+            $card['badge'] = productBadge($p);
 
             // The hover photograph, so a Load More card behaves like one that
             // arrived with the page. Only the filename leaves the server, the
@@ -1337,7 +1361,16 @@ try {
     $sleeves   = $attrOptions('sleeve');
     $necks     = $attrOptions('neck');
     $patterns  = $attrOptions('pattern');
-    $occasions = $attrOptions('occasion');
+    /* Split for the same reason: $attrOptions returns DISTINCT whole fields, so
+       the sidebar offered one tick box per product, each labelled with a whole
+       sentence. Split, deduped and sorted, it offers the handful of occasions
+       the shop really sells for. */
+    $occasions = [];
+    foreach ($attrOptions('occasion') as $occRaw) {
+        foreach (dievonSplitOccasions($occRaw) as $occOne) { $occasions[$occOne] = true; }
+    }
+    $occasions = array_keys($occasions);
+    sort($occasions);
 } catch (PDOException $e) {}
 ?>
 

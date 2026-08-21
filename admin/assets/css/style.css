@@ -1706,6 +1706,34 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 .admin-checkbox-label { display: flex; align-items: center; gap: 12px; cursor: pointer; font-size: 15px; font-weight: 600; color: var(--text-secondary); }
 .admin-checkbox-label-allergy { color: #b45309; }
 .admin-checkbox-input { width: 18px; height: 18px; accent-color: var(--color-primary); }
+
+/* The publish switch, and the sentence that explains it.
+   ────────────────────────────────────────────────────────────────────────────
+   .admin-form-checkbox-align is a flex ROW: it exists to sit a lone checkbox on
+   the bottom edge of a form row, level with the input beside it. This block puts
+   a label AND a paragraph inside it, so the row laid them out side by side —
+   squeezing "Published — visible to shoppers" into a four-line column barely
+   wider than one word, with the explanation floating beside it as if it belonged
+   to something else.
+
+   Stacking is what it always wanted. The hint is indented by 30px — the 18px box
+   plus the 12px gap — so it starts exactly under the label's first letter and
+   reads as part of the same thought rather than a new one. */
+.admin-publish-group {
+    display: block;
+    padding-bottom: 0;
+}
+.admin-publish-group .admin-checkbox-label {
+    font-weight: 700;
+    line-height: 1.4;
+}
+.admin-publish-hint {
+    margin: 8px 0 0 30px;
+    font-size: 12.5px;
+    line-height: 1.65;
+    color: var(--text-secondary);
+    max-width: 60ch;        /* a comfortable reading measure, not the panel's full width */
+}
 .tax-locked,
 .form-control[readonly] { background: rgba(0,0,0,0.07) !important; color: var(--text-secondary) !important; cursor: not-allowed; box-shadow: none !important; border-color: rgba(0,0,0,0.12) !important; }
 .admin-checkbox-input-allergy { accent-color: #b45309; }
@@ -1726,7 +1754,14 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 .admin-gallery-new-item { border-color: #10b981 !important; }
 .gallery-image-wrap img,
 .admin-gallery-thumb-img { width: 95px !important; height: 95px !important; min-width: 95px !important; min-height: 95px !important; max-width: 95px !important; max-height: 95px !important; object-fit: cover !important; display: block !important; }
-.admin-gallery-del-btn { position: absolute !important; top: 6px !important; right: 6px !important; background: #ef4444 !important; color: #ffffff !important; border: none !important; border-radius: 50% !important; width: 24px !important; height: 24px !important; display: flex !important; align-items: center !important; justify-content: center !important; cursor: pointer !important; font-size: 12px !important; box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important; z-index: 99 !important; opacity: 1 !important; visibility: visible !important; transition: transform 0.2s ease, background 0.2s ease !important; }
+/* Matched to the colour-variant gallery's remove button in the same form:
+   18px in #c0392b, not 24px in #ef4444. Two galleries sitting one above the
+   other on one screen should not have differently sized delete buttons — and
+   the larger, brighter circle was taking a quarter of a 95px tile, covering
+   the garment it was meant to sit beside.
+   Kept INSIDE the tile rather than overhanging like its sibling, because this
+   tile has overflow:hidden and would clip it. */
+.admin-gallery-del-btn { position: absolute !important; top: 5px !important; right: 5px !important; background: #c0392b !important; color: #ffffff !important; border: none !important; border-radius: 50% !important; width: 18px !important; height: 18px !important; display: flex !important; align-items: center !important; justify-content: center !important; cursor: pointer !important; font-size: 10px !important; box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important; z-index: 99 !important; opacity: 1 !important; visibility: visible !important; transition: transform 0.2s ease, background 0.2s ease !important; }
 .admin-gallery-del-btn:hover { background: #dc2626 !important; transform: scale(1.15) !important; }
 .admin-gallery-saved-tag { position: absolute !important; bottom: 4px !important; left: 4px !important; background: rgba(15,23,42,0.85) !important; color: #ffffff !important; font-size: 9px !important; font-weight: 700 !important; padding: 2px 6px !important; border-radius: 4px !important; text-transform: uppercase !important; z-index: 10 !important; }
 .admin-gallery-new-tag { position: absolute !important; bottom: 4px !important; left: 4px !important; background: #10b981 !important; color: #ffffff !important; font-size: 9px !important; font-weight: 700 !important; padding: 2px 6px !important; border-radius: 4px !important; text-transform: uppercase !important; z-index: 10 !important; }
@@ -1794,6 +1829,87 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
     border: 1px solid var(--color-secondary);
     letter-spacing: .04em;
     cursor: help;
+}
+
+/* Supplier, and the supplier's own design number, on the product row.
+   ────────────────────────────────────────────────────────────────────────────
+   A second caption line under the SKU rather than another pill: this is a fact
+   about the piece, not a status, and a third coloured badge would compete with
+   Archived and Draft for the eye. The number gets a tinted chip because it is
+   the one string actually copied out of this screen when reordering. */
+.prod-supply {
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--text-muted);
+}
+.prod-supply i {
+    margin-right: 5px;
+    color: var(--color-secondary);
+}
+.prod-supply-no {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 6px;
+    border-radius: 3px;
+    background: var(--bg-surface-soft);
+    color: var(--text-primary);
+    font-weight: 600;
+    letter-spacing: .02em;
+}
+
+/* Sortable column headings on the product table.
+   ────────────────────────────────────────────────────────────────────────────
+   The arrow is always in the layout, only faint until its column is the one
+   doing the sorting — so the heading never changes width on click and the row
+   of headings does not jog sideways. A dimmed arrow also advertises that the
+   heading can be clicked at all, which a bare word does not. */
+.prod-sort-th {
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+}
+.prod-sort-th:hover,
+.prod-sort-th:focus-visible { color: var(--color-secondary); }
+.prod-sort-th::after {
+    content: "\2191";              /* ↑ */
+    margin-left: 6px;
+    font-size: 11px;
+    opacity: .25;
+}
+.prod-sort-th[data-dir="desc"]::after { content: "\2193"; }   /* ↓ */
+.prod-sort-th.is-sorted::after { opacity: 1; }
+.prod-sort-th.is-sorted { color: var(--color-secondary); }
+
+/* Stock state on the product list.
+   ────────────────────────────────────────────────────────────────────────────
+   The previous badges were 10px in #10b981 on #ecfdf5 — 2.41:1, where readable
+   text needs 4.5:1. They were in the page and nobody could see them, so the
+   column looked blank and the one number a shopkeeper checks every morning was
+   the hardest thing on the screen to find.
+
+   Every pair below clears 6:1, and 12px is a size that survives a laptop screen
+   at arm's length. The emoji carries the same meaning again for anyone who does
+   not separate the two greens — colour alone is never the only signal. */
+.stock-pill {
+    display: inline-block;
+    padding: 4px 9px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.4;
+    white-space: nowrap;
+}
+.stock-pill--ok   { background: #d1fae5; color: #065f46; }   /* 6.9:1 */
+.stock-pill--low  { background: #fef3c7; color: #92400e; }   /* 6.4:1 */
+.stock-pill--out  { background: #fee2e2; color: #991b1b; }   /* 6.8:1 */
+/* Not a warning and not a reassurance — simply a product that is not counted,
+   so it stays neutral rather than borrowing the green of "in stock". */
+.stock-pill--free {
+    background: var(--bg-surface-soft);
+    color: var(--text-secondary);
+    font-weight: 600;
 }
 
 .prod-audience {
@@ -3411,3 +3527,236 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
     white-space: nowrap;
 }
 
+
+/* Shiprocket: the booking result, and the booked state on a row.
+   The message is deliberately not truncated — a refusal carries Shiprocket's
+   own reason, and a success names the garments whose weight was estimated. */
+.sr-flash {
+    display: flex; align-items: flex-start; gap: 10px;
+    margin: 0 0 18px; padding: 12px 16px;
+    border-radius: var(--radius-sm); font-size: 13px; line-height: 1.55;
+}
+.sr-flash.is-ok  { background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; }
+.sr-flash.is-bad { background: #fff5f5; border: 1px solid #fecaca; color: var(--color-danger); }
+.sr-flash i { margin-top: 2px; }
+/* Booked rows show the shipment number in place of the button — there is
+   nothing left to press, and Shiprocket would accept a second booking. */
+.sr-booked {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px; border-radius: var(--radius-xs);
+    background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46;
+    font-size: 12px; font-weight: 700; white-space: nowrap;
+}
+
+
+
+/* Arrow controls, bottom-right of the tile.
+   The delete button owns top-right and the First/Saved tag owns bottom-left,
+   so this is the corner that is free — an overlap there is what made the tag
+   unreadable the first time these existed. Shown on hover with a mouse, always
+   visible on touch: there is no hover on a phone, and a control you cannot
+   reveal is a control that is not there. */
+.gal-move {
+    position: absolute; right: 4px; bottom: 4px;
+    display: flex; gap: 2px;
+    opacity: 0; transition: opacity 0.15s ease;
+}
+.admin-gallery-thumb-item:hover .gal-move,
+.admin-gallery-thumb-item:focus-within .gal-move { opacity: 1; }
+@media (hover: none) { .gal-move { opacity: 1; } }
+.gal-move-btn {
+    width: 20px; height: 20px; padding: 0;
+    border: 1px solid rgba(255,255,255,0.3); border-radius: 3px;
+    background: rgba(20,6,12,0.8); color: #fff;
+    font-size: 11px; line-height: 1; cursor: pointer;
+    transition: background 0.15s ease;
+}
+.gal-move-btn:hover:not(:disabled) { background: var(--color-primary); }
+.gal-move-btn:disabled { opacity: 0.28; cursor: default; }
+
+
+/* ══ Inventory & Stock — search, filter and sort bar ══════════════════════════
+   Wraps rather than scrolls: on a narrow admin window the controls stack instead
+   of pushing the table sideways, because a filter you have to scroll to reach is
+   one nobody uses. */
+.stock-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    padding: 12px 14px;
+    background: var(--bg-surface-soft);
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+}
+.stock-toolbar-search {
+    position: relative;
+    flex: 1 1 260px;
+    min-width: 200px;
+}
+.stock-toolbar-search i {
+    position: absolute;
+    left: 12px; top: 50%;
+    transform: translateY(-50%);
+    font-size: 12px;
+    color: var(--text-muted);
+    pointer-events: none;          /* the icon must never eat a click meant for the box */
+}
+.stock-toolbar-search input {
+    width: 100%;
+    padding-left: 32px;            /* clears the icon */
+    font-size: 13px;
+}
+.stock-toolbar-select {
+    flex: 0 1 auto;
+    width: auto;
+    min-width: 150px;
+    font-size: 13px;
+    padding: 8px 12px;
+    height: auto;
+}
+/* Pushed to the end of the row so the count sits away from the controls and
+   reads as a result, not another thing to set. */
+.stock-toolbar-count {
+    margin-left: auto;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+/* The hidden attribute needs its own display rule or any rule above outranks it. */
+.stock-empty-note {
+    display: block;
+    margin: 18px 0 0;
+    padding: 16px;
+    text-align: center;
+    font-size: 13px;
+    color: var(--text-secondary);
+    background: var(--bg-surface-soft);
+    border-radius: 8px;
+}
+.stock-empty-note[hidden] { display: none; }
+
+@media (max-width: 640px) {
+    .stock-toolbar-select { flex: 1 1 100%; min-width: 0; }
+    .stock-toolbar-count  { margin-left: 0; }
+}
+
+
+/* ══ Customers & Inquiries — collapsible panels, search and sort ══════════════ */
+.cx-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: none;
+    border: 0;
+    padding: 0;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    text-align: left;
+}
+.cx-toggle-caret {
+    font-size: 12px;
+    color: var(--text-muted);
+    transition: transform .18s ease;
+}
+/* Closed points right, open points down — the caret is the only thing on screen
+   that says which way the section will go before you click it. */
+.cx-toggle[aria-expanded="false"] .cx-toggle-caret { transform: rotate(-90deg); }
+.cx-toggle:hover { color: var(--color-secondary); }
+
+/* The panel is hidden with the attribute; this pair is what makes the attribute
+   work, because any display rule above outranks `hidden` on its own. */
+.cx-panel { display: block; }
+.cx-panel[hidden] { display: none; }
+
+.cx-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border-light);
+    background: var(--bg-surface-soft);
+}
+.cx-search { position: relative; flex: 1 1 240px; min-width: 190px; }
+.cx-search i {
+    position: absolute; left: 12px; top: 50%;
+    transform: translateY(-50%);
+    font-size: 12px; color: var(--text-muted);
+    pointer-events: none;                 /* never eat a click meant for the box */
+}
+.cx-search input { width: 100%; padding-left: 32px; font-size: 13px; }
+.cx-select { width: auto; min-width: 150px; font-size: 13px; padding: 8px 12px; height: auto; }
+.cx-count {
+    margin-left: auto;
+    font-size: 12.5px; font-weight: 600;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+.cx-empty {
+    display: block;
+    margin: 0; padding: 24px;
+    text-align: center;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+.cx-empty[hidden] { display: none; }
+
+/* Sortable headings. The arrow keeps its place in the layout at all times, so a
+   heading never changes width on click and the row does not jog sideways. */
+.cx-sort-th { cursor: pointer; user-select: none; white-space: nowrap; }
+.cx-sort-th::after {
+    content: "\2191";
+    margin-left: 6px; font-size: 11px; opacity: .25;
+}
+.cx-sort-th[data-dir="desc"]::after { content: "\2193"; }
+.cx-sort-th.is-sorted::after { opacity: 1; }
+.cx-sort-th.is-sorted,
+.cx-sort-th:hover { color: var(--color-secondary); }
+
+@media (max-width: 640px) {
+    .cx-select { flex: 1 1 100%; min-width: 0; }
+    .cx-count  { margin-left: 0; }
+}
+
+
+/* ══ SEO page — the products a fault names, as links you can open ═════════════
+   These were printed as text ("#70 Aarini Ivory…") on a panel that says fix this
+   before submitting to Google, and finding each one was left to the reader. */
+.seo-fix-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 8px 0 4px;
+}
+.seo-fix-link {
+    display: inline-block;
+    max-width: 100%;
+    padding: 4px 10px;
+    border-radius: 4px;
+    background: var(--bg-surface-soft);
+    border: 1px solid var(--border-light);
+    color: var(--color-primary);
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    line-height: 1.5;
+    /* One line each, so twenty of them stay a list rather than a wall. */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.seo-fix-link:hover,
+.seo-fix-link:focus-visible {
+    background: var(--color-secondary-bg);
+    border-color: var(--color-secondary);
+}
+.seo-fix-more {
+    align-self: center;
+    font-size: 12px;
+    color: var(--text-muted);
+}

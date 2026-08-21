@@ -26,6 +26,21 @@ require_once 'includes/header.php';
 
 ?>
         
+<?php
+/* Whatever the Shiprocket handler came back with, shown once and cleared.
+   Kept verbatim — a booking that failed says WHY (their validator names the
+   field), and a booking that succeeded says which garments' weights were a
+   default rather than a measurement. Summarising either would remove the only
+   part the owner can act on. */
+if (!empty($_SESSION['sr_flash'])):
+    $srF = $_SESSION['sr_flash'];
+    unset($_SESSION['sr_flash']);
+?>
+<div class="sr-flash <?= $srF['ok'] ? 'is-ok' : 'is-bad' ?>">
+    <i class="fa-solid <?= $srF['ok'] ? 'fa-circle-check' : 'fa-triangle-exclamation' ?>"></i>
+    <span><?= htmlspecialchars($srF['msg']) ?></span>
+</div>
+<?php endif; ?>
         <div class="glass-panel" style="padding:24px; overflow:hidden;">
             <?php if (empty($orders)): ?>
             <div style="text-align:center; padding:60px 20px; color:var(--text-muted);">
@@ -580,6 +595,24 @@ require_once 'includes/header.php';
                                              <button class="btn-sm btn-sm-outline" onclick='printShippingLabel(<?= htmlspecialchars(json_encode($order), ENT_QUOTES) ?>)' style="background:#ffffff; color:#1e293b; border:1px solid #cbd5e1; font-weight:600;">
                                                  <i class="fa-solid fa-tag"></i> Shipping Label
                                              </button>
+                                             <?php /* Booked, or bookable — never both. Once a shipment exists the
+                                                      button becomes the number, because Shiprocket will happily accept
+                                                      the same order twice and bill for two pickups. */ ?>
+                                             <?php if (!empty($order['shiprocket_shipment_id'])): ?>
+                                                 <span class="sr-booked" title="Booked <?= htmlspecialchars((string)$order['shiprocket_booked_at']) ?>">
+                                                     <i class="fa-solid fa-truck-fast"></i>
+                                                     Shiprocket <?= htmlspecialchars($order['shiprocket_shipment_id']) ?>
+                                                 </span>
+                                             <?php else: ?>
+                                                 <form method="POST" action="shiprocket_handler.php" style="display:inline; margin:0;"
+                                                       onsubmit="return dvConfirmForm(this, 'Book <?= htmlspecialchars($order['order_code'], ENT_QUOTES) ?> with Shiprocket? This creates a real shipment and a courier charge.', {confirmText:'Book shipment'})">
+                                                     <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
+                                                     <input type="hidden" name="order_id" value="<?= (int)$order['id'] ?>">
+                                                     <button type="submit" class="btn-sm btn-sm-outline">
+                                                         <i class="fa-solid fa-truck-fast"></i> Send to Shiprocket
+                                                     </button>
+                                                 </form>
+                                             <?php endif; ?>
                                          </div>
 
                                          <span id="status-msg-<?= $order['id'] ?>" style="font-size:12px; color:var(--color-secondary);"></span>

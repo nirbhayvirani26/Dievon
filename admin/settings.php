@@ -114,6 +114,28 @@ $storeSettingDefaults = [
     'free_shipping_min'     => '2000',
     'standard_shipping_fee' => '99',
     'international_shipping_fee' => '2500',
+    /* '' = follow the Countries screen, which is how this behaved before the
+       setting had a field. '0' refuses every foreign address whatever Countries
+       says; '1' allows them. See the note on the field itself for why the lock
+       is worth having. */
+    'ships_internationally'      => '',
+    /* ── Shiprocket ──────────────────────────────────────────────────────────
+       pickup_location is blank by design. Shiprocket matches it against the
+       pickup addresses registered in the account, and an invented default is
+       refused at booking time with a message that does not explain itself.
+       A blank field the owner must fill is better than a plausible one that
+       fails on a real customer's order.
+
+       The parcel figures ARE seeded, because a booking cannot be made without
+       them and every product here has an empty weight. 0.4kg / 30x25x5cm suits
+       womenswear packed flat in a poly mailer — a starting point, not a
+       measurement. Shiprocket bills on actual or volumetric weight, whichever
+       is greater, and re-weighs at the hub. */
+    'shiprocket_pickup_location'   => '',
+    'shiprocket_default_city'      => '',
+    'shiprocket_default_state'     => '',
+    'default_parcel_weight_kg'     => '0.4',
+    'default_parcel_dimensions_cm' => '30x25x5',
     // ── COD guardrails ──────────────────────────────────────────────────────
     // Every order on this shop is Cash on Delivery, and none of these rules
     // existed before: no cap (an order of any size could go out for cash
@@ -712,6 +734,36 @@ require_once __DIR__ . '/includes/header.php';
                             <small class="settings-hint">Flat rate for addresses outside the home country. The free-shipping threshold never applies to these.</small>
                         </div>
                         <div class="form-group">
+                            <label class="form-label">Deliver Outside <?= htmlspecialchars(homeCountryRow()['name'] ?? 'India') ?>?</label>
+                            <?php
+                            /* A lock, because the automatic answer has a trap in it.
+                               ────────────────────────────────────────────────────
+                               shipsInternationally() is true as soon as ANY second
+                               country is enabled under Countries — and that screen
+                               exists mainly to set PRICES for other countries. So
+                               enabling one to quote in pounds also, silently, starts
+                               accepting delivery addresses in Britain: the checkout
+                               takes the order, GST is added to what is legally an
+                               export, and Razorpay still settles it in rupees.
+
+                               "Never" makes that impossible whatever Countries says.
+                               Leave it on Automatic to keep the behaviour this shop
+                               has always had. */
+                            $shipIntl = (string)($storeSettings['ships_internationally'] ?? '');
+                            ?>
+                            <select name="ships_internationally" class="form-control">
+                                <option value=""  <?= $shipIntl === ''  ? 'selected' : '' ?>>Automatic &mdash; follow Countries We Sell To</option>
+                                <option value="0" <?= $shipIntl === '0' ? 'selected' : '' ?>>Never &mdash; refuse addresses outside the home country</option>
+                                <option value="1" <?= $shipIntl === '1' ? 'selected' : '' ?>>Yes &mdash; accept overseas addresses</option>
+                            </select>
+                            <small class="settings-hint">
+                                On <strong>Automatic</strong> this turns itself on the moment a second country is
+                                enabled under <a href="countries.php">Countries We Sell To</a> &mdash; even if you
+                                enabled it only to show prices. Choose <strong>Never</strong> while you are not
+                                ready to ship abroad.
+                            </small>
+                        </div>
+                        <div class="form-group">
                             <label class="form-label">COD Maximum Order Value (<?= htmlspecialchars($currencySymbol) ?>)</label>
                             <input type="number" name="cod_max_order_value" class="form-control" min="0"
                                    value="<?= htmlspecialchars($storeSettings['cod_max_order_value'] ?? '') ?>">
@@ -722,6 +774,47 @@ require_once __DIR__ . '/includes/header.php';
                             <input type="number" name="cod_fee" class="form-control" min="0" step="0.01"
                                    value="<?= htmlspecialchars($storeSettings['cod_fee'] ?? '') ?>">
                             <small class="settings-hint">Added to the order total on Cash on Delivery orders. Set to 0 for none.</small>
+                        </div>
+                        <?php /* Shiprocket. Sits with the other shipping settings rather than on a
+                                 screen of its own — a booking fails without these, and the person
+                                 setting shipping fees is the person who knows them. */ ?>
+                        <div class="form-group" style="grid-column:1 / -1;">
+                            <label class="form-label">Shiprocket pickup location</label>
+                            <input type="text" name="shiprocket_pickup_location" class="form-control"
+                                   value="<?= htmlspecialchars($storeSettings['shiprocket_pickup_location'] ?? '') ?>"
+                                   placeholder="e.g. Primary">
+                            <small class="settings-hint">
+                                Must match a pickup address in your Shiprocket account <strong>exactly</strong> —
+                                Shiprocket &rsaquo; Settings &rsaquo; Company &rsaquo; Pickup Addresses, the
+                                <em>nickname</em> column. Leave it wrong and every booking is refused.
+                                Bookings will not run at all while this is empty.
+                            </small>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Warehouse city</label>
+                            <input type="text" name="shiprocket_default_city" class="form-control"
+                                   value="<?= htmlspecialchars($storeSettings['shiprocket_default_city'] ?? '') ?>" placeholder="e.g. Surat">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Warehouse state</label>
+                            <input type="text" name="shiprocket_default_state" class="form-control"
+                                   value="<?= htmlspecialchars($storeSettings['shiprocket_default_state'] ?? '') ?>" placeholder="e.g. Gujarat">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Default parcel weight (kg)</label>
+                            <input type="text" name="default_parcel_weight_kg" class="form-control"
+                                   value="<?= htmlspecialchars($storeSettings['default_parcel_weight_kg'] ?? '0.4') ?>" placeholder="0.4">
+                            <small class="settings-hint">
+                                Used for any product with no weight of its own — currently that is every product.
+                                Shiprocket bills on actual or volumetric weight, whichever is greater, and re-weighs
+                                at the hub, so an under-declared parcel is charged back to you.
+                            </small>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Default parcel size (cm)</label>
+                            <input type="text" name="default_parcel_dimensions_cm" class="form-control"
+                                   value="<?= htmlspecialchars($storeSettings['default_parcel_dimensions_cm'] ?? '30x25x5') ?>" placeholder="30x25x5">
+                            <small class="settings-hint">Length x breadth x height. Accepts 30x25x5 or 30 x 25 x 5 cm.</small>
                         </div>
                     </div>
                     <?php // This used to warn that these values were "saved, but not yet wired
@@ -815,6 +908,51 @@ require_once __DIR__ . '/includes/header.php';
                 <span><strong>Click ‘Edit Stock’ to add new stock, damage, or offline sales.</strong> Grand Total, In Stock, Damage and Sold columns are all read-only — updated when you save via the Edit button. Sold Online auto-counts when an order is marked Delivered.</span>
             </div>
 
+            <?php
+            /* Categories offered are the ones these products actually use, not a
+               list of every category in the shop — an option that filters to
+               nothing is a dead end the owner has to discover by clicking it. */
+            $stockCats = array_values(array_unique(array_filter(
+                array_map(static fn($r) => trim((string)($r['category'] ?? '')), $stockProducts)
+            )));
+            sort($stockCats);
+            ?>
+            <div class="stock-toolbar">
+                <div class="stock-toolbar-search">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="search" id="stockSearch" class="form-control"
+                           placeholder="Search by product name or SKU&hellip;" autocomplete="off">
+                </div>
+
+                <select id="stockStateFilter" class="form-control stock-toolbar-select">
+                    <option value="all">All stock levels</option>
+                    <option value="out">Out of stock</option>
+                    <option value="low">Low stock (5 or fewer)</option>
+                    <option value="in">In stock</option>
+                    <option value="untracked">Not tracked</option>
+                </select>
+
+                <select id="stockCatFilter" class="form-control stock-toolbar-select">
+                    <option value="all">All categories</option>
+                    <?php foreach ($stockCats as $sc): ?>
+                    <option value="<?= htmlspecialchars($sc) ?>"><?= htmlspecialchars($sc) ?></option>
+                    <?php endforeach; ?>
+                </select>
+
+                <select id="stockSort" class="form-control stock-toolbar-select">
+                    <?php /* Lowest first is the default on purpose: this screen exists to
+                             answer "what am I about to run out of", and the answer should
+                             be at the top without anyone choosing it. */ ?>
+                    <option value="stock_asc">Stock: lowest first</option>
+                    <option value="stock_desc">Stock: highest first</option>
+                    <option value="name_asc">Name (A&ndash;Z)</option>
+                    <option value="name_desc">Name (Z&ndash;A)</option>
+                    <option value="total_desc">Goods received: most first</option>
+                </select>
+
+                <span class="stock-toolbar-count" id="stockCount"></span>
+            </div>
+
             <div class="table-wrapper">
                 <table class="data-table" id="stockTable">
                     <thead>
@@ -856,7 +994,25 @@ require_once __DIR__ . '/includes/header.php';
                                 ? max(0, $ts - $dmg - $off - $sol)
                                 : max(0, $rowSellable);
                         ?>
-                        <tr id="stock-row-<?= $sp['id'] ?>">
+                        <?php
+                        /* Everything the filter bar reads, on the row itself.
+                           Computed here in PHP rather than scraped out of the
+                           cells by JavaScript: the cells are formatted for a
+                           person — thousands separators, badges, an em dash for
+                           "not tracked" — and parsing them back into numbers is
+                           how a filter starts disagreeing with the table it is
+                           filtering. */
+                        $rowTracked = !empty($sp['track_stock']);
+                        $rowState   = !$rowTracked ? 'untracked'
+                                    : ($ins <= 0 ? 'out' : ($ins <= 5 ? 'low' : 'in'));
+                        ?>
+                        <tr id="stock-row-<?= $sp['id'] ?>" class="stock-row"
+                            data-name="<?= htmlspecialchars(mb_strtolower($sp['name'] ?? '')) ?>"
+                            data-sku="<?= htmlspecialchars(mb_strtolower(productDisplayCode($sp))) ?>"
+                            data-category="<?= htmlspecialchars($sp['category'] ?? '') ?>"
+                            data-state="<?= $rowState ?>"
+                            data-instock="<?= (int)$ins ?>"
+                            data-total="<?= (int)$ts ?>">
                             <!-- Product -->
                             <td>
                                 <div class="stock-product">
@@ -952,6 +1108,86 @@ onclick="openStockEdit(<?= $sp['id'] ?>, '<?= htmlspecialchars(addslashes($sp['n
                     </tbody>
                 </table>
             </div>
+            <p class="stock-empty-note" id="stockNoMatch" hidden>
+                Nothing matches that. Clear the search or choose <strong>All stock levels</strong>.
+            </p>
+
+            <script>
+            /* Search, filter and sort for the stock table.
+               ─────────────────────────────────────────────────────────────────
+               Done in the browser on rows already on the page, so a search does
+               not cost a page load and does not lose the tab you are on. The
+               table is the whole catalogue and the shop is small; when it is not,
+               this becomes a query rather than a loop, and the row attributes it
+               reads are already the right shape for that.
+
+               Every value comes off data- attributes written by PHP. Reading the
+               cells instead would mean parsing "1,240" and "—" back into numbers,
+               which is how a filter starts disagreeing with its own table. */
+            (function () {
+                const table  = document.getElementById('stockTable');
+                if (!table) { return; }
+                const body   = table.querySelector('tbody');
+                const rows   = Array.from(body.querySelectorAll('tr.stock-row'));
+                const search = document.getElementById('stockSearch');
+                const state  = document.getElementById('stockStateFilter');
+                const cat    = document.getElementById('stockCatFilter');
+                const sort   = document.getElementById('stockSort');
+                const count  = document.getElementById('stockCount');
+                const empty  = document.getElementById('stockNoMatch');
+
+                const num = (r, a) => parseInt(r.getAttribute(a), 10) || 0;
+                const txt = (r, a) => (r.getAttribute(a) || '');
+
+                const ORDER = {
+                    stock_asc:  (a, b) => num(a,'data-instock') - num(b,'data-instock'),
+                    stock_desc: (a, b) => num(b,'data-instock') - num(a,'data-instock'),
+                    name_asc:   (a, b) => txt(a,'data-name').localeCompare(txt(b,'data-name')),
+                    name_desc:  (a, b) => txt(b,'data-name').localeCompare(txt(a,'data-name')),
+                    total_desc: (a, b) => num(b,'data-total')  - num(a,'data-total')
+                };
+
+                function apply() {
+                    const q  = (search.value || '').trim().toLowerCase();
+                    const st = state.value;
+                    const ct = cat.value;
+
+                    let shown = 0;
+                    rows.forEach(r => {
+                        /* An untracked product has no stock level, so it can only
+                           ever match its own option — never "out of stock", which
+                           would otherwise sweep in every product that simply is
+                           not counted. */
+                        const okState = st === 'all' || txt(r,'data-state') === st;
+                        const okCat   = ct === 'all' || txt(r,'data-category') === ct;
+                        const okText  = !q || txt(r,'data-name').includes(q) || txt(r,'data-sku').includes(q);
+                        const visible = okState && okCat && okText;
+                        r.style.display = visible ? '' : 'none';
+                        if (visible) { shown++; }
+                    });
+
+                    // Sorting the whole set, not only what is on screen, so the
+                    // order is the same when a filter is cleared again.
+                    const cmp = ORDER[sort.value] || ORDER.stock_asc;
+                    rows.slice().sort(cmp).forEach(r => body.appendChild(r));
+
+                    if (count) {
+                        count.textContent = shown === rows.length
+                            ? rows.length + ' product' + (rows.length === 1 ? '' : 's')
+                            : shown + ' of ' + rows.length;
+                    }
+                    if (empty) { empty.hidden = shown !== 0; }
+                }
+
+                [search, state, cat, sort].forEach(el => {
+                    if (!el) { return; }
+                    el.addEventListener('input',  apply);
+                    el.addEventListener('change', apply);
+                });
+                apply();
+            })();
+            </script>
+
 
             <?php
             /* Stock history.

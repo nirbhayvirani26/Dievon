@@ -1052,6 +1052,13 @@ document.addEventListener('DOMContentLoaded', function () {
            present alongside a working Owl. */
         $rail.addClass('owl-carousel');
 
+        /* Firefox ignores the CSS user-drag property, so the attribute says it
+           too: a tile is a link around a photograph, and both are draggable
+           objects by default. Pulling one started a native drag-and-drop that
+           ate the mouse events Owl needs, and the rail simply would not slide.
+           Clicking is untouched — only dragging the object itself is off. */
+        $rail.find('a, img').attr('draggable', 'false');
+
         var autoWidth = $rail.data('owl-autowidth') === 1 || $rail.data('owl-autowidth') === '1';
         var gap       = parseFloat(getComputedStyle(this).columnGap) || 24;
 
@@ -1094,6 +1101,106 @@ document.addEventListener('DOMContentLoaded', function () {
            refresh is the belt to that braces: it also catches a late-loading
            web font or image changing an item's size after init. */
         requestAnimationFrame(function () { $rail.trigger('refresh.owl.carousel'); });
+
+        /* Trackpad: two fingers sideways should slide the rail.
+           ────────────────────────────────────────────────────────────────────
+           Before Owl these rails were native overflow-x containers, so a
+           two-finger swipe scrolled them for free. Owl replaced that with a
+           transform inside overflow:hidden — there is no scrollable box left,
+           and Owl itself only listens for drags. So on a laptop the most
+           natural gesture there is did nothing at all, and the rail looked
+           broken to anyone who never thought to click and pull.
+
+           Only a HORIZONTAL gesture is taken: deltaX has to beat deltaY, so an
+           ordinary vertical scroll still belongs to the page and reading the
+           homepage never gets caught on a slider. preventDefault is called only
+           on that horizontal case — which also stops macOS reading the same
+           swipe as "go back a page" while you are browsing a row of kurtis.
+
+           The deltas are accumulated to a threshold and then locked for the
+           length of Owl's own animation: a trackpad fires wheel events in the
+           dozens, and one slide each would send the rail flying to the end. */
+        (function (railEl, $c) {
+            /* The rail follows the fingers, it does not hop.
+               ─────────────────────────────────────────────────────────────────
+               The first version of this counted the deltas up and fired
+               next.owl.carousel once they passed a threshold — a whole slide per
+               push, with a lock while it animated. It worked, and it felt awful:
+               a trackpad sends a continuous stream and got back a series of
+               jerks, nothing like the scrolling every other strip on a Mac does.
+
+               So during the gesture the stage is moved directly, pixel for pixel,
+               with the transition switched off — that is what makes it glide.
+               When the fingers stop, the nearest slide is handed back to Owl,
+               which animates the last few pixels and, more importantly, leaves
+               its own idea of the current index correct so the arrows and any
+               later drag still behave. */
+            var outer = railEl.querySelector('.owl-stage-outer');
+            var stage = railEl.querySelector('.owl-stage');
+            if (!outer || !stage) { return; }
+
+            var at = null, settle = null;
+
+            function currentX() {
+                var m = window.getComputedStyle(stage).transform;
+                if (!m || m === 'none') { return 0; }
+                try { return new DOMMatrix(m).m41; } catch (err) { return 0; }
+            }
+
+            function limit() {                       // furthest left the rail may go
+                return Math.min(0, outer.clientWidth - stage.scrollWidth);
+            }
+
+            function snap() {
+                var items = Array.prototype.slice.call(railEl.querySelectorAll('.owl-item'));
+                if (!items.length) { at = null; stage.style.transition = ''; return; }
+
+                // whichever item sits closest to the left edge right now
+                var want = -at, best = 0, bestGap = Infinity;
+                items.forEach(function (el, i) {
+                    var gap = Math.abs(el.offsetLeft - want);
+                    if (gap < bestGap) { bestGap = gap; best = i; }
+                });
+
+                /* Animate the last few pixels ourselves, then tell Owl where we
+                   ended up at zero speed.
+                   ──────────────────────────────────────────────────────────────
+                   Handing the settle to Owl directly did not work: when the
+                   nearest slide is the one it already thinks it is on — a short
+                   swipe that does not reach the next card — it has nothing to do
+                   and does nothing, leaving the rail parked wherever the fingers
+                   stopped while its index said otherwise. The next arrow press
+                   then jumped from a position it did not know about.
+
+                   Doing the movement here covers both cases with one path, and
+                   the zero-speed handover afterwards writes the same transform
+                   we just animated to, so nothing moves twice — it only brings
+                   Owl's own bookkeeping back in step. */
+                var target = -items[best].offsetLeft;
+                stage.style.transition = 'transform 220ms cubic-bezier(.25,.46,.45,.94)';
+                stage.style.transform  = 'translate3d(' + target + 'px, 0px, 0px)';
+                at = null;
+
+                window.setTimeout(function () {
+                    stage.style.transition = '';
+                    $c.trigger('to.owl.carousel', [best, 0, true]);
+                }, 240);
+            }
+
+            railEl.addEventListener('wheel', function (e) {
+                if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) { return; }   // vertical → the page's
+                e.preventDefault();
+
+                if (at === null) { at = currentX(); }
+                at = Math.max(limit(), Math.min(0, at - e.deltaX));
+
+                stage.style.transition = 'none';
+                stage.style.transform  = 'translate3d(' + at + 'px, 0px, 0px)';
+
+                window.clearTimeout(settle);
+                settle = window.setTimeout(snap, 110);   // the fingers have stopped
+            }, { passive: false });
+        })(this, $rail);
 
         /* Centre the row when there is not enough to scroll.
            ────────────────────────────────────────────────────────────────────

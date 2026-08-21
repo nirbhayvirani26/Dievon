@@ -638,6 +638,118 @@ const ADMIN_CAPABILITY_CATALOGUE = [
  * $context labels a specific shot ("Back view", "Detail") for galleries where
  * several photographs of one garment would otherwise share identical alt text.
  */
+/* The care wording used when a product has none of its own. Defined as a
+   constant so the product page, the details sheet and the admin form's
+   placeholder all quote the same sentence. */
+define('DEFAULT_WASH_CARE', 'Gentle machine wash or hand wash in cold water. Wash with similar colours. Do not bleach. Do not tumble dry. Dry in shade. Iron on low to medium heat.');
+
+/**
+ * The care instructions shown for a garment, and the wording used when the
+ * owner has not written any.
+ *
+ * One function rather than the text repeated at each place that shows it. It
+ * appears on the product page, inside the Details sheet and as the placeholder
+ * in the admin form — and before this the page carried its own paragraph while
+ * the form suggested something else, so what an owner was shown while typing
+ * was not what a shopper would read if they left it blank.
+ *
+ * The default suits the cottons, georgettes and blended silks this shop
+ * actually sells. It deliberately does NOT say "dry clean only", which the
+ * previous fallback did: that was printed under every garment including
+ * machine-washable cotton, and telling a customer to dry clean a cotton kurti
+ * costs them money for nothing.
+ *
+ * A garment with genuinely different needs — pure silk, hand embroidery, zari —
+ * still needs its own text typed in. This is the sensible floor, not an excuse
+ * to leave the field empty on a piece that cannot take water.
+ */
+function productWashCare(array $product): string
+{
+    $own = trim((string)($product['wash_care'] ?? ''));
+    return $own !== '' ? $own : DEFAULT_WASH_CARE;
+}
+
+/**
+ * How many days a product wears its "New" badge.
+ *
+ * Thirty is long enough that a piece added at the start of a month is still
+ * flagged at the end of it, and short enough that "New" never sits on something
+ * a shopper already saw last season. Change it here and every screen follows,
+ * because they all ask productBadge() instead of reading the column.
+ */
+const NEW_BADGE_DAYS = 30;
+
+/**
+ * The individual occasions inside a product's occasion field.
+ *
+ * The field holds a LIST, not one value: the shop types "Casual / Everyday /
+ * Day Out / Travel" because a kurti genuinely suits all four. Everything read
+ * it as a single opaque string, so the homepage grouped by it and produced one
+ * tile per product — nine tiles on a nine-product shop, each a sentence long,
+ * each leading to exactly one garment. The data was never wrong; the reading
+ * of it was.
+ *
+ * Slashes and commas both separate, spacing is forgiving, and each value comes
+ * back in one consistent capitalisation so "casual" and "Casual" cannot become
+ * two different filters.
+ */
+function dievonSplitOccasions(?string $raw): array
+{
+    $parts = preg_split('~\s*[/,]\s*~u', (string)$raw, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+    $out = [];
+    foreach ($parts as $part) {
+        $clean = ucwords(mb_strtolower(trim($part)));
+        if ($clean !== '') { $out[$clean] = true; }
+    }
+    return array_keys($out);
+}
+
+/**
+ * SQL that matches ONE occasion inside that list, and not a longer name that
+ * happens to contain it.
+ *
+ * The separators are normalised to a single slash and the whole value is
+ * wrapped in slashes, so the pattern "%/Casual/%" matches "Casual / Everyday"
+ * but NOT "Smart Casual" — which a plain LIKE '%Casual%' would have swept in.
+ */
+const OCCASION_MATCH_SQL =
+    "CONCAT('/', REPLACE(REPLACE(REPLACE(occasion, ' / ', '/'), ', ', '/'), ',', '/'), '/')";
+
+/**
+ * The badge a product should actually be shown wearing.
+ *
+ * "New" is the only badge with a natural expiry, and nothing ever took it off.
+ * A badge that never comes off stops meaning anything: once every other card
+ * says New, the word tells a shopper nothing and the genuinely new pieces are
+ * the ones that lose out. Worse, it quietly makes the shop look untended — a
+ * garment first listed last year still announcing itself as new is the sort of
+ * detail a customer notices and a shopkeeper never does.
+ *
+ * So "New" is now a fact about the product's age rather than a flag somebody has
+ * to remember to clear. The stored value is left alone: this only decides what
+ * is DISPLAYED, so turning the window up or off brings every badge straight
+ * back, and nothing the owner chose has been thrown away.
+ *
+ * "Hot" and "Best Seller" are editorial judgements with no natural expiry date,
+ * so they are returned untouched.
+ */
+function productBadge(array $product): string
+{
+    $badge = trim((string)($product['badge'] ?? ''));
+    if ($badge === '' || strcasecmp($badge, 'New') !== 0) { return $badge; }
+
+    // No date to judge age by — leave the owner's choice exactly as it is. A
+    // query that simply did not select created_at must never silently strip a
+    // badge off every product it returns.
+    $created = trim((string)($product['created_at'] ?? ''));
+    if ($created === '') { return $badge; }
+
+    $ts = strtotime($created);
+    if ($ts === false) { return $badge; }
+
+    return (time() - $ts) > (NEW_BADGE_DAYS * 86400) ? '' : $badge;
+}
+
 function productImageAlt(array $product, string $context = ''): string {
     $stored = trim((string)($product['image_alt'] ?? ''));
     if ($stored !== '') {
@@ -859,21 +971,30 @@ function productCoverFallback(PDO $pdo, int $productId): ?string {
     $dir = __DIR__ . '/../uploads/products/';
 
     try {
-        // Dead rows go first, before anything returns.
-        //
-        // Deleting a colour unlinks its photographs, so a cover archived from
-        // that colour leaves a gallery row naming a file that is no longer on
-        // disk — which the product page renders as a broken tile. Nothing can
-        // reference it again, so it is dropped rather than skipped. This runs
-        // even when the cover itself is perfectly healthy, because the broken
-        // tile and the broken cover are independent problems; doing it after
-        // the early return below left the tile on the page.
+        /* A gallery row whose file is not on disk is SKIPPED, never deleted.
+           ────────────────────────────────────────────────────────────────────
+           This used to run DELETE FROM product_images for every row whose file
+           was missing, on the reasoning that a colour deletion leaves rows that
+           nothing can reference again. That reasoning does not hold, because a
+           missing file is very often temporary:
+
+             • Media Cleanup MOVES files into uploads/_quarantine and is meant
+               to be undoable — but the moment the next save ran, this deleted
+               the rows, so restoring the batch brought the files back with
+               nothing left pointing at them.
+             • An interrupted or add-only FTP upload, a permissions blip, or a
+               folder not yet synced all read as "missing" for a few seconds.
+
+           A missing file is a display problem and it is recoverable. A deleted
+           row is a data problem and it is not — the order the owner arranged is
+           gone for good. So the row stays and only the cover choice skips it;
+           pages/product.php skips missing files when rendering, so the broken
+           tile this was written to prevent still never reaches a shopper. */
         $rows = $pdo->prepare("SELECT id, image FROM product_images WHERE product_id = :pid ORDER BY sort_order ASC, id ASC");
         $rows->execute(['pid' => $productId]);
         $live = [];
         foreach ($rows->fetchAll(PDO::FETCH_ASSOC) as $row) {
-            if (is_file($dir . $row['image'])) { $live[] = $row; continue; }
-            $pdo->prepare("DELETE FROM product_images WHERE id = :id")->execute(['id' => $row['id']]);
+            if (is_file($dir . $row['image'])) { $live[] = $row; }
         }
 
         $cur = $pdo->prepare("SELECT image FROM products WHERE id = :pid");
@@ -1802,6 +1923,51 @@ function currentCountryCode(): string {
 }
 
 /** The full row for the current country. */
+/**
+ * The currency an order should actually be CHARGED in, and how to express it in
+ * the smallest unit a payment gateway wants.
+ *
+ * Razorpay was handed the string 'INR' in three places with a comment saying
+ * standard accounts only settle in rupees. True of the account, not of the code:
+ * it meant a shopper shown £45 was charged 45 in RUPEES — off by a factor of a
+ * hundred in the shop's favour, which is worse than refusing the payment.
+ *
+ * The country row already carries currency_code, so the answer was always in the
+ * database; nothing asked it. Reading it here means enabling a country under
+ * Countries We Sell To is the only step — no code change waiting on it.
+ *
+ * `minor` is the multiplier to the smallest unit. It is 100 for every currency
+ * this shop can currently sell in (paise, pence, cents, fils), but it is NOT
+ * universal — yen has no minor unit and dinars have three digits — so the
+ * exceptions are named rather than assumed. Getting this wrong is a hundredfold
+ * over- or under-charge, which is the one arithmetic error worth spelling out.
+ */
+function checkoutCurrency(?string $countryCode = null): array
+{
+    $row  = null;
+    $code = strtoupper(trim((string)($countryCode ?: currentCountryCode())));
+
+    foreach (enabledCountries() as $cc => $c) {
+        if (strtoupper((string)$cc) === $code) { $row = $c; break; }
+    }
+    if ($row === null) { $row = homeCountryRow(); }
+
+    $currency = strtoupper(trim((string)($row['currency_code'] ?? 'INR'))) ?: 'INR';
+
+    // Currencies with no minor unit, and those with three digits rather than two.
+    $noMinor    = ['JPY', 'KRW', 'VND', 'CLP', 'ISK'];
+    $threeMinor = ['KWD', 'BHD', 'OMR', 'JOD', 'TND'];
+    $minor = in_array($currency, $noMinor, true) ? 1
+           : (in_array($currency, $threeMinor, true) ? 1000 : 100);
+
+    return [
+        'code'   => $currency,
+        'symbol' => (string)($row['currency_symbol'] ?? '₹'),
+        'minor'  => $minor,
+        'is_home'=> strtoupper((string)($row['country_code'] ?? '')) === strtoupper((string)(homeCountryRow()['country_code'] ?? 'IN')),
+    ];
+}
+
 function currentCountry(): ?array {
     return allStoreCountries()[currentCountryCode()] ?? homeCountryRow();
 }
@@ -2236,7 +2402,14 @@ function legalIdentityGaps(?PDO $pdo): array {
  * page, the structured data and the Merchant Center feed, so they need to be
  * visible somewhere the owner will look.
  *
- * Returns a list of ['label', 'detail', 'ids'].
+ * Returns a list of ['label', 'detail'] plus EITHER 'products' (rows that can be
+ * opened and corrected: id, name, note) or 'ids' (plain strings, for a fault that
+ * is not about one product — a size chart belongs to a category, not a garment).
+ *
+ * 'products' exists so the SEO page can link straight to the edit form. It listed
+ * "#70 Aarini Ivory…" as text and left the owner to go and find it, which on a
+ * screen that says "fix these before submitting to Google" is the one moment you
+ * do not want to send somebody hunting.
  */
 function catalogueDataProblems(PDO $pdo): array {
     $problems = [];
@@ -2281,21 +2454,38 @@ function catalogueDataProblems(PDO $pdo): array {
     foreach ($rows as $r) {
         $brand = mb_strtolower(trim((string)$r['brand']));
         if ($brand !== '' && !in_array($brand, $ownBrands, true)) {
-            $foreignBrand[] = '#' . $r['id'] . ' ' . $r['name'] . ' → "' . $r['brand'] . '"';
+            $foreignBrand[] = ['id' => (int)$r['id'], 'name' => (string)$r['name'], 'note' => 'brand is "' . $r['brand'] . '"'];
         }
 
         $nameLower = mb_strtolower((string)$r['name']);
         $fabric    = mb_strtolower(trim((string)$r['fabric']));
+        /* The fabric only has to CONTAIN the word, not equal it.
+           ────────────────────────────────────────────────────────────────────
+           This demanded $fabric === $w, so every compound fabric name was
+           reported as contradicting itself: "Ivory Embroidered Khadi Cotton
+           Short Kurti" recorded as "Khadi Cotton" was listed as a clash, because
+           "khadi cotton" is not the literal string "cotton". Six products were
+           flagged with a message that named the same fabric twice and told the
+           owner to fix a disagreement that was not there — before submitting to
+           Google, which makes it read as urgent.
+
+           Pure Silk, Cotton Blend and Chanderi Silk all failed the same way. The
+           identical bug was in admin/product_form.php's publish check and was
+           fixed there; this copy was missed, which is what a second copy of a
+           rule is for.
+
+           A real contradiction is the fabric not mentioning the word at all — a
+           "Georgette Kurti" recorded as Silk. */
         foreach ($fabricWords as $w) {
-            if (str_contains($nameLower, $w) && $fabric !== '' && $fabric !== $w) {
-                $fabricClash[] = '#' . $r['id'] . ' "' . $r['name'] . '" is recorded as ' . $r['fabric'];
+            if (str_contains($nameLower, $w) && $fabric !== '' && !str_contains($fabric, $w)) {
+                $fabricClash[] = ['id' => (int)$r['id'], 'name' => (string)$r['name'], 'note' => 'recorded as ' . $r['fabric']];
                 break;
             }
         }
 
         $img = trim((string)$r['image']);
         if ($img === '' || !is_file(__DIR__ . '/../uploads/products/' . $img)) {
-            $missingImage[] = '#' . $r['id'] . ' ' . $r['name'];
+            $missingImage[] = ['id' => (int)$r['id'], 'name' => (string)$r['name'], 'note' => 'no photograph on disk'];
         } else {
             // Only flag when the NAME does not also mention the accessory — a real
             // handbag product called "… Handbag" is correctly named handbag.jpg.
@@ -2303,13 +2493,13 @@ function catalogueDataProblems(PDO $pdo): array {
             $nameLower2 = mb_strtolower((string)$r['name'] . ' ' . (string)$r['category']);
             foreach ($accessoryWords as $w) {
                 if (str_contains($imgLower, $w) && !str_contains($nameLower2, $w)) {
-                    $wrongPhoto[] = '#' . $r['id'] . ' ' . $r['name'] . ' → ' . $img;
+                    $wrongPhoto[] = ['id' => (int)$r['id'], 'name' => (string)$r['name'], 'note' => 'photo file is ' . $img];
                     break;
                 }
             }
         }
         if (trim((string)$r['image_alt']) === '') {
-            $noAlt[] = '#' . $r['id'];
+            $noAlt[] = ['id' => (int)$r['id'], 'name' => (string)$r['name'], 'note' => 'no image description'];
         }
     }
 
@@ -2318,7 +2508,7 @@ function catalogueDataProblems(PDO $pdo): array {
             'label'  => 'Products branded as another label',
             'detail' => 'These are published as the brand in the product schema and in the Merchant Center feed. '
                       . 'Listing another company\'s trademark as your brand gets a Merchant Center account suspended.',
-            'ids'    => $foreignBrand,
+            'products' => $foreignBrand,
         ];
     }
     if ($fabricClash) {
@@ -2326,7 +2516,7 @@ function catalogueDataProblems(PDO $pdo): array {
             'label'  => 'Fabric contradicts the product name',
             'detail' => 'The name says one fabric and the fabric field says another. Both appear on the page, '
                       . 'and the fabric field also drives the shop filter and the schema material.',
-            'ids'    => $fabricClash,
+            'products' => $fabricClash,
         ];
     }
     // ── Size-guide gaps ──
@@ -2389,7 +2579,7 @@ function catalogueDataProblems(PDO $pdo): array {
                       . 'so nothing else catches this — the wrong photo appears on the product page, in the '
                       . 'suggested strip, on the home page category tile, in the share preview and in the '
                       . 'Google Merchant feed.',
-            'ids'    => $wrongPhoto,
+            'products' => $wrongPhoto,
         ];
     }
     if ($missingImage) {
@@ -2397,7 +2587,7 @@ function catalogueDataProblems(PDO $pdo): array {
             'label'  => 'Main image file is missing',
             'detail' => 'The file named on the product is not in uploads/products, so the page, the share preview '
                       . 'and the feed all point at an image that does not exist.',
-            'ids'    => $missingImage,
+            'products' => $missingImage,
         ];
     }
     if ($noAlt) {
@@ -2405,7 +2595,7 @@ function catalogueDataProblems(PDO $pdo): array {
             'label'  => 'No image description',
             'detail' => 'What a shopper using a screen reader hears in place of the photograph, and what Google '
                       . 'Images indexes. Without it the product name is used, which describes the product, not the picture.',
-            'ids'    => [count($noAlt) . ' products: ' . implode(', ', $noAlt)],
+            'products' => $noAlt,
         ];
     }
     return $problems;
@@ -6422,8 +6612,31 @@ function optimizeUploadedImage(string $absolutePath, int $maxDimension = 2000, i
     }
 
     $needsResize = ($width > $maxDimension || $height > $maxDimension);
+
+    /* A PNG that already fits is left exactly as it is.
+       ────────────────────────────────────────────────────────────────────────
+       I briefly made this re-encode large PNGs instead of skipping them, on the
+       reasoning that a 2.4MB garment shot is worth compressing. Then I timed it,
+       on a real 1024x1536 photograph from this shop:
+
+           re-encode as PNG   3937 ms   1.37MB -> 1.14MB   (17% smaller)
+           WebP twin          1053 ms   1.37MB -> 0.14MB   (90% smaller)
+
+       Four seconds of CPU for 17%, while the twin beside it does 90% in one.
+       PNG is lossless: re-encoding a photograph in it cannot win, whatever the
+       compression level. And that cost lands in the worst possible place — the
+       owner sits on a spinning Save button, once per photograph, six or seven
+       times for one product, on shared hosting slower than the machine measured
+       above. It made adding a product feel broken.
+
+       The .webp copy is what browsers are actually served through srcset, so the
+       PNG's own size costs disk and backup space, not page speed. That is not
+       worth four seconds of anybody's morning.
+
+       Oversized PNGs still go through: a resize is real work with a real result,
+       and it is the one case where the pixels genuinely have to be rewritten. */
     if (!$needsResize && $type === IMAGETYPE_PNG) {
-        return false;   // leave small PNGs exactly as they are
+        return false;
     }
 
     switch ($type) {

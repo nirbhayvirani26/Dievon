@@ -400,9 +400,29 @@ if ($promo) {
 // the customer was charged — never recomputed from a rate edited afterwards.
 // Inclusive prices (the default) leave the tax to be backed out at print time;
 // either way, the stored order total is the number the customer pays.
+/* An export carries no Indian GST.
+   ────────────────────────────────────────────────────────────────────────────
+   Nothing here looked at where the parcel was going, so an order to London was
+   charged Indian GST — money the customer should not pay and the shop cannot
+   keep, on an invoice that states a tax that does not apply. Both storage modes
+   got it wrong in their own way: an exclusive price had GST added on top, and an
+   inclusive one left line_tax null, which tells the invoice to BACK GST OUT of
+   the price at print time — printing a tax line on an export either way.
+
+   So a non-domestic destination freezes the line at exactly zero. Zero, not
+   null: null means "work it out later", and later is where the mistake was.
+
+   This is the shipping zone, which is the destination, not the shopper's chosen
+   currency — someone browsing in pounds who ships to an Indian address is a
+   domestic sale and pays GST. */
+$isExport      = ($shippingZone !== 'domestic');
 $gstAddedTotal = 0.0;
 foreach ($items as &$gstItem) {
     $gstItem['line_tax'] = null;   // inclusive → derived at invoice time
+    if ($isExport) {
+        $gstItem['line_tax'] = 0.0;
+        continue;
+    }
     if ((int)($gstItem['price_includes_gst'] ?? 1) === 0) {
         $gstRate = (float)($gstItem['gst_rate'] ?? 0);
         if ($gstRate > 0) {
@@ -497,8 +517,16 @@ if ($paymentMethod === 'online') {
             // the payment popup was open. Refuse to mark Paid unless what was actually
             // charged still matches the order being saved, or a customer could pay for
             // a small cart and have a larger one recorded as paid in full.
-            $chargedAmountPaise = (int)round($total * 100);
-            $tolerancePaise = 300; // covers benign delivery-charge recalculation drift only
+            /* Same minor unit the charge was created with.
+               ────────────────────────────────────────────────────────────────
+               This was a bare * 100. It agreed with actions/razorpay_order.php
+               only because that file also assumed 100 — two copies of the same
+               guess. Both now ask checkoutCurrency(), so a currency with no
+               minor unit or with three digits cannot make the two halves
+               disagree and turn a good payment into a mismatch. */
+            $payMinor = checkoutCurrency()['minor'];
+            $chargedAmountPaise = (int)round($total * $payMinor);
+            $tolerancePaise = (int)round(3 * $payMinor); // benign delivery-charge drift only
             if ($sessionAmountPaise !== null && abs($sessionAmountPaise - $chargedAmountPaise) <= $tolerancePaise) {
                 $paymentStatus = 'Paid';
             } else {
@@ -514,7 +542,7 @@ if ($paymentMethod === 'online') {
                 // was charged. The saved razorpay_payment_id and this log line
                 // let admin reconcile against the Razorpay dashboard.
                 error_log("Razorpay amount mismatch for order $rzpOrderId / payment $rzpPaymentId: charged {$sessionAmountPaise}p, recomputed {$chargedAmountPaise}p — recording order at the charged amount, marked Paid");
-                $total = (float)($sessionAmountPaise / 100);
+                $total = (float)($sessionAmountPaise / $payMinor);
                 $paymentStatus = 'Paid';
             }
         } else {

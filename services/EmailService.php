@@ -308,8 +308,23 @@ class EmailService {
 <head>
     <meta charset='UTF-8'>
     <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    " . "<!-- Dark mode: this email declares its own colours and asks not to be repainted.
+         ─────────────────────────────────────────────────────────────────────
+         The header was already white — twice, as a class and as a bgcolor — and
+         it still looked wrong, because a phone in dark mode does not read the
+         white; it INVERTS it. The band came back near-black and the logo, which
+         is transparent artwork in dark burgundy, disappeared into it. Painting
+         it white a third time could never have helped.
+
+         These two meta tags plus color-scheme below tell Apple Mail and
+         Outlook.com that light is deliberate, and they leave it alone. Gmail
+         ignores them, which is what the dark-mode media query and the [data-ogsc]
+         rules further down are for. --> " . "
+    <meta name='color-scheme' content='light'>
+    <meta name='supported-color-schemes' content='light'>
     <title>" . htmlspecialchars($title) . "</title>
     <style>
+        :root { color-scheme: light; supported-color-schemes: light; }
         body { margin: 0; padding: 0; background-color: #FAF8F5; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #2B2627; -webkit-font-smoothing: antialiased; }
         .wrapper { width: 100%; table-layout: fixed; background-color: #FAF8F5; padding: 36px 0; }
         .main-card { max-width: 600px; margin: 0 auto; background: #FFFFFF; border-radius: 12px; overflow: hidden; border: 1px solid #EAE4DC; box-shadow: 0 8px 30px rgba(81,17,38,0.06); }
@@ -332,6 +347,35 @@ class EmailService {
         table.item-table { width: 100%; border-collapse: collapse; margin: 18px 0; }
         table.item-table th { background: #FAF8F5; color: #511126; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; padding: 10px 12px; text-align: left; border-bottom: 1px solid #EAE4DC; }
         table.item-table td { padding: 12px; border-bottom: 1px solid #F3EEE7; font-size: 13px; }
+
+        /* Hold the light palette when the phone is in dark mode.
+           ────────────────────────────────────────────────────────────────────
+           The meta tags above are enough for Apple Mail and Outlook.com. Gmail
+           ignores them and repaints anyway, so the values it would change are
+           stated again here — !important, because Gmail's own injected styles
+           are what we are overriding.
+
+           Only the surfaces the logo and the text sit on. The point is not to
+           fight dark mode everywhere; it is that a transparent burgundy logo
+           needs the band behind it to stay white, or it vanishes. */
+        @media (prefers-color-scheme: dark) {
+            body, .wrapper           { background-color: #FAF8F5 !important; }
+            .main-card               { background: #FFFFFF !important; }
+            .brand-header            { background: #FFFFFF !important; }
+            .brand-logo, .brand-header, .brand-header * { color: #511126 !important; }
+            .footer, .footer a       { color: #511126 !important; }
+            table.item-table th      { background: #FAF8F5 !important; color: #511126 !important; }
+            table.item-table td      { color: #2B2627 !important; }
+        }
+
+        /* Outlook.com rewrites the message and prefixes everything with these
+           attributes rather than honouring the media query. Same values again —
+           there is no shared syntax that covers both. */
+        [data-ogsc] .brand-header,
+        [data-ogsb] .brand-header    { background: #FFFFFF !important; }
+        [data-ogsc] .brand-logo,
+        [data-ogsc] .brand-header *  { color: #511126 !important; }
+        [data-ogsc] .main-card       { background: #FFFFFF !important; }
     </style>
 </head>
 <body>

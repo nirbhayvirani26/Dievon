@@ -138,10 +138,18 @@ $cardUrl = productUrl($cardProduct['id'], $cardProduct['name'], $cardProduct['se
         <span class="badge-luxury badge-sold-out">Sold Out</span>
     <?php elseif ($cardHasDiscount): ?>
         <span class="badge-luxury badge-sale"><?= $cardDiscountPercent ?>% OFF</span>
-    <?php elseif (!empty($cardProduct['badge'])): ?>
-        <span class="badge-luxury"><?= htmlspecialchars($cardProduct['badge']) ?></span>
-    <?php elseif ($cardFallbackBadge !== ''): ?>
-        <span class="badge-luxury"><?= htmlspecialchars($cardFallbackBadge) ?></span>
+    <?php /* productBadge(), not the raw column: "New" comes off by itself once the
+             product is NEW_BADGE_DAYS old. See config/config.php. */ ?>
+    <?php elseif (($cardBadge = productBadge($cardProduct)) !== ''): ?>
+        <span class="badge-luxury"><?= htmlspecialchars($cardBadge) ?></span>
+    <?php /* The fallback goes through productBadge() too.
+             The New Arrivals carousel passes $cardFallbackBadge = 'New', which
+             stamped NEW on every card it drew whatever the garment's age — so a
+             product whose own New badge had just expired got the word back from
+             the section around it, and the expiry looked broken. Any other
+             fallback wording passes straight through; only 'New' is dated. */ ?>
+    <?php elseif (($cardFallback = productBadge(['badge' => $cardFallbackBadge, 'created_at' => $cardProduct['created_at'] ?? ''])) !== ''): ?>
+        <span class="badge-luxury"><?= htmlspecialchars($cardFallback) ?></span>
     <?php endif; ?>
 
     <button class="product-card-wishlist-btn"

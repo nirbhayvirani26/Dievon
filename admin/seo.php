@@ -112,8 +112,8 @@ $gaId     = (string)storeSetting($pdo, 'google_analytics_id', '');
 // and the filesystem — no request is made back to this site, because a PHP page
 // fetching its own URL can occupy the last free worker and hang the server.
 $checks = [];
-$addCheck = function (string $label, bool $ok, string $detail, string $fix = '') use (&$checks) {
-    $checks[] = ['label' => $label, 'ok' => $ok, 'detail' => $detail, 'fix' => $fix];
+$addCheck = function (string $label, bool $ok, string $detail, string $fix = '', array $products = []) use (&$checks) {
+    $checks[] = ['label' => $label, 'ok' => $ok, 'detail' => $detail, 'fix' => $fix, 'products' => $products];
 };
 
 $addCheck(
@@ -246,8 +246,17 @@ $addCheck(
 // brand, a fabric that contradicts the garment's own name, a missing photograph.
 // No amount of code can fix these — only the person who owns the catalogue can.
 foreach (catalogueDataProblems($pdo) as $cp) {
-    $addCheck($cp['label'], false, $cp['detail'] . ' — ' . implode('; ', array_slice($cp['ids'], 0, 12))
-        . (count($cp['ids']) > 12 ? ' …' : ''), 'Fix these in Products before submitting anything to Google.');
+    /* A fault that belongs to real products is passed through as products, so the
+       list below can link each one straight to its edit form. Anything else keeps
+       the old plain-text list — a size chart belongs to a category, not to one
+       garment, so there is nothing single to open. */
+    if (!empty($cp['products'])) {
+        $addCheck($cp['label'], false, $cp['detail'],
+            'Open each one and correct it before submitting anything to Google.', $cp['products']);
+    } else {
+        $addCheck($cp['label'], false, $cp['detail'] . ' — ' . implode('; ', array_slice($cp['ids'] ?? [], 0, 12))
+            . (count($cp['ids'] ?? []) > 12 ? ' …' : ''), 'Fix these in Products before submitting anything to Google.');
+    }
 }
 
 // "All 0 live products describe their image" was a green tick on an empty
@@ -319,6 +328,26 @@ require_once __DIR__ . '/includes/header.php';
                     <span class="seo-check-body">
                         <strong><?= htmlspecialchars($c['label']) ?></strong>
                         <span><?= htmlspecialchars($c['detail']) ?></span>
+                        <?php if (!empty($c['products'])): ?>
+                        <?php /* The whole point of this change: the id was printed as text
+                                 and the owner had to go and find the product by hand, on a
+                                 screen telling them to fix it before submitting to Google.
+                                 Each one opens its own edit form now. The note rides along
+                                 as the title so the reason is there on hover without making
+                                 every chip a paragraph. */ ?>
+                        <span class="seo-fix-list">
+                            <?php foreach (array_slice($c['products'], 0, 20) as $pRow): ?>
+                            <a class="seo-fix-link"
+                               href="product_form.php?id=<?= (int)$pRow['id'] ?>"
+                               title="<?= htmlspecialchars($pRow['note'] ?? '') ?>">
+                                #<?= (int)$pRow['id'] ?> <?= htmlspecialchars($pRow['name'] ?? '') ?>
+                            </a>
+                            <?php endforeach; ?>
+                            <?php if (count($c['products']) > 20): ?>
+                            <span class="seo-fix-more">and <?= count($c['products']) - 20 ?> more</span>
+                            <?php endif; ?>
+                        </span>
+                        <?php endif; ?>
                         <?php if (!$c['ok'] && $c['fix'] !== ''): ?>
                         <em><?= htmlspecialchars($c['fix']) ?></em>
                         <?php endif; ?>

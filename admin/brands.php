@@ -58,7 +58,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete'])) {
 
 $brands = [];
 try {
-    $brands = $pdo->query("SELECT * FROM brands ORDER BY id DESC")->fetchAll();
+    /* Alphabetical, not newest-first. This is a reference list you come to in
+       order to FIND a brand, and nobody looks one up by when it was added — with
+       id DESC the one you wanted was wherever it happened to land. There is no
+       sort_order column on this table, so nothing manual is being overridden. */
+    $brands = $pdo->query("SELECT * FROM brands ORDER BY name ASC, id ASC")->fetchAll();
 } catch (PDOException $e) {}
 
 require_once __DIR__ . '/includes/header.php';

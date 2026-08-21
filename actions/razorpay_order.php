@@ -157,18 +157,33 @@ $currencyData   = $GLOBALS['CURRENCY_RATES'][$activeCurrency] ?? ['symbol' => '�
 $total          = max(0, $cartTotal - $discountAmount + $gstAddedTotal + $deliveryCharge);
 $convertedTotal = $total * (float)$currencyData['rate'];
 
-// Razorpay only settles in INR on standard accounts — charge in INR regardless
-// of the storefront's display currency.
-$amountPaise = (int)round($total * 100);
+/* Charge in the currency the shopper was quoted.
+   ────────────────────────────────────────────────────────────────────────────
+   This sent 'INR' whatever the storefront displayed, with a comment explaining
+   that standard Razorpay accounts settle in rupees. That is true of the ACCOUNT
+   and irrelevant to the code: a shopper shown £45 was charged 45 rupees — a
+   hundredfold undercharge in their favour and an order the shop loses money on.
+   Refusing the payment would have been better than taking the wrong one.
 
-if ($amountPaise < 100) {
+   The country row already held currency_code. Reading it means enabling a
+   country under Countries We Sell To is the only step, with no code change
+   waiting behind it — which is the whole point.
+
+   What this CANNOT do is make Razorpay accept a foreign currency: that is a
+   capability on the account, applied for separately. If it is not enabled the
+   API refuses order creation, and the message below says so plainly instead of
+   leaving a shopper staring at a failed payment nobody can explain. */
+$payCurrency = checkoutCurrency();
+$amountMinor = (int)round($total * $payCurrency['minor']);
+
+if ($amountMinor < 100) {
     echo json_encode(['error' => 'Order total is too small for card payment.']);
     exit;
 }
 
 $payload = json_encode([
-    'amount'   => $amountPaise,
-    'currency' => 'INR',
+    'amount'   => $amountMinor,
+    'currency' => $payCurrency['code'],
     'receipt'  => 'dievon_' . time() . '_' . random_int(1000, 9999),
     'notes'    => [
         'shop'       => SHOP_NAME,
@@ -194,6 +209,27 @@ curl_close($ch);
 
 if ($curlErr || $httpCode >= 400) {
     error_log('Razorpay order create error: ' . $curlErr . ' | HTTP ' . $httpCode . ' | ' . $response);
+
+    /* Name the one failure the shop can actually act on.
+       ────────────────────────────────────────────────────────────────────────
+       Charging in a foreign currency is a capability Razorpay grants per
+       ACCOUNT; the code asking for it is not enough. When it has not been
+       granted the API refuses the order, and the generic message below sends
+       the owner hunting through code that is working correctly.
+
+       Only for a non-home currency, and only in the log plus a slightly clearer
+       line to the shopper — the customer must never be shown an account detail,
+       but they should be told to use another method rather than pressing Pay
+       again on something that cannot succeed. */
+    if (empty($payCurrency['is_home'])) {
+        error_log('Razorpay refused ' . $payCurrency['code'] . '. If this is a currency error, the '
+                . 'Razorpay account needs international payments enabled — the shop code is sending '
+                . 'the right currency. Until then, disable overseas selling under '
+                . 'Settings → Deliver Outside India, or Countries We Sell To.');
+        echo json_encode(['error' => 'Card payment is not available for this country yet. Please choose another payment method.']);
+        exit;
+    }
+
     echo json_encode(['error' => 'Payment setup failed. Please try again or choose Pay Later.']);
     exit;
 }
@@ -205,7 +241,7 @@ if (empty($order['id'])) {
 }
 
 $_SESSION['razorpay_order_id'] = $order['id'];
-$_SESSION['razorpay_amount']   = $amountPaise;
+$_SESSION['razorpay_amount']   = $amountMinor;
 
 // Snapshot everything checkout_action.php would need to build the real order, keyed by
 // this Razorpay order id. A server-to-server webhook has no access to this PHP session,
@@ -261,7 +297,7 @@ try {
         ON DUPLICATE KEY UPDATE amount_paise = VALUES(amount_paise), items_json = VALUES(items_json), total_price = VALUES(total_price)")
         ->execute([
             'rzp_id'    => $order['id'],
-            'amount'    => $amountPaise,
+            'amount'    => $amountMinor,
             'cid'       => $customerId,
             'name'      => trim($_POST['customer_name']  ?? ''),
             'email'     => trim($_POST['customer_email'] ?? ''),
@@ -276,8 +312,8 @@ try {
             'delivery'  => $deliveryCharge,
             'total'     => $total,
             'promo'     => $promo['code'] ?? null,
-            'currency'  => 'INR',
-            'symbol'    => '₹',
+            'currency'  => $payCurrency['code'],
+            'symbol'    => $payCurrency['symbol'],
         ]);
 } catch (PDOException $e) {
     // Non-fatal: the normal browser-completes-checkout path still works without this row —
@@ -287,8 +323,8 @@ try {
 
 echo json_encode([
     'order_id' => $order['id'],
-    'amount'   => $amountPaise,
-    'currency' => 'INR',
+    'amount'   => $amountMinor,
+    'currency' => $payCurrency['code'],
     'key_id'   => RAZORPAY_KEY_ID,
     'display_total' => number_format($total, 2),
 ]);

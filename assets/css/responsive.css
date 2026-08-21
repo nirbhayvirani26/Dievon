@@ -1,9 +1,18 @@
 
 /* ── Global Section Space Master Control ────────────────── */
-.section-space { padding: 80px 0 !important; }
+/* THE section spacing value for the whole site. Change this number and nothing
+   else — style.css points here rather than keeping a second copy that could
+   disagree with it.
+
+   .occasion-banners-section is listed too because it is the one content section
+   that does not carry .section-space. It was on its own 80px, so the two gaps
+   either side of it came out 140 against everyone else's 120; sharing the
+   declaration means it can never fall out of step again. */
+.section-space,
+.occasion-banners-section { padding: 60px 0 !important; }
 
 @media (max-width: 991px) {
-    .section-space { padding: 50px 0 !important; }
+    /* .section-space step moved to the ladder at the end of this file. */
     body:not(.admin-wrapper) { padding-top: var(--header-height, 75px) !important; }
 
     /* The gap under every section heading comes down with the section padding.
@@ -32,7 +41,6 @@
 }
 
 @media (max-width: 480px) {
-    .section-space { padding: 35px 0 !important; }
     body:not(.admin-wrapper) { padding-top: var(--header-height, 65px) !important; }
 
     .section-title-wrapper { margin-bottom: 22px; }
@@ -165,10 +173,8 @@
     .search-results-area { grid-template-columns: 1fr; gap: 20px; }
     .instant-results-grid { grid-template-columns: 1fr; }
 
-    /* Section Spacing Responsive Adjustments */
-    .section-space { padding: 70px 0; }
-    /* .section-space-sm */ { padding: 45px 0; }
-    /* .section-space-lg */ { padding: 90px 0; }
+    /* .section-space at 70px was here and never applied — an earlier !important
+       rule always beat it. The one ladder now lives at the end of this file. */
     .section-mb { margin-bottom: 40px; }
     .section-mb-lg { margin-bottom: 60px; }
 }
@@ -642,10 +648,7 @@
     /* Cart layout mobile */
     .cart-page-layout { grid-template-columns: 1fr; gap: 30px; }
 
-    /* Section Spacing Responsive Adjustments */
-    .section-space { padding: 50px 0; }
-    /* .section-space-sm */ { padding: 35px 0; }
-    /* .section-space-lg */ { padding: 70px 0; }
+    /* .section-space at 50px was here and never applied — see the ladder at the
     .section-mb { margin-bottom: 30px; }
     .section-mb-lg { margin-bottom: 40px; }
 }
@@ -725,10 +728,8 @@
     .blog-list-grid { grid-template-columns: 1fr; gap: 20px; }
 
     .home-benefits-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
-    
-    .section-space { padding: 40px 0; }
-    /* .section-space-sm */ { padding: 28px 0; }
-    /* .section-space-lg */ { padding: 55px 0; }
+    /* .section-space at 40px was here and never applied — see the ladder at the
+       end of this file. */
     .section-mb { margin-bottom: 25px; }
     .section-mb-lg { margin-bottom: 35px; }
     .main-header-bar { padding: 10px 0 !important; }
@@ -1388,7 +1389,6 @@ html {
 
 @media (max-width: 640px) {
     /* Section and Outer Gaps Optimization */
-    .section-space { padding: 25px 0 !important; }
     .section-mb, .section-mb-lg { margin-bottom: 20px !important; }
     .section-mb-sm { margin-bottom: 12px !important; }
 
@@ -1997,4 +1997,31 @@ html {
     .image-upload-box {
         padding: 20px;
     }
+}
+
+
+
+/* ══ Mobile ═══════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+
+    /* Tighter on a phone. 60px between sections is right on a desktop, where
+       there is width either side to balance it; on a 375px screen the same gap
+       is most of a thumb-scroll of nothing, and the page reads as emptier than
+       it is. Both selectors together for the same reason as above — the banners
+       section carries no .section-space class and must not drift from it. */
+    .section-space,
+    .occasion-banners-section { padding: 40px 0 !important; }
+
+    /* Free delivery, easy returns and the rest move below the fold's business.
+       ────────────────────────────────────────────────────────────────────────
+       .product-details-col is a flex column here, so order does the moving and
+       the markup stays as it reads — the row is written where it belongs in the
+       document, next to the buy box it describes.
+
+       Everything else keeps the default order of 0, so 1 puts this last without
+       having to number the other four and keep those numbers in step whenever a
+       block is added. On a phone the shopper wants size, price and Add to Bag
+       first; the reassurances are worth reading, but not before the thing they
+       came to buy. */
+    .product-benefits-row { order: 1; }
 }

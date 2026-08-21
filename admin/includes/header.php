@@ -234,10 +234,24 @@ $stockNotArchived   = "WHERE (is_deleted = 0 OR is_deleted IS NULL)";
 $stockProducts      = [];
 $stockMigrationDone = false;
 $stockV2Done        = false; // true when total_stock + sold_online also exist
+
+/* Only the screen that shows stock pays for reading it.
+   ────────────────────────────────────────────────────────────────────────────
+   This sits in the shared header, so it ran on EVERY admin page: every product,
+   eleven columns, sorted — and then up to two more full-table fallbacks if the
+   v2 columns are missing. The only file that ever reads $stockProducts is
+   admin/settings.php. Saving a category, editing a coupon, opening the orders
+   list: each one loaded the entire stock table and threw it away.
+
+   $stockProducts is already [] above, and $stockMigrationDone/$stockV2Done are
+   already false, so every other page gets exactly the empty state it was going
+   to ignore anyway. Same fix as the five page lists removed from this header
+   earlier — this one was missed because it is used, just not here. */
+if (($dvPage ?? '') === 'settings.php') {
 try {
     // Try full v2 schema
     $stockProducts = $pdo->query(
-        "SELECT id, name, emoji, image, category,
+        "SELECT id, name, emoji, image, category, sku, atelier_code,
                 IFNULL(track_stock,  0) AS track_stock,
                 IFNULL(total_stock,  0) AS total_stock,
                 IFNULL(stock_qty,    0) AS stock_qty,
@@ -252,7 +266,7 @@ try {
     // v2 columns missing — try v1 (damage + offline only)
     try {
         $stockProducts = $pdo->query(
-            "SELECT id, name, emoji, image, category,
+            "SELECT id, name, emoji, image, category, sku, atelier_code,
                     IFNULL(track_stock,  0) AS track_stock,
                     IFNULL(stock_qty,    0) AS total_stock,
                     IFNULL(stock_qty,    0) AS stock_qty,
@@ -266,7 +280,7 @@ try {
         // No stock columns at all — basic fallback
         try {
             $stockProducts = $pdo->query(
-                "SELECT id, name, emoji, image, category,
+                "SELECT id, name, emoji, image, category, sku, atelier_code,
                         0 AS track_stock, 0 AS total_stock, 0 AS stock_qty,
                         0 AS damage_stock, 0 AS sold_offline, 0 AS sold_online
                  FROM products $stockNotArchived ORDER BY name ASC"
@@ -274,6 +288,7 @@ try {
         } catch (PDOException $e3) { $stockProducts = []; }
     }
 }
+}   // end of the settings.php-only guard
 
 
 // ── Load gallery (removed) ──────────────────────────────────

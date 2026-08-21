@@ -168,6 +168,51 @@ function buildSteps(PDO $pdo, string $db): array {
                     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
     ];
 
+    /* ── Shiprocket ──────────────────────────────────────────────────────────
+       What comes back from a booking, kept on the order so the shop is not
+       dependent on the Shiprocket dashboard to answer "was this shipped, and
+       under what number". awb_code is the number the customer tracks with; it
+       is written to the existing tracking_number column TOO, because the status
+       emails and the customer's own order page already read that one. */
+    foreach ([
+        ['shiprocket_order_id',    "ALTER TABLE orders ADD COLUMN shiprocket_order_id VARCHAR(40) NULL DEFAULT NULL AFTER carrier"],
+        ['shiprocket_shipment_id', "ALTER TABLE orders ADD COLUMN shiprocket_shipment_id VARCHAR(40) NULL DEFAULT NULL AFTER shiprocket_order_id"],
+        ['shiprocket_booked_at',   "ALTER TABLE orders ADD COLUMN shiprocket_booked_at DATETIME NULL DEFAULT NULL AFTER shiprocket_shipment_id"],
+    ] as [$col, $sql]) {
+        $steps[] = [
+            'group' => 'Shiprocket',
+            'label' => "orders.$col",
+            'done'  => columnExists($pdo, $db, 'orders', $col),
+            'sql'   => $sql,
+        ];
+    }
+
+    /* The pickup location is seeded EMPTY on purpose. Shiprocket matches it
+       against the addresses registered in the account, and a wrong guess is
+       rejected at booking time with a message that does not say why. Better an
+       obviously blank field the owner must fill than a plausible default that
+       fails on a real customer's order. */
+    $steps[] = [
+        'group' => 'Shiprocket',
+        'label' => 'shipping defaults in Store Settings (pickup, city, state, parcel weight)',
+        'done'  => (int)$pdo->query(
+                       "SELECT COUNT(*) FROM store_settings
+                         WHERE setting_key = 'default_parcel_weight_kg'"
+                   )->fetchColumn() > 0,
+        'php'   => function (PDO $pdo) {
+            $seed = [
+                'shiprocket_pickup_location'   => '',
+                'shiprocket_default_city'      => '',
+                'shiprocket_default_state'     => '',
+                'default_parcel_weight_kg'     => '0.4',
+                'default_parcel_dimensions_cm' => '30x25x5',
+            ];
+            $ins = $pdo->prepare("INSERT IGNORE INTO store_settings (setting_key, setting_value) VALUES (:k, :v)");
+            foreach ($seed as $k => $v) { $ins->execute([':k' => $k, ':v' => $v]); }
+            return count($seed) . ' setting(s) seeded';
+        },
+    ];
+
     // ── 2. Size guide undo snapshots ──
     $steps[] = [
         'group' => 'Size guide — undo history',

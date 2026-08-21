@@ -135,6 +135,13 @@ RewriteRule ^(.*)$ https://%1/$1 [L,R=301]
 RewriteRule ^robots\.txt$ robots.php [L]
 RewriteRule ^sitemap\.xml$ sitemap.php [L]
 
+# Public product feed as JSON, at the address storefront integrations expect.
+# google_merchant_feed.php is XML in Google Merchant shape (one row per SIZE);
+# most tools want Shopify's arrangement instead and report the XML as
+# "Unexpected token '<' ... is not valid JSON". Same rewrite pattern as the
+# two SEO files above, so the served name is static while the content is live.
+RewriteRule ^products\.json$ products_feed.php [L]
+
 # 0b. SEO-friendly product URLs: /product/aurelia-silk-kurti-1 -> pages/product.php?id=1
 # The trailing number is the real lookup key; the slug text is decorative for readability/SEO
 # and is not itself parsed, so renaming a product never breaks an already-shared link.

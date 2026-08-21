@@ -124,11 +124,21 @@ try {
 } catch (PDOException $e) {}
 
 // Fetch additional images
+//
+// A row whose file is not on disk is left out of the page rather than rendered
+// as a broken tile. It stays in the database: the file may be sitting in the
+// media quarantine waiting to be restored, or half-way through an upload, and
+// the row carries the order the owner arranged. Dropping the row to avoid a
+// broken tile threw that away permanently — see productCoverFallback().
 $additionalImages = [];
 try {
     $stmt = $pdo->prepare("SELECT * FROM product_images WHERE product_id = :id ORDER BY sort_order ASC, id ASC");
     $stmt->execute(['id' => $productId]);
-    $additionalImages = $stmt->fetchAll();
+    $productImageDir = __DIR__ . '/../uploads/products/';
+    $additionalImages = array_values(array_filter(
+        $stmt->fetchAll(),
+        fn($r) => trim((string)$r['image']) !== '' && is_file($productImageDir . $r['image'])
+    ));
 } catch (PDOException $e) {}
 
 // ── Related products ────────────────────────────────────────────────────────
@@ -816,8 +826,10 @@ require_once __DIR__ . '/../includes/header.php';
                          aria-label="View larger image<?= $gIndex === 0 ? '' : ' ' . ($gIndex + 1) ?>"
                          onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}"
                          onclick="openProductLightbox('<?= SITE_URL ?>/uploads/products/<?= htmlspecialchars($gFile) ?>')">
-                        <?php if ($gIndex === 0 && !empty($product['badge'])): ?>
-                            <span class="badge-luxury badge-product-page"><?= htmlspecialchars($product['badge']) ?></span>
+                        <?php /* An expired "New" disappears here too — one rule for every
+                                 screen, so the card and the page it opens cannot disagree. */ ?>
+                        <?php if ($gIndex === 0 && ($pageBadge = productBadge($product)) !== ''): ?>
+                            <span class="badge-luxury badge-product-page"><?= htmlspecialchars($pageBadge) ?></span>
                         <?php endif; ?>
                         <?php $gWebp = webpUrlIfExists('products', $gFile); ?>
                         <picture>
@@ -1524,11 +1536,10 @@ require_once __DIR__ . '/../includes/header.php';
                                   // read here, so every garment in the catalogue — silk, linen, cotton —
                                   // showed the same "dry clean only" paragraph. The generic text stays
                                   // as the fallback for products with nothing entered yet. ?>
-                            <?php if (!empty($product['wash_care'])): ?>
-                                <p><?= nl2br(htmlspecialchars($product['wash_care'])) ?></p>
-                            <?php else: ?>
-                                <p>We recommend professional dry clean only to preserve the drape and structural integrity of the fabric. Store in a cool, dry place inside a breathable cotton garment bag.</p>
-                            <?php endif; ?>
+                            <?php /* productWashCare() supplies the default, so the sentence a
+                                     shopper reads when nothing was typed is the same one the admin
+                                     form offered while typing. */ ?>
+                            <p><?= nl2br(htmlspecialchars(productWashCare($product))) ?></p>
                             <?php if (!empty($product['composition'])): ?>
                                 <p style="margin-top: 10px;"><strong>Composition:</strong> <?= htmlspecialchars($product['composition']) ?></p>
                             <?php endif; ?>
@@ -1827,7 +1838,7 @@ $dvAdd('Brand',       $product['brand']);
 $dvAdd('Sourcing',    $product['sourcing'] ?? '');
 $dvAdd('Fit',         $product['fit_description'] ?? '');
 $dvAdd('Model wears', trim(trim((string)($product['model_height'] ?? '')) . ' · ' . trim((string)($product['model_size_worn'] ?? '')), ' ·'));
-$dvAdd('Care',        $product['wash_care']);
+$dvAdd('Care',        productWashCare($product));
 ?>
 <div id="productDetailsSheet" class="pd-sheet" role="dialog" aria-modal="true"
      aria-labelledby="pdSheetTitle" hidden onclick="closeProductDetails(event)">
