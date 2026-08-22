@@ -569,7 +569,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
                 }
             }
             $p['not_sold_here'] = $pNotSoldHere;
-            // Never left empty: createProductCard() below falls back to a raw,
+            // Never left empty: the card partial falls back to a raw,
             // un-converted p.price when formatted_price is falsy, which would
             // print the INR figure with no symbol fix — the exact bug this whole
             // change exists to remove.
@@ -614,6 +614,27 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
                 ? (productSellableStock($pdo, $p) <= 0)
                 : false;
 
+            /* The card itself, rendered here by the one partial.
+               ────────────────────────────────────────────────────────────────
+               createProductCard() in the script below used to build this markup
+               a second time in JavaScript, and the file said so: "Mirrors
+               includes/product_card.php — keep the two in step, or a product
+               looks like a different component depending on whether it arrived
+               with the page or with Load More." That is a contract enforced by a
+               comment, and the recently-viewed copy had already lost the bet.
+
+               Rendered through the same include the static grid three hundred
+               lines below uses, with $card set the same way, so a card that
+               arrives from a filter, a sort or Load More is byte-for-byte the
+               card that would have arrived with the page.
+
+               Note this runs BEFORE the projection below, which reuses $card as
+               its own name for the JSON payload. */
+            $card = $p;
+            ob_start();
+            include __DIR__ . '/../includes/product_card.php';
+            $cardHtml = ob_get_clean();
+
             // Only what the card actually draws leaves the server.
             //
             // The whole products row went out as JSON to any visitor — 63 fields,
@@ -626,7 +647,8 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
             // The stock columns are still needed ABOVE, because productSellableStock()
             // and the sold-out flag are computed server-side — so the projection
             // happens here, at the encode boundary, rather than by narrowing the
-            // SELECT. The field list is what createProductCard() reads, nothing more.
+            // SELECT. The field list is what the JSON payload carries, nothing more —
+            // the card itself is rendered above and travels as 'html'.
             $cardFields = [
                 'id', 'name', 'seo_url', 'category', 'price', 'image', 'image_webp', 'image_alt',
                 'emoji', 'badge', 'video_url', 'available', 'is_deleted',
@@ -638,8 +660,12 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
             // "New" expires — see productBadge() in config/config.php. Applied
             // here, at the encode boundary, so the cards that arrive from Load
             // More and from every filter say exactly what the server-rendered
-            // ones say. createProductCard() needed no change for it.
+            // ones say. It stays in the payload; the card reads it from the row.
             $card['badge'] = productBadge($p);
+
+            // The finished card. Everything else in this payload is data the
+            // grid no longer renders from; this is what it draws.
+            $card['html'] = $cardHtml;
 
             // The hover photograph, so a Load More card behaves like one that
             // arrived with the page. Only the filename leaves the server, the
@@ -2139,13 +2165,18 @@ if (function_exists('currentShopGender') && currentShopGender() === 'men') {
                     // Render products
                     data.products.forEach(p => {
                         allLoadedProducts[p.id] = p;
-                        const card = createProductCard(p);
+                        // The server sent the finished card, built by the same
+                        // partial as the grid already on the page — see the
+                        // render note in the ajax branch above. Nothing is
+                        // rebuilt here any more.
+                        grid.insertAdjacentHTML('beforeend', p.html || '');
+                        const card = grid.lastElementChild;
+                        if (!card) { return; }
                         // Same scroll-entrance as the static grid: hidden briefly
                         // then revealed by the site's observer (footer.php). New
                         // cards without this class stay plainly visible, so a
                         // failure here can never hide products.
                         card.classList.add('reveal-on-scroll');
-                        grid.appendChild(card);
                         if (typeof dievonObserveReveal === 'function') dievonObserveReveal(card);
                     });
 
@@ -2184,92 +2215,19 @@ if (function_exists('currentShopGender') && currentShopGender() === 'men') {
         return `${window.SITE_URL}/product/${slugify(p.seo_url || p.name)}-${p.id}`;
     }
 
-    function createProductCard(p) {
-        const article = document.createElement('article');
-        article.className = 'product-card reveal-on-scroll';
-        // Matches includes/product_card.php. syncBagNotes() in includes/footer.php
-        // fills the bag note on both renderers from the same code, so the card a
-        // shopper gets from "load more" says the same thing as the one that
-        // arrived with the page.
-        article.dataset.productId = p.id;
 
-        let imgHtml = '';
-        if (p.image) {
-            // Mirrors includes/product_card.php — keep the two in step, or a product
-            // looks different depending on whether it arrived with the page or with
-            // "load more".
-            const alt = escHtml(p.image_alt || p.name);
-            const src = `<?= SITE_URL ?>/uploads/products/${escHtml(p.image)}`;
-            const webpSource = p.image_webp
-                ? `<source srcset="${escHtml(p.image_webp)}" type="image/webp">` : '';
-            imgHtml = `<picture>${webpSource}<img src="${src}" alt="${alt}" loading="lazy" decoding="async" class="card-img"></picture>`;
-            // The hover layer, matching includes/product_card.php: empty src,
-            // real path in data-src, filled in by the delegated listener in
-            // includes/footer.php the first time a pointer reaches the tile.
-            if (p.image_hover) {
-                const hSrc  = `<?= SITE_URL ?>/uploads/products/${escHtml(p.image_hover)}`;
-                const hWebp = p.image_hover_webp ? ` data-webp="${escHtml(p.image_hover_webp)}"` : '';
-                imgHtml += `<img class="card-img card-img-hover" alt="" aria-hidden="true" decoding="async" data-src="${hSrc}"${hWebp}>`;
-            }
-        } else if (p.video_url) {
-            const vSrc = (p.video_url.startsWith('http://') || p.video_url.startsWith('https://')) ? p.video_url : `${window.SITE_URL}/uploads/products/${p.video_url}`;
-            imgHtml = `<video src="${escHtml(vSrc)}" autoplay loop muted playsinline class="card-img"></video>`;
-        } else {
-            imgHtml = `<div class="card-img-fallback" aria-label="No image available">${escHtml(p.emoji)}</div>`;
-        }
+    /* createProductCard() lived here.
+       ────────────────────────────────────────────────────────────────────────
+       It was a second, hand-written copy of includes/product_card.php, carried
+       so that cards arriving by filter, sort or Load More would look like the
+       ones rendered with the page. Its own comment set the terms — "keep the two
+       in step, or a product looks like a different component depending on how it
+       arrived" — and that is a contract no comment can enforce. The equivalent
+       copy on the product page had already lost its sold-out state.
 
-        // Sold Out wins over any other badge, exactly as the server card orders
-        // them (includes/product_card.php:60-64). Kept first for the same reason:
-        // a discount badge on something that cannot be bought is worse than no
-        // badge at all.
-        const badgeHtml = p.not_sold_here ? `<span class="badge-luxury badge-sold-out">Not Available Here</span>` : (p.is_sold_out ? `<span class="badge-luxury badge-sold-out">Sold Out</span>` : (p.has_discount ? `<span class="badge-luxury badge-sale">${p.discount_percent}% OFF</span>` : (p.badge ? `<span class="badge-luxury">${escHtml(p.badge)}</span>` : '')));
+       The ajax branch now renders each card through the partial and sends the
+       markup, so there is one definition again and nothing left here to drift. */
 
-        // Sizing indicator
-        let sizeInfo = '';
-        if (p.variants && p.variants.length > 0) {
-            const sizes = p.variants.map(v => v.name.replace('Size: ', '')).join(', ');
-            sizeInfo = `<span class="product-card-sizes">Sizes: ${escHtml(sizes)}</span>`;
-        }
-
-        // Wishlist active check
-        const isWishlisted = getWishlist().indexOf(p.id.toString()) > -1;
-        const wishlistClass = isWishlisted ? 'fa-solid fa-heart wishlist-btn-active' : 'fa-regular fa-heart';
-
-        article.innerHTML = `
-            ${badgeHtml}
-
-            <button class="product-card-wishlist-btn" onclick="event.preventDefault(); handleWishlistClick(${p.id}, this)" aria-label="Add to Wishlist">
-                <i class="${wishlistClass}"></i>
-            </button>
-
-            <div class="card-img-container">
-                <a href="${productUrl(p)}" class="card-img-link">
-                    ${imgHtml}
-                </a>
-                <label class="compare-toggle" title="Compare (up to 3)" onclick="event.stopPropagation()">
-                    <input type="checkbox" class="compare-check" value="${p.id}" data-name="${escHtml(p.name)}" onchange="toggleCompare(this)">
-                    <span>Compare</span>
-                </label>
-                <button onclick="event.preventDefault(); openQuickView(${p.id})" class="quick-view-btn">Quick View</button>
-            </div>
-            <div class="product-card-details">
-                <p class="product-card-bag-note" data-bag-note hidden></p>
-                <span class="product-card-category">${escHtml(p.category)}</span>
-                <h3 class="product-card-title">
-                    <a href="${productUrl(p)}">${escHtml(p.name)}</a>
-                </h3>
-                ${sizeInfo}
-                <div class="product-card-price">
-                    ${p.has_discount ? `<span class="price-mrp-strike">${escHtml(p.formatted_mrp)}</span>` : ''}
-                    ${p.price_varies ? '<span class="price-from-label">From</span> ' : ''}${p.formatted_price ? escHtml(p.formatted_price) : (typeof formatPriceJS === 'function' ? formatPriceJS(p.price) : '<?= currencySymbol() ?>' + parseFloat(p.price).toFixed(2))}
-                </div>
-                <a href="${productUrl(p)}" class="btn-luxury product-card-cta">
-                    Details
-                </a>
-            </div>
-        `;
-        return article;
-    }
 </script>
 
 
