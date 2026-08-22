@@ -529,6 +529,43 @@ $searchHint = $searchHintNames
 
 <!-- ══ Luxury Multi-Tier Header with Mega Menu ════════════════════════════ -->
 <header class="navbar-luxury">
+    <?php
+    // ── Women / Men switch ──────────────────────────────────────────────────
+    // Rendered only when BOTH sides genuinely have stock. A Men tab that leads
+    // to an empty grid is worse than no tab, so an un-launched menswear range
+    // simply does not appear — the same rule the country selector follows.
+    //
+    // Real <a href> links to real addresses, not a JavaScript toggle: /men has
+    // to work for a crawler carrying no cookie, for a shared link and for
+    // middle-click. The cookie only remembers the choice while browsing.
+    $dvShopGender = function_exists('currentShopGender') ? currentShopGender() : 'women';
+    if (function_exists('shopGenderSelectorEnabled') && shopGenderSelectorEnabled()): ?>
+    <?php /* No .hide-mobile: this bar shows at every screen size. It is the only
+             control that changes what the whole rest of the site means, so it
+             belongs where it can be seen rather than behind the hamburger.
+
+             .header-top-bar puts it in its own strip ABOVE the wordmark rather
+             than in a tier between the wordmark and the collections. Choosing a
+             side is the first decision a shopper makes and it governs every link
+             below it, so it reads better as the thing that comes before the shop
+             than as a band wedged into the middle of it — and the logo row and
+             the collections row become adjacent, which is what makes the header
+             read as one object instead of three stacked bands. */ ?>
+    <div class="audience-switch-bar header-top-bar">
+        <div class="container">
+            <nav class="audience-switch" aria-label="Shop for">
+                <?php /* ?for=women is load-bearing, not decoration. Plain "/" leaves the
+                         dievon_shop_for cookie saying men, so currentShopGender() keeps
+                         answering men and the Women tab does nothing at all — the switch
+                         becomes one-way once a visitor has chosen Men. */ ?>
+                <a href="<?= SITE_URL ?>/?for=women" class="audience-switch-link <?= $dvShopGender === 'women' ? 'is-active' : '' ?>"
+                   <?= $dvShopGender === 'women' ? 'aria-current="page"' : '' ?>>Women</a>
+                <a href="<?= SITE_URL ?>/men" class="audience-switch-link <?= $dvShopGender === 'men' ? 'is-active' : '' ?>"
+                   <?= $dvShopGender === 'men' ? 'aria-current="page"' : '' ?>>Men</a>
+            </nav>
+        </div>
+    </div>
+    <?php endif; ?>
     <!-- Main Header Bar -->
     <div class="main-header-bar">
         <div class="container main-header-container">
@@ -746,35 +783,6 @@ $searchHint = $searchHintNames
     $headerNavParents  = array_slice($headerParents, 0, HEADER_NAV_MAX);
     $headerMoreParents = array_slice($headerParents, HEADER_NAV_MAX);
     ?>
-    <?php
-    // ── Women / Men switch ──────────────────────────────────────────────────
-    // Rendered only when BOTH sides genuinely have stock. A Men tab that leads
-    // to an empty grid is worse than no tab, so an un-launched menswear range
-    // simply does not appear — the same rule the country selector follows.
-    //
-    // Real <a href> links to real addresses, not a JavaScript toggle: /men has
-    // to work for a crawler carrying no cookie, for a shared link and for
-    // middle-click. The cookie only remembers the choice while browsing.
-    $dvShopGender = function_exists('currentShopGender') ? currentShopGender() : 'women';
-    if (function_exists('shopGenderSelectorEnabled') && shopGenderSelectorEnabled()): ?>
-    <?php /* No .hide-mobile: this bar now shows on every screen size. It is the
-             only control that changes what the whole rest of the site means, so
-             it belongs where it can be seen rather than behind the hamburger. */ ?>
-    <div class="audience-switch-bar">
-        <div class="container">
-            <nav class="audience-switch" aria-label="Shop for">
-                <?php /* ?for=women is load-bearing, not decoration. Plain "/" leaves the
-                         dievon_shop_for cookie saying men, so currentShopGender() keeps
-                         answering men and the Women tab does nothing at all — the switch
-                         becomes one-way once a visitor has chosen Men. */ ?>
-                <a href="<?= SITE_URL ?>/?for=women" class="audience-switch-link <?= $dvShopGender === 'women' ? 'is-active' : '' ?>"
-                   <?= $dvShopGender === 'women' ? 'aria-current="page"' : '' ?>>Women</a>
-                <a href="<?= SITE_URL ?>/men" class="audience-switch-link <?= $dvShopGender === 'men' ? 'is-active' : '' ?>"
-                   <?= $dvShopGender === 'men' ? 'aria-current="page"' : '' ?>>Men</a>
-            </nav>
-        </div>
-    </div>
-    <?php endif; ?>
     <div class="bottom-header-bar hide-mobile">
         <div class="container bottom-header-container">
             <ul class="nav-links">

@@ -2167,3 +2167,14 @@ html {
     }
     .mobile-drawer-close:hover { background: transparent !important; color: var(--dv-nav-hover) !important; }
 }
+
+/* The top strip on a phone. Wider tap targets, same slim band. */
+@media (max-width: 640px) {
+    .navbar-luxury .header-top-bar .audience-switch { gap: 0; }
+    .navbar-luxury .header-top-bar .audience-switch-link {
+        flex: 0 0 auto;
+        padding: 10px 26px !important;
+        font-size: 10px !important;
+        letter-spacing: 0.2em !important;
+    }
+}

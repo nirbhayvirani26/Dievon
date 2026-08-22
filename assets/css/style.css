@@ -9752,3 +9752,69 @@ input.chk-input-error:focus {
     background-color: var(--color-primary);
 }
 .navbar-luxury .nav-link-item.nav-link-sale:not(.active)::after { display: none !important; }
+
+/* ── The top strip ──────────────────────────────────────────────────────────
+   Women / Men now has a bar of its own above the wordmark, rather than a tier
+   between the wordmark and the collections.
+
+   It is the only control on the site that changes what every other link means,
+   so it belongs before the shop rather than inside it — and lifting it out puts
+   the logo row and the collections row next to each other, which is what makes
+   the header read as one object instead of three stacked bands.
+
+   A shade warmer than the header so the strip is legible as its own surface
+   without a border doing the work, and slim enough (~34px) that it costs
+   almost nothing. Still one flat colour — no gradient, no shadow.
+
+   These rules override the ones further up this file, which styled the same
+   element while it sat in the middle of the header. Same class, same markup,
+   same two real hrefs. */
+.navbar-luxury .header-top-bar {
+    background: #f7f1e8;
+    border-bottom: 1px solid rgba(81, 17, 38, 0.07);
+    transition: padding 0.3s var(--dv-ease);
+}
+.navbar-luxury .header-top-bar .audience-switch {
+    gap: 0;
+    justify-content: center;
+}
+.navbar-luxury .header-top-bar .audience-switch-link {
+    padding: 9px 22px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    color: #8a7a63;
+    border-bottom: 0;
+    background: transparent;
+    transition: color 0.2s ease, background-color 0.2s ease;
+}
+.navbar-luxury .header-top-bar .audience-switch-link:hover { color: var(--dv-nav-ink); }
+.navbar-luxury .header-top-bar .audience-switch-link.is-active {
+    color: var(--dv-nav-ink);
+    background: var(--dv-header-bg);
+    border-bottom: 0;
+}
+/* Compact loses 6px here rather than hiding the strip: it is the one control a
+   shopper may want at any point in a scroll, and a switch that vanishes when
+   the page moves is a switch that cannot be found. */
+.navbar-luxury.header-compact .header-top-bar .audience-switch-link {
+    padding-top: 6px;
+    padding-bottom: 6px;
+}
+/* No sliding underline on this strip.
+   ─────────────────────────────────────────────────────────────────────────────
+   .audience-switch-link is one of eight selectors sharing the site's ::after
+   underline, which scaleX(1)s on the active one. That is right for a link in a
+   row of links. It is wrong here for two reasons: the active side already
+   changes ground, so the line is a second indicator saying the same thing, and
+   at 34px tall it lands exactly on the strip's bottom edge — closing off the
+   join where the tab should read as continuous with the header beneath it.
+
+   Ground plus ink carries the state, and aria-current on the active anchor
+   carries it for anyone not looking at either. */
+.navbar-luxury .header-top-bar .audience-switch-link::after { display: none !important; }
+
+.navbar-luxury .header-top-bar .audience-switch-link:focus-visible {
+    outline: 2px solid var(--color-secondary);
+    outline-offset: -3px;
+}
