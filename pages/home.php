@@ -183,16 +183,22 @@ try {
 $bestSellers = [];
 $trending    = [];
 try {
-    $bestSellers = $pdo->query("SELECT * FROM products WHERE available = 1{$homeLiveSql} AND badge = 'Best Seller'{$homeGenderSql} ORDER BY id ASC LIMIT 4")->fetchAll();
-    $trending    = $pdo->query("SELECT * FROM products WHERE available = 1{$homeLiveSql} AND badge = 'Hot'{$homeGenderSql} ORDER BY id ASC LIMIT 4")->fetchAll();
+    /* Twelve, not four. These two lists are a slider now rather than a fixed
+       four-up grid — four is what is ON SCREEN at desktop, and a slider whose
+       total equals its window has nothing to slide and two arrows that are both
+       dead on arrival. The mockup's own counter reads 01-04 / 12. The section
+       still renders correctly at any count from one upward: the arrows, the
+       counter and the progress bar all read the real total. */
+    $bestSellers = $pdo->query("SELECT * FROM products WHERE available = 1{$homeLiveSql} AND badge = 'Best Seller'{$homeGenderSql} ORDER BY id ASC LIMIT 12")->fetchAll();
+    $trending    = $pdo->query("SELECT * FROM products WHERE available = 1{$homeLiveSql} AND badge = 'Hot'{$homeGenderSql} ORDER BY id ASC LIMIT 12")->fetchAll();
 } catch (PDOException $e) {}
 
 /* Claim the deliberate picks in page order, then top each section up from what
    is left — newest for arrivals, dearest for best sellers, keenest for trending,
    which is the ordering each section had before. Nothing is drawn twice. */
 $newArrivals = $homeClaim($newArrivals, 8);
-$bestSellers = $homeClaim($bestSellers, 4);
-$trending    = $homeClaim($trending,    4);
+$bestSellers = $homeClaim($bestSellers, 12);
+$trending    = $homeClaim($trending,    12);
 
 $byNewest = $homePool;                                          // already id DESC
 $byDearest = $homePool;
@@ -201,8 +207,8 @@ $byKeenest = $homePool;
 usort($byKeenest, fn($a, $b) => (float)($a['price'] ?? 0) <=> (float)($b['price'] ?? 0));
 
 $newArrivals = array_merge($newArrivals, $homeClaim($byNewest,  8 - count($newArrivals)));
-$bestSellers = array_merge($bestSellers, $homeClaim($byDearest, 4 - count($bestSellers)));
-$trending    = array_merge($trending,    $homeClaim($byKeenest, 4 - count($trending)));
+$bestSellers = array_merge($bestSellers, $homeClaim($byDearest, 12 - count($bestSellers)));
+$trending    = array_merge($trending,    $homeClaim($byKeenest, 12 - count($trending)));
 
 // Fetch dynamic hero slider banners
 $heroBanners = [];
@@ -852,45 +858,201 @@ $naFirstPageCount = min(count($naItems), $naPerPage);
 
 <!-- ==================== 4. TRENDING / BEST SELLERS ==================== -->
 <?php
-/* Two tabs are only worth having when both of them lead somewhere. With one list
-   empty the pair became a button that opened a blank grid, so the toggle is
-   replaced by a plain heading naming whichever half has stock — and when neither
-   has any, the section does not appear. */
-$homeHasBoth = !empty($bestSellers) && !empty($trending);
+/* ── The photo fan ───────────────────────────────────────────────────────────
+   Four garments laid out like physical prints dropped on a table: alternating
+   rotations, overlapping slightly, straightening and lifting under the pointer.
+   A fifth is half in frame to say the strip continues.
+
+   Built on the shared product card, not on a copy of it. Every tile here is
+   includes/product_card.php with one extra class — so the badge, the sale
+   percentage, the sold-out state, country pricing, the "From" spread, the
+   wishlist button and the product link are all the same code that draws the
+   shop grid, and none of them can drift. Only the arrangement is new, and that
+   is entirely CSS.
+
+   No carousel library. Owl drives the hero and Shop by Occasion, but it wraps
+   every item and clips the stage — a card that rotates, lifts 14px and scales
+   to 1.03 would be cut off at the moment it is being looked at. This is a flex
+   track moved by transform, which is about sixty lines and cannot clip.
+
+   Two tabs are only worth having when both lead somewhere. With one list empty
+   the pair became a button that opened a blank grid, so the toggle collapses to
+   a plain heading naming whichever half has stock — and when neither has any,
+   the section does not appear. */
+$pfPanels = [];
+if (!empty($bestSellers)) {
+    $pfPanels['best']  = ['label' => 'Best Sellers', 'items' => $bestSellers, 'badge' => 'Best Seller'];
+}
+if (!empty($trending)) {
+    $pfPanels['trend'] = ['label' => 'Trending Now', 'items' => $trending,    'badge' => 'Hot'];
+}
+$pfHasBoth = count($pfPanels) > 1;
 ?>
-<?php if (!empty($bestSellers) || !empty($trending)): ?>
-<section class="trending-section section-space">
+<?php if ($pfPanels): ?>
+<section class="trending-section section-space photo-fan-section">
     <div class="container">
-        <div class="tab-toggle-container">
-            <?php if ($homeHasBoth): ?>
-            <div class="tab-toggle-wrapper">
-                <button id="btnTabBest" onclick="toggleTabs('best')" class="btn-luxury">Best Sellers</button>
-                <button id="btnTabTrend" onclick="toggleTabs('trend')" class="btn-luxury-outline">Trending Now</button>
+
+        <div class="pf-head">
+            <?php if ($pfHasBoth): ?>
+            <?php /* Real tabs, so a screen reader announces "tab 1 of 2, selected"
+                     rather than two unrelated buttons. Arrow keys move between
+                     them; only the selected tab is in the tab order, which is the
+                     expected pattern for a tablist. */ ?>
+            <div class="pf-tabs" role="tablist" aria-label="Product collections">
+                <?php $pfFirst = true; foreach ($pfPanels as $pfKey => $pfPanel): ?>
+                <button type="button" role="tab"
+                        id="pfTab-<?= $pfKey ?>"
+                        class="pf-tab<?= $pfFirst ? ' is-active' : '' ?>"
+                        aria-selected="<?= $pfFirst ? 'true' : 'false' ?>"
+                        aria-controls="pfPanel-<?= $pfKey ?>"
+                        tabindex="<?= $pfFirst ? '0' : '-1' ?>"><?= htmlspecialchars($pfPanel['label']) ?></button>
+                <?php $pfFirst = false; endforeach; ?>
             </div>
             <?php else: ?>
-            <h2 class="section-title"><?= !empty($bestSellers) ? 'Best Sellers' : 'Trending Now' ?></h2>
+            <h2 class="section-title pf-single-title"><?= htmlspecialchars(reset($pfPanels)['label']) ?></h2>
             <?php endif; ?>
+
+            <?php /* One link per panel, swapped with the tab, because "View all"
+                     has to mean the tab you are looking at. ?badges= is the shop's
+                     own filter — the same one the shop page's badge facet writes —
+                     rather than a route invented for this section. */ ?>
+            <?php $pfFirst = true; foreach ($pfPanels as $pfKey => $pfPanel): ?>
+            <a class="pf-viewall" data-pf-viewall="<?= $pfKey ?>"
+               href="<?= SITE_URL ?>/shop?badges=<?= urlencode($pfPanel['badge']) ?>"
+               <?= $pfFirst ? '' : 'hidden' ?>>View All</a>
+            <?php $pfFirst = false; endforeach; ?>
         </div>
 
-        <div id="gridBestSellers" class="home-best-sellers-grid<?= empty($bestSellers) ? ' is-hidden' : '' ?>">
-            <?php // Shared partial — see includes/product_card.php. Each of these grids
-                  // carried its own copy of the card markup, so none served the WebP image,
-                  // offered Compare, or used the product's own alt text. ?>
-            <?php foreach ($bestSellers as $p): ?>
-                <?php $card = $p; $cardCompare = false; include __DIR__ . '/../includes/product_card.php'; ?>
-            <?php endforeach; ?>
-        </div>
+        <?php $pfFirst = true; foreach ($pfPanels as $pfKey => $pfPanel): ?>
+        <div class="pf-panel<?= $pfFirst ? ' is-active' : '' ?>"
+             id="pfPanel-<?= $pfKey ?>"
+             data-pf-panel="<?= $pfKey ?>"
+             <?= $pfHasBoth ? 'role="tabpanel" aria-labelledby="pfTab-' . $pfKey . '"' : '' ?>
+             <?= $pfFirst ? '' : 'hidden' ?>>
 
-        <?php /* Hidden only when Best Sellers is the one being shown. If that list is
-                 empty this grid is what the section is FOR, so it opens visible. */ ?>
-        <div id="gridTrending" class="home-best-sellers-grid<?= !empty($bestSellers) ? ' is-hidden' : '' ?>">
-            <?php // Shared partial — see includes/product_card.php. Each of these grids
-                  // carried its own copy of the card markup, so none served the WebP image,
-                  // offered Compare, or used the product's own alt text. ?>
-            <?php foreach ($trending as $p): ?>
-                <?php $card = $p; $cardCompare = false; include __DIR__ . '/../includes/product_card.php'; ?>
-            <?php endforeach; ?>
+            <?php /* The viewport clips horizontally. Its vertical padding is not
+                     decoration: a card that lifts 14px and scales 1.03 grows past
+                     its own box, and overflow:hidden would shave the top off the
+                     one being hovered. */ ?>
+            <div class="pf-viewport" tabindex="-1">
+                <ul class="pf-track" data-pf-track>
+                    <?php foreach ($pfPanel['items'] as $pfIndex => $pfProduct): ?>
+                    <?php /* --pf-i drives the stacking order below: a fan of
+                             prints falls with the LEFT one on top, so an earlier
+                             print has to out-rank a later one. Source order gives
+                             the opposite. */ ?>
+                    <li class="pf-item" data-pf-index="<?= $pfIndex ?>" style="--pf-i: <?= $pfIndex ?>">
+                        <?php
+                        /* NOT the product card. This section is photographs, and
+                           the boxed card — border, white ground, details stacked
+                           underneath — is a different component that already
+                           appears elsewhere on the site. Rendering it here and
+                           stripping the box with CSS would also tie this section
+                           to that component's redesign.
+
+                           What IS shared is the logic, not the markup: the price
+                           resolver, the badge rule, the URL builder, the alt-text
+                           builder, the WebP lookup and the wishlist handler are
+                           all the same functions the card uses, so a price or a
+                           link can never disagree between the two. */
+                        $cardProduct = $pfProduct;
+                        require __DIR__ . '/../includes/product_price_resolve.php';
+
+                        $pfUrl   = productUrl($pfProduct['id'], $pfProduct['name'], $pfProduct['seo_url'] ?? null);
+                        $pfAlt   = productImageAlt($pfProduct);
+                        $pfImg   = trim((string)($pfProduct['image'] ?? ''));
+                        $pfWebp  = $pfImg !== '' ? webpUrlIfExists('products', $pfImg) : '';
+                        $pfMrp   = $cardMrp; $pfPrice = $cardPrice;
+                        $pfHasDiscount = $pfMrp > $pfPrice && $pfPrice > 0 && !$cardVaries;
+                        $pfBadge = $pfHasDiscount
+                            ? (int)round((($pfMrp - $pfPrice) / $pfMrp) * 100) . '% OFF'
+                            : productBadge($pfProduct);
+                        ?>
+                        <article class="pf-print">
+                            <?php if ($cardNotSoldHere): ?>
+                                <span class="pf-badge pf-badge-quiet">Not Available Here</span>
+                            <?php elseif ($pfBadge !== ''): ?>
+                                <span class="pf-badge"><?= htmlspecialchars($pfBadge) ?></span>
+                            <?php endif; ?>
+
+                            <?php /* The same handler the card uses, so a heart set
+                                     here is the same heart everywhere. */ ?>
+                            <button type="button" class="pf-wish"
+                                    onclick="handleWishlistClick(<?= (int)$pfProduct['id'] ?>, this)"
+                                    aria-label="Add <?= htmlspecialchars($pfProduct['name'], ENT_QUOTES) ?> to wishlist">
+                                <i class="fa-regular fa-heart" aria-hidden="true"></i>
+                            </button>
+
+                            <a class="pf-photo" href="<?= $pfUrl ?>">
+                              <?php /* The frame is a separate box from the link.
+                                       It carries the 3:4 ratio and the clipping;
+                                       the caption is its SIBLING, not its child.
+                                       Inside it, the caption is fine while it is
+                                       absolutely positioned over the photograph,
+                                       but the moment mobile drops it back into
+                                       the flow it is clipped away by the very
+                                       overflow:hidden that keeps the picture in
+                                       its ratio — which is exactly what happened:
+                                       no name, no price, no button on a phone. */ ?>
+                              <span class="pf-frame">
+                                <?php if ($pfImg !== ''): ?>
+                                <picture>
+                                    <?php if ($pfWebp): ?><source srcset="<?= htmlspecialchars($pfWebp) ?>" type="image/webp"><?php endif; ?>
+                                    <?php /* width and height are the intrinsic 3:4 so
+                                             the box is reserved before the file lands;
+                                             the section is well below the fold, so
+                                             every one of them is lazy. */ ?>
+                                    <img src="<?= SITE_URL ?>/uploads/products/<?= htmlspecialchars($pfImg) ?>"
+                                         alt="<?= htmlspecialchars($pfAlt) ?>"
+                                         width="1500" height="2000"
+                                         loading="lazy" decoding="async">
+                                <?php else: ?>
+                                <span class="pf-fallback" aria-hidden="true"><?= htmlspecialchars($pfProduct['emoji'] ?? '👗') ?></span>
+                                <?php endif; ?>
+                              </span>
+
+                                <?php /* Inside the link, so the whole caption is part
+                                         of the same click target rather than a second
+                                         one laid over it. "View Product" is a span for
+                                         the same reason — an anchor inside an anchor is
+                                         invalid and browsers unnest it. */ ?>
+                                <span class="pf-info">
+                                    <span class="pf-name"><?= htmlspecialchars($pfProduct['name']) ?></span>
+                                    <span class="pf-price">
+                                        <?php if ($cardNotSoldHere): ?>
+                                            Not available here
+                                        <?php else: ?>
+                                            <?php if ($pfHasDiscount): ?><span class="pf-was"><?= formatPrice($pfMrp) ?></span> <?php endif; ?>
+                                            <?php if ($cardVaries): ?><span class="pf-from">From</span> <?php endif; ?>
+                                            <?= formatPrice($pfPrice) ?>
+                                        <?php endif; ?>
+                                    </span>
+                                    <span class="pf-cta">View Product</span>
+                                </span>
+                            </a>
+                        </article>
+                    </li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
+
+            <div class="pf-controls">
+                <?php /* aria-live on the counter, not on the track: announcing the
+                         range once per move is the whole story, whereas announcing
+                         twelve cards is noise. */ ?>
+                <span class="pf-counter" data-pf-counter aria-live="polite" aria-atomic="true"></span>
+                <div class="pf-progress" aria-hidden="true"><span class="pf-progress-fill" data-pf-fill></span></div>
+            </div>
+
+            <button type="button" class="pf-arrow pf-prev" data-pf-prev aria-label="Previous products">
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 5 8 12l7 7" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <button type="button" class="pf-arrow pf-next" data-pf-next aria-label="More products">
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 5 7 7-7 7" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
         </div>
+        <?php $pfFirst = false; endforeach; ?>
+
     </div>
 </section>
 <?php endif; ?>
@@ -1620,30 +1782,211 @@ $occIsMen = function_exists('currentShopGender') && currentShopGender() === 'men
        editorial gallery now — four panels side by side, expanded on hover, with
        nothing to scroll — so the arrows and this function went with it. */
 
-    // ── Tabbed Collections ───────────────────────────────────
-    function toggleTabs(tab) {
-        const gridBest  = document.getElementById('gridBestSellers');
-        const gridTrend = document.getElementById('gridTrending');
-        const btnBest   = document.getElementById('btnTabBest');
-        const btnTrend  = document.getElementById('btnTabTrend');
-        const showBest  = (tab === 'best');
+    /* ── Best Sellers / Trending Now: the photo fan ───────────────────────
+       A slider in about a hundred lines, because the thing being slid cannot go
+       in a carousel library: Owl wraps each item and clips its stage, and these
+       cards rotate, lift 14px and scale to 1.03 — they would be cut off at the
+       exact moment they are being looked at.
 
-        // Was setting btnX.style.border = 'none' here. Both button classes carry a
-        // 1.5px border, so that inline rule stripped 6px off the pair — on a phone the
-        // labels were wrapping to two lines until the first click gave them those 6px
-        // back, which is why the buttons "fixed themselves" after one tap. Toggling
-        // classes only keeps the box identical before and after.
-        gridBest.classList.toggle('is-hidden', !showBest);
-        gridTrend.classList.toggle('is-hidden', showBest);
+       Nothing here measures in CSS units. The step between cards is read off the
+       rendered DOM (the gap between two items' offsetLeft), so the four
+       breakpoints in style.css are the only place the visible count is written
+       down, and changing one of them needs no matching change here.
 
-        btnBest.classList.toggle('btn-luxury', showBest);
-        btnBest.classList.toggle('btn-luxury-outline', !showBest);
-        btnTrend.classList.toggle('btn-luxury', !showBest);
-        btnTrend.classList.toggle('btn-luxury-outline', showBest);
+       Never autoplays. There is no timer in this file. */
+    (function () {
+        var section = document.querySelector('.photo-fan-section');
+        if (!section) { return; }
 
-        btnBest.setAttribute('aria-pressed', showBest ? 'true' : 'false');
-        btnTrend.setAttribute('aria-pressed', showBest ? 'false' : 'true');
-    }
+        var panels = Array.prototype.slice.call(section.querySelectorAll('[data-pf-panel]'));
+        var tabs   = Array.prototype.slice.call(section.querySelectorAll('.pf-tab'));
+        var sliders = [];
+
+        function makeSlider(panel) {
+            var track   = panel.querySelector('[data-pf-track]');
+            var items   = Array.prototype.slice.call(panel.querySelectorAll('.pf-item'));
+            var prev    = panel.querySelector('[data-pf-prev]');
+            var next    = panel.querySelector('[data-pf-next]');
+            var counter = panel.querySelector('[data-pf-counter]');
+            var fill    = panel.querySelector('[data-pf-fill]');
+            var view    = panel.querySelector('.pf-viewport');
+            if (!track || !items.length) { return null; }
+
+            var index = 0, step = 0, visible = 1, maxIndex = 0;
+
+            function measure() {
+                /* Straight off the layout. With one item there is no gap to read,
+                   so fall back to the item's own width. */
+                step = items.length > 1
+                    ? (items[1].offsetLeft - items[0].offsetLeft)
+                    : items[0].offsetWidth;
+                if (step < 1) { step = 1; }
+                visible  = Math.max(1, Math.floor(view.clientWidth / step));
+                maxIndex = Math.max(0, items.length - visible);
+                if (index > maxIndex) { index = maxIndex; }
+            }
+
+            function paint(animate) {
+                track.style.transform = 'translate3d(' + (-index * step) + 'px, 0, 0)';
+
+                var first = index + 1;
+                var last  = Math.min(items.length, index + visible);
+                if (counter) {
+                    counter.textContent = items.length <= visible
+                        ? String(items.length).padStart(2, '0') + ' items'
+                        : String(first).padStart(2, '0') + '–' + String(last).padStart(2, '0') +
+                          ' / ' + String(items.length).padStart(2, '0');
+                }
+                if (fill) { fill.style.width = ((last / items.length) * 100).toFixed(2) + '%'; }
+
+                if (prev) { prev.disabled = index <= 0; }
+                if (next) { next.disabled = index >= maxIndex; }
+
+                /* A card scrolled out of frame must not be reachable by Tab —
+                   otherwise the focus ring walks off the side of the screen and
+                   the page appears to jump for no reason. inert takes the whole
+                   subtree out of the tab order and the accessibility tree at
+                   once. If focus is already inside one, move it out first, or the
+                   browser is left with focus on an inert node. */
+                for (var i = 0; i < items.length; i++) {
+                    var off = (i < index || i > index + visible - 1);
+                    if (off && items[i].contains(document.activeElement)) {
+                        if (next && !next.disabled) { next.focus(); } else { view.focus(); }
+                    }
+                    if (off) { items[i].setAttribute('inert', ''); }
+                    else     { items[i].removeAttribute('inert'); }
+                }
+                if (!animate) { void track.offsetWidth; }
+            }
+
+            function go(to) {
+                index = Math.max(0, Math.min(maxIndex, to));
+                paint(true);
+            }
+
+            if (prev) { prev.addEventListener('click', function () { go(index - 1); }); }
+            if (next) { next.addEventListener('click', function () { go(index + 1); }); }
+
+            /* Left and right arrows move the strip while the focus is anywhere
+               inside this panel. Only those two keys are taken; everything else,
+               Tab included, behaves normally. */
+            panel.addEventListener('keydown', function (e) {
+                if (e.key === 'ArrowLeft')  { e.preventDefault(); go(index - 1); }
+                if (e.key === 'ArrowRight') { e.preventDefault(); go(index + 1); }
+            });
+
+            /* Drag and swipe. Pointer events cover mouse, trackpad and finger in
+               one path. The 8px threshold is what separates a drag from a click:
+               below it the card link fires as normal, above it the click is
+               swallowed so a shopper who flicks the strip does not land on a
+               product page they never chose. */
+            var down = false, moved = false, startX = 0, startIdx = 0, dx = 0;
+            var THRESHOLD = 8;
+
+            /* Firefox ignores -webkit-user-drag, so the attribute says it too.
+               Without this the first pointermove starts a native drag and the
+               browser cancels the pointer, killing the swipe. */
+            panel.querySelectorAll('.pf-print a, .pf-print img').forEach(function (el) {
+                el.setAttribute('draggable', 'false');
+            });
+            view.addEventListener('dragstart', function (e) { e.preventDefault(); });
+
+            view.addEventListener('pointerdown', function (e) {
+                if (e.button !== undefined && e.button !== 0) { return; }
+                down = true; moved = false; startX = e.clientX; startIdx = index; dx = 0;
+            });
+            view.addEventListener('pointermove', function (e) {
+                if (!down) { return; }
+                dx = e.clientX - startX;
+                if (!moved && Math.abs(dx) > THRESHOLD) {
+                    moved = true;
+                    track.classList.add('is-dragging');
+                    if (view.setPointerCapture) { try { view.setPointerCapture(e.pointerId); } catch (err) {} }
+                }
+                if (moved) {
+                    track.style.transform = 'translate3d(' + (-startIdx * step + dx) + 'px, 0, 0)';
+                }
+            });
+            function release() {
+                if (!down) { return; }
+                down = false;
+                if (!moved) { return; }
+                track.classList.remove('is-dragging');
+                go(Math.round(startIdx - dx / step));
+            }
+            view.addEventListener('pointerup', release);
+            view.addEventListener('pointercancel', release);
+            view.addEventListener('click', function (e) {
+                if (moved) { e.preventDefault(); e.stopPropagation(); moved = false; }
+            }, true);
+
+            return {
+                panel: panel,
+                reset: function () { index = 0; measure(); paint(false); },
+                refresh: function () { measure(); paint(false); }
+            };
+        }
+
+        panels.forEach(function (panel) {
+            var s = makeSlider(panel);
+            if (s) { sliders.push(s); }
+        });
+
+        /* Measure once the photographs have settled. The cards are 3:4 by CSS so
+           nothing moves as they arrive, but a late web font can still change the
+           caption's height, and the step is read from the layout. */
+        function refreshAll() { sliders.forEach(function (s) { s.refresh(); }); }
+        refreshAll();
+        window.addEventListener('load', refreshAll);
+        var rt;
+        window.addEventListener('resize', function () {
+            clearTimeout(rt);
+            rt = setTimeout(refreshAll, 120);
+        });
+
+        /* ── Tabs ──────────────────────────────────────────────────────────
+           The inactive panel is hidden outright rather than moved off screen, so
+           it costs no layout, cannot be tabbed into and is invisible to a screen
+           reader. It also cannot be measured while hidden — offsetLeft is 0 for
+           everything — so the incoming panel is measured AFTER it is shown, and
+           its slider is reset to the first product as the brief asks. */
+        function selectTab(key) {
+            tabs.forEach(function (t) {
+                var on = t.getAttribute('aria-controls') === 'pfPanel-' + key;
+                t.classList.toggle('is-active', on);
+                t.setAttribute('aria-selected', on ? 'true' : 'false');
+                t.tabIndex = on ? 0 : -1;
+            });
+            panels.forEach(function (p) {
+                var on = p.getAttribute('data-pf-panel') === key;
+                p.hidden = !on;
+                p.classList.toggle('is-active', on);
+            });
+            section.querySelectorAll('[data-pf-viewall]').forEach(function (a) {
+                a.hidden = a.getAttribute('data-pf-viewall') !== key;
+            });
+            sliders.forEach(function (s) {
+                if (s.panel.getAttribute('data-pf-panel') === key) { s.reset(); }
+            });
+        }
+
+        tabs.forEach(function (tab, i) {
+            tab.addEventListener('click', function () {
+                selectTab(tab.getAttribute('aria-controls').replace('pfPanel-', ''));
+            });
+            /* Roving tabindex: one stop for the whole tablist, arrows to move
+               within it. Anything else and a keyboard shopper tabs through every
+               tab before reaching the products. */
+            tab.addEventListener('keydown', function (e) {
+                var d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+                if (!d) { return; }
+                e.preventDefault();
+                var nextTab = tabs[(i + d + tabs.length) % tabs.length];
+                nextTab.focus();
+                nextTab.click();
+            });
+        });
+    })();
 
     // ── Reviews Testimonials Carousel Slider ───────────────
     let reviewIndex = 0;

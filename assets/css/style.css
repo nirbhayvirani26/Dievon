@@ -11129,3 +11129,444 @@ input.chk-input-error:focus {
    supports a tile is (320 - 32 - 12) / 1.35 = 205px, which is wider than the
    two-column grid this replaced ever managed, and the arrangement does not
    change shape — it just scrolls further. */
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   BEST SELLERS / TRENDING NOW — the photo fan
+   ──────────────────────────────────────────────────────────────────────────
+   Four garments arranged like physical prints dropped on a table: alternating
+   rotations, overlapping slightly, straightening and lifting under the pointer.
+   A fifth sits half in frame so the strip reads as continuing.
+
+   THESE ARE NOT PRODUCT CARDS. The boxed card — white ground, hairline border,
+   name and price stacked underneath — is a separate component used elsewhere on
+   the site, and it is not what this section is. The tiles here are photographs
+   with the caption written over them, built from their own markup. Only the
+   LOGIC is shared with the card: the same price resolver, badge rule, URL and
+   alt-text builders and wishlist handler, so the two can never disagree about a
+   price or a link while looking completely different.
+
+   No carousel library either. Owl drives the hero and Shop by Occasion, but it
+   wraps every item and clips its stage — a print that rotates, lifts and scales
+   would be cut off at the moment it is being looked at. This is a flex track
+   moved by transform.
+   ══════════════════════════════════════════════════════════════════════════ */
+.photo-fan-section {
+    /* How many prints are in frame. The slider reads this back off the rendered
+       layout rather than keeping its own copy, so these four breakpoints are the
+       only place the number is written down. The fraction is the point: a
+       partial print is what says the strip continues. */
+    --pf-visible: 4.2;
+    /* How far the prints sit into each other — what makes it a fan rather than a
+       row of tiles with gaps. */
+    --pf-overlap: 26px;
+    /* Room for the lift and the scale, so overflow:hidden on the viewport does
+       not shave the top off whichever print is being hovered. */
+    --pf-lift-room: 42px;
+    /* The arrows hang into the page gutter but never past it — see .pf-prev. */
+    --pf-arrow-out: min(clamp(14px, 3.4vw, 62px), var(--dv-gutter));
+
+    /* Warm ivory, not the white every other band uses. The prints are shot on
+       pale studio walls and a white page makes them float with no edge; the
+       ivory gives them a table to sit on. */
+    background: var(--bg-surface-soft);
+}
+
+/* ── Head: tabs left, View all right ───────────────────────────────────── */
+.photo-fan-section .pf-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 34px;
+}
+.photo-fan-section .pf-tabs { display: inline-flex; gap: 34px; }
+.photo-fan-section .pf-tab {
+    position: relative;
+    padding: 0 0 10px;
+    background: none;
+    border: 0;
+    cursor: pointer;
+    font-family: var(--font-body), sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--color-accent-ink);
+    transition: color 220ms ease;
+}
+/* The underline scales rather than appearing: a border toggling on and off
+   shifts the label by its own width. */
+.photo-fan-section .pf-tab::after {
+    content: '';
+    position: absolute;
+    inset: auto 0 0 0;
+    height: 2px;
+    background: var(--color-primary-dark);
+    transform: scaleX(0);
+    transition: transform 260ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.photo-fan-section .pf-tab.is-active { color: var(--color-primary-dark); }
+.photo-fan-section .pf-tab.is-active::after { transform: scaleX(1); }
+.photo-fan-section .pf-tab:focus-visible { outline: 2px solid var(--color-primary-dark); outline-offset: 4px; }
+
+.photo-fan-section .pf-viewall {
+    font-family: var(--font-body), sans-serif;
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--color-primary-dark);
+    text-decoration: none;
+    border-bottom: 1px solid var(--color-accent-ink);
+    padding-bottom: 3px;
+    transition: color 200ms ease, border-color 200ms ease;
+}
+.photo-fan-section .pf-viewall:hover { color: var(--color-accent-ink); }
+.photo-fan-section .pf-viewall:focus-visible { outline: 2px solid var(--color-primary-dark); outline-offset: 3px; }
+.photo-fan-section .pf-single-title { margin: 0; }
+
+/* ── Panel ─────────────────────────────────────────────────────────────── */
+.photo-fan-section .pf-panel { position: relative; }
+/* The inactive panel is [hidden], so it costs no layout, cannot be tabbed into
+   and is invisible to a screen reader. The fade is on the way IN only — fading
+   out would need the outgoing panel to stay in flow and the two would overlap. */
+.photo-fan-section .pf-panel.is-active { animation: pf-fade-in 340ms ease both; }
+@keyframes pf-fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+.photo-fan-section .pf-viewport {
+    overflow: hidden;
+    padding-block: var(--pf-lift-room);
+    margin-block: calc(-1 * var(--pf-lift-room));
+    padding-inline: 4px;
+    margin-inline: -4px;
+    /* Horizontal gestures belong to the slider, vertical ones to the page.
+       Without this a swipe down the phone that starts on a print is swallowed. */
+    touch-action: pan-y;
+    cursor: grab;
+    /* Focused only by script, when a print is paged out from under the pointer;
+       never a tab stop of its own. */
+    outline: none;
+}
+.photo-fan-section .pf-track {
+    display: flex;
+    align-items: flex-start;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    /* transform only. Nothing here triggers layout. */
+    transition: transform 620ms cubic-bezier(0.22, 0.61, 0.36, 1);
+    will-change: transform;
+}
+.photo-fan-section .pf-track.is-dragging { transition: none; }
+.photo-fan-section .pf-viewport:has(.pf-track.is-dragging) { cursor: grabbing; }
+
+/* A print is a link wrapped round a photograph, and both are draggable objects
+   to the browser by default. Starting a drag on one fires native drag-and-drop,
+   which cancels the pointer stream mid-gesture — measured: pointerdown, one
+   pointermove, then pointercancel, and the strip never moved. */
+.photo-fan-section .pf-print a,
+.photo-fan-section .pf-print img { -webkit-user-drag: none; user-select: none; }
+
+.photo-fan-section .pf-item {
+    flex: 0 0 calc(100% / var(--pf-visible));
+    max-width: calc(100% / var(--pf-visible));
+    /* The overlap, halved onto both sides so the row stays centred in the
+       viewport instead of drifting left as prints are added. */
+    margin-inline: calc(var(--pf-overlap) / -2);
+    position: relative;
+    /* Earlier prints on top. A stack of photographs spread across a table falls
+       left-over-right, and source order paints the opposite way — which put each
+       print's right-hand corner UNDER its neighbour and swallowed the wishlist
+       heart on every one of them. 40 is simply higher than any plausible number
+       of prints in one tab; the hovered print overrides it below. */
+    z-index: calc(40 - var(--pf-i, 0));
+}
+
+/* ── The print ─────────────────────────────────────────────────────────── */
+.photo-fan-section .pf-print {
+    position: relative;
+    transform-origin: center bottom;
+    transition: transform 400ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+/* -3, -1, 1, 3 and repeat. nth-child(4n) rather than a class per print, so the
+   pattern continues however many products the tab holds. */
+.photo-fan-section .pf-item:nth-child(4n + 1) .pf-print { transform: rotate(-3deg); }
+.photo-fan-section .pf-item:nth-child(4n + 2) .pf-print { transform: rotate(-1deg); }
+.photo-fan-section .pf-item:nth-child(4n + 3) .pf-print { transform: rotate(1deg); }
+.photo-fan-section .pf-item:nth-child(4n + 4) .pf-print { transform: rotate(3deg); }
+
+/* The link is just a link. The frame inside it is the thing with a shape. */
+.photo-fan-section .pf-photo {
+    position: relative;
+    display: block;
+    text-decoration: none;
+}
+.photo-fan-section .pf-frame {
+    position: relative;
+    display: block;
+    /* 3:4, held by the box rather than by the file, so nothing shifts while the
+       photograph is still arriving. */
+    aspect-ratio: 3 / 4;
+    overflow: hidden;
+    background: var(--color-primary-dark);
+    box-shadow: 0 14px 34px rgba(58, 12, 27, 0.14);
+}
+.photo-fan-section .pf-frame img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    /* The garment and the face are in the upper two thirds of a fashion plate;
+       centring the crop takes the head off. */
+    object-position: center 18%;
+    display: block;
+}
+.photo-fan-section .pf-fallback {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 52px;
+    opacity: 0.5;
+}
+
+/* ── The caption, revealed ─────────────────────────────────────────────── */
+.photo-fan-section .pf-info {
+    position: absolute;
+    /* Against the link, which wraps the frame exactly, so this sits over the
+       photograph without being clipped by it. */
+    inset: auto 0 0 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+    padding: 22px 18px 18px;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 380ms ease, transform 380ms cubic-bezier(0.22, 0.61, 0.36, 1);
+    background: linear-gradient(to top,
+        rgba(0, 0, 0, 0.88) 0%, rgba(0, 0, 0, 0.70) 26%,
+        rgba(0, 0, 0, 0.28) 58%, rgba(0, 0, 0, 0) 100%);
+}
+.photo-fan-section .pf-name {
+    font-family: var(--font-heading), serif;
+    font-size: clamp(15px, 1.2vw, 18px);
+    line-height: 1.2;
+    color: #ffffff;
+}
+.photo-fan-section .pf-price { font-size: 13px; font-weight: 500; color: #ffffff; }
+.photo-fan-section .pf-was   { text-decoration: line-through; opacity: 0.66; margin-right: 4px; font-weight: 400; }
+.photo-fan-section .pf-from  { font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.78; }
+.photo-fan-section .pf-cta {
+    margin-top: 7px;
+    font-family: var(--font-body), sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--color-accent);
+    border-bottom: 1px solid currentColor;
+    padding-bottom: 3px;
+}
+
+/* Hover and keyboard focus do the same thing, or the section is usable with a
+   mouse only. */
+/* Above every resting print, not above 4. The resting stack starts at 40 and
+   counts DOWN, so the old value of 5 put the print being looked at BEHIND its
+   neighbours — the lift worked, but the caption was sliced off down its left
+   edge by the print in front. */
+.photo-fan-section .pf-item:hover,
+.photo-fan-section .pf-item:focus-within { z-index: 60; }
+.photo-fan-section .pf-item:hover .pf-print,
+.photo-fan-section .pf-item:focus-within .pf-print {
+    /* Straight, lifted, barely enlarged. 1.03 is the ceiling; past that it reads
+       as a zoom rather than a print being picked up. */
+    transform: rotate(0deg) translateY(-14px) scale(1.03);
+}
+.photo-fan-section .pf-item:hover .pf-frame,
+.photo-fan-section .pf-item:focus-within .pf-frame { box-shadow: 0 26px 56px rgba(58, 12, 27, 0.26); }
+.photo-fan-section .pf-item:hover .pf-info,
+.photo-fan-section .pf-item:focus-within .pf-info { opacity: 1; transform: translateY(0); }
+.photo-fan-section .pf-photo:focus-visible { outline: 2px solid var(--color-accent); outline-offset: -4px; }
+
+/* ── Badge and wishlist ────────────────────────────────────────────────── */
+.photo-fan-section .pf-badge {
+    position: absolute;
+    top: 12px;
+    /* Clear of the neighbour lying over this print's left edge. At a flat 12px
+       the discount badge was half-covered by the print in front of it. */
+    left: calc(var(--pf-overlap) + 14px);
+    z-index: 3;
+    padding: 5px 10px;
+    font-family: var(--font-body), sans-serif;
+    font-size: 9.5px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-accent);
+    background: var(--color-primary-dark);
+}
+.photo-fan-section .pf-badge-quiet { background: rgba(58, 12, 27, 0.82); }
+
+/* On the photograph at all times — it is the one control a shopper looks for
+   without hovering first — but quiet until the print is the one in hand. */
+.photo-fan-section .pf-wish {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* 44px, the minimum touch target, met by the box itself. */
+    width: 44px;
+    height: 44px;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--color-primary-dark);
+    font-size: 15px;
+    cursor: pointer;
+    opacity: 0.85;
+    transition: opacity 220ms ease, background-color 220ms ease;
+}
+.photo-fan-section .pf-item:hover .pf-wish,
+.photo-fan-section .pf-item:focus-within .pf-wish { opacity: 1; }
+.photo-fan-section .pf-wish:hover { background: #ffffff; }
+.photo-fan-section .pf-wish:focus-visible { outline: 2px solid var(--color-primary-dark); outline-offset: 2px; }
+
+/* ── Controls ──────────────────────────────────────────────────────────── */
+.photo-fan-section .pf-controls {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 18px;
+    margin-top: 26px;
+}
+.photo-fan-section .pf-counter {
+    font-family: var(--font-body), sans-serif;
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-primary-dark);
+}
+.photo-fan-section .pf-progress {
+    width: min(240px, 34vw);
+    height: 2px;
+    background: rgba(58, 12, 27, 0.16);
+    overflow: hidden;
+}
+.photo-fan-section .pf-progress-fill {
+    display: block;
+    height: 100%;
+    width: 0;
+    background: linear-gradient(90deg, var(--color-primary-dark), var(--color-accent));
+    transition: width 420ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.photo-fan-section .pf-arrow {
+    position: absolute;
+    top: calc(50% - 26px);       /* the controls row sits below; centre on the prints */
+    transform: translateY(-50%);
+    z-index: 6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;                 /* comfortably past the 44px minimum */
+    height: 48px;
+    border: 1px solid var(--color-accent-ink);
+    border-radius: 50%;
+    background: var(--bg-surface-soft);
+    color: var(--color-primary-dark);
+    cursor: pointer;
+    transition: background-color 220ms ease, color 220ms ease, opacity 220ms ease;
+}
+.photo-fan-section .pf-arrow svg { width: 20px; height: 20px; }
+/* The arrows hang into the page gutter but never past it. Left to the clamp
+   alone they reached 26px at a 768px screen where the gutter is 24px, putting
+   2px of circle off the glass and giving the whole PAGE a horizontal scrollbar. */
+.photo-fan-section .pf-prev { left: calc(-1 * var(--pf-arrow-out)); }
+.photo-fan-section .pf-next { right: calc(-1 * var(--pf-arrow-out)); }
+.photo-fan-section .pf-arrow:hover:not(:disabled) { background: var(--color-primary-dark); color: var(--color-accent); }
+.photo-fan-section .pf-arrow:focus-visible { outline: 2px solid var(--color-primary-dark); outline-offset: 3px; }
+/* Disabled, not hidden: a control that vanishes at the end of a strip moves the
+   one beside it and makes the shopper re-aim. */
+.photo-fan-section .pf-arrow:disabled { opacity: 0.3; cursor: default; }
+
+/* ── Reduced motion ────────────────────────────────────────────────────── */
+/* The rotations go too. To someone who asked for less movement, a wall of
+   tilted photographs that snap straight IS the motion, not the transition. */
+@media (prefers-reduced-motion: reduce) {
+    .photo-fan-section .pf-track,
+    .photo-fan-section .pf-print,
+    .photo-fan-section .pf-progress-fill,
+    .photo-fan-section .pf-info { transition: none; }
+    .photo-fan-section .pf-panel.is-active { animation: none; }
+    .photo-fan-section .pf-item:nth-child(4n + 1) .pf-print,
+    .photo-fan-section .pf-item:nth-child(4n + 2) .pf-print,
+    .photo-fan-section .pf-item:nth-child(4n + 3) .pf-print,
+    .photo-fan-section .pf-item:nth-child(4n + 4) .pf-print { transform: none; }
+    .photo-fan-section .pf-item:hover .pf-print,
+    .photo-fan-section .pf-item:focus-within .pf-print { transform: none; }
+}
+
+/* ── Standard desktop ──────────────────────────────────────────────────── */
+@media (max-width: 1279px) {
+    .photo-fan-section { --pf-visible: 3.2; --pf-overlap: 22px; }
+}
+
+/* ── Tablet ────────────────────────────────────────────────────────────── */
+@media (max-width: 991px) {
+    .photo-fan-section { --pf-visible: 2.2; --pf-overlap: 16px; --pf-lift-room: 30px; }
+}
+
+/* ── Touch: no hover, so nothing may hide behind one ───────────────────── */
+/* A caption revealed on hover is a caption a phone cannot reach, and making the
+   first tap reveal it and the second open the product is the pattern every
+   shopper gets wrong. So below 768 the fan flattens and the caption comes out
+   from under the gradient to sit below the photograph, permanently visible, and
+   one tap opens the product.
+   767, not 768: at exactly 768 this and the tablet block above both matched and
+   the later won, so an iPad in portrait got the one-print phone layout. */
+@media (max-width: 767px) {
+    .photo-fan-section {
+        --pf-visible: 1.15;
+        --pf-overlap: 0px;
+        --pf-lift-room: 10px;
+    }
+    .photo-fan-section .pf-head { align-items: center; margin-bottom: 24px; }
+    .photo-fan-section .pf-tabs { gap: 22px; }
+    .photo-fan-section .pf-tab { font-size: 11.5px; letter-spacing: 0.16em; }
+
+    .photo-fan-section .pf-item { padding-inline: 6px; }
+    /* A single degree, kept only because it still reads as deliberate at this
+       size. More and a full-width photograph looks knocked askew. */
+    .photo-fan-section .pf-item:nth-child(odd)  .pf-print { transform: rotate(-1deg); }
+    .photo-fan-section .pf-item:nth-child(even) .pf-print { transform: rotate(1deg); }
+    .photo-fan-section .pf-item:hover .pf-print,
+    .photo-fan-section .pf-item:focus-within .pf-print { transform: none; }
+
+    .photo-fan-section .pf-info {
+        position: static;
+        opacity: 1;
+        transform: none;
+        background: none;
+        padding: 14px 2px 0;
+    }
+    .photo-fan-section .pf-name  { color: var(--text-primary); }
+    .photo-fan-section .pf-price { color: var(--text-primary); }
+    .photo-fan-section .pf-was   { color: var(--text-muted); }
+    .photo-fan-section .pf-cta   { color: var(--color-accent-ink); }
+
+    /* Arrows off: the strip is swiped, and two 48px circles over a full-width
+       photograph cover the garment they are meant to help you reach. The counter
+       and the progress bar stay — they are the only thing saying how much
+       further the strip goes. */
+    .photo-fan-section .pf-arrow { display: none; }
+    .photo-fan-section .pf-controls { justify-content: space-between; margin-top: 18px; }
+    .photo-fan-section .pf-progress { width: 55%; }
+    .photo-fan-section .pf-viewall { padding: 12px 0; }   /* 44px tap target */
+}
