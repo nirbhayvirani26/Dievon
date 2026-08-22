@@ -11444,7 +11444,13 @@ input.chk-input-error:focus {
         letter-spacing: 0.02em;
         color: rgba(255, 255, 255, 0.92);
     }
-    .photo-fan-section .pf-card .price-mrp-strike { color: rgba(255, 255, 255, 0.66); margin-right: 5px; }
+    /* The price is spans now, not one text node: .price-now and .price-off were
+       added when the shop card was redesigned, and neither inherits the caption
+       colour — the default gives them dark burgundy, which on this scrim is
+       invisible. Colour follows the element that actually carries the text. */
+    .photo-fan-section .pf-card .price-now { color: rgba(255, 255, 255, 0.92); font-size: 14px; font-weight: 500; }
+    .photo-fan-section .pf-card .price-off { color: var(--color-accent); font-size: 11.5px; }
+    .photo-fan-section .pf-card .price-mrp-strike { color: rgba(255, 255, 255, 0.66); font-size: 12.5px; }
     .photo-fan-section .pf-card .price-from-label { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.75; }
     .photo-fan-section .pf-card .product-card-bag-note {
         margin: 0;
@@ -11570,20 +11576,21 @@ input.chk-input-error:focus {
        the print to be picked up. It is still reachable by keyboard at any time —
        focus-within opens it — and it is never display:none, which would take it out
        of the tab order entirely. */
-    /* Under the badge, the same stack the shop uses. The base rule pins it with
-       `top: 48px`, so adding a `bottom` here — as a first pass did — does not move
-       it down, it stretches it: the pill became a white panel 500px tall lying
-       across the middle of the garment. top is re-stated and bottom left alone. */
-    .photo-fan-section .pf-card .compare-toggle {
-        top: 52px;
-        bottom: auto;
-        left: calc(var(--pf-overlap) + 14px);
-        right: auto;
-        z-index: 4;
+    /* Wishlist and compare travel together in .product-card-tools now, so they
+       are positioned as a pair rather than pinned separately. Pulled in from the
+       card's 14px, because these prints overlap and a control on the right edge
+       of one lands on top of the next. */
+    .photo-fan-section .pf-card .product-card-tools {
+        top: 12px;
+        right: calc(var(--pf-overlap) + 10px);
+        gap: 7px;
     }
-    /* The base opens it on .product-card:hover. Here the whole ITEM is the hover
-       target — the card inside it is scaled and rotated — so it opens on the item
-       too, and on focus-within, or a keyboard shopper could never reach it. */
+    .photo-fan-section .pf-card .product-card-wishlist-btn,
+    .photo-fan-section .pf-card .compare-toggle { width: 38px; height: 38px; }
+    /* Compare waits for the print to be picked up — it is the one control that
+       clutters a photograph. Opacity, not display, so it keeps its place in the
+       tab order; focus-within is what makes it reachable by keyboard. */
+    .photo-fan-section .pf-card .compare-toggle { opacity: 0; transition: opacity 260ms ease; }
     .photo-fan-section .pf-item:hover .compare-toggle,
     .photo-fan-section .pf-item:focus-within .compare-toggle { opacity: 1; }
 
@@ -11732,4 +11739,308 @@ input.chk-input-error:focus {
     .photo-fan-section .pf-controls { justify-content: space-between; margin-top: 18px; }
     .photo-fan-section .pf-progress { width: 55%; }
     .photo-fan-section .pf-viewall { padding: 12px 0; }   /* 44px tap target */
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   PRODUCT CARD — the design in the brief
+   ──────────────────────────────────────────────────────────────────────────
+   Photograph, a badge top left, wishlist and compare as round buttons top
+   right, Quick View on the picture when you point at it, a burgundy rule, then
+   the category, the name and the price ranged left.
+
+   Appended rather than edited into the original .product-card block above, so
+   the whole redesign is one contiguous thing to read, revert or replace when
+   the next iteration arrives. Everything here is the DEFAULT variant; the home
+   page's .product-card--home overrides sit in the photo-fan block and are
+   unaffected.
+   ══════════════════════════════════════════════════════════════════════════ */
+.product-card {
+    /* Ranged left. The card was centred, which is fine for one product and
+       restless across a grid of twenty-four: every name starts in a different
+       place and the eye has nothing to run down. */
+    text-align: left;
+    padding-bottom: 0;
+    border-radius: 0;
+    border-color: rgba(81, 17, 38, 0.10);
+}
+/* The rule under the photograph. It is the only thing separating a pale garment
+   shot from the white card below it, which otherwise run together. */
+.product-card .card-img-container {
+    border-bottom: 2px solid var(--color-primary);
+}
+
+/* ── Badge ─────────────────────────────────────────────────────────────── */
+.product-card .badge-luxury {
+    top: 14px;
+    left: 14px;
+    right: auto;
+    z-index: 3;
+    padding: 7px 12px;
+    border-radius: 0;
+    background: var(--color-accent-ink);
+    color: #ffffff;
+    font-family: var(--font-body), sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+/* Sold out and not-sold-here are states, not offers, so they do not wear the
+   gold an offer wears. */
+.product-card .badge-sold-out { background: var(--color-primary-dark); }
+
+/* ── Wishlist and compare ──────────────────────────────────────────────── */
+/* -tools, not -actions. .product-card-actions is already taken further up this
+   file by a stacked, full-width button group — dead CSS from an older card, but
+   live enough to win: it set flex-direction: column and stood the two round
+   buttons on top of each other. */
+.product-card-tools {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.product-card .product-card-wishlist-btn,
+.product-card .compare-toggle {
+    position: static;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* 40px. Not the 44 a bare touch target wants — these two sit side by side on
+       a 165px-wide card in a two-up mobile grid, and 44 each plus the gap starts
+       crowding the garment. The 8px gap between them is what keeps a thumb from
+       hitting the wrong one. */
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: #ffffff;
+    color: var(--color-primary-dark);
+    box-shadow: 0 2px 10px rgba(58, 12, 27, 0.16);
+    cursor: pointer;
+    opacity: 1;
+    transition: background-color 200ms ease, color 200ms ease, transform 200ms ease;
+}
+.product-card .product-card-wishlist-btn:hover,
+.product-card .compare-toggle:hover { transform: scale(1.07); }
+.product-card .product-card-wishlist-btn:focus-visible,
+.product-card .compare-toggle:focus-within {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+.product-card .product-card-wishlist-btn i { font-size: 15px; }
+
+/* The checkbox is still the control — see the note in product_card.php — so it
+   is taken out of the layout rather than out of the DOM. Not display:none:
+   that would drop it from the tab order and make compare keyboard-unreachable. */
+.product-card .compare-toggle input.compare-check {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: 0;
+    opacity: 0;
+    pointer-events: none;
+}
+.product-card .compare-toggle-icon { display: flex; }
+.product-card .compare-toggle-icon svg { width: 19px; height: 19px; }
+/* The label text stays for a screen reader and goes for everyone else. */
+.product-card .compare-toggle-word {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+}
+/* Selected reads as filled, so it is obvious which of three is already chosen. */
+.product-card .compare-toggle:has(input:checked) {
+    background: var(--color-primary);
+    color: #ffffff;
+    border-color: var(--color-primary);
+}
+
+/* ── Quick View ────────────────────────────────────────────────────────── */
+.product-card .quick-view-btn {
+    bottom: 16px;
+    /* Centred with auto margins between left:0 and right:0, NOT with
+       left:50% + translateX(-50%).
+       ────────────────────────────────────────────────────────────────────────
+       The transform trick centres correctly but sizes wrongly: an absolutely
+       positioned box with `left: 50%` and `right: auto` shrink-to-fits into the
+       space from that point to the container's right edge — 86px on a 173px
+       card in a two-up phone grid — and `white-space: nowrap` content then
+       spilled straight out of its own button, so the words ran past the edge of
+       the photograph. Anchoring both sides gives it the full width to size
+       against, and `margin-inline: auto` does the centring. */
+    left: 0;
+    right: 0;
+    width: fit-content;
+    max-width: calc(100% - 20px);
+    margin-inline: auto;
+    transform: none;
+    display: none;
+    align-items: center;
+    gap: 9px;
+    padding: 12px 22px;
+    border: 0;
+    border-radius: 0;
+    background: var(--color-primary);
+    color: #ffffff;
+    font-family: var(--font-body), sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    z-index: 5;
+}
+.product-card .quick-view-eye { width: 17px; height: 17px; flex: none; }
+/* On hover OR focus-within. The base opened it on hover alone, which means a
+   keyboard shopper could never reach it: display:none is not focusable, so
+   without this the button does not exist for them at all. */
+.product-card:hover .quick-view-btn,
+.product-card:focus-within .quick-view-btn { display: flex !important; }
+.product-card .quick-view-btn:hover {
+    background: var(--color-primary-dark) !important;
+    color: #ffffff !important;
+}
+.product-card .quick-view-btn:focus-visible { outline: 2px solid #ffffff; outline-offset: -4px; }
+
+/* No hover, no way to reveal it — so show it outright. Keyed on the POINTER,
+   not on a width. A width was tried and was wrong: at 600px it left every
+   tablet between 601 and 1024 with a Quick View button that could never appear,
+   measured at 768 as a control zero pixels wide. Screen size has never been the
+   question; whether the device has a hover has. */
+@media (hover: none) {
+    .product-card .quick-view-btn { display: flex !important; }
+}
+
+/* ── The details ───────────────────────────────────────────────────────── */
+.product-card .product-card-details {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 18px 18px 20px;
+    text-align: left;
+}
+.product-card .product-card-category {
+    margin: 0;
+    font-family: var(--font-body), sans-serif;
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+.product-card .product-card-title {
+    margin: 0;
+    font-family: var(--font-heading);
+    font-weight: var(--font-heading-weight);
+    font-size: clamp(16px, 1.25vw, 20px);
+    line-height: 1.25;
+    /* Two lines of room, reserved, so a row of cards lines its prices up whether
+       the names run to one line or two. Expressed in ems rather than the 48px
+       the old rule used: 48 was two lines of an 18px face and became a stray gap
+       the moment the size changed, which is exactly what it had become. */
+    min-height: 2.5em;
+    /* Ranged left, and never hyphenated mid-word — a garment name broken across
+       lines is unreadable at a glance. */
+    overflow-wrap: break-word;
+}
+.product-card .product-card-title a { color: var(--text-primary); text-decoration: none; }
+.product-card .product-card-title a:hover { color: var(--color-primary); }
+
+/* Price, saving and struck MRP on one line, wrapping as a unit rather than
+   breaking a figure in half. */
+.product-card .product-card-price {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 0;
+    font-family: var(--font-body), sans-serif;
+}
+.product-card .price-now {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+.product-card .price-mrp-strike {
+    font-size: 14px;
+    font-weight: 400;
+    text-decoration: line-through;
+    /* --text-muted, not a lighter grey: this is still a real number and has to
+       clear 4.5:1 on white like any other. */
+    color: var(--text-muted);
+}
+.product-card .price-off {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--color-primary);
+}
+.product-card .price-from-label {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+.product-card .product-card-bag-note {
+    margin: 0;
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-accent-ink);
+}
+.product-card .product-card-cta {
+    width: 100%;
+    margin-top: 4px;
+    justify-content: center;
+}
+
+/* ── Sold out ──────────────────────────────────────────────────────────── */
+/* Badge and a greyed photograph carry it; the price stays, because a shopper
+   still wants to know what the thing costs before deciding to wait for it. */
+.product-card.sold-out .price-now { color: var(--text-muted); }
+
+/* The Sold Out button was white on #e5e7eb — 1.24:1, which is not low contrast,
+   it is invisible. .btn-luxury sets `color: #ffffff !important` and outranked
+   the muted grey .sold-out-cta asks for, so every sold-out product on the site
+   has been showing a blank grey slab.
+
+   Fixed here rather than left for later: this is the card being redesigned, and
+   shipping a new card with an unreadable state in it is shipping the bug twice.
+   #5f5346 is chosen against the requirement, not by eye — white type needs its
+   ground below L 0.138 to clear 4.5:1 and this ground is 0.795, so the TEXT has
+   to come down instead; 0.090 puts it at 6.0:1. Muted enough to read as
+   unavailable, dark enough to actually read. */
+.product-card .product-card-cta.sold-out-cta {
+    color: #5f5346 !important;
+    border-color: rgba(81, 17, 38, 0.12);
+}
+
+/* ── Narrow screens ────────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+    .product-card .product-card-details { padding: 14px 13px 16px; gap: 6px; }
+    .product-card .product-card-title { font-size: 15px; }
+    .product-card .price-now { font-size: 16px; }
+    .product-card .price-mrp-strike { font-size: 12.5px; }
+    .product-card .price-off { font-size: 11.5px; }
+    .product-card-tools { top: 10px; right: 10px; gap: 6px; }
+    .product-card .product-card-wishlist-btn,
+    .product-card .compare-toggle { width: 36px; height: 36px; }
+    .product-card .badge-luxury { top: 10px; left: 10px; padding: 5px 9px; font-size: 9.5px; }
+    /* Tighter, because the card is 173px wide in a two-up grid and the label
+       must fit inside it whole. */
+    .product-card .quick-view-btn { bottom: 10px; padding: 9px 12px; font-size: 9px; letter-spacing: 0.08em; gap: 6px; }
+    .product-card .quick-view-eye { width: 14px; height: 14px; }
 }

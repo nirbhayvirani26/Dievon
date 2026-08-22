@@ -131,12 +131,6 @@ $cardUrl = productUrl($cardProduct['id'], $cardProduct['name'], $cardProduct['se
         <span class="badge-luxury"><?= htmlspecialchars($cardFallback) ?></span>
     <?php endif; ?>
 
-    <button class="product-card-wishlist-btn"
-            onclick="event.preventDefault(); handleWishlistClick(<?= (int)$cardProduct['id'] ?>, this)"
-            aria-label="Add to Wishlist">
-        <i class="fa-regular fa-heart"></i>
-    </button>
-
     <div class="card-img-container">
         <a href="<?= $cardUrl ?>" class="card-img-link">
             <?php if (!empty($cardProduct['image'])):
@@ -192,17 +186,44 @@ $cardUrl = productUrl($cardProduct['id'], $cardProduct['name'], $cardProduct['se
             <?php endif; ?>
         </a>
 
-        <?php if ($cardCompare): ?>
-        <label class="compare-toggle" title="Compare (up to 3)" onclick="event.stopPropagation()">
-            <input type="checkbox" class="compare-check" value="<?= (int)$cardProduct['id'] ?>"
-                   data-name="<?= htmlspecialchars($cardProduct['name'], ENT_QUOTES) ?>"
-                   onchange="toggleCompare(this)">
-            <span>Compare</span>
-        </label>
-        <?php endif; ?>
+        <?php /* Wishlist and Compare together in a row of round buttons at
+                 the top right, and INSIDE the image container rather than beside
+                 it: they belong to the photograph, and the container is what
+                 gives them something to be positioned against.
+
+                 Compare is still a checkbox. The control looks like a button
+                 now, but toggleCompare() reads input.value and input.dataset.name
+                 and dievon-compare.js clears selections by walking
+                 .compare-check — so the input stays exactly as it was and only
+                 its wrapper is restyled. A <button> here would have needed all
+                 of that rewritten to gain nothing. */ ?>
+        <div class="product-card-tools">
+            <button type="button" class="product-card-wishlist-btn"
+                    onclick="event.preventDefault(); handleWishlistClick(<?= (int)$cardProduct['id'] ?>, this)"
+                    aria-label="Add <?= htmlspecialchars($cardProduct['name'], ENT_QUOTES) ?> to wishlist">
+                <i class="fa-regular fa-heart" aria-hidden="true"></i>
+            </button>
+
+            <?php if ($cardCompare): ?>
+            <label class="compare-toggle" title="Compare (up to 3)" onclick="event.stopPropagation()">
+                <input type="checkbox" class="compare-check" value="<?= (int)$cardProduct['id'] ?>"
+                       data-name="<?= htmlspecialchars($cardProduct['name'], ENT_QUOTES) ?>"
+                       onchange="toggleCompare(this)">
+                <?php /* The word is still here for a screen reader; the circle
+                         shows the glyph. */ ?>
+                <span class="compare-toggle-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" focusable="false"><path d="M4 8h13m0 0-3.2-3.2M17 8l-3.2 3.2M20 16H7m0 0 3.2-3.2M7 16l3.2 3.2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </span>
+                <span class="compare-toggle-word">Compare</span>
+            </label>
+            <?php endif; ?>
+        </div>
 
         <?php if ($cardQuickView): ?>
-        <button onclick="event.preventDefault(); openQuickView(<?= (int)$cardProduct['id'] ?>)" class="quick-view-btn">Quick View</button>
+        <button type="button" onclick="event.preventDefault(); openQuickView(<?= (int)$cardProduct['id'] ?>)" class="quick-view-btn">
+            <svg class="quick-view-eye" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2 12s3.8-6.4 10-6.4S22 12 22 12s-3.8 6.4-10 6.4S2 12 2 12Z" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12" r="2.6" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>
+            Quick View
+        </button>
         <?php endif; ?>
     </div>
 
@@ -224,11 +245,16 @@ $cardUrl = productUrl($cardProduct['id'], $cardProduct['name'], $cardProduct['se
             <?php if ($cardNotSoldHere): ?>
                 Not available in your country
             <?php else: ?>
+                <?php if ($cardVaries): ?><span class="price-from-label">From</span> <?php endif; ?>
+                <span class="price-now"><?= formatPrice($cardPrice) ?></span>
+                <?php /* Struck price and saving AFTER the price being charged, not
+                         before it. The number a shopper is deciding on is the one
+                         they will pay; leading with the old price makes them read
+                         two figures to find it. */ ?>
                 <?php if ($cardHasDiscount): ?>
                     <span class="price-mrp-strike"><?= formatPrice($cardMrp) ?></span>
+                    <span class="price-off"><?= $cardDiscountPercent ?>% OFF</span>
                 <?php endif; ?>
-                <?php if ($cardVaries): ?><span class="price-from-label">From</span> <?php endif; ?>
-                <?= formatPrice($cardPrice) ?>
             <?php endif; ?>
         </div>
 <?php /* "View Product" on the home page, "Details" everywhere else. Sold Out
