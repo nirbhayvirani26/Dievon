@@ -540,14 +540,13 @@ $searchHint = $searchHintNames
     // middle-click. The cookie only remembers the choice while browsing.
     $dvShopGender = function_exists('currentShopGender') ? currentShopGender() : 'women';
 
-    /* The strip now carries two independent controls, so it renders when EITHER
-       is live rather than only when the audience switch is. Without this, a shop
-       that enables a second country but has not launched menswear would have
-       nowhere to put the country picker — the strip it moved into would not
-       exist. Both conditions stay exactly as they were individually. */
+    /* The strip carries the audience switch and nothing else, so it renders with
+       it. The country picker briefly lived here too, which is why this once read
+       "either" — with the picker back in the icon row a shop that sells to two
+       countries but has not launched menswear draws no strip at all, rather than
+       a full-bleed band holding one two-letter control. */
     $dvShowAudience = function_exists('shopGenderSelectorEnabled') && shopGenderSelectorEnabled();
-    $dvShowCountry  = function_exists('countrySelectorEnabled') && countrySelectorEnabled();
-    if ($dvShowAudience || $dvShowCountry): ?>
+    if ($dvShowAudience): ?>
     <?php /* No .hide-mobile: this bar shows at every screen size. It is the only
              control that changes what the whole rest of the site means, so it
              belongs where it can be seen rather than behind the hamburger.
@@ -574,53 +573,6 @@ $searchHint = $searchHintNames
             </nav>
             <?php endif; ?>
 
-            <?php if (countrySelectorEnabled()): ?>
-            <?php // Real per-country selling (Countries We Sell To): the option list is
-                  // exactly the countries enabled there, each priced separately. Picking
-                  // one sets dievon_country and reloads, so productCountryPricing() then
-                  // charges what was actually typed in for that country. Shown only once
-                  // a second country is enabled — one country is no choice to make. ?>
-            <div class="currency-selector-wrapper">
-                <?php
-                $curCountryCode = currentCountryCode();
-
-                /* Country CODE only, at every screen size: IN, UK, US.
-                   ────────────────────────────────────────────────────────
-                   This briefly rendered two controls — a long label for desktop
-                   and a short one for phones — because a <select> renders one
-                   string and CSS cannot rewrite the text inside an <option>. With
-                   the same short label wanted everywhere, the second control is
-                   just dead weight, so there is one again.
-
-                   Two letters is ~40px against ~192px for "United Kingdom
-                   (£ GBP)". That matters beyond looks: the search bar is
-                   absolutely centred, so it does not reserve space for its
-                   neighbours — at 192px the icon row was pushed left until the
-                   search box was drawn straight over the top of it.
-
-                   GB is the ISO code and what the database stores. The option
-                   VALUE stays GB, so nothing downstream changes — only the label
-                   reads UK, because that is what shoppers say. The full country
-                   name and currency stay on the title for anyone hovering. */
-                $shortLabel = static function (string $code): string {
-                    return ['GB' => 'UK'][$code] ?? $code;
-                };
-                $cc = enabledCountries()[$curCountryCode] ?? null;
-                $ctrlTitle = $cc ? $cc['country_name'] . ' — prices in ' . $cc['currency_code'] : '';
-                ?>
-                <select id="countrySelector" class="country-select"
-                        onchange="changeCountry(this.value)"
-                        aria-label="Select country and currency"
-                        title="<?= htmlspecialchars($ctrlTitle) ?>">
-                    <?php foreach (enabledCountries() as $ccode => $crow): ?>
-                    <option value="<?= htmlspecialchars($ccode) ?>" <?= $curCountryCode === $ccode ? 'selected' : '' ?>
-                            title="<?= htmlspecialchars($crow['country_name'] . ' — ' . $crow['currency_symbol'] . ' ' . $crow['currency_code']) ?>">
-                        <?= htmlspecialchars($shortLabel($ccode)) ?>
-                    </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            <?php endif; ?>
         </div>
     </div>
     <?php endif; ?>
@@ -652,19 +604,69 @@ $searchHint = $searchHintNames
 
             <!-- Right Action Icons -->
             <div class="nav-actions">
-                <?php /* The country / currency picker used to sit here, first in the icon
-                         row. It was the only filled, bordered shape among five 1.4px
-                         stroke icons — a form control dropped into an icon set — and an
-                         earlier note in style.css had already recorded that it "pulled
-                         the eye straight to the least important control there".
+                <?php /* The country / currency picker, first in the row.
+                         ──────────────────────────────────────────────────────
+                         It spent a release in the utility strip at the top,
+                         because as a filled, bordered pill it was the only solid
+                         shape among five 1.4px stroke icons and pulled the eye
+                         straight to the least important control there.
 
-                         It is also the wrong KIND of thing for this row. Search, account,
-                         wishlist and bag are actions. Country is a preference, set once
-                         on arrival and then remembered in a cookie. It has moved to the
-                         utility strip at the top, beside Women / Men, which is what that
-                         strip is for. On a 390px phone that also gives the row back the
-                         64px it was short by: seven controls needed 400px of a 390px
-                         screen, so the wordmark was left with 8px of clear space. */ ?>
+                         The pill was the problem, not the position. Drawn the way
+                         the icons are drawn — bare type at their optical weight,
+                         the navigation's own chevron, no border and no fill — it
+                         sits in the row as one of them. That also frees the top
+                         strip to disappear on a shop that has not launched
+                         menswear, instead of existing to hold one control.
+
+                         Two letters and a chevron is about 34px, so the row still
+                         fits a 360px phone with the wordmark beside it. */ ?>
+                <?php if (countrySelectorEnabled()): ?>
+                <?php // Real per-country selling (Countries We Sell To): the option list is
+                      // exactly the countries enabled there, each priced separately. Picking
+                      // one sets dievon_country and reloads, so productCountryPricing() then
+                      // charges what was actually typed in for that country. Shown only once
+                      // a second country is enabled — one country is no choice to make. ?>
+                <div class="currency-selector-wrapper">
+                    <?php
+                    $curCountryCode = currentCountryCode();
+
+                    /* Country CODE only, at every screen size: IN, UK, US.
+                       ────────────────────────────────────────────────────────
+                       This briefly rendered two controls — a long label for desktop
+                       and a short one for phones — because a <select> renders one
+                       string and CSS cannot rewrite the text inside an <option>. With
+                       the same short label wanted everywhere, the second control is
+                       just dead weight, so there is one again.
+
+                       Two letters is ~40px against ~192px for "United Kingdom
+                       (£ GBP)". That matters beyond looks: the search bar is
+                       absolutely centred, so it does not reserve space for its
+                       neighbours — at 192px the icon row was pushed left until the
+                       search box was drawn straight over the top of it.
+
+                       GB is the ISO code and what the database stores. The option
+                       VALUE stays GB, so nothing downstream changes — only the label
+                       reads UK, because that is what shoppers say. The full country
+                       name and currency stay on the title for anyone hovering. */
+                    $shortLabel = static function (string $code): string {
+                        return ['GB' => 'UK'][$code] ?? $code;
+                    };
+                    $cc = enabledCountries()[$curCountryCode] ?? null;
+                    $ctrlTitle = $cc ? $cc['country_name'] . ' — prices in ' . $cc['currency_code'] : '';
+                    ?>
+                    <select id="countrySelector" class="country-select"
+                            onchange="changeCountry(this.value)"
+                            aria-label="Select country and currency"
+                            title="<?= htmlspecialchars($ctrlTitle) ?>">
+                        <?php foreach (enabledCountries() as $ccode => $crow): ?>
+                        <option value="<?= htmlspecialchars($ccode) ?>" <?= $curCountryCode === $ccode ? 'selected' : '' ?>
+                                title="<?= htmlspecialchars($crow['country_name'] . ' — ' . $crow['currency_symbol'] . ' ' . $crow['currency_code']) ?>">
+                            <?= htmlspecialchars($shortLabel($ccode)) ?>
+                        </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <?php endif; ?>
                 <!-- Multi-Language Translator Widget Slot -->
                 <div class="nav-action-item hide-mobile" id="google_translate_element" style="padding:0;"></div>
 

@@ -2274,14 +2274,44 @@ html {
     }
 }
 
-/* The country picker on a phone: same treatment, a touch larger to stay tappable
-   in a 35px strip. It is no longer competing with the icon row for width — that
-   is the whole reason it moved — so it can afford the extra pixel of type. */
+/* The country picker on a phone. It is back in the icon row, so here it does
+   compete for width — two letters and a chevron come down to about 28px. */
 @media (max-width: 640px) {
-    .navbar-luxury .header-top-bar #countrySelector {
+    .navbar-luxury .nav-actions #countrySelector {
         font-size: 10px !important;
-        padding: 4px 14px 4px 0 !important;
+        letter-spacing: 0.1em !important;
+        padding: 0 11px 0 0 !important;
+        background-size: 8px 8px !important;
     }
+    .navbar-luxury .nav-actions .currency-selector-wrapper { margin-right: 0; }
+}
+
+/* Five controls on a narrow phone.
+   ─────────────────────────────────────────────────────────────────────────────
+   The row carried four; the country picker makes five, and at 38px boxes that
+   is 195px of cluster against roughly 150px of clear space on a 320px screen —
+   the bag ended up 32px off the right edge. Measured, not guessed: scrollWidth
+   353 against a 320 client width.
+
+   The glyphs themselves are not the problem, the boxes around them are. 38px of
+   box for a 20px icon is 9px of padding a side; at 30px it is 5, which is still
+   a 30px target with 2px between them and reads no tighter because the drawn
+   size does not change. */
+@media (max-width: 420px) {
+    .navbar-luxury .nav-action-item { width: 30px; }
+    .navbar-luxury .nav-actions #countrySelector {
+        font-size: 9.5px !important;
+        letter-spacing: 0.06em !important;
+        padding: 0 10px 0 0 !important;
+    }
+}
+
+/* Narrower still: the wordmark gives up four pixels of height so the cluster
+   keeps its targets rather than the other way round. */
+@media (max-width: 345px) {
+    .navbar-luxury .nav-action-item { width: 27px; }
+    .navbar-luxury .dv-icon { width: 19px; height: 19px; }
+    .navbar-luxury .logo img { height: 30px; }
 }
 
 /* ═════════════════════════════════════════════════════════════════════════
@@ -2385,16 +2415,36 @@ html {
     }
 }
 
-/* Stacked, but not edge to edge: two full-bleed buttons over a photograph read
-   as a bar stuck to the bottom of it. Capped, they stay a left-aligned pair. */
+/* Side by side and small, not two stacked bars.
+   ───────────────────────────────────────────────────────────────────────────
+   Stacked full-width, the pair read as a bar bolted to the foot of the
+   photograph rather than as two buttons on it. They fit in a row once the
+   type gives up a little size and tracking: "Explore Collection" is 18
+   characters, and at 9.5px with 0.12em it measures about 139px inside its
+   padding, against the 156px each button gets inside a 320px cap on a 390px
+   screen. The cap is what keeps them off the gutters. */
 @media (max-width: 640px) {
     .hero-slider-section .slide-actions {
-        flex-direction: column;
+        flex-direction: row;
         align-items: stretch;
-        max-width: 260px;
+        flex-wrap: nowrap;
+        max-width: 320px;
+        gap: 8px;
     }
     .hero-slider-section .btn-hero-primary,
-    .hero-slider-section .btn-hero-ghost { flex: 0 0 auto; width: 100%; font-size: 10.5px; }
+    .hero-slider-section .btn-hero-ghost {
+        flex: 1 1 0;
+        min-width: 0;
+        width: auto;
+        /* 44, not the 40 this first shrank to. Narrower is what was asked for;
+           shorter than a fingertip is not, and this is the banner's main call
+           to action. The same floor the hero arrows carry. */
+        min-height: 44px;
+        padding: 0 8px;
+        font-size: 9.5px;
+        letter-spacing: 0.12em;
+        white-space: nowrap;
+    }
 }
 
 /* Very narrow: the same column of type over a shorter frame, so it occupies a
