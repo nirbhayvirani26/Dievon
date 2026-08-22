@@ -2351,9 +2351,41 @@ html {
         padding: clamp(26px, 7vw, 40px) var(--dv-gutter) clamp(32px, 8vw, 46px);
     }
     .slide-content { max-width: 100%; margin-left: 0; }
+
+    /* Desktop's type is white with a shadow because it lies on a black scrim
+       over the photograph. Here the panel is ivory and the picture is above it,
+       so all of that has to come back off — white on cream is nothing, and a
+       drop shadow on a flat panel is the kind of ornament this build removed
+       everywhere else. Ink, no shadow, same hierarchy. */
+    .slide-content { color: var(--text-primary); }
+    .slide-eyebrow {
+        color: var(--color-accent-ink);
+        text-shadow: none;
+    }
+    .hero-slider-section .slide-content h1,
+    .hero-slider-section .slide-content h2 {
+        color: var(--text-primary) !important;
+        text-shadow: none !important;
+    }
+    .hero-slider-section .slide-content p {
+        color: var(--text-primary);
+        text-shadow: none;
+    }
     .hero-slider-section .slide-content h1,
     .hero-slider-section .slide-content h2 { font-size: clamp(30px, 9vw, 44px) !important; }
     .hero-slider-section .slide-content p { font-size: 13.5px; max-width: 34rem; }
+
+    /* Same reason: filled dark, outlined ink — the desktop pair is inverted for
+       the scrim and both would disappear against cream. */
+    .hero-slider-section .btn-hero-primary {
+        background: var(--text-primary);
+        border-color: var(--text-primary);
+        color: #ffffff !important;
+    }
+    .hero-slider-section .btn-hero-ghost {
+        border-color: rgba(58, 12, 27, 0.4);
+        color: var(--text-primary) !important;
+    }
 
     /* Tablet has the width for two buttons side by side. A phone does not:
        "Explore Collection" at 10px with 0.18em tracking needs about 175px of
@@ -2378,10 +2410,18 @@ html {
         left: 50%;
         transform: translateX(-50%);
     }
-    /* On the seam the dots sit half on the photograph and half on the ivory, so
-       the white ring the desktop ones carry is dropped — against cream it draws
-       a halo rather than separating anything. */
-    .hero-slider-section .slide-dot { box-shadow: none; }
+    /* On the seam the dots sit half on the photograph and half on the ivory.
+       Desktop's white-on-scrim dots vanish into the cream half, so they go back
+       to ink — and the ring is dropped, because against cream it draws a halo
+       rather than separating anything. */
+    .hero-slider-section .slide-dot {
+        border-color: rgba(58, 12, 27, 0.45);
+        box-shadow: none;
+    }
+    .hero-slider-section .slide-dot.active {
+        background: var(--text-primary);
+        border-color: var(--text-primary);
+    }
 }
 
 @media (max-width: 640px) {

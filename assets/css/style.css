@@ -9984,24 +9984,24 @@ input.chk-input-error:focus {
 }
 
 /* The words sit ON the photograph, in its own negative space.
-   ─────────────────────────────────────────────────────────────────────────────
-   This was briefly a split — an ivory panel beside the picture — because the two
-   banners on the shop today measure luminance 78 and 196 in the zone the text
-   falls in, so no single ink colour reads on both. A panel made legibility
-   independent of the upload.
+   ────────────────────────────────────────────────────────────────────────────
+   The wash was ivory with dark type for one release. It worked, but it depended
+   on the photograph: ivory only lifts type off a banner that is already darker
+   than the ink, and a bright upload flattens it. Black is the opposite bet and
+   the more robust one — a banner can be arbitrarily bright and white type over a
+   dark scrim still reads, which is why the live site has always darkened rather
+   than lightened.
 
-   The design asked for is the overlay, and it is the better-looking of the two
-   when the photograph is shot for it: nothing between the reader and the image.
-   The cost is that it moves a requirement from the code to the camera — a hero
-   image now has to carry light, quiet copy space on its left third, the way the
-   reference shot does. One of the two live banners does; the other does not, and
-   dark type on it will not read.
+   So these are dievon.com's own overlay stops (style.css:6712 on main), turned
+   from bottom-up to left-to-right. Live's text sits at the bottom of the frame,
+   so live darkens from the bottom; this hero's text sits at the left, vertically
+   centred, so the same weight has to fall on the left instead. Same colour, same
+   opacities, same falloff — rotated to where the words actually are.
 
-   The wash below is the compromise, not a decoration: flat ivory at low opacity
-   over the left of the frame, fading out well before the model. On a banner shot
-   with a pale wall it is imperceptible — that ground is already this colour. On
-   a dark one it lifts the type enough to be read. It is the only gradient in the
-   header or the hero and it exists to buy that tolerance back. */
+   0.06 at the far edge rather than 0 is live's value too: a whisper of scrim
+   across the whole frame, so the right side of a very bright banner does not
+   glare against the darkened left. It is imperceptible as tint and it keeps the
+   image reading as one photograph rather than two halves. */
 .slide {
     position: relative;
     display: block;
@@ -10020,28 +10020,12 @@ input.chk-input-error:focus {
     z-index: 2;
     display: flex;
     align-items: center;
-    /* As light as the measurements allow, so the photograph reads across the
-       whole width rather than behind a panel.
-       ─────────────────────────────────────────────────────────────────────────
-       This was 0.90 at the edge, which is a solid ivory block with a fade — the
-       banner stopped looking full bleed, which is the opposite of the point.
-
-       The number is not a taste call. Sweeping the edge opacity against the
-       darker of the two live banners, measuring the subtext each time:
-
-           0.90  ->  10.57:1        0.62  ->   5.83:1
-           0.75  ->   7.78:1        0.50  ->   4.39:1   fails
-       
-       4.5:1 is the threshold, so 0.50 is already under it and 0.62 is the
-       lightest step that clears it with any margin — margin worth keeping,
-       because the next banner uploaded could be darker than either of these.
-       The fade is out by 62% of the width, so the model is never touched. */
     background: linear-gradient(
         to right,
-        rgba(250, 246, 240, 0.62) 0%,
-        rgba(250, 246, 240, 0.52) 30%,
-        rgba(250, 246, 240, 0.18) 48%,
-        rgba(250, 246, 240, 0) 62%
+        rgba(0, 0, 0, 0.78) 0%,
+        rgba(0, 0, 0, 0.62) 30%,
+        rgba(0, 0, 0, 0.28) 55%,
+        rgba(0, 0, 0, 0.06) 100%
     );
     /* Left padding tracks the container's real content edge — see --dv-gutter.
        Below 1440 that is the gutter; above it the container centres, so the edge
@@ -10059,7 +10043,7 @@ input.chk-input-error:focus {
     bottom: auto;
     max-width: 30rem;
     margin-left: 0;
-    color: var(--text-primary);
+    color: #ffffff;
     text-align: left;
 }
 .slide-eyebrow {
@@ -10069,9 +10053,9 @@ input.chk-input-error:focus {
     font-weight: 600;
     letter-spacing: 0.28em;
     text-transform: uppercase;
-    color: var(--color-accent-ink);
+    color: rgba(255, 255, 255, 0.82);
     margin-bottom: clamp(14px, 1.6vw, 22px);
-    text-shadow: none;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
 }
 /* The headline. Marcellus at a size it can actually be seen at — the whole
    point of a display serif is the modelling in the strokes, and 56px capitals
@@ -10090,9 +10074,9 @@ input.chk-input-error:focus {
        a photograph the burgundy reads as a colour choice competing with the
        garment, where ink reads as type. --text-primary is #3a0c1b, which is a
        very dark burgundy — on brand, but it behaves like black at this size. */
-    color: var(--text-primary) !important;
+    color: #ffffff !important;
     margin: 0 0 clamp(16px, 1.8vw, 26px) !important;
-    text-shadow: none !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8), 0 0 18px rgba(0, 0, 0, 0.45) !important;
 }
 .hero-slider-section .slide-content p {
     font-family: var(--font-body), sans-serif;
@@ -10106,10 +10090,10 @@ input.chk-input-error:focus {
        shot's backdrop is a plain wall. This is the same ink as the headline at a
        lower weight, so it still reads as secondary without depending on the
        picture behind it. */
-    color: var(--text-primary);
+    color: rgba(255, 255, 255, 0.9);
     max-width: 27rem;
     margin: 0 0 clamp(26px, 2.6vw, 38px);
-    text-shadow: none;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
 }
 
 /* Two buttons, one weight apart. Square, because every rounded container has
@@ -10133,28 +10117,32 @@ input.chk-input-error:focus {
     box-shadow: none;
     transform: none;
 }
+/* Solid white with near-black type, and burgundy on hover — live's own hero
+   button, squared off to match the rest of this build. Against a dark scrim the
+   filled button has to be the light one; ink on ink would disappear. */
 .hero-slider-section .btn-hero-primary {
-    background: var(--text-primary);
-    border: 1px solid var(--text-primary);
-    color: #ffffff !important;
+    background: #ffffff;
+    border: 1px solid #ffffff;
+    color: #111111 !important;
 }
 .hero-slider-section .btn-hero-primary:hover {
     background: var(--color-primary);
     border-color: var(--color-primary);
+    color: #ffffff !important;
     box-shadow: none;
     transform: none;
 }
-/* Outlined, on the photograph. The border is the ink at 40% rather than a grey,
-   so it stays related to the type beside it instead of reading as a stray rule. */
+/* Outlined, on the photograph. The border is white held back, so it stays
+   related to the type beside it instead of reading as a stray rule. */
 .hero-slider-section .btn-hero-ghost {
     background: transparent;
-    border: 1px solid rgba(58, 12, 27, 0.4);
-    color: var(--text-primary) !important;
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    color: #ffffff !important;
 }
 .hero-slider-section .btn-hero-ghost:hover {
-    background: rgba(255, 255, 255, 0.35);
-    border-color: var(--text-primary);
-    color: var(--text-primary) !important;
+    background: rgba(255, 255, 255, 0.16);
+    border-color: #ffffff;
+    color: #ffffff !important;
     transform: none;
 }
 
@@ -10194,17 +10182,19 @@ input.chk-input-error:focus {
     left: 50%;
     transform: translateX(-50%);
 }
-/* Bottom centre now falls on the photograph, which may be pale there — the
-   reference's paving is nearly white. A white dot would vanish, so these are ink
-   at low opacity with a white ring to hold them off a dark frame too. */
+/* White, like live's, now that the frame is darkened rather than lightened.
+   The inactive one is an outline so it does not compete with the active pill;
+   the faint dark ring underneath is for the case where the bottom centre of a
+   banner is nearly white — the scrim is thin out there. */
 .hero-slider-section .slide-dot {
     width: 7px; height: 7px;
-    border: 0;
-    background: rgba(58, 12, 27, 0.35);
-    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.75);
+    background: transparent;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.18);
 }
 .hero-slider-section .slide-dot.active {
-    background: var(--text-primary);
+    background: #ffffff;
+    border-color: #ffffff;
     width: 20px;
     border-radius: 4px;
 }
