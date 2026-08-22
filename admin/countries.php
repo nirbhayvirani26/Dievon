@@ -14,6 +14,17 @@ require_once __DIR__ . '/../config/db.php';
 if (session_status() === PHP_SESSION_NONE) { session_start(); }
 requireAdminCapability('settings.manage');
 
+/* ?refresh=1 forces a live fetch, then redirects so a browser reload does not
+   repeat it. This runs BEFORE includes/header.php on purpose: that file starts
+   sending HTML, and a Location: header after output has begun is ignored — the
+   first version of this sat below it and the redirect silently did nothing,
+   leaving ?refresh=1 in the address bar to refetch on every reload. */
+if (isset($_GET['refresh']) && function_exists('fxRatesForCountries')) {
+    fxRatesForCountries($pdo, true);
+    header('Location: countries.php?rates=1');
+    exit;
+}
+
 $activeTab = 'countries';
 $hideHeaderTitle = true;
 require_once 'includes/header.php';
@@ -37,6 +48,25 @@ try { $totalProducts = (int)$pdo->query("SELECT COUNT(*) FROM products WHERE is_
 
 $enabledCount = 0;
 foreach ($countries as $c) { if ((int)$c['is_enabled'] === 1) { $enabledCount++; } }
+
+/* Exchange rates.
+   ────────────────────────────────────────────────────────────────────────────
+   These do not price anything. They are what the product form offers as a
+   starting number when a rupee price is typed, and they are shown here so the
+   figure is never anonymous — you can see it, see when it was fetched, and
+   type over it if you would rather price on your own rate.
+
+   Read from the twelve-hour cache here; the forced fetch happens at the top of
+   this file, before any output. */
+$fxJustRefreshed = isset($_GET['rates']);
+$fxRates = function_exists('fxRatesForCountries') ? fxRatesForCountries($pdo) : [];
+
+// Re-read, so the row values shown are the ones a refresh just wrote.
+try {
+    $countries = $pdo->query("SELECT * FROM store_countries ORDER BY sort_order ASC, country_name ASC")->fetchAll();
+} catch (PDOException $e) {}
+
+$fxSupported = $countries && array_key_exists('fx_rate', $countries[0]);
 ?>
 
 <div class="glass-panel" style="padding:28px;">
@@ -56,9 +86,33 @@ foreach ($countries as $c) { if ((int)$c['is_enabled'] === 1) { $enabledCount++;
 
     <div id="countryMsg" class="cn-msg" hidden></div>
 
+    <?php if ($fxJustRefreshed): ?>
+    <?php
+    // Say which way it went. A refresh that silently failed and left yesterday's
+    // number on screen looks identical to one that worked.
+    $fxFresh = 0; $fxOld = 0;
+    foreach ($fxRates as $cc => $fi) {
+        if ($cc === strtoupper(homeCountryRow()['country_code'] ?? 'IN')) { continue; }
+        if (!empty($fi['stale']) || $fi['rate'] === null) { $fxOld++; } else { $fxFresh++; }
+    }
+    ?>
+    <div class="cn-msg <?= $fxOld ? 'is-err' : 'is-ok' ?>">
+        <?php if ($fxOld && !$fxFresh): ?>
+            Could not reach the exchange-rate service. The rates below are the last ones on record — you can also type a rate in by hand.
+        <?php elseif ($fxOld): ?>
+            <?= (int)$fxFresh ?> rate<?= $fxFresh === 1 ? '' : 's' ?> updated. <?= (int)$fxOld ?> could not be fetched and still show the last known figure.
+        <?php else: ?>
+            Exchange rates updated.
+        <?php endif; ?>
+    </div>
+    <?php endif; ?>
+
     <div class="cn-note">
         <strong>Prices are set per country, not converted.</strong>
         A product with no price for a country is simply not sold there — that is also how you keep a piece India-only.
+        The exchange rate below is only used to <em>suggest</em> a price in the product form — press Convert there and it
+        fills the box, which you can then change. No rate is ever applied to a price a shopper sees, so a rate moving
+        overnight can never change what a garment costs.
         Before enabling anywhere new: Razorpay international payments must be active, you need an LUT filed for zero-rated exports,
         and you must decide who pays customs duty. A surprise duty bill on delivery is the main reason international parcels get refused.
     </div>
@@ -70,6 +124,7 @@ foreach ($countries as $c) { if ((int)$c['is_enabled'] === 1) { $enabledCount++;
                     <th>Country</th>
                     <th>Currency</th>
                     <th>Symbol</th>
+                    <?php if ($fxSupported): ?><th>Rate per &#8377;1</th><?php endif; ?>
                     <th>Delivery charge</th>
                     <th>Free over</th>
                     <th>COD</th>
@@ -93,6 +148,28 @@ foreach ($countries as $c) { if ((int)$c['is_enabled'] === 1) { $enabledCount++;
                     </td>
                     <td><input type="text" class="form-control cn-in cn-in-sm" data-f="currency_code" value="<?= htmlspecialchars($c['currency_code']) ?>" maxlength="3"></td>
                     <td><input type="text" class="form-control cn-in cn-in-xs" data-f="currency_symbol" value="<?= htmlspecialchars($c['currency_symbol']) ?>" maxlength="8"></td>
+                    <?php if ($fxSupported): ?>
+                    <td>
+                        <?php if ($isHome): ?>
+                            <span class="cn-muted">&mdash;</span>
+                        <?php else:
+                            $fxInfo  = $fxRates[$code] ?? null;
+                            $fxWhen  = $c['fx_rate_updated_at'] ?? null;
+                            $fxStale = $fxInfo['stale'] ?? ($fxWhen === null);
+                        ?>
+                            <input type="number" step="0.00000001" min="0" class="form-control cn-in cn-in-md"
+                                   data-f="fx_rate" value="<?= $c['fx_rate'] !== null ? htmlspecialchars(rtrim(rtrim($c['fx_rate'], '0'), '.')) : '' ?>"
+                                   placeholder="auto" title="Type a rate to price on your own figure. Clear it to go back to the live rate on the next load.">
+                            <div class="cn-fx-when<?= $fxStale ? ' cn-warn' : '' ?>">
+                                <?php if ($fxWhen): ?>
+                                    <?= htmlspecialchars(date('j M, H:i', strtotime($fxWhen))) ?><?= $fxStale ? ' — stale' : '' ?>
+                                <?php else: ?>
+                                    never fetched
+                                <?php endif; ?>
+                            </div>
+                        <?php endif; ?>
+                    </td>
+                    <?php endif; ?>
                     <td><input type="number" step="0.01" min="0" class="form-control cn-in cn-in-md" data-f="shipping_fee" value="<?= htmlspecialchars($c['shipping_fee']) ?>"></td>
                     <td><input type="number" step="0.01" min="0" class="form-control cn-in cn-in-md" data-f="free_shipping_min" value="<?= htmlspecialchars($c['free_shipping_min']) ?>"></td>
                     <td>
@@ -128,6 +205,16 @@ foreach ($countries as $c) { if ((int)$c['is_enabled'] === 1) { $enabledCount++;
 
     <div class="cn-actions">
         <button type="button" class="btn-primary" onclick="saveCountries()"><i class="fa-solid fa-floppy-disk"></i> Save Changes</button>
+        <?php if ($fxSupported): ?>
+        <?php /* A link, not a fetch: this is a page-level action with a redirect
+                 behind it, and a full reload is the honest way to show that every
+                 rate on screen has been replaced. Unsaved edits in the table would
+                 be lost, so the click is guarded. */ ?>
+        <a href="countries.php?refresh=1" class="btn-secondary"
+           onclick="return !document.getElementById('cnDirty').hidden ? confirm('You have unsaved changes. Refreshing rates will discard them. Continue?') : true;">
+            <i class="fa-solid fa-rotate"></i> Refresh rates now
+        </a>
+        <?php endif; ?>
         <span id="cnDirty" class="cn-muted" hidden>Unsaved changes</span>
     </div>
 </div>

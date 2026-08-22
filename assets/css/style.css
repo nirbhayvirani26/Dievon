@@ -6400,6 +6400,11 @@ body.welcome-open { overflow: hidden; }
 .cn-in-sm { width: 80px; }
 .cn-in-md { width: 110px; }
 .cn-muted { color: var(--text-muted); font-size: 12px; }
+/* When a rate was last fetched, under the rate itself. Small and grey unless it
+   is stale, in which case .cn-warn (already defined for the unpriced-country
+   count) makes it amber — the same colour the product form uses for the same
+   condition, so the two screens agree. */
+.cn-fx-when { font-size: 10.5px; line-height: 1.4; color: var(--text-muted); margin-top: 3px; }
 .cn-warn  { color: #b45309; font-weight: 600; }
 .cn-actions { margin-top: 18px; display: flex; align-items: center; gap: 14px; }
 .cn-check { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; cursor: pointer; }

@@ -3760,3 +3760,82 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
     font-size: 12px;
     color: var(--text-muted);
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   PRODUCT FORM — international price suggestions
+   ──────────────────────────────────────────────────────────────────────────
+   The Convert buttons and the line that says how old the rate is. Quiet by
+   design: these sit inside a form that already has two dozen controls, and a
+   convenience button competing with Save would be the wrong thing shouting.
+   ══════════════════════════════════════════════════════════════════════════ */
+.pf-fx-bar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px 14px;
+    margin: 2px 0 14px;
+}
+.pf-fx-note {
+    font-size: 11.5px;
+    line-height: 1.6;
+    color: var(--text-muted);
+}
+/* A rate that could not be refreshed still converts, so this is a caution, not
+   an error — amber rather than red, and it names the date it is working from. */
+.pf-fx-stale { color: #8a6a12; }
+
+.pf-fx-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+    padding: 5px 10px;
+    border: 1px solid var(--border-color, #e3dcd2);
+    border-radius: 4px;
+    background: transparent;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+}
+.pf-fx-btn:hover,
+.pf-fx-btn:focus-visible {
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+    background: var(--color-secondary-bg, rgba(138, 106, 18, 0.06));
+}
+.pf-fx-btn i { font-size: 10px; }
+
+/* A converted box flashes once, so it is obvious WHICH fields the button just
+   changed — with four countries on screen, a silent fill is easy to miss. */
+.pf-fx-filled {
+    animation: pfFxFlash 1.2s ease;
+}
+@keyframes pfFxFlash {
+    0%, 40% { background-color: rgba(138, 106, 18, 0.14); }
+    100%    { background-color: transparent; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .pf-fx-filled { animation: none; box-shadow: inset 0 0 0 2px rgba(138, 106, 18, 0.35); }
+}
+
+/* Which box is which. The pair is list-then-sale, the reverse of the rupee
+   fields above, and once both hold a number the placeholders are gone. */
+.pf-cp-cap {
+    display: block;
+    margin: 8px 0 3px;
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+.pf-cp-cap span {
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+}
+.pf-cp-cap:first-of-type { margin-top: 2px; }

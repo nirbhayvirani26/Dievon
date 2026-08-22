@@ -1646,6 +1646,40 @@ function buildSteps(PDO $pdo, string $db): array {
         },
     ];
 
+    /* ── Exchange rates, so international prices can be suggested ──────────
+       Prices stay stored per country and hand-editable; the rate only decides
+       what the product form PRE-FILLS. Kept on store_countries rather than in a
+       table of its own because there is exactly one rate per country and it is
+       edited on the same screen as the currency it belongs to.
+
+       DECIMAL(18,8): the rate is foreign-currency-per-1-INR, so GBP is about
+       0.00940000 — four decimal places would round that to 0.0094 and put a
+       0.4% error into every suggested price. */
+    $steps[] = [
+        'group' => 'International pricing — suggested conversions',
+        'label' => 'store_countries.fx_rate column',
+        'done'  => !tableExists($pdo, $db, 'store_countries') || columnExists($pdo, $db, 'store_countries', 'fx_rate'),
+        'skip'  => tableExists($pdo, $db, 'store_countries') ? '' : 'store_countries table does not exist here',
+        'sql'   => "ALTER TABLE store_countries ADD COLUMN fx_rate DECIMAL(18,8) NULL DEFAULT NULL AFTER currency_symbol",
+    ];
+    $steps[] = [
+        'group' => 'International pricing — suggested conversions',
+        'label' => 'store_countries.fx_rate_updated_at column',
+        'done'  => !tableExists($pdo, $db, 'store_countries') || columnExists($pdo, $db, 'store_countries', 'fx_rate_updated_at'),
+        'skip'  => tableExists($pdo, $db, 'store_countries') ? '' : 'store_countries table does not exist here',
+        'sql'   => "ALTER TABLE store_countries ADD COLUMN fx_rate_updated_at DATETIME NULL DEFAULT NULL AFTER fx_rate",
+    ];
+    /* The home country converts to itself. Seeded rather than special-cased in
+       code, so anything reading the column gets a usable number for every row. */
+    $steps[] = [
+        'group' => 'International pricing — suggested conversions',
+        'label' => 'home country rate = 1',
+        'done'  => !columnExists($pdo, $db, 'store_countries', 'fx_rate')
+                   || (int)$pdo->query("SELECT COUNT(*) FROM store_countries WHERE is_home = 1 AND (fx_rate IS NULL OR fx_rate <> 1)")->fetchColumn() === 0,
+        'skip'  => columnExists($pdo, $db, 'store_countries', 'fx_rate') ? '' : 'fx_rate column not present yet — re-run',
+        'sql'   => "UPDATE store_countries SET fx_rate = 1.00000000, fx_rate_updated_at = NOW() WHERE is_home = 1",
+    ];
+
     return $steps;
 }
 
