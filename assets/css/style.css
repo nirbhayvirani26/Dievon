@@ -10011,7 +10011,8 @@ input.chk-input-error:focus {
    full label went into the footer; see includes/footer.php. */
 .navbar-luxury .nav-actions .currency-selector-wrapper {
     position: relative;
-    width: 40px;
+    /* Width follows the glyph plus its label rather than being fixed at the
+       icon box: the code is two characters today and could be three. */
     height: 40px;
     align-items: center;
     justify-content: center;
@@ -10021,11 +10022,27 @@ input.chk-input-error:focus {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 100%;
+    /* 5px, not the row's gap. The glyph and its code are ONE control, so they
+       have to sit closer to each other than the control sits to the search
+       icon beside it — otherwise the code reads as a stray word between two
+       glyphs, which is what the first version of this looked like. */
+    gap: 5px;
     height: 100%;
+    padding: 0 2px;
     color: var(--dv-nav-ink);
     transition: color 0.2s ease;
     pointer-events: none;   /* the select underneath takes the click */
+}
+/* The code sits ON the glyph's baseline, not the box's. 10.5px against a 22px
+   drawn icon: matched by weight, not by measurement — two letters at 600 carry
+   about as much ink as one 1.4px stroke glyph. */
+.navbar-luxury .nav-actions .dv-country-code {
+    font-family: var(--font-body), sans-serif;
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    line-height: 1;
+    color: inherit;
 }
 .navbar-luxury .nav-actions .currency-selector-wrapper:hover .dv-country-glyph {
     color: var(--dv-nav-hover);

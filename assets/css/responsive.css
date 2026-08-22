@@ -2278,7 +2278,7 @@ html {
    boxes beside it — see the 991px block above for where those are set. Nothing
    to re-type or re-space: the <select> over it is invisible at every width. */
 @media (max-width: 991px) {
-    .navbar-luxury .nav-actions .currency-selector-wrapper { width: 38px; height: 38px; }
+    .navbar-luxury .nav-actions .currency-selector-wrapper { height: 38px; }
 }
 
 /* Five controls on a narrow phone.
@@ -2293,15 +2293,19 @@ html {
    a 30px target with 2px between them and reads no tighter because the drawn
    size does not change. */
 @media (max-width: 420px) {
-    .navbar-luxury .nav-action-item,
-    .navbar-luxury .nav-actions .currency-selector-wrapper { width: 30px; }
+    .navbar-luxury .nav-action-item { width: 30px; }
+    .navbar-luxury .nav-actions .dv-country-glyph { gap: 4px; padding: 0; }
+    .navbar-luxury .nav-actions .dv-country-code { font-size: 10px; letter-spacing: 0.06em; }
 }
 
 /* Narrower still: the wordmark gives up four pixels of height so the cluster
    keeps its targets rather than the other way round. */
+/* Narrowest step: the code goes, the glyph stays. Five controls, a hamburger
+   and the wordmark do not fit on a 320px screen with two extra characters in
+   the row — and the footer states the country in full anyway. */
 @media (max-width: 345px) {
-    .navbar-luxury .nav-action-item,
-    .navbar-luxury .nav-actions .currency-selector-wrapper { width: 27px; }
+    .navbar-luxury .nav-action-item { width: 27px; }
+    .navbar-luxury .nav-actions .dv-country-code { display: none; }
     .navbar-luxury .dv-icon { width: 19px; height: 19px; }
     .navbar-luxury .logo img { height: 30px; }
 }

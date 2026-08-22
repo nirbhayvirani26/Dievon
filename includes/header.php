@@ -633,11 +633,27 @@ $searchHint = $searchHintNames
                              screen-reader semantics and its mobile wheel while drawing
                              something else on top. Nothing about the element changes:
                              same id, same options, same onchange, same aria-label. */ ?>
-                    <span class="dv-country-glyph" aria-hidden="true">
-                        <svg class="dv-icon" viewBox="0 0 24 24" focusable="false"><circle cx="12" cy="12" r="8.6"/><ellipse cx="12" cy="12" rx="3.7" ry="8.6"/><path d="M3.7 9.1h16.6M3.7 14.9h16.6"/></svg>
-                    </span>
                     <?php
                     $curCountryCode = currentCountryCode();
+
+                    /* GB is the ISO code and what the database stores; shoppers say UK.
+                       Declared here rather than beside the <option> loop because the
+                       glyph's label and the option labels have to agree — written twice,
+                       the row could read UK while the open list read GB. */
+                    $shortLabel = static function (string $code): string {
+                        return ['GB' => 'UK'][$code] ?? $code;
+                    };
+                    ?>
+                    <span class="dv-country-glyph" aria-hidden="true">
+                        <svg class="dv-icon" viewBox="0 0 24 24" focusable="false"><circle cx="12" cy="12" r="8.6"/><ellipse cx="12" cy="12" rx="3.7" ry="8.6"/><path d="M3.7 9.1h16.6M3.7 14.9h16.6"/></svg>
+                        <?php /* The code beside the glyph, so the row says WHICH country
+                                 without opening anything. aria-hidden with the glyph: the
+                                 <select> over it already announces the country and its
+                                 currency through its own label, and a screen reader
+                                 reading "IN" twice is worse than not reading it here. */ ?>
+                        <span class="dv-country-code"><?= htmlspecialchars($shortLabel($curCountryCode)) ?></span>
+                    </span>
+                    <?php
 
                     /* The option LABELS are still the country codes — IN, UK, US.
                        ────────────────────────────────────────────────────────
@@ -660,13 +676,10 @@ $searchHint = $searchHintNames
                        neighbours — at 192px the icon row was pushed left until the
                        search box was drawn straight over the top of it.
 
-                       GB is the ISO code and what the database stores. The option
-                       VALUE stays GB, so nothing downstream changes — only the label
-                       reads UK, because that is what shoppers say. The full country
-                       name and currency stay on the title for anyone hovering. */
-                    $shortLabel = static function (string $code): string {
-                        return ['GB' => 'UK'][$code] ?? $code;
-                    };
+                       The option VALUE stays GB, so nothing downstream changes — only
+                       the label reads UK. The full country name and currency stay on
+                       the title for anyone hovering. $shortLabel is declared above, with
+                       the glyph that uses the same mapping. */
                     $cc = enabledCountries()[$curCountryCode] ?? null;
                     $ctrlTitle = $cc ? $cc['country_name'] . ' — prices in ' . $cc['currency_code'] : '';
                     ?>
