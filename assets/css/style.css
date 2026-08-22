@@ -11129,4 +11129,3 @@ input.chk-input-error:focus {
    supports a tile is (320 - 32 - 12) / 1.35 = 205px, which is wider than the
    two-column grid this replaced ever managed, and the arrangement does not
    change shape — it just scrolls further. */
-}
