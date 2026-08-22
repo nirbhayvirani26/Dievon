@@ -648,25 +648,49 @@ $heroSlideCount = !empty($heroBanners)
 /* ── New Arrivals: an editorial gallery, not a rail ──────────────────────────
    Four garments side by side, the first shown large and the other three as
    narrow panels. Hovering or focusing a panel expands it and collapses the one
-   that was open. Nothing moves on its own and there is no slider underneath:
-   the whole effect is flex-basis and a transition, so there is no library to
-   load, nothing to initialise, and it cannot break if a script fails.
+   that was open. The expanding itself is flex-basis and a transition — no
+   library, nothing to initialise, and it survives a script that fails to load.
 
-   Four because that is the composition. A fifth panel would make every narrow
-   one 12% of the screen, which is a stripe rather than a garment. */
-$naItems = array_slice($newArrivals, 0, 4);
+   Four ACROSS, because that is the composition: a fifth panel would make every
+   narrow one 12% of the screen, which is a stripe rather than a garment. More
+   than four arrivals are not dropped, they are paged — the desktop shows one
+   set of four at a time and the arrows top right swap in the next set. Twelve
+   is the ceiling; past that this stops being an editorial opener and starts
+   being the shop page, which already exists.
+
+   On a phone none of that applies. There is no hover to expand with and no
+   room for four across, so the same panels become one full-bleed swipe rail
+   holding every arrival — see the touch block in style.css. That is why the
+   off-page panels are marked with a class rather than the hidden attribute:
+   .na-off is only honoured above 1024px, so the rail keeps all of them. */
+$naItems    = array_slice($newArrivals, 0, 12);
+$naPerPage  = 4;
+$naPages    = (int)ceil(count($naItems) / $naPerPage);
+/* data-count sizes the panels for the set actually on screen, so it is the
+   size of the FIRST page, not the total. With JavaScript off that is the only
+   page there is, and the four still add to exactly 100%. */
+$naFirstPageCount = min(count($naItems), $naPerPage);
 ?>
 <section class="new-arrivals-section section-space">
     <?php /* Outside .container by design — the gallery runs edge to edge, and
              .container is max-width 1440 centred. The heading rides on top of
              the photographs instead of sitting above them, as the reference has
-             it, and drops back above them on a phone. */ ?>
-    <div class="na-gallery" data-count="<?= count($naItems) ?>">
+             it, and drops back above them on a phone.
+
+             The heading and the arrows are siblings of the gallery rather than
+             children of it, held together by .na-stage. That is not tidiness:
+             .na-gallery:hover collapses the open panel, and an arrow inside the
+             gallery would fire that rule while being the thing hovered — so no
+             panel would be expanded and the row would come up a third short.
+             Outside the gallery, hovering an arrow is not hovering the gallery. */ ?>
+    <div class="na-stage">
 
         <div class="na-heading">
             <span class="editorial-label">Latest Creations</span>
             <h2 class="section-title">New Arrivals</h2>
         </div>
+
+    <div class="na-gallery" data-count="<?= $naFirstPageCount ?>" data-na-pages="<?= $naPages ?>" data-na-per-page="<?= $naPerPage ?>">
 
         <?php foreach ($naItems as $naIndex => $naProduct):
             /* The card partial's own price resolution, called rather than
@@ -685,18 +709,24 @@ $naItems = array_slice($newArrivals, 0, 4);
                  is a span inside it, not a second anchor: an anchor inside an
                  anchor is invalid and browsers unnest it, which would have left
                  the CTA outside the clickable area it appears to belong to. */ ?>
-        <a class="na-panel<?= $naIndex === 0 ? ' is-default' : '' ?>"
+        <?php /* One panel per page is the open one, so it is the first of each
+                 set of four, not only the very first product. */
+              $naOnFirstPage = $naIndex < $naPerPage; ?>
+        <a class="na-panel<?= $naIndex % $naPerPage === 0 ? ' is-default' : '' ?><?= $naOnFirstPage ? '' : ' na-off' ?>"
            href="<?= htmlspecialchars($naUrl) ?>"
+           data-na-page="<?= intdiv($naIndex, $naPerPage) ?>"
            aria-label="<?= htmlspecialchars($naProduct['name']) ?>">
             <span class="na-media">
                 <?php if ($naImg !== ''): ?>
                 <picture>
                     <?php if ($naWebp): ?><source srcset="<?= htmlspecialchars($naWebp) ?>" type="image/webp"><?php endif; ?>
                     <?php /* The first panel is the one on screen at rest, so it
-                             loads eagerly; the other three are lazy. width and
-                             height are the intrinsic ratio — the panel decides
-                             the box, but the browser needs them to reserve it
-                             before the file lands. */ ?>
+                             loads eagerly; everything else is lazy. The panels
+                             on later pages are display:none until paged to, so
+                             the browser does not fetch them at all until then.
+                             width and height are the intrinsic ratio — the panel
+                             decides the box, but the browser needs them to
+                             reserve it before the file lands. */ ?>
                     <img class="na-img" src="<?= SITE_URL ?>/uploads/products/<?= htmlspecialchars($naImg) ?>"
                          alt="<?= htmlspecialchars($naAlt) ?>"
                          width="800" height="1000" decoding="async"
@@ -722,8 +752,89 @@ $naItems = array_slice($newArrivals, 0, 4);
             </span>
         </a>
         <?php endforeach; ?>
-    </div>
+    </div><!-- /.na-gallery -->
+
+        <?php if ($naPages > 1): ?>
+        <?php /* Rendered hidden and revealed by the script below. With no
+                 JavaScript the arrows would be two buttons that do nothing, so
+                 they must not appear until the thing that makes them work has
+                 run.
+
+                 Below the photographs, not on them. Inside the gallery the only
+                 free corner is the top right, and these are portrait
+                 photographs — the pill landed squarely on the model's face, and
+                 would on any garment shot the same way. Bottom right inside is
+                 worse still: that is where the caption of whichever panel is
+                 open appears. */ ?>
+        <div class="na-pager" hidden>
+          <div class="na-pager-pill">
+            <button type="button" class="na-arrow" data-na-step="-1" aria-label="Previous new arrivals">
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 5 8 12l7 7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <span class="na-count" aria-live="polite">1&#8202;/&#8202;<?= $naPages ?></span>
+            <button type="button" class="na-arrow" data-na-step="1" aria-label="Next new arrivals">
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 5 7 7-7 7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
+        </div>
+        <?php endif; ?>
+    </div><!-- /.na-stage -->
 </section>
+
+<?php if ($naPages > 1): ?>
+<script>
+/* New Arrivals paging. The gallery itself is CSS; this only decides which four
+   panels are in the flow, and it is additive — with the script absent the first
+   four are already the only ones rendered visible and the arrows never appear.
+
+   --na-rest is the number of NARROW panels on the page being shown, one less
+   than that page's count, and --na-open is how wide the open one is. A final
+   page of two would otherwise size its one narrow panel at a sixth of the row,
+   and a final page of one would sit at half width with the rest of the gallery
+   bare. Both go on the gallery, not the panels, so the inline values beat the
+   [data-count] rules by being on the element those panels inherit from. */
+(function () {
+    var stage = document.querySelector('.na-stage');
+    if (!stage) { return; }
+    var gallery = stage.querySelector('.na-gallery');
+    var pager   = stage.querySelector('.na-pager');
+    if (!gallery || !pager) { return; }
+
+    var panels  = Array.prototype.slice.call(gallery.querySelectorAll('.na-panel'));
+    var pages   = parseInt(gallery.getAttribute('data-na-pages'), 10) || 1;
+    var counter = pager.querySelector('.na-count');
+    var current = 0;
+
+    function show(next) {
+        /* Wrap rather than disable. Two arrows that grey out at the ends need a
+           disabled style, a disabled cursor and an explanation; wrapping needs
+           none of them and cannot strand anyone on a dead control. */
+        current = ((next % pages) + pages) % pages;
+
+        var live = 0;
+        panels.forEach(function (panel) {
+            var on = parseInt(panel.getAttribute('data-na-page'), 10) === current;
+            panel.classList.toggle('na-off', !on);
+            if (on) { live++; }
+        });
+
+        /* A page of one has nothing to sit beside, so it takes the whole
+           width; every other page keeps the half-and-the-rest composition. */
+        gallery.style.setProperty('--na-open', live === 1 ? '100%' : '50%');
+        gallery.style.setProperty('--na-rest', String(Math.max(1, live - 1)));
+        if (counter) { counter.textContent = (current + 1) + '\u200a/\u200a' + pages; }
+    }
+
+    pager.addEventListener('click', function (event) {
+        var button = event.target.closest('.na-arrow');
+        if (!button) { return; }
+        show(current + (parseInt(button.getAttribute('data-na-step'), 10) || 1));
+    });
+
+    pager.hidden = false;
+})();
+</script>
+<?php endif; ?>
 
 <?php endif; ?>
 

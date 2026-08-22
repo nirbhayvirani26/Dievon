@@ -10700,6 +10700,21 @@ input.chk-input-error:focus {
    specific of the two and wins over the panel's own hover, so the first panel
    could never be re-opened once the pointer had entered the gallery.
    ══════════════════════════════════════════════════════════════════════════ */
+/* The heading and the arrows sit in here beside the gallery rather than inside
+   it. .na-gallery:hover is what collapses the open panel, so a control INSIDE
+   the gallery would trigger that rule while being the thing under the pointer —
+   nothing would be expanded and the row would come up a third short. Out here,
+   hovering an arrow is not hovering the gallery. */
+.na-stage { position: relative; }
+
+/* Arrivals beyond the four on screen. Only honoured on the desktop composition:
+   below 1024px the same panels become one swipe rail and it keeps all of them,
+   which is why this is a class and not the hidden attribute. display:none also
+   means the browser never fetches those photographs until the set is paged to. */
+@media (min-width: 1025px) {
+    .na-panel.na-off { display: none; }
+}
+
 .na-gallery {
     position: relative;
     display: flex;
@@ -10711,7 +10726,21 @@ input.chk-input-error:focus {
     height: clamp(520px, 54vw, 820px);
     overflow: hidden;
     background: var(--color-primary-dark);
+
+    /* The two numbers the whole composition is derived from: how wide the open
+       panel is, and how many narrow ones share what is left. Kept as a pair so
+       the row always adds to exactly 100% and never wraps or leaves a strip of
+       bare burgundy at the end.
+
+       --na-open is not always half. One panel on its own has nothing to sit
+       beside and takes the whole width — a shop with a single new arrival, or a
+       final page of one. At 50% both of those left half the gallery empty. */
+    --na-open: 50%;
+    --na-rest: 3;
 }
+.na-gallery[data-count="1"] { --na-open: 100%; --na-rest: 1; }
+.na-gallery[data-count="2"] { --na-rest: 1; }
+.na-gallery[data-count="3"] { --na-rest: 2; }
 
 .na-panel {
     position: relative;
@@ -10719,25 +10748,23 @@ input.chk-input-error:focus {
     overflow: hidden;
     text-decoration: none;
     min-width: 0;
-    /* The three narrow panels share the half the open one does not take, so the
-       four always add to exactly 100% and the row never wraps or leaves a strip
-       of background at the end. --na-rest is the number of narrow panels. */
-    --na-rest: 3;
-    flex: 0 0 calc(50% / var(--na-rest));
+    /* The narrow panels share whatever the open one does not take. Both numbers
+       are declared on the GALLERY and inherited, not set on each panel: the
+       paging script rewrites them when a page holds fewer than four, and an
+       inline value on the gallery reaches every panel — whereas
+       .na-gallery[data-count] .na-panel would have out-specified it. */
+    flex: 0 0 calc((100% - var(--na-open)) / var(--na-rest));
     transition: flex-basis 500ms cubic-bezier(0.4, 0, 0.2, 1);
 }
-.na-gallery[data-count="1"] .na-panel { --na-rest: 1; }
-.na-gallery[data-count="2"] .na-panel { --na-rest: 1; }
-.na-gallery[data-count="3"] .na-panel { --na-rest: 2; }
 
-.na-panel.is-default { flex-basis: 50%; }
+.na-panel.is-default { flex-basis: var(--na-open); }
 .na-gallery:hover        .na-panel.is-default:not(:hover),
 .na-gallery:focus-within .na-panel.is-default:not(:focus-within) {
-    flex-basis: calc(50% / var(--na-rest));
+    flex-basis: calc((100% - var(--na-open)) / var(--na-rest));
 }
 .na-panel:hover,
 .na-panel:focus-visible,
-.na-panel:focus-within { flex-basis: 50%; }
+.na-panel:focus-within { flex-basis: var(--na-open); }
 
 /* ── The photograph ────────────────────────────────────────────────────────
    Two fits, deliberately. A narrow panel is a 200px-wide slot and cover is the
@@ -10889,6 +10916,44 @@ input.chk-input-error:focus {
     padding-inline: var(--dv-gutter);
     pointer-events: none;
 }
+/* The wash that makes the heading readable, carried by the heading itself
+   rather than by the gallery.
+
+   The gallery-wide gradient below is mood, and it is not enough: measured off
+   rendered pixels, white "NEW ARRIVALS" came out at 2.17:1 over these
+   photographs, against the 3.0:1 large text needs. It read as fine only while
+   the seeded products were flat colour blocks — real garment photography is
+   shot on pale studio walls, which is the same white-on-white failure the hero
+   banner went through earlier.
+
+   Local, not a stronger wash over the whole left half: that half is the open
+   panel, and darkening it to 0.6 to rescue two words would dull the one garment
+   the composition exists to show. The ellipse bleeds far past the type on every
+   side so its edge is never a visible box, and it is held flat across the
+   middle rather than falling off from the centre — a centre-peaked gradient is
+   at its weakest exactly where the ends of a long heading sit. */
+.na-heading::before {
+    content: '';
+    position: absolute;
+    inset: -120px -190px;
+    z-index: -1;
+    /* closest-side, not the default farthest-corner. With farthest-corner the
+       ellipse only reaches its last stop at the CORNERS, so alpha was still
+       0.30 at the middle of each edge and the wash rendered as a hard-edged
+       rectangle over the photograph. closest-side puts the 100% stop on all
+       four edge midpoints, so it fades to nothing exactly at the boundary.
+
+       46% is where the far corner of the type falls, measured: the heading box
+       is 413x68 at desktop and the bleed above makes the normalised radius at
+       the end of "ARRIVALS" 0.41. Holding full strength to 46% keeps every
+       letter on the plateau instead of on the falloff, which is where a
+       centre-peaked wash is weakest and the longest word reaches. */
+    background: radial-gradient(closest-side ellipse at center,
+        rgba(0, 0, 0, 0.68) 0%,
+        rgba(0, 0, 0, 0.66) 46%,
+        rgba(0, 0, 0, 0.34) 72%,
+        rgba(0, 0, 0, 0) 100%);
+}
 .na-gallery::before {
     content: '';
     position: absolute;
@@ -10904,6 +10969,62 @@ input.chk-input-error:focus {
     margin: 0;
 }
 .na-heading .section-title::after { background: var(--color-accent); }
+
+/* ── Paging the sets of four ───────────────────────────────────────────────
+   Under the photographs, right aligned to the page gutter. Not on them: every
+   corner inside the gallery is taken or unsafe. Bottom right is where the open
+   panel's caption appears. Top right was tried and is where a portrait
+   photograph puts the model's head — the pill sat on her face, and would on any
+   garment shot the same way.
+
+   The pill is not decoration. Gold on the page's pale ground is the failure the
+   collection tiles already hit; the brand's burgundy behind it is the same
+   pairing the captions use, and makes the contrast a fixed quantity rather than
+   a property of whatever is nearby. */
+.na-pager {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 4px;
+    padding: 16px var(--dv-gutter) 0;
+}
+.na-pager-pill {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 5px;
+    border-radius: 999px;
+    background: var(--color-primary-dark);
+}
+.na-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border-radius: 50%;
+    color: var(--color-accent);
+    background: transparent;
+    cursor: pointer;
+    transition: background-color 200ms ease, color 200ms ease;
+}
+.na-arrow svg { width: 19px; height: 19px; display: block; }
+.na-arrow:hover,
+.na-arrow:focus-visible {
+    background: var(--color-accent);
+    color: var(--color-primary-dark);
+}
+.na-arrow:focus-visible { outline: 2px solid #ffffff; outline-offset: 2px; }
+.na-count {
+    font-family: var(--font-body), sans-serif;
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-accent);
+    padding: 0 2px;
+}
 
 /* The whole panel is the link, so the ring has to be on the panel. inset, or a
    ring on a flush panel is clipped by its neighbour. */
@@ -10925,36 +11046,80 @@ input.chk-input-error:focus {
    A hover-expand gallery on a phone is a gallery with one garment visible and
    no way to reach the others: the first tap would only be read as a hover and
    the second as the link. So below 1024px the composition changes rather than
-   shrinking — the heading goes above the photographs, the first garment takes
-   the full width, and the rest sit two across. Every caption is visible,
-   because there is no hover to reveal it, and a tap goes straight to the
-   product.
+   shrinking — the panels become one full-bleed swipe rail running to both
+   edges of the glass, one garment and a third of the next in view, every
+   caption already visible because there is no hover to reveal it, and a tap
+   goes straight to the product.
+
+   A rail rather than a grid, for two reasons. Four products in "one big, then
+   the rest two across" leaves the fourth alone in a half row with a white hole
+   beside it — the arrangement is only whole at three, five, seven. And the
+   rail takes every arrival, not four: the desktop pages through them with the
+   arrows, and swiping is the same gesture the collections rail directly above
+   this one already uses.
 
    Every desktop hover rule is undone here rather than left to fall through: a
    stylus or a hybrid laptop can produce :hover on a touch layout, and a panel
-   that expanded to 50% of a two-column grid would tear the row in half. */
+   that expanded to 50% of the rail would shove its neighbours off screen. */
 @media (max-width: 1024px) {
+    .na-stage { position: static; }
+
+    /* No arrows on touch — the rail is swiped. They are also the only thing in
+       here that needs the gallery's dark ground behind it, which is gone. */
+    .na-pager { display: none; }
+
     .na-gallery {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 10px;
+        /* Authoritative, because the tile width is computed from it below and
+           responsive.css loads after this file. */
+        --na-rail-gap: 12px;
+
+        display: flex;
+        gap: var(--na-rail-gap);
         height: auto;
+        overflow-x: auto;
+        overflow-y: hidden;
         background: transparent;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+
+        /* Full bleed, with nothing to cancel. Every other rail on the site sits
+           inside .container and has to pull back out of its gutter with a
+           negative margin; this section is outside .container already, so the
+           gallery's border box IS the screen. Adding that negative margin here
+           pushed the rail 16px past both edges and the whole PAGE scrolled
+           sideways — measured, not guessed. Only the 16px inset is wanted, and
+           it is the same 16px as .dv-rail-bleed, which this element cannot
+           simply use because above 1024px it is the gallery. */
+        padding-inline: 16px;
+        scroll-padding-inline-start: 16px;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
     }
+    .na-gallery::-webkit-scrollbar { display: none; }
     .na-gallery::before { display: none; }
 
     .na-heading {
         position: static;
-        grid-column: 1 / -1;
         padding-inline: var(--dv-gutter);
-        margin-bottom: 6px;
+        margin-bottom: 14px;
         pointer-events: auto;
     }
+    /* The wash exists to lift white type off a photograph. Here the heading is
+       burgundy on the page's own pale ground, so the wash has nothing to do —
+       and being absolute against a static parent it would escape to the section
+       and paint a dark ellipse across it. */
+    .na-heading::before { display: none; }
     /* Back to page text on the page's own ground, so the white the overlay
        needed would be invisible. */
     .na-heading .section-title { color: var(--text-primary); }
     .na-heading .editorial-label { color: var(--color-accent-ink); }
 
+    /* One tile and a third of the next: t + gap + t/3 = the visible width, so
+       t = (C - gap) / 1.35. Solved rather than guessed at, because a flat
+       percentage gives a different number of tiles at 320 than at 430 — the
+       collections rail was rebuilt for exactly this. The third of a tile is
+       what tells you the rail scrolls; without it a phone user sees one photo
+       and no reason to swipe. */
     .na-panel,
     .na-panel.is-default,
     .na-panel:hover,
@@ -10962,18 +11127,14 @@ input.chk-input-error:focus {
     .na-panel:focus-within,
     .na-gallery:hover .na-panel.is-default:not(:hover),
     .na-gallery:focus-within .na-panel.is-default:not(:focus-within) {
-        flex: initial;
-        grid-column: span 1;
-        aspect-ratio: 3 / 4;
-    }
-    .na-panel.is-default {
-        grid-column: 1 / -1;
-        aspect-ratio: 4 / 5;
+        flex: 0 0 calc((100% - var(--na-rail-gap)) / 1.35);
+        height: auto;
+        aspect-ratio: 3 / 4.2;
+        scroll-snap-align: start;
     }
 
-    /* cover everywhere on touch. contain in a grid cell leaves bars on a
-       screen that has no width to spare, and the garment is already large
-       here — the full-width first panel is the whole screen wide. */
+    /* cover everywhere on touch. contain in a tile this size leaves bars on a
+       screen that has no width to spare. */
     .na-img,
     .na-panel.is-default .na-img,
     .na-panel:hover .na-img,
@@ -11001,13 +11162,8 @@ input.chk-input-error:focus {
     .na-cta   { font-size: 9.5px; letter-spacing: 0.12em; }
 }
 
-/* One column only once two would be genuinely too narrow. This was set at
-   460px, which swallowed every common phone — 360, 375 and 390 all fell to a
-   single column and the two-column arrangement never appeared on the devices
-   it was for. At 390 a column is 190px, which holds the name, the price and
-   the call to action comfortably; 330 is where that stops being true. */
-@media (max-width: 330px) {
-    .na-gallery { grid-template-columns: minmax(0, 1fr); }
-    .na-panel,
-    .na-panel.is-default { grid-column: 1 / -1; aspect-ratio: 4 / 5; }
+/* The rail needs no one-column fallback. At the narrowest screen the site
+   supports a tile is (320 - 32 - 12) / 1.35 = 205px, which is wider than the
+   two-column grid this replaced ever managed, and the arrangement does not
+   change shape — it just scrolls further. */
 }
