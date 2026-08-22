@@ -645,7 +645,7 @@ $searchHint = $searchHintNames
                     };
                     ?>
                     <span class="dv-country-glyph" aria-hidden="true">
-                        <svg class="dv-icon" viewBox="0 0 24 24" focusable="false"><circle cx="12" cy="12" r="8.6"/><ellipse cx="12" cy="12" rx="3.7" ry="8.6"/><path d="M3.7 9.1h16.6M3.7 14.9h16.6"/></svg>
+                        <svg class="dv-icon" viewBox="0 0 24 24" focusable="false"><circle cx="12" cy="12" r="8.6"/><ellipse cx="12" cy="12" rx="3.9" ry="8.6"/><path d="M3.5 12h17"/></svg>
                         <?php /* The code beside the glyph, so the row says WHICH country
                                  without opening anything. aria-hidden with the glyph: the
                                  <select> over it already announces the country and its

@@ -10022,25 +10022,36 @@ input.chk-input-error:focus {
     display: flex;
     align-items: center;
     justify-content: center;
-    /* 5px, not the row's gap. The glyph and its code are ONE control, so they
-       have to sit closer to each other than the control sits to the search
+    /* 7px, not the row's 12-18px. The glyph and its code are ONE control, so
+       they have to sit closer to each other than the control sits to the search
        icon beside it — otherwise the code reads as a stray word between two
-       glyphs, which is what the first version of this looked like. */
-    gap: 5px;
+       glyphs. It went 5 -> 7 with the type: a bigger label needs a little more
+       air or the two touch. */
+    gap: 7px;
     height: 100%;
     padding: 0 2px;
     color: var(--dv-nav-ink);
     transition: color 0.2s ease;
     pointer-events: none;   /* the select underneath takes the click */
 }
-/* The code sits ON the glyph's baseline, not the box's. 10.5px against a 22px
-   drawn icon: matched by weight, not by measurement — two letters at 600 carry
-   about as much ink as one 1.4px stroke glyph. */
+/* The label.
+   ───────────────────────────────────────────────────────────────────────────
+   This was 10.5px at weight 600 — caption-sized type at a caption's weight,
+   sitting beside a 22px drawn glyph. The mismatch in scale was the problem,
+   and 600 made it worse: heavy small type reads as a badge, not as a label.
+
+   12.5px at 500 with 0.16em is the opposite move and the one luxury setting
+   actually uses — a size you can read, a weight that stays quiet, and the air
+   between letters doing the work that weight was doing badly. Tracking adds
+   space after the last letter as well as between them, so the negative margin
+   takes that back; without it the gap to the search icon looks two pixels
+   wider than the gap on the glyph's other side. */
 .navbar-luxury .nav-actions .dv-country-code {
     font-family: var(--font-body), sans-serif;
-    font-size: 10.5px;
-    font-weight: 600;
-    letter-spacing: 0.1em;
+    font-size: 12.5px;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    margin-right: -0.16em;
     line-height: 1;
     color: inherit;
 }

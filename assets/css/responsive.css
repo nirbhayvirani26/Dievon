@@ -2019,8 +2019,14 @@ html {
 
     .navbar-luxury .logo img { height: 34px; max-width: 150px; }
 
+    /* 2px between the glyphs is fine — each one is centred in its own 36px box,
+       so the drawn shapes are already 14px apart. It is NOT fine either side of
+       the country label, which is type and sits flush to the edge of its text:
+       at 2px the N ran into the magnifier. The unit gets its own margin, and
+       the boxes give up 2px each to pay for it. */
     .navbar-luxury .nav-actions { gap: 2px !important; }
-    .navbar-luxury .nav-action-item { width: 38px; height: 38px; }
+    .navbar-luxury .nav-action-item { width: 36px; height: 38px; }
+    .navbar-luxury .nav-actions .currency-selector-wrapper { margin-right: 8px; }
     .navbar-luxury .dv-icon { width: 20px; height: 20px; }
     .navbar-luxury.header-compact .logo img { height: 30px; }
 
@@ -2294,8 +2300,8 @@ html {
    size does not change. */
 @media (max-width: 420px) {
     .navbar-luxury .nav-action-item { width: 30px; }
-    .navbar-luxury .nav-actions .dv-country-glyph { gap: 4px; padding: 0; }
-    .navbar-luxury .nav-actions .dv-country-code { font-size: 10px; letter-spacing: 0.06em; }
+    .navbar-luxury .nav-actions .dv-country-glyph { gap: 5px; padding: 0; }
+    .navbar-luxury .nav-actions .dv-country-code { font-size: 11.5px; letter-spacing: 0.1em; margin-right: -0.1em; }
 }
 
 /* Narrower still: the wordmark gives up four pixels of height so the cluster
@@ -2305,7 +2311,9 @@ html {
    the row — and the footer states the country in full anyway. */
 @media (max-width: 345px) {
     .navbar-luxury .nav-action-item { width: 27px; }
+    /* No label here, so no type to keep clear of — the margin goes back. */
     .navbar-luxury .nav-actions .dv-country-code { display: none; }
+    .navbar-luxury .nav-actions .currency-selector-wrapper { margin-right: 0; }
     .navbar-luxury .dv-icon { width: 19px; height: 19px; }
     .navbar-luxury .logo img { height: 30px; }
 }
