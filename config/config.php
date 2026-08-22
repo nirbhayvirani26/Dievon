@@ -1536,7 +1536,7 @@ function requireAdminCapability(string $capability, bool $asJson = false): void 
     echo '<!doctype html><meta charset="utf-8"><meta name="robots" content="noindex, nofollow">'
        . '<title>Not permitted</title>'
        . '<div style="font-family:system-ui,sans-serif;max-width:520px;margin:80px auto;padding:28px;'
-       . 'border:1px solid #e5e7eb;border-radius:10px;line-height:1.7;">'
+       . 'border:1px solid #e5e7eb;line-height:1.7;">'
        . '<h1 style="font-size:19px;margin:0 0 10px;">You do not have permission to open this page</h1>'
        . '<p style="color:#555;margin:0 0 18px;">Your account is set up as <strong>'
        . htmlspecialchars(currentAdminRole()) . '</strong>. Ask the shop owner if you need access.</p>'
