@@ -943,94 +943,23 @@ $pfHasBoth = count($pfPanels) > 1;
                              the opposite. */ ?>
                     <li class="pf-item" data-pf-index="<?= $pfIndex ?>" style="--pf-i: <?= $pfIndex ?>">
                         <?php
-                        /* NOT the product card. This section is photographs, and
-                           the boxed card — border, white ground, details stacked
-                           underneath — is a different component that already
-                           appears elsewhere on the site. Rendering it here and
-                           stripping the box with CSS would also tie this section
-                           to that component's redesign.
+                        /* The shared product card in its 'home' variant — see
+                           includes/product_card.php. One component, two designs:
+                           the badge, the sale percentage, sold out, "not sold in
+                           your country", country pricing, the "From" spread, the
+                           wishlist heart, the compare toggle and the "in your bag"
+                           note are all the same code that draws the shop grid, so
+                           a price or a state can never disagree between the two.
 
-                           What IS shared is the logic, not the markup: the price
-                           resolver, the badge rule, the URL builder, the alt-text
-                           builder, the WebP lookup and the wishlist handler are
-                           all the same functions the card uses, so a price or a
-                           link can never disagree between the two. */
-                        $cardProduct = $pfProduct;
-                        require __DIR__ . '/../includes/product_price_resolve.php';
-
-                        $pfUrl   = productUrl($pfProduct['id'], $pfProduct['name'], $pfProduct['seo_url'] ?? null);
-                        $pfAlt   = productImageAlt($pfProduct);
-                        $pfImg   = trim((string)($pfProduct['image'] ?? ''));
-                        $pfWebp  = $pfImg !== '' ? webpUrlIfExists('products', $pfImg) : '';
-                        $pfMrp   = $cardMrp; $pfPrice = $cardPrice;
-                        $pfHasDiscount = $pfMrp > $pfPrice && $pfPrice > 0 && !$cardVaries;
-                        $pfBadge = $pfHasDiscount
-                            ? (int)round((($pfMrp - $pfPrice) / $pfMrp) * 100) . '% OFF'
-                            : productBadge($pfProduct);
+                           This section supplies only the shell: what a print looks
+                           like, how far it is rotated, and when the caption
+                           appears. All of that is CSS on .pf-card. */
+                        $card           = $pfProduct;
+                        $cardVariant    = 'home';
+                        $cardExtraClass = 'pf-card';
+                        $cardQuickView  = false;   // the caption already offers the product
+                        include __DIR__ . '/../includes/product_card.php';
                         ?>
-                        <article class="pf-print">
-                            <?php if ($cardNotSoldHere): ?>
-                                <span class="pf-badge pf-badge-quiet">Not Available Here</span>
-                            <?php elseif ($pfBadge !== ''): ?>
-                                <span class="pf-badge"><?= htmlspecialchars($pfBadge) ?></span>
-                            <?php endif; ?>
-
-                            <?php /* The same handler the card uses, so a heart set
-                                     here is the same heart everywhere. */ ?>
-                            <button type="button" class="pf-wish"
-                                    onclick="handleWishlistClick(<?= (int)$pfProduct['id'] ?>, this)"
-                                    aria-label="Add <?= htmlspecialchars($pfProduct['name'], ENT_QUOTES) ?> to wishlist">
-                                <i class="fa-regular fa-heart" aria-hidden="true"></i>
-                            </button>
-
-                            <a class="pf-photo" href="<?= $pfUrl ?>">
-                              <?php /* The frame is a separate box from the link.
-                                       It carries the 3:4 ratio and the clipping;
-                                       the caption is its SIBLING, not its child.
-                                       Inside it, the caption is fine while it is
-                                       absolutely positioned over the photograph,
-                                       but the moment mobile drops it back into
-                                       the flow it is clipped away by the very
-                                       overflow:hidden that keeps the picture in
-                                       its ratio — which is exactly what happened:
-                                       no name, no price, no button on a phone. */ ?>
-                              <span class="pf-frame">
-                                <?php if ($pfImg !== ''): ?>
-                                <picture>
-                                    <?php if ($pfWebp): ?><source srcset="<?= htmlspecialchars($pfWebp) ?>" type="image/webp"><?php endif; ?>
-                                    <?php /* width and height are the intrinsic 3:4 so
-                                             the box is reserved before the file lands;
-                                             the section is well below the fold, so
-                                             every one of them is lazy. */ ?>
-                                    <img src="<?= SITE_URL ?>/uploads/products/<?= htmlspecialchars($pfImg) ?>"
-                                         alt="<?= htmlspecialchars($pfAlt) ?>"
-                                         width="1500" height="2000"
-                                         loading="lazy" decoding="async">
-                                <?php else: ?>
-                                <span class="pf-fallback" aria-hidden="true"><?= htmlspecialchars($pfProduct['emoji'] ?? '👗') ?></span>
-                                <?php endif; ?>
-                              </span>
-
-                                <?php /* Inside the link, so the whole caption is part
-                                         of the same click target rather than a second
-                                         one laid over it. "View Product" is a span for
-                                         the same reason — an anchor inside an anchor is
-                                         invalid and browsers unnest it. */ ?>
-                                <span class="pf-info">
-                                    <span class="pf-name"><?= htmlspecialchars($pfProduct['name']) ?></span>
-                                    <span class="pf-price">
-                                        <?php if ($cardNotSoldHere): ?>
-                                            Not available here
-                                        <?php else: ?>
-                                            <?php if ($pfHasDiscount): ?><span class="pf-was"><?= formatPrice($pfMrp) ?></span> <?php endif; ?>
-                                            <?php if ($cardVaries): ?><span class="pf-from">From</span> <?php endif; ?>
-                                            <?= formatPrice($pfPrice) ?>
-                                        <?php endif; ?>
-                                    </span>
-                                    <span class="pf-cta">View Product</span>
-                                </span>
-                            </a>
-                        </article>
                     </li>
                     <?php endforeach; ?>
                 </ul>
@@ -1886,7 +1815,7 @@ $occIsMen = function_exists('currentShopGender') && currentShopGender() === 'men
             /* Firefox ignores -webkit-user-drag, so the attribute says it too.
                Without this the first pointermove starts a native drag and the
                browser cancels the pointer, killing the swipe. */
-            panel.querySelectorAll('.pf-print a, .pf-print img').forEach(function (el) {
+            panel.querySelectorAll('.pf-card a, .pf-card img').forEach(function (el) {
                 el.setAttribute('draggable', 'false');
             });
             view.addEventListener('dragstart', function (e) { e.preventDefault(); });

@@ -11266,9 +11266,6 @@ input.chk-input-error:focus {
    to the browser by default. Starting a drag on one fires native drag-and-drop,
    which cancels the pointer stream mid-gesture — measured: pointerdown, one
    pointermove, then pointercancel, and the strip never moved. */
-.photo-fan-section .pf-print a,
-.photo-fan-section .pf-print img { -webkit-user-drag: none; user-select: none; }
-
 .photo-fan-section .pf-item {
     flex: 0 0 calc(100% / var(--pf-visible));
     max-width: calc(100% / var(--pf-visible));
@@ -11284,190 +11281,229 @@ input.chk-input-error:focus {
     z-index: calc(40 - var(--pf-i, 0));
 }
 
-/* ── The print ─────────────────────────────────────────────────────────── */
-.photo-fan-section .pf-print {
+/* ── The print ───────────────────────────────────────────────────────────────
+   Everything below dresses the SHARED product card in its 'home' variant. The
+   markup is includes/product_card.php — the same file that draws the shop grid —
+   so there is no second component to keep in step. .pf-card exists only inside
+   this section, and .product-card--home only on the home page, so the shop is
+   untouched by any of it. */
+.photo-fan-section .pf-card {
     position: relative;
+    /* The card's own chrome, undone. This is a photograph, not the boxed white
+       tile the shop uses. */
+    background: transparent;
+    border: 0;
+    padding: 0;
+    overflow: visible;
     transform-origin: center bottom;
-    transition: transform 400ms cubic-bezier(0.22, 0.61, 0.36, 1);
+    /* !important, reluctantly. .product-card carries
+       `transition: all 0.5s ease 0s !important`, which outranks anything written
+       here — measured: the fan's 400ms never applied and the lift ran at 500ms,
+       outside the 350-450ms the design calls for. `all` is also wrong for a card
+       that moves: it animates layout properties too. Naming transform keeps it
+       on the compositor. */
+    transition: transform 400ms cubic-bezier(0.22, 0.61, 0.36, 1) !important;
 }
+.photo-fan-section .pf-card:hover { transform: none; }   /* the item drives it, not the card */
+
 /* -3, -1, 1, 3 and repeat. nth-child(4n) rather than a class per print, so the
    pattern continues however many products the tab holds. */
-.photo-fan-section .pf-item:nth-child(4n + 1) .pf-print { transform: rotate(-3deg); }
-.photo-fan-section .pf-item:nth-child(4n + 2) .pf-print { transform: rotate(-1deg); }
-.photo-fan-section .pf-item:nth-child(4n + 3) .pf-print { transform: rotate(1deg); }
-.photo-fan-section .pf-item:nth-child(4n + 4) .pf-print { transform: rotate(3deg); }
+.photo-fan-section .pf-item:nth-child(4n + 1) .pf-card { transform: rotate(-3deg); }
+.photo-fan-section .pf-item:nth-child(4n + 2) .pf-card { transform: rotate(-1deg); }
+.photo-fan-section .pf-item:nth-child(4n + 3) .pf-card { transform: rotate(1deg); }
+.photo-fan-section .pf-item:nth-child(4n + 4) .pf-card { transform: rotate(3deg); }
 
-/* The link is just a link. The frame inside it is the thing with a shape. */
-.photo-fan-section .pf-photo {
+.photo-fan-section .pf-card .card-img-container {
     position: relative;
-    display: block;
-    text-decoration: none;
-}
-.photo-fan-section .pf-frame {
-    position: relative;
-    display: block;
     /* 3:4, held by the box rather than by the file, so nothing shifts while the
        photograph is still arriving. */
     aspect-ratio: 3 / 4;
+    height: auto;
     overflow: hidden;
+    border-radius: 0;
     background: var(--color-primary-dark);
     box-shadow: 0 14px 34px rgba(58, 12, 27, 0.14);
 }
-.photo-fan-section .pf-frame img {
+.photo-fan-section .pf-card .card-img-link { display: block; height: 100%; }
+.photo-fan-section .pf-card .card-img {
     width: 100%;
     height: 100%;
     object-fit: cover;
     /* The garment and the face are in the upper two thirds of a fashion plate;
        centring the crop takes the head off. */
     object-position: center 18%;
-    display: block;
 }
-.photo-fan-section .pf-fallback {
-    position: absolute;
-    inset: 0;
+.photo-fan-section .pf-card .card-img-fallback {
     display: flex;
     align-items: center;
     justify-content: center;
+    height: 100%;
     font-size: 52px;
     opacity: 0.5;
 }
 
-/* ── The caption, revealed ─────────────────────────────────────────────── */
-/* The same caption the New Arrivals gallery writes, deliberately. A name in the
-   heading face, the price under it in the body face, and "View Product" in gold
-   small caps with a rule under it — a shopper meets that pairing twice on this
-   page and it has to be the same thing both times.
+/* ── The caption ─────────────────────────────────────────────────────────────
+   The card's own .product-card-details, moved rather than rebuilt — so the name,
+   the price, the strike-through, the "From" spread, the bag note and the link
+   are all still the markup the shop grid draws.
 
-   The gradient is copied exactly rather than re-eyeballed, because it is not a
-   look, it is a measurement: the New Arrivals stops were derived from the fact
-   that white type needs its ground at or below about 118 to clear 4.5:1, and
-   0.54 alpha over pure WHITE leaves 117 — which is what a scrim tuned by eye on
-   a dark photograph gets wrong the moment a pale one is uploaded. */
-.photo-fan-section .pf-info {
+   A SIBLING of the image container, not a child, which is what lets it flip
+   between lying over the photograph here and sitting below it on a phone. A
+   caption inside the container would be clipped away by the overflow:hidden
+   that keeps the picture in its ratio. */
+.photo-fan-section .pf-card .product-card-details {
     position: absolute;
-    /* Against the link, which wraps the frame exactly, so this sits over the
-       photograph without being clipped by it. */
     inset: auto 0 0 0;
+    z-index: 2;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     gap: 6px;
-    /* Scaled to this box. A print is ~283px across where the New Arrivals panel
-       it borrows from is 720px, so the gallery's clamp(20px, 2.4vw, 34px) would
-       be a third of the width in padding. */
+    /* Scaled to this box: a print is ~283px across where the New Arrivals panel
+       these values come from is 720. */
     padding: clamp(16px, 1.3vw, 22px);
+    margin: 0;
+    text-align: left;
     opacity: 0;
     transform: translateY(12px);
     transition: opacity 380ms ease, transform 380ms cubic-bezier(0.22, 0.61, 0.36, 1);
-    /* transform makes this a stacking context already; isolate says so out loud
+    pointer-events: none;
+    /* transform already makes this a stacking context; isolate says so out loud
        so the scrim below cannot escape behind the photograph. */
     isolation: isolate;
 }
-/* The scrim is a pseudo-element that reaches 74px ABOVE the caption, not a
-   background on the caption itself.
+/* The scrim reaches 58px ABOVE the caption rather than being a background on it.
+   Gradient stops are percentages of their own box, and this box is small — a
+   print is ~377px tall where the gallery panel the stops came from is 778 — so
+   pasted verbatim the name, the topmost and weakest line, measured 2.72:1
+   against the 4.5:1 it needs. Extending the box upward puts every line in the
+   strong part and leaves the fade where there is no text to fail.
 
-   Copying the gallery's stops directly failed here, measured: 2.72:1 on the
-   name against the 4.5:1 it needs. The stops are percentages of the box they
-   sit on, and this box is small — a print is ~377px tall where the gallery
-   panel is 778 — so the name, which is the topmost line, landed in the thin end
-   of the fade. Extending the box upward puts every line of type in the strong
-   part and leaves the fade somewhere there is no text to fail. */
-.photo-fan-section .pf-info::before {
+   Tuned, not maximised. White type needs its ground at or below L 0.183 to clear
+   4.5:1, which over a pure-white photograph means at least 0.55 alpha, so the
+   stop where the name sits is held at 0.68. 0.58 was tried and is not enough:
+   the name's position inside the box MOVES with the length of the name — a
+   one-line title sits higher in the fade than a two-line one — and over a bright
+   mustard photograph a short title measured 3.49:1. The stop has to clear the
+   worst case, not the one that happened to be tested first.
+
+   Still not maximised. An early attempt held 0.62 up to 70% of a taller box and
+   measured 16:1 — and painted out the bottom half of the garment, so the price
+   was perfectly legible and the hem being sold was not. */
+.photo-fan-section .pf-card .product-card-details::before {
     content: '';
     position: absolute;
     inset: -58px 0 0 0;
     z-index: -1;
-    /* Tuned, not guessed. White type needs its ground at or below L 0.183 to
-       clear 4.5:1, which over a pure-white photograph means at least 0.55 alpha
-       — so the stop where the NAME sits, the topmost and therefore weakest
-       line, is held at 0.58 and everything below it is darker.
-
-       No higher than that. A first attempt held 0.62 up to 70% of the box and
-       measured a comfortable 16:1, but it also painted out the bottom half of
-       the garment: the shopper could read the price perfectly and no longer see
-       the hem they were being sold. */
     background: linear-gradient(to top,
-        rgba(0, 0, 0, 0.86) 0%,
-        rgba(0, 0, 0, 0.74) 34%,
-        rgba(0, 0, 0, 0.58) 56%,
-        rgba(0, 0, 0, 0.20) 82%,
+        rgba(0, 0, 0, 0.88) 0%,
+        rgba(0, 0, 0, 0.80) 34%,
+        rgba(0, 0, 0, 0.68) 58%,
+        rgba(0, 0, 0, 0.24) 84%,
         rgba(0, 0, 0, 0) 100%);
 }
-.photo-fan-section .pf-name {
+
+/* The same caption New Arrivals writes. A shopper meets this pairing twice on
+   the page and it has to be the same thing both times. */
+.photo-fan-section .pf-card .product-card-title {
+    margin: 0;
     font-family: var(--font-heading);
     font-weight: var(--font-heading-weight);
-    /* Same clamp shape as .na-name, stepped down for the narrower print — the
-       gallery's 26px ceiling was set against a 720px panel and wraps a garment
-       name onto three lines here. */
+    /* Same clamp shape as .na-name, stepped down for the narrower print. */
     font-size: clamp(16px, 1.3vw, 20px);
     line-height: 1.15;
-    color: #ffffff;
     text-wrap: balance;
 }
-.photo-fan-section .pf-price {
+.photo-fan-section .pf-card .product-card-title a { color: #ffffff; text-decoration: none; }
+.photo-fan-section .pf-card .product-card-price {
+    margin: 0;
     font-family: var(--font-body), sans-serif;
     font-size: 14px;
     font-weight: 500;
     letter-spacing: 0.02em;
     color: rgba(255, 255, 255, 0.92);
 }
-.photo-fan-section .pf-was  { text-decoration: line-through; opacity: 0.68; margin-right: 5px; font-weight: 400; }
-.photo-fan-section .pf-from { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.75; }
-.photo-fan-section .pf-cta {
-    margin-top: 4px;
-    font-family: var(--font-body), sans-serif;
+.photo-fan-section .pf-card .price-mrp-strike { color: rgba(255, 255, 255, 0.66); margin-right: 5px; }
+.photo-fan-section .pf-card .price-from-label { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.75; }
+.photo-fan-section .pf-card .product-card-bag-note {
+    margin: 0;
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--color-accent);
+}
+/* !important on the colour only, to beat .btn-luxury's own
+   `color: #ffffff !important`. Without it the call to action came out white
+   rather than gold — legible, but not the gold rule the rest of the page uses
+   for "go and look at this". */
+.photo-fan-section .pf-card .product-card-cta {
+    color: var(--color-accent) !important;
+    width: auto;
+    margin: 4px 0 0;
+    padding: 0 0 3px;
+    background: none;
+    border: 0;
+    border-bottom: 1px solid var(--color-accent);
+    border-radius: 0;
+    color: var(--color-accent);
     font-size: 10.5px;
     font-weight: 600;
     letter-spacing: 0.16em;
     text-transform: uppercase;
-    color: var(--color-accent);
-    border-bottom: 1px solid currentColor;
-    padding-bottom: 3px;
 }
+.photo-fan-section .pf-card .product-card-cta.sold-out-cta { color: rgba(255, 255, 255, 0.78) !important; border-bottom-color: currentColor; }
 
 /* Hover and keyboard focus do the same thing, or the section is usable with a
    mouse only. */
-/* Above every resting print, not above 4. The resting stack starts at 40 and
-   counts DOWN, so the old value of 5 put the print being looked at BEHIND its
-   neighbours — the lift worked, but the caption was sliced off down its left
-   edge by the print in front. */
 .photo-fan-section .pf-item:hover,
 .photo-fan-section .pf-item:focus-within { z-index: 60; }
-.photo-fan-section .pf-item:hover .pf-print,
-.photo-fan-section .pf-item:focus-within .pf-print {
+.photo-fan-section .pf-item:hover .pf-card,
+.photo-fan-section .pf-item:focus-within .pf-card {
     /* Straight, lifted, barely enlarged. 1.03 is the ceiling; past that it reads
        as a zoom rather than a print being picked up. */
     transform: rotate(0deg) translateY(-14px) scale(1.03);
 }
-.photo-fan-section .pf-item:hover .pf-frame,
-.photo-fan-section .pf-item:focus-within .pf-frame { box-shadow: 0 26px 56px rgba(58, 12, 27, 0.26); }
-.photo-fan-section .pf-item:hover .pf-info,
-.photo-fan-section .pf-item:focus-within .pf-info { opacity: 1; transform: translateY(0); }
-.photo-fan-section .pf-photo:focus-visible { outline: 2px solid var(--color-accent); outline-offset: -4px; }
+.photo-fan-section .pf-item:hover .card-img-container,
+.photo-fan-section .pf-item:focus-within .card-img-container { box-shadow: 0 26px 56px rgba(58, 12, 27, 0.26); }
+.photo-fan-section .pf-item:hover .product-card-details,
+.photo-fan-section .pf-item:focus-within .product-card-details {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+.photo-fan-section .pf-card .card-img-link:focus-visible,
+.photo-fan-section .pf-card .product-card-title a:focus-visible,
+.photo-fan-section .pf-card .product-card-cta:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+}
 
-/* ── Badge and wishlist ────────────────────────────────────────────────── */
-.photo-fan-section .pf-badge {
-    position: absolute;
+/* ── Badge, wishlist, compare ──────────────────────────────────────────────
+   A print is a link wrapped round a photograph, and both are draggable objects
+   to the browser by default. Starting a drag on one fires native drag-and-drop,
+   which cancels the pointer stream mid-gesture — measured: pointerdown, one
+   pointermove, then pointercancel, and the strip never moved. */
+.photo-fan-section .pf-card a,
+.photo-fan-section .pf-card img { -webkit-user-drag: none; user-select: none; }
+
+.photo-fan-section .pf-card .badge-luxury {
     top: 12px;
     /* Clear of the neighbour lying over this print's left edge. At a flat 12px
        the discount badge was half-covered by the print in front of it. */
     left: calc(var(--pf-overlap) + 14px);
+    right: auto;
     z-index: 3;
     padding: 5px 10px;
-    font-family: var(--font-body), sans-serif;
     font-size: 9.5px;
-    font-weight: 600;
     letter-spacing: 0.14em;
-    text-transform: uppercase;
     color: var(--color-accent);
     background: var(--color-primary-dark);
 }
-.photo-fan-section .pf-badge-quiet { background: rgba(58, 12, 27, 0.82); }
+.photo-fan-section .pf-card .badge-sold-out { background: rgba(58, 12, 27, 0.86); }
 
 /* On the photograph at all times — it is the one control a shopper looks for
    without hovering first — but quiet until the print is the one in hand. */
-.photo-fan-section .pf-wish {
-    position: absolute;
+.photo-fan-section .pf-card .product-card-wishlist-btn {
     top: 10px;
     right: 10px;
     z-index: 4;
@@ -11477,19 +11513,43 @@ input.chk-input-error:focus {
     /* 44px, the minimum touch target, met by the box itself. */
     width: 44px;
     height: 44px;
-    border: 0;
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.9);
     color: var(--color-primary-dark);
-    font-size: 15px;
-    cursor: pointer;
     opacity: 0.85;
-    transition: opacity 220ms ease, background-color 220ms ease;
 }
-.photo-fan-section .pf-item:hover .pf-wish,
-.photo-fan-section .pf-item:focus-within .pf-wish { opacity: 1; }
-.photo-fan-section .pf-wish:hover { background: #ffffff; }
-.photo-fan-section .pf-wish:focus-visible { outline: 2px solid var(--color-primary-dark); outline-offset: 2px; }
+.photo-fan-section .pf-item:hover .product-card-wishlist-btn,
+.photo-fan-section .pf-item:focus-within .product-card-wishlist-btn { opacity: 1; }
+
+/* Compare is the one control that would clutter a photograph, so it waits for
+   the print to be picked up. It is still reachable by keyboard at any time —
+   focus-within opens it — and it is never display:none, which would take it out
+   of the tab order entirely. */
+/* Under the badge, the same stack the shop uses. The base rule pins it with
+   `top: 48px`, so adding a `bottom` here — as a first pass did — does not move
+   it down, it stretches it: the pill became a white panel 500px tall lying
+   across the middle of the garment. top is re-stated and bottom left alone. */
+.photo-fan-section .pf-card .compare-toggle {
+    top: 52px;
+    bottom: auto;
+    left: calc(var(--pf-overlap) + 14px);
+    right: auto;
+    z-index: 4;
+}
+/* The base opens it on .product-card:hover. Here the whole ITEM is the hover
+   target — the card inside it is scaled and rotated — so it opens on the item
+   too, and on focus-within, or a keyboard shopper could never reach it. */
+.photo-fan-section .pf-item:hover .compare-toggle,
+.photo-fan-section .pf-item:focus-within .compare-toggle { opacity: 1; }
+
+/* Sold out, softened for this ground only. The shop greys the photograph to 0.6
+   against a white tile, where it reads as unavailable; over this section's dark
+   burgundy the same 0.6 reads as an image that failed to load. The grayscale —
+   which is the part actually carrying the meaning — is untouched, and the badge
+   and the button still say Sold Out in words. */
+.photo-fan-section .pf-card.sold-out .card-img,
+.photo-fan-section .pf-card.sold-out .card-img-fallback { opacity: 0.82; }
+.photo-fan-section .pf-card.sold-out .product-card-price { opacity: 0.85; }
 
 /* ── Controls ──────────────────────────────────────────────────────────── */
 .photo-fan-section .pf-controls {
@@ -11554,17 +11614,21 @@ input.chk-input-error:focus {
 /* The rotations go too. To someone who asked for less movement, a wall of
    tilted photographs that snap straight IS the motion, not the transition. */
 @media (prefers-reduced-motion: reduce) {
+    /* !important on the card, because .product-card's own
+       `transition: all 0.5s !important` would otherwise keep animating for
+       someone who has asked the operating system for less movement. */
+    .photo-fan-section .pf-card { transition: none !important; }
     .photo-fan-section .pf-track,
-    .photo-fan-section .pf-print,
     .photo-fan-section .pf-progress-fill,
-    .photo-fan-section .pf-info { transition: none; }
+    .photo-fan-section .pf-card .product-card-details,
+    .photo-fan-section .pf-card .compare-toggle { transition: none; }
     .photo-fan-section .pf-panel.is-active { animation: none; }
-    .photo-fan-section .pf-item:nth-child(4n + 1) .pf-print,
-    .photo-fan-section .pf-item:nth-child(4n + 2) .pf-print,
-    .photo-fan-section .pf-item:nth-child(4n + 3) .pf-print,
-    .photo-fan-section .pf-item:nth-child(4n + 4) .pf-print { transform: none; }
-    .photo-fan-section .pf-item:hover .pf-print,
-    .photo-fan-section .pf-item:focus-within .pf-print { transform: none; }
+    .photo-fan-section .pf-item:nth-child(4n + 1) .pf-card,
+    .photo-fan-section .pf-item:nth-child(4n + 2) .pf-card,
+    .photo-fan-section .pf-item:nth-child(4n + 3) .pf-card,
+    .photo-fan-section .pf-item:nth-child(4n + 4) .pf-card { transform: none; }
+    .photo-fan-section .pf-item:hover .pf-card,
+    .photo-fan-section .pf-item:focus-within .pf-card { transform: none; }
 }
 
 /* ── Standard desktop ──────────────────────────────────────────────────── */
@@ -11598,24 +11662,45 @@ input.chk-input-error:focus {
     .photo-fan-section .pf-item { padding-inline: 6px; }
     /* A single degree, kept only because it still reads as deliberate at this
        size. More and a full-width photograph looks knocked askew. */
-    .photo-fan-section .pf-item:nth-child(odd)  .pf-print { transform: rotate(-1deg); }
-    .photo-fan-section .pf-item:nth-child(even) .pf-print { transform: rotate(1deg); }
-    .photo-fan-section .pf-item:hover .pf-print,
-    .photo-fan-section .pf-item:focus-within .pf-print { transform: none; }
+    .photo-fan-section .pf-item:nth-child(odd)  .pf-card { transform: rotate(-1deg); }
+    .photo-fan-section .pf-item:nth-child(even) .pf-card { transform: rotate(1deg); }
+    .photo-fan-section .pf-item:hover .pf-card,
+    .photo-fan-section .pf-item:focus-within .pf-card { transform: none; }
 
-    .photo-fan-section .pf-info {
+    /* The caption comes out from under the gradient and sits below the
+       photograph, permanently. It is a SIBLING of the image container, so
+       dropping it back into the flow costs nothing — nothing clips it. */
+    .photo-fan-section .pf-card .product-card-details {
         position: static;
         opacity: 1;
         transform: none;
+        pointer-events: auto;
         padding: 14px 2px 0;
     }
-    /* No scrim here — the caption is page text on the ivory ground now, and a
-       black wash behind it would be a rectangle in the middle of the page. */
-    .photo-fan-section .pf-info::before { display: none; }
-    .photo-fan-section .pf-name  { color: var(--text-primary); }
-    .photo-fan-section .pf-price { color: var(--text-primary); }
-    .photo-fan-section .pf-was   { color: var(--text-muted); }
-    .photo-fan-section .pf-cta   { color: var(--color-accent-ink); }
+    /* No scrim — the caption is page text on the ivory ground now, and a black
+       wash behind it would be a rectangle in the middle of the page. */
+    .photo-fan-section .pf-card .product-card-details::before { display: none; }
+    .photo-fan-section .pf-card .product-card-title a { color: var(--text-primary); }
+    .photo-fan-section .pf-card .product-card-price   { color: var(--text-primary); }
+    .photo-fan-section .pf-card .price-mrp-strike     { color: var(--text-muted); }
+    .photo-fan-section .pf-card .product-card-cta     { color: var(--color-accent-ink) !important; border-bottom-color: var(--color-accent-ink); }
+    .photo-fan-section .pf-card .product-card-bag-note { color: var(--color-accent-ink); }
+    /* Compare is NOT re-enabled here. The site hides both the toggle and the
+       compare bar below 900px on purpose — the bar is fixed at z-index 9500 and
+       on a phone it covers the page it is meant to help you shop. This section
+       defers to that rather than carving out an exception, so comparing stays a
+       desktop action everywhere, including the home page.
+
+       An earlier attempt did try to fold the toggle into the caption, and it
+       could not have worked anyway: the toggle is a child of the image
+       container, not of the caption, so making it static dropped it inside a
+       box with overflow:hidden and a fixed ratio, where it was clipped to
+       nothing. */
+    .photo-fan-section .pf-card .product-card-cta.sold-out-cta {
+        /* The dark-ground colour would be white on ivory here. */
+        color: var(--text-muted) !important;
+        border-bottom-color: var(--text-muted);
+    }
 
     /* Arrows off: the strip is swiped, and two 48px circles over a full-width
        photograph cover the garment they are meant to help you reach. The counter

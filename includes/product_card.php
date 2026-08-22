@@ -20,6 +20,26 @@
  *   $cardQuickView     — false to hide Quick View (default true)
  *   $cardExtraClass    — extra class on the <article>, e.g. 'product-card-carousel'
  *   $cardFallbackBadge — badge to show when the product has none and is not on sale
+ *   $cardVariant       — 'default' (the shop, category pages, search, the wishlist
+ *                        and the related strip) or 'home'. See below.
+ *
+ * TWO DESIGNS, ONE COMPONENT.
+ * ─────────────────────────────────────────────────────────────────────────────
+ * The home page wants a different card from the shop: no category line, "View
+ * Product" rather than "Details", and a caption that lies over the photograph
+ * instead of sitting under it in the flow. That is a presentation difference,
+ * not a different product — every rule about what a card may SAY is identical.
+ *
+ * So it is one file with a variant, not two files. Country pricing, the "From"
+ * spread across sizes, the strike-through MRP and the percentage it is measured
+ * against, the New badge that expires by itself, sold out, "not sold in your
+ * country", the wishlist heart, the compare toggle and the "in your bag" note
+ * are written once here. A second component would have meant every one of those
+ * rules existing twice, and the first time one was fixed in one copy and not the
+ * other, the same product would quote two different prices on two pages.
+ *
+ * The 'home' variant changes three things in this file — a class, the category
+ * line, and the button's wording. Everything else about it is CSS.
  */
 
 $cardProduct = $card ?? null;
@@ -29,6 +49,8 @@ $cardCompare       = $cardCompare   ?? true;
 $cardQuickView     = $cardQuickView ?? true;
 $cardExtraClass    = $cardExtraClass ?? '';
 $cardFallbackBadge = $cardFallbackBadge ?? '';
+$cardVariant       = ($cardVariant ?? '') === 'home' ? 'home' : 'default';
+$cardIsHome        = $cardVariant === 'home';
 
 /* Country pricing and the buyable price, both resolved before anything is
    drawn — see includes/product_price_resolve.php for why, and for the bug that
@@ -87,7 +109,7 @@ $cardUrl = productUrl($cardProduct['id'], $cardProduct['name'], $cardProduct['se
          renderers — this partial and createProductCard() in pages/shop.php — so
          the two cannot drift apart again, and the count stays right the moment
          the bag changes without waiting for a page load. */ ?>
-<article class="product-card reveal-on-scroll<?= $cardSoldOut ? ' sold-out' : '' ?><?= $cardExtraClass !== '' ? ' ' . htmlspecialchars($cardExtraClass) : '' ?>"
+<article class="product-card reveal-on-scroll<?= $cardIsHome ? ' product-card--home' : '' ?><?= $cardSoldOut ? ' sold-out' : '' ?><?= $cardExtraClass !== '' ? ' ' . htmlspecialchars($cardExtraClass) : '' ?>"
          data-product-id="<?= (int)$cardProduct['id'] ?>">
     <?php if ($cardNotSoldHere): ?>
         <span class="badge-luxury badge-sold-out">Not Available Here</span>
@@ -186,7 +208,12 @@ $cardUrl = productUrl($cardProduct['id'], $cardProduct['name'], $cardProduct['se
 
     <div class="product-card-details">
         <p class="product-card-bag-note" data-bag-note hidden></p>
+        <?php /* Dropped on the home page. There the photograph is doing the
+                 categorising, and the line is one more thing to read on top of a
+                 picture. */ ?>
+        <?php if (!$cardIsHome): ?>
         <span class="product-card-category"><?= htmlspecialchars($cardProduct['category'] ?? '') ?></span>
+        <?php endif; ?>
         <h3 class="product-card-title">
             <a href="<?= $cardUrl ?>"><?= htmlspecialchars($cardProduct['name']) ?></a>
         </h3>
@@ -204,12 +231,15 @@ $cardUrl = productUrl($cardProduct['id'], $cardProduct['name'], $cardProduct['se
                 <?= formatPrice($cardPrice) ?>
             <?php endif; ?>
         </div>
+<?php /* "View Product" on the home page, "Details" everywhere else. Sold Out
+         still wins over both — it is a state, not a label. */
+      $cardCtaWord = $cardIsHome ? 'View Product' : 'Details'; ?>
         <?php if ($cardNotSoldHere): ?>
-        <a href="<?= $cardUrl ?>" class="btn-luxury product-card-cta">Details</a>
+        <a href="<?= $cardUrl ?>" class="btn-luxury product-card-cta"><?= $cardCtaWord ?></a>
         <?php elseif ($cardSoldOut): ?>
         <span class="btn-luxury product-card-cta sold-out-cta" aria-disabled="true">Sold Out</span>
         <?php else: ?>
-        <a href="<?= $cardUrl ?>" class="btn-luxury product-card-cta">Details</a>
+        <a href="<?= $cardUrl ?>" class="btn-luxury product-card-cta"><?= $cardCtaWord ?></a>
         <?php endif; ?>
     </div>
 </article>
@@ -217,5 +247,5 @@ $cardUrl = productUrl($cardProduct['id'], $cardProduct['name'], $cardProduct['se
 // Clear the per-card options. Without this a caller that sets $cardExtraClass once
 // leaks it into every later include in the same request — the carousel class would
 // end up on the grid below it.
-unset($cardCompare, $cardQuickView, $cardExtraClass, $cardFallbackBadge, $card);
+unset($cardCompare, $cardQuickView, $cardExtraClass, $cardFallbackBadge, $cardVariant, $card);
 ?>
