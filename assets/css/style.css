@@ -11046,6 +11046,94 @@ input.chk-input-error:focus {
     padding-bottom: 3px;
 }
 
+/* ── The caption scales with its PANEL, not with the viewport ───────────────
+   The panel is 240px when it is a sliver and 720px when it is open, at the same
+   viewport. So a viewport unit cannot describe this caption: clamp(19px,1.7vw,
+   26px) gave a 720x900 plate and a 240px sliver identical 24.5px type, and it
+   sized the whole lockup for the sliver. The result was card type on a poster —
+   the title was 3.4% of the panel it sat on where the mobile rail card, which
+   reads correctly, is 10.6%, and the price and the DETAILS link did not scale at
+   ALL: 14px and 10.5px, the same values a 179px phone card uses, and a SMALLER
+   price than the 299px shop tile's 16px.
+
+   Container queries are the unit that actually names the thing that varies. One
+   declaration then covers the sliver, the open panel and the phone card, and
+   because the size resolves from the panel's width it interpolates across the
+   500ms flex-basis transition instead of snapping — measured mid-open at a
+   625px panel: 31.3px, on its way from 23 to 30.
+
+   Sizes are fitted to the measured panel widths, not chosen by eye:
+
+     viewport   panel     title  price strike %off DETAILS  pad
+      1025      513x641    23      16    14    12.5   11     28
+      1280      640x800    26      16    14    12.5   11     36
+      1440      720x900    28      16    14    12.5   11     40
+      1600+     800x1000   30      16    14    12.5   11     44
+
+   calc(10.5px + 2.44cqw) passes through 23 at 513 and 30 at 800, so the two
+   clamp ends are hit exactly rather than approached. Only the title and the
+   inset ride the panel; the four information lines are canvas-invariant, which
+   is what the house already does with its on-photo micro-type — the same 11px
+   label serves a 259px occasion tile and a 1440px banner. Every one of those
+   four is an existing house value: 16 the shop card's price, 14 and 12.5 this
+   component's own, 11 the occasion tile label at the same 0.16em.
+
+   The title stops at 30. The panel stops growing at 800px and the section
+   heading above never grows at all, so the name has to plateau too.
+
+   Written as two declarations per property, px first and cq second, and NOT
+   through a custom property. A var() holding a cq value stays valid at parse
+   time and fails at computed-value time, which resolves to unset — padding 0,
+   not the fallback. Written directly, a browser without container units drops
+   the second declaration while parsing and keeps the first, so it renders
+   exactly what it renders today. That is also why the scrim inset repeats the
+   padding clamp instead of referring to it. */
+@media (min-width: 1025px) {
+    /* Safe because the panel's width comes from `flex: 0 0 <length>`. Inline-size
+       containment removes an element's intrinsic width contribution, so anything
+       that later sizes this panel from its CONTENT — flex-basis: auto, or
+       flex: 1 1 auto — would collapse it to zero. It does not contain block
+       size, so the image's height: 100% still resolves. */
+    .na-gallery .na-panel { container-type: inline-size; }
+
+    .na-gallery .na-panel .product-card-title {
+        font-size: clamp(19px, 1.7vw, 26px);
+        font-size: clamp(23px, calc(10.5px + 2.44cqw), 30px);
+    }
+    .na-gallery .na-panel .product-card-price,
+    .na-gallery .na-panel .price-now        { font-size: 16px; }
+    .na-gallery .na-panel .price-mrp-strike { font-size: 14px; }
+    .na-gallery .na-panel .price-off        { font-size: 12.5px; }
+    .na-gallery .na-panel .product-card-cta { font-size: 11px; }
+
+    .na-gallery .na-panel .product-card-details {
+        padding: 34px;
+        padding: clamp(28px, 5.6cqw, 44px);
+        gap: 8px;
+    }
+    /* The scrim has to grow with the caption or the fix undoes itself.
+       The gradient's stops are percentages of THIS box, so a taller caption
+       inside a fixed-height box slides the title up into the thin end of the
+       fade — which is exactly how the title came to measure 2.05:1 before the
+       -58px lead-in was added. 58 was padding + 24 when the padding was 34;
+       keeping that relationship is what holds the 0.68 stop above the name at
+       every size. */
+    .na-gallery .na-panel .product-card-details::before {
+        inset: -58px 0 0 0;
+        inset: calc(-1 * (clamp(28px, 5.6cqw, 44px) + 24px)) 0 0 0;
+    }
+    /* A long name must not recompose the plate. Three lines of a 30px serif
+       pushes the price and the link off the bottom of a 1000px panel and drags
+       the whole lockup into the pale part of the photograph. */
+    .na-gallery .na-panel .product-card-title {
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        overflow: hidden;
+    }
+}
+
 /* The heading is not in here. It is the ordinary .section-title-wrapper above
    the gallery, inside .container, like every other section on the page.
 
@@ -11232,9 +11320,17 @@ input.chk-input-error:focus {
         padding: 16px;
         gap: 4px;
     }
+    /* The title is already right here — 19px on a 179px card is the one caption
+       on the site whose proportion reads correctly, and it is the anchor the
+       desktop scale above was fitted to. Only the two lines that had fallen
+       below their own floor move. 13px was never a price value anywhere on the
+       site (it is the occasion banner's CTA); 14 is. And 9.5px uppercase gold
+       tracked over a photograph is under any sensible floor for a link — 10.5
+       is what the shop card and the photo fan both use, so the tracking comes
+       from the base rule rather than being overridden thinner here. */
     .na-panel .product-card-title { font-size: clamp(15px, 4vw, 20px); }
-    .na-panel .product-card-price { font-size: 13px; }
-    .na-panel .product-card-cta   { font-size: 9.5px; letter-spacing: 0.12em; }
+    .na-panel .product-card-price { font-size: 14px; }
+    .na-panel .product-card-cta   { font-size: 10.5px; }
 }
 
 /* The rail needs no one-column fallback. At the narrowest screen the site
