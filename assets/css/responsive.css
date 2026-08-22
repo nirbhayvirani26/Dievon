@@ -2209,8 +2209,30 @@ html {
    wins, so a <=1200px rule sitting after the <=900px one re-widened the gutter
    at 800px. Measured, not reasoned about — 800px read 32px where the file says
    24px. Order is the rule here, not range. */
-@media (max-width: 1200px) { .container { padding: 0 2rem; } }     /* 32px */
-@media (max-width: 900px)  { .container { padding: 0 1.5rem; } }   /* 24px */
+/* The gutter ladder, re-spaced for the 4.5rem base.
+   ─────────────────────────────────────────────────────────────────────────────
+   The base was 3.5rem and the first step down was 2rem — a 24px drop at a single
+   breakpoint, which was already the largest in the ladder. Raising the base to
+   4.5rem without touching the steps would have made it a 40px cliff at 1200px:
+   a window dragged one pixel narrower would jump the content edge by forty.
+
+   So the two upper steps move up with the base, and a 768px step is added to
+   carry the difference. That extra step is not a new behaviour — it holds 24px,
+   which is exactly what 641-768px already had from the old 900px rule. Every
+   width at or below 768px is therefore untouched, which matters: that is the
+   phone range, and it is most of this shop's traffic.
+
+   What actually changes:
+       769- 900px   24px -> 32px
+       901-1200px   32px -> 48px
+          > 1200px   56px -> 72px
+
+   Order is load-bearing. These four have equal specificity, so the widest
+   condition must come first — see the note above about a <=1200 rule that ended
+   up after the <=900 one and re-widened the gutter at 800px. */
+@media (max-width: 1200px) { .container { padding: 0 3rem; } }     /* 48px */
+@media (max-width: 900px)  { .container { padding: 0 2rem; } }     /* 32px */
+@media (max-width: 768px)  { .container { padding: 0 1.5rem; } }   /* 24px */
 @media (max-width: 640px)  { .container { padding: 0 1rem; } }     /* 16px */
 @media (max-width: 380px)  { .container { padding: 0 0.75rem; } }  /* 12px */
 

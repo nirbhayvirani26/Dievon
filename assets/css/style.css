@@ -209,7 +209,14 @@
     width: 100%;
     max-width: 1440px;
     margin: 0 auto;
-    padding: 0 3.5rem;
+    /* 4.5rem = 72px, taken from the design comp: measured at 43-46px on an
+       864px render, and 864 is exactly 1440 x 0.6, so the scaling is exact
+       rather than estimated. That put the intended gutter at ~74px across five
+       separate content rows; 4.5rem is the round number inside that. Content
+       width at 1440 is therefore 1296px.
+
+       The step-down ladder lives in responsive.css — see the note there. */
+    padding: 0 4.5rem;
     box-sizing: border-box;
 }
 
