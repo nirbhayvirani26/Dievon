@@ -304,17 +304,36 @@ $heroSlideCount = !empty($heroBanners)
                 // the tint and the text still layer exactly as before.
                 ?>
                 <div class="slide slide-<?= ($idx % 3) + 1 ?> slide-has-img">
-                    <picture>
-                        <?php if ($imgWebp): ?><source srcset="<?= htmlspecialchars(cacheBustedUploadUrl($imgWebp)) ?>" type="image/webp"><?php endif; ?>
-                        <img src="<?= htmlspecialchars(cacheBustedUploadUrl($imgUrl)) ?>"
-                             alt="<?= htmlspecialchars($banner['title'] ?? 'Dievon collection') ?>"
-                             class="slide-img"
-                             <?= $idx === 0 ? 'fetchpriority="high" decoding="async"' : 'decoding="async"' ?>
-                             loading="eager">
-                    </picture>
-                    <div class="slide-overlay"></div>
+                    <?php /* The photograph and the words no longer share a surface.
+                             ────────────────────────────────────────────────────────
+                             The text used to sit ON the banner, in white, over a dark
+                             gradient laid across the picture to keep it readable. That
+                             cannot be made to work here, and it is measurable rather
+                             than a matter of taste: of the two banners live on the shop
+                             today, the text zone of one averages luminance 78 and the
+                             other 196. White text disappears on the second, dark text
+                             on the first, and the gradient that rescues one dulls the
+                             garment on the other — which is the one thing a banner is
+                             for.
+
+                             A panel gives the words their own ground, so legibility
+                             stops depending on what the owner uploaded. It also lets
+                             the scrim go entirely, and with it the text shadows, which
+                             is what the brief asked for: no gradients, no heavy
+                             shadows, and real empty space for the type. */ ?>
+                    <div class="slide-media">
+                        <picture>
+                            <?php if ($imgWebp): ?><source srcset="<?= htmlspecialchars(cacheBustedUploadUrl($imgWebp)) ?>" type="image/webp"><?php endif; ?>
+                            <img src="<?= htmlspecialchars(cacheBustedUploadUrl($imgUrl)) ?>"
+                                 alt="<?= htmlspecialchars($banner['title'] ?? 'Dievon collection') ?>"
+                                 class="slide-img"
+                                 <?= $idx === 0 ? 'fetchpriority="high" decoding="async"' : 'decoding="async"' ?>
+                                 loading="eager">
+                        </picture>
+                    </div>
+                    <div class="slide-panel">
                     <div class="slide-content">
-                        <span class="slide-eyebrow">Edition <?= $idx + 1 ?></span>
+                        <span class="slide-eyebrow">New Season</span>
                         <?php
                         // One H1 per page, on the first slide only. This loop used to
                         // print <h1> for every banner, so a shop with three banners
@@ -346,7 +365,17 @@ $heroSlideCount = !empty($heroBanners)
                             $bannerLink = SITE_URL . '/' . ltrim($bannerLink, '/');
                         }
                         ?>
-                        <a href="<?= htmlspecialchars($bannerLink) ?>" class="btn-luxury btn-hero-explore">Explore Collection</a>
+                        <?php /* Two ways in, as the brief asks. The primary keeps the
+                                 address the owner typed into the banner in admin; the
+                                 secondary is always the full shop, so a visitor who does
+                                 not want that particular edition still has somewhere to
+                                 go. Neither is new behaviour for the admin — the link
+                                 field means exactly what it meant before. */ ?>
+                        <div class="slide-actions">
+                            <a href="<?= htmlspecialchars($bannerLink) ?>" class="btn-hero-primary">Shop Now</a>
+                            <a href="<?= SITE_URL ?>/shop" class="btn-hero-ghost">Explore Collection</a>
+                        </div>
+                    </div>
                     </div>
                 </div>
             <?php endforeach; ?>
@@ -358,42 +387,70 @@ $heroSlideCount = !empty($heroBanners)
                      what the page is about, on the menswear address. One honest slide
                      naming the section beats three advertising the wrong half of the
                      shop, and it disappears the moment a men's banner is uploaded. */ ?>
-            <div class="slide slide-1" style="background-image: url('<?= lookbookUrl(2) ?>') !important; background-size: cover !important; background-position: center !important;">
-                <div class="slide-overlay"></div>
+            <div class="slide slide-1">
+                <div class="slide-media" style="background-image: url('<?= lookbookUrl(2) ?>');"></div>
+                <div class="slide-panel">
                 <div class="slide-content">
-                    <span class="slide-eyebrow">Menswear</span>
+                    <span class="slide-eyebrow">New Season</span>
                     <h1>Dievon Men</h1>
                     <p>Shirts, trousers and tailoring, cut clean and made to be worn often.</p>
-                    <a href="<?= SITE_URL ?>/shop" class="btn-luxury btn-hero-explore">Explore Menswear</a>
+                    <div class="slide-actions">
+                        <a href="<?= SITE_URL ?>/shop" class="btn-hero-primary">Shop Now</a>
+                        <a href="<?= SITE_URL ?>/shop" class="btn-hero-ghost">Explore Collection</a>
+                    </div>
+                </div>
                 </div>
             </div>
         <?php else: ?>
             <!-- Default Curated Slides -->
+            <?php /* The brief's own copy, on the slide that carries the page's h1.
+                     This only renders when the shop has no banners of its own — on a
+                     stocked shop the admin slides above replace it entirely — so it is
+                     the empty state, not the usual one. Worth knowing that "Timeless
+                     Elegance" is a weaker h1 for search than the line it replaces
+                     ("Luxury Indian Womenswear — Hand-Finished Fashion"); it is the
+                     copy that was asked for, and it is only ever seen by a shop with
+                     nothing uploaded. */ ?>
             <div class="slide slide-1">
-                <div class="slide-overlay"></div>
+                <div class="slide-media"></div>
+                <div class="slide-panel">
                 <div class="slide-content">
-                    <span class="slide-eyebrow">Volume I</span>
-                    <h1>Luxury Indian Womenswear — Hand-Finished Fashion</h1>
-                    <p>Fluid silhouettes draped in pure heavy mulberry silk. Designed for grace in motion.</p>
-                    <a href="<?= htmlspecialchars(categoryUrlByName($pdo, 'Kurtis')) ?>" class="btn-luxury btn-hero-explore">Explore Edition</a>
+                    <span class="slide-eyebrow">New Season</span>
+                    <h1>Timeless Elegance</h1>
+                    <p>Graceful silhouettes. Exquisite details. Crafted for every moment.</p>
+                    <div class="slide-actions">
+                        <a href="<?= SITE_URL ?>/shop" class="btn-hero-primary">Shop Now</a>
+                        <a href="<?= htmlspecialchars(categoryUrlByName($pdo, 'Kurtis')) ?>" class="btn-hero-ghost">Explore Collection</a>
+                    </div>
+                </div>
                 </div>
             </div>
             <div class="slide slide-2">
-                <div class="slide-overlay"></div>
+                <div class="slide-media"></div>
+                <div class="slide-panel">
                 <div class="slide-content">
-                    <span class="slide-eyebrow">Volume II</span>
+                    <span class="slide-eyebrow">New Season</span>
                     <h2>3-Piece Suits</h2>
                     <p>Elegant tailored brocades and soft raw silks. Perfect for premium celebrations.</p>
-                    <a href="<?= htmlspecialchars(categoryUrlByName($pdo, '3 Piece Suits')) ?>" class="btn-luxury btn-hero-explore">View Collection</a>
+                    <div class="slide-actions">
+                        <a href="<?= SITE_URL ?>/shop" class="btn-hero-primary">Shop Now</a>
+                        <a href="<?= htmlspecialchars(categoryUrlByName($pdo, '3 Piece Suits')) ?>" class="btn-hero-ghost">Explore Collection</a>
+                    </div>
+                </div>
                 </div>
             </div>
             <div class="slide slide-3">
-                <div class="slide-overlay"></div>
+                <div class="slide-media"></div>
+                <div class="slide-panel">
                 <div class="slide-content">
-                    <span class="slide-eyebrow">Volume III</span>
+                    <span class="slide-eyebrow">New Season</span>
                     <h2>Coord Sets</h2>
                     <p>Luxurious satin wide-legs and tailored organic linens. Designed for refined modern loungewear.</p>
-                    <a href="<?= htmlspecialchars(categoryUrlByName($pdo, 'Coord Sets')) ?>" class="btn-luxury btn-hero-explore">Discover Sets</a>
+                    <div class="slide-actions">
+                        <a href="<?= SITE_URL ?>/shop" class="btn-hero-primary">Shop Now</a>
+                        <a href="<?= htmlspecialchars(categoryUrlByName($pdo, 'Coord Sets')) ?>" class="btn-hero-ghost">Explore Collection</a>
+                    </div>
+                </div>
                 </div>
             </div>
         <?php endif; ?>
@@ -1176,10 +1233,15 @@ $occIsMen = function_exists('currentShopGender') && currentShopGender() === 'men
             jQuery('#heroSlider .slide').removeClass('is-active');
             jQuery('#heroSlider .owl-item.active .slide').addClass('is-active');
 
+            /* The class only — the appearance belongs to the stylesheet.
+               This also wrote background inline, white or transparent, which
+               beat any rule CSS could offer: the redesigned dots are a 55% white
+               dot that stretches into a short bar when active, and the inline
+               "transparent" made every inactive one invisible. An inline style
+               is the one thing a stylesheet cannot answer, so the two can never
+               both be right; the class is the honest half. */
             $dots.each(function (i) {
-                var on = (i === idx);
-                jQuery(this).toggleClass('active', on)
-                            .css('background', on ? 'white' : 'transparent');
+                jQuery(this).toggleClass('active', i === idx);
             });
         }
 

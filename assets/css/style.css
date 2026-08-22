@@ -133,6 +133,12 @@
     --text-muted:     #7a674f;
     --text-on-primary: #ffffff;
 
+    /* ── Layout ───────────────────────────────────────────── */
+    /* The page gutter. .container and the homepage hero's text panel both read
+       it, so a heading in a contained section and the hero headline above it
+       start on the same pixel. Stepped down per breakpoint in responsive.css. */
+    --dv-gutter: 4.5rem;
+
     /* ── Borders ──────────────────────────────────────────── */
     --border-color:  rgba(81, 17, 38, 0.1);
     --border-strong: rgba(81, 17, 38, 0.25);
@@ -215,8 +221,16 @@
        separate content rows; 4.5rem is the round number inside that. Content
        width at 1440 is therefore 1296px.
 
-       The step-down ladder lives in responsive.css — see the note there. */
-    padding: 0 4.5rem;
+       Read from --dv-gutter rather than written here, because .container is no
+       longer the only thing that needs it: the homepage hero is full bleed, so
+       its text panel is not inside a container, and its headline still has to
+       start on the same pixel as every section heading below it. One variable
+       means the two cannot drift — which is the whole reason the product card
+       and the journal card were unified earlier in this branch.
+
+       The step-down ladder lives in responsive.css and moves the variable, not
+       this rule — see the note there. */
+    padding: 0 var(--dv-gutter);
     box-sizing: border-box;
 }
 
@@ -9935,3 +9949,241 @@ input.chk-input-error:focus {
 .drawer-bag-count::before { content: "("; }
 .drawer-bag-count::after  { content: ")"; }
 .drawer-bag-count[hidden] { display: none; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   HOMEPAGE HERO — editorial split
+   ───────────────────────────────────────────────────────────────────────────
+   The banner used to be words printed on the photograph: white type, a dark
+   gradient laid across the picture to keep it readable, and a text-shadow on
+   top of that to rescue the cases the gradient could not.
+
+   That was never going to hold, and it is measurable rather than a matter of
+   taste. Of the two banners on the shop today, the zone the text falls in
+   averages luminance 78 on one and 196 on the other. White type vanishes on
+   the second, dark type on the first, and the scrim that saves one dulls the
+   garment on the other — which is the single thing a banner exists to show.
+   The owner uploads the picture; the design cannot depend on what is in it.
+
+   So the words get their own ground. A solid ivory panel beside the
+   photograph: legibility is constant whatever is uploaded, the scrim and both
+   text shadows are gone, and the picture is finally shown undimmed. It is also
+   the more editorial arrangement — a fashion book gives the image a page and
+   the words the facing one.
+
+   Nothing about the slider changes. Same .slide elements, same OwlCarousel,
+   same .is-active entrance animation on .slide-content's four children, same
+   arrows and dots, same admin banners feeding it.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* 100vh was too tall to be elegant — on a laptop the banner WAS the page and
+   nothing below it was ever suggested. A clamp keeps it generous without
+   swallowing the fold, and 88vh caps it on a short window. */
+.hero-slider-section {
+    height: clamp(520px, 78vh, 760px) !important;
+    background: var(--bg-hero);
+}
+
+.slide {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    background-image: none;   /* the media pane carries it now */
+}
+/* The three default slides carried their picture as a background on .slide
+   itself. The picture lives in its own pane now, so the rules move with it —
+   otherwise the fallback banners render as an empty cream rectangle, which is
+   exactly what happened the first time this was wired up. */
+.slide-1 .slide-media { background-image: url('../../uploads/products/georgette_kurti_1784414698877.jpg'); }
+.slide-2 .slide-media { background-image: url('../../uploads/products/silk_3_piece_1784414705496.jpg'); }
+.slide-3 .slide-media { background-image: url('../../uploads/products/linen_coord_1784414712638.jpg'); }
+/* The panel first in the source, the picture second — but drawn the other way
+   round, because the eye should meet the garment and the words together and a
+   right-hand image is the convention this catalogue's photography is shot for
+   (the model sits right of centre in both live banners). */
+.slide-panel {
+    grid-column: 1;
+    grid-row: 1;
+    display: flex;
+    align-items: center;
+    background: var(--bg-hero);
+    /* The left padding is the container's own gutter, so the headline starts on
+       the same pixel as "Dievon Collections" and every section heading below it.
+       The hero is not inside .container — it is full bleed — so the value is
+       restated rather than inherited; 4.5rem is the same number, and the same
+       clamp shape the container ladder steps through. */
+    /* The left padding tracks where .container's content edge actually falls,
+       not just the gutter value. Below 1440 the container is full width and its
+       edge IS the gutter, so max() picks that. Above 1440 the container stops
+       growing and centres, so its content edge moves inward by half the
+       overflow — at 1920 that is 240px + the gutter = 312px, while a plain
+       gutter would leave the hero headline 240px to the left of every heading
+       under it. max() of the two is the container's edge at every width. */
+    padding-block: clamp(32px, 5vw, 80px);
+    padding-right: clamp(24px, 4vw, 64px);
+    padding-left: max(var(--dv-gutter), calc((100vw - 1440px) / 2 + var(--dv-gutter)));
+    z-index: 2;
+}
+.slide-media {
+    grid-column: 2;
+    grid-row: 1;
+    position: relative;
+    overflow: hidden;
+    background: var(--bg-surface-soft);
+    background-size: cover;
+    background-position: center;
+}
+
+/* The image fills its own pane rather than the whole slide. object-position
+   keeps the top of the frame — where the face is in portrait fashion
+   photography — so a tall pane crops the hem, not the model. */
+.slide-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 18%;
+    z-index: 0;
+}
+
+/* Text sits in the flow of the panel now, not absolutely against the slide. */
+.slide-content {
+    position: static;
+    left: auto;
+    bottom: auto;
+    max-width: 30rem;
+    /* Flush left, not pushed to the panel's inner edge: the headline lines up
+       with the page's gutter and with every heading down the homepage. */
+    margin-left: 0;
+    color: var(--text-primary);
+    text-align: left;
+}
+.slide-eyebrow {
+    display: block;
+    font-family: var(--font-body), sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--color-accent-ink);
+    margin-bottom: clamp(14px, 1.6vw, 22px);
+    text-shadow: none;
+}
+/* The headline. Marcellus at a size it can actually be seen at — the whole
+   point of a display serif is the modelling in the strokes, and 56px capitals
+   under a scrim showed none of it. Sentence case for the same reason: uppercase
+   flattens a serif's ascenders and descenders, which is most of its character.
+   No shadow: there is nothing behind it now to fight. */
+.hero-slider-section .slide-content h1,
+.hero-slider-section .slide-content h2 {
+    font-family: var(--font-heading);
+    font-size: clamp(40px, 5.2vw, 82px) !important;
+    font-weight: var(--font-heading-weight) !important;
+    line-height: 1.02 !important;
+    letter-spacing: -0.005em !important;
+    text-transform: none !important;
+    color: var(--color-primary) !important;
+    margin: 0 0 clamp(16px, 1.8vw, 26px) !important;
+    text-shadow: none !important;
+}
+.hero-slider-section .slide-content p {
+    font-family: var(--font-body), sans-serif;
+    font-size: clamp(13px, 1.05vw, 15px);
+    font-weight: 400;
+    line-height: 1.75;
+    letter-spacing: 0.01em;
+    color: var(--text-muted);
+    max-width: 27rem;
+    margin: 0 0 clamp(26px, 2.6vw, 38px);
+    text-shadow: none;
+}
+
+/* Two buttons, one weight apart. Square, because every rounded container has
+   come out of this header and shop grid already. */
+.slide-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.hero-slider-section .btn-hero-primary,
+.hero-slider-section .btn-hero-ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    padding: 0 30px;
+    border-radius: 0;
+    font-family: var(--font-body), sans-serif;
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+    box-shadow: none;
+    transform: none;
+}
+.hero-slider-section .btn-hero-primary {
+    background: var(--color-primary);
+    border: 1px solid var(--color-primary);
+    color: #ffffff !important;
+}
+.hero-slider-section .btn-hero-primary:hover {
+    background: var(--color-primary-dark);
+    border-color: var(--color-primary-dark);
+    box-shadow: none;
+    transform: none;
+}
+.hero-slider-section .btn-hero-ghost {
+    background: transparent;
+    border: 1px solid rgba(81, 17, 38, 0.35);
+    color: var(--color-primary) !important;
+}
+.hero-slider-section .btn-hero-ghost:hover {
+    background: transparent;
+    border-color: var(--color-primary);
+    color: var(--color-primary-dark) !important;
+    transform: none;
+}
+
+/* Controls, quietened to match. They were dark translucent squares with a
+   blurred pill behind the dots — three more surfaces on a banner that is now
+   two. Over the picture, so they stay light. */
+/* Both arrows over the photograph, as a pair in its bottom corner.
+   Left/right against the section edges put the previous arrow in the middle of
+   the ivory panel — a white disc on cream, sitting across the subtext. Pairing
+   them keeps them on the one surface they read against and off the type. */
+.hero-slider-section .hero-arrow {
+    top: auto;
+    bottom: 22px;
+    transform: none;
+    background: rgba(255, 255, 255, 0.86);
+    border: 0;
+    color: var(--color-primary);
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    transition: background-color 0.2s ease;
+}
+.hero-slider-section .hero-arrow-left  { left: auto; right: 78px; }
+.hero-slider-section .hero-arrow-right { right: 22px; }
+.hero-slider-section .hero-arrow:hover { background: #ffffff; }
+.hero-slider-section .hero-dots-container {
+    background: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    padding: 0;
+    border-radius: 0;
+    bottom: 34px;
+    /* Over the picture, clear of the arrow pair in the corner. 45% is where the
+       media pane starts — the grid is 0.9fr / 1.1fr. */
+    left: calc(45% + 28px);
+    transform: none;
+}
+.hero-slider-section .slide-dot {
+    width: 6px; height: 6px;
+    border: 0;
+    background: rgba(255, 255, 255, 0.55);
+}
+.hero-slider-section .slide-dot.active { background: #ffffff; width: 18px; border-radius: 3px; }
+
+@media (prefers-reduced-motion: reduce) {
+    .hero-slider-section .btn-hero-primary,
+    .hero-slider-section .btn-hero-ghost,
+    .hero-slider-section .hero-arrow { transition: none; }
+}

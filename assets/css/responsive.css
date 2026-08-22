@@ -2230,11 +2230,15 @@ html {
    Order is load-bearing. These four have equal specificity, so the widest
    condition must come first — see the note above about a <=1200 rule that ended
    up after the <=900 one and re-widened the gutter at 800px. */
-@media (max-width: 1200px) { .container { padding: 0 3rem; } }     /* 48px */
-@media (max-width: 900px)  { .container { padding: 0 2rem; } }     /* 32px */
-@media (max-width: 768px)  { .container { padding: 0 1.5rem; } }   /* 24px */
-@media (max-width: 640px)  { .container { padding: 0 1rem; } }     /* 16px */
-@media (max-width: 380px)  { .container { padding: 0 0.75rem; } }  /* 12px */
+/* Stepping --dv-gutter rather than .container's padding: the homepage hero's
+   text panel is full bleed and reads the same variable, so its headline steps
+   with every contained section instead of needing its own copy of this ladder.
+   Same five values, same order, same result for .container. */
+@media (max-width: 1200px) { :root { --dv-gutter: 3rem; } }     /* 48px */
+@media (max-width: 900px)  { :root { --dv-gutter: 2rem; } }     /* 32px */
+@media (max-width: 768px)  { :root { --dv-gutter: 1.5rem; } }   /* 24px */
+@media (max-width: 640px)  { :root { --dv-gutter: 1rem; } }     /* 16px */
+@media (max-width: 380px)  { :root { --dv-gutter: 0.75rem; } }  /* 12px */
 
 @media (max-width: 1199px) { .occasion-tile { flex-basis: 23%; } }  /* ~4.3 in view */
 @media (max-width: 991px)  { .occasion-tile { flex-basis: 30%; } }  /* ~3.3 in view */
@@ -2278,4 +2282,93 @@ html {
         font-size: 10px !important;
         padding: 4px 14px 4px 0 !important;
     }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   HOMEPAGE HERO on small screens — stacked, not cropped
+   ───────────────────────────────────────────────────────────────────────────
+   Squeezing the desktop split onto a phone would give a ~180px-wide photograph
+   beside a ~180px column of type: the garment unreadable and the headline
+   breaking every second word. The brief asked for the mobile banner to be
+   adjusted rather than badly cropped, and this is what that means — the two
+   halves become two rows.
+
+   The picture takes a 4:5 portrait, which is the shape fashion photography is
+   actually composed in, so a landscape 1600x900 upload is cropped to its centre
+   rather than letterboxed. object-position keeps the top of the frame for the
+   same reason it does on desktop: on a tall crop it is the hem that should go,
+   not the face.
+
+   Height is auto below the picture. A fixed vh on a phone is how text ends up
+   clipped when a headline wraps to three lines or the browser chrome moves.
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 991px) {
+    .hero-slider-section { height: auto !important; }
+    .slider-container,
+    .slider-container.owl-loaded .owl-item,
+    .slider-container.owl-loaded .slide { height: auto !important; }
+
+    .slide {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        grid-template-rows: auto auto;
+        height: auto !important;
+    }
+    .slide-media {
+        grid-column: 1 !important;
+        grid-row: 1 !important;
+        aspect-ratio: 4 / 5;
+        max-height: 62vh;
+        width: 100%;
+    }
+    .slide-panel {
+        grid-column: 1 !important;
+        grid-row: 2 !important;
+        /* --dv-gutter, not a hardcoded 16px: the panel is full bleed, so without
+           it the hero headline sat 16px from the edge while the section headings
+           below stepped 32 / 24 / 16 / 12 with the ladder. Measured before the
+           fix: 16px against 32px at 900, and 16 against 12 at 360 — adrift in
+           both directions. */
+        padding: clamp(26px, 7vw, 40px) var(--dv-gutter) clamp(32px, 8vw, 46px);
+    }
+    .slide-content { max-width: 100%; margin-left: 0; }
+    .hero-slider-section .slide-content h1,
+    .hero-slider-section .slide-content h2 { font-size: clamp(30px, 9vw, 44px) !important; }
+    .hero-slider-section .slide-content p { font-size: 13.5px; max-width: 34rem; }
+
+    /* Tablet has the width for two buttons side by side. A phone does not:
+       "Explore Collection" at 10px with 0.18em tracking needs about 175px of
+       line, and half of a 390px screen leaves 146px inside the padding — so the
+       label was being clipped. Stacked below 640px, side by side above it. */
+    .slide-actions { gap: 10px; }
+    .hero-slider-section .btn-hero-primary,
+    .hero-slider-section .btn-hero-ghost { flex: 1 1 0; min-height: 46px; padding: 0 14px; font-size: 10px; }
+
+    /* No arrows on a phone — the slider is swipeable and two discs over the
+       photograph is clutter on a screen this size. The dots stay. */
+    .hero-slider-section .hero-arrow { display: none; }
+
+    /* The dots sit on the seam between the picture and the panel.
+       min() rather than a vh guess: the pane's height is aspect-ratio 4/5 of the
+       viewport width UNTIL that exceeds the 62vh cap, and min() is exactly that
+       rule, so the dots track the real edge at every size instead of at the one
+       width the guess was written for. */
+    .hero-slider-section .hero-dots-container {
+        bottom: auto;
+        top: calc(min(100vw * 1.25, 62vh) - 5px);
+        left: 50%;
+        transform: translateX(-50%);
+    }
+}
+
+@media (max-width: 640px) {
+    .hero-slider-section .slide-actions { flex-direction: column; align-items: stretch; }
+    .hero-slider-section .btn-hero-primary,
+    .hero-slider-section .btn-hero-ghost { flex: 0 0 auto; width: 100%; font-size: 10.5px; }
+}
+
+/* Very narrow: a taller crop, so the seam the dots sit on moves with it. */
+@media (max-width: 380px) {
+    .slide-media { aspect-ratio: 3 / 4; }
+    .hero-slider-section .hero-dots-container { top: calc(min(100vw * 1.3333, 62vh) - 5px); }
 }
