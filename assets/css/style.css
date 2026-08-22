@@ -10020,13 +10020,28 @@ input.chk-input-error:focus {
     z-index: 2;
     display: flex;
     align-items: center;
+    /* As light as the measurements allow, so the photograph reads across the
+       whole width rather than behind a panel.
+       ─────────────────────────────────────────────────────────────────────────
+       This was 0.90 at the edge, which is a solid ivory block with a fade — the
+       banner stopped looking full bleed, which is the opposite of the point.
+
+       The number is not a taste call. Sweeping the edge opacity against the
+       darker of the two live banners, measuring the subtext each time:
+
+           0.90  ->  10.57:1        0.62  ->   5.83:1
+           0.75  ->   7.78:1        0.50  ->   4.39:1   fails
+       
+       4.5:1 is the threshold, so 0.50 is already under it and 0.62 is the
+       lightest step that clears it with any margin — margin worth keeping,
+       because the next banner uploaded could be darker than either of these.
+       The fade is out by 62% of the width, so the model is never touched. */
     background: linear-gradient(
         to right,
-        rgba(250, 246, 240, 0.90) 0%,
-        rgba(250, 246, 240, 0.82) 24%,
-        rgba(250, 246, 240, 0.48) 44%,
-        rgba(250, 246, 240, 0.12) 58%,
-        rgba(250, 246, 240, 0) 70%
+        rgba(250, 246, 240, 0.62) 0%,
+        rgba(250, 246, 240, 0.52) 30%,
+        rgba(250, 246, 240, 0.18) 48%,
+        rgba(250, 246, 240, 0) 62%
     );
     /* Left padding tracks the container's real content edge — see --dv-gutter.
        Below 1440 that is the gutter; above it the container centres, so the edge
