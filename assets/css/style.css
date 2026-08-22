@@ -9076,7 +9076,19 @@ main#mainContent:focus { outline: none; }
        of those. Declaring the variable and the gap together on [data-count]
        puts both at (0,2,0), above responsive.css's (0,1,0), so the number in
        the calc is the number on screen. */
-    .home-categories-grid[data-count] { --rail-gap: 12px; gap: var(--rail-gap); }
+    /* Full bleed, the same as every other rail — see .dv-rail-bleed. This one
+       cannot leave .container in the markup, because above 768px the same
+       element is the mosaic and has to stay aligned with the heading. Cancelling
+       the container's padding does it exactly, with no viewport units: the
+       container is max-width 1440 and every screen this rail appears on is well
+       under that, so its border box IS the screen. */
+    .home-categories-grid[data-count] {
+        --rail-gap: 12px;
+        gap: var(--rail-gap);
+        margin-inline: calc(-1 * var(--dv-gutter));
+        padding-inline: 16px;
+        scroll-padding-inline-start: 16px;
+    }
     .home-categories-grid[data-count] > .category-card:nth-child(n),
     .home-categories-grid[data-count] > .category-card.is-feature:nth-child(n) {
         flex: 0 0 calc((100% - 2 * var(--rail-gap)) / 2.3);
@@ -10634,3 +10646,40 @@ input.chk-input-error:focus {
     .hero-slider-section .btn-hero-ghost,
     .hero-slider-section .hero-arrow { transition: none; }
 }
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   FULL-BLEED RAILS — one behaviour for every horizontal strip on the site
+   ──────────────────────────────────────────────────────────────────────────
+   A rail is read by the tile clipped at the edge of the screen: that is what
+   says "there is more" without adding arrows or dots to look at. A rail that
+   stops at the page gutter clips its last tile 72px early on a desktop, and
+   the cut reads as the end of the list rather than the edge of the window.
+
+   .occasion-slider has done this since it was written, by sitting outside
+   .container in the markup. .new-arrivals-carousel now does the same, and this
+   class carries the shared part so the two cannot drift: the same 16px inset,
+   the same scroll padding, the same hidden scrollbar.
+
+   16px, not --dv-gutter. A rail indented to the full 72px gutter is not edge to
+   edge in any meaningful sense; 16px is enough to keep the first tile off the
+   glass without pretending to be a margin. The heading above keeps the real
+   gutter, because it is still page text. */
+.dv-rail-bleed {
+    padding-inline: 16px;
+    scroll-padding-inline-start: 16px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+.dv-rail-bleed::-webkit-scrollbar { display: none; }
+
+/* Owl replaces the element's children with its own stage, so CSS padding on the
+   rail would inset the CLIP as well as the content — the strip would be cut 16px
+   early instead of at the edge of the screen. Owl has stagePadding for exactly
+   this, and it is set in the initialiser in includes/footer.php.
+
+   Do NOT reach for `overflow: visible` on .owl-stage-outer to achieve it. That
+   was tried: the stage is every card laid out in one row, so unclipping it spills
+   the whole track into the document and the PAGE scrolls sideways — measured at
+   1648px of horizontal overflow on a 1600px screen. */
+.dv-rail-bleed.owl-loaded { padding-inline: 0; }

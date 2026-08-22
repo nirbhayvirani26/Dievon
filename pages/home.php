@@ -649,7 +649,19 @@ $heroSlideCount = !empty($heroBanners)
             </div>
         </div>
 
-        <div id="newArrivalsCarousel" class="new-arrivals-carousel hide-scrollbar js-owl-rail">
+    </div><?php /* .container closes here, before the rail.
+
+        The rail runs edge to edge and the container cannot let it: .container is
+        max-width 1440 centred, so anything inside it stops at 1440 however wide
+        the screen is. Closing the container after the heading and reopening it
+        after the rail is the same arrangement .occasion-slider already uses
+        further down this page — one mechanism for full-bleed rails on this site
+        rather than a CSS escape here and a markup one there.
+
+        The heading above stays inside the container, so it keeps its alignment
+        with every other section heading on the page. */ ?>
+
+        <div id="newArrivalsCarousel" class="new-arrivals-carousel hide-scrollbar js-owl-rail dv-rail-bleed">
             <?php // Shared partial — see includes/product_card.php. Each of these grids
                   // carried its own copy of the card markup, so none served the WebP image,
                   // offered Compare, or used the product's own alt text. ?>
@@ -661,6 +673,8 @@ $heroSlideCount = !empty($heroBanners)
                 <?php $card = $p; $cardExtraClass = 'product-card-carousel'; $cardFallbackBadge = 'New'; $cardCompare = false; include __DIR__ . '/../includes/product_card.php'; ?>
             <?php endforeach; ?>
         </div>
+    <div class="container"><?php /* reopened, so anything added below the rail is
+        back on the page's normal measure. */ ?>
     </div>
 </section>
 

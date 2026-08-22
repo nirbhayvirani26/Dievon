@@ -1158,7 +1158,19 @@ document.addEventListener('DOMContentLoaded', function () {
         var autoWidth = $rail.data('owl-autowidth') === 1 || $rail.data('owl-autowidth') === '1';
         var gap       = parseFloat(getComputedStyle(this).columnGap) || 24;
 
+        /* stagePadding, not CSS padding, for a full-bleed rail.
+           ─────────────────────────────────────────────────────────────────────
+           A rail marked .dv-rail-bleed runs to the edge of the screen, and the
+           first card should not sit against the glass. CSS padding on the
+           element cannot do it: Owl clips the strip at the element's box, so
+           padding insets the CLIP too and the last card is cut 16px early
+           instead of at the edge. stagePadding insets the cards inside a stage
+           that still clips at the element's edge, which is the whole point.
+
+           Read from the class rather than passed per call site, so any rail that
+           opts into the bleed gets the inset automatically. */
         $rail.owlCarousel({
+            stagePadding: $rail.hasClass('dv-rail-bleed') ? 16 : 0,
             // autoWidth keeps each card at the width the CSS already gives it,
             // which is what preserves the existing look (and the peek of the
             // next card) instead of Owl stretching items to fill the row.
