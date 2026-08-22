@@ -9583,6 +9583,26 @@ input.chk-input-error:focus {
 }
 .navbar-luxury .mega-shop-all:hover { color: var(--dv-nav-hover); }
 
+/* Keep the card row inside the container.
+   ─────────────────────────────────────────────────────────────────────────────
+   The third card steps aside at 1180px. That threshold is too low for the row
+   it is protecting: two 220px link columns, a 48px gap and a 769px three-card
+   block need 1257px of content width, and the container only offers that from
+   about 1350px up. Between 1180 and 1350 the row therefore ran past the
+   container — measured at 1280, the cards ended 107px beyond the container's
+   right edge and 66px beyond the VIEWPORT, so the third card was simply cut off
+   by the page's overflow-x: clip. It is cropped on live at that width too.
+
+   1366 rather than a tighter number because that is a real laptop width and the
+   row should not be deciding this within a pixel of it.
+
+   Scoped to .navbar-luxury and additive: it changes WHEN the third card steps
+   aside, which the stylesheet already does on its own at 1180 — not how any of
+   the cards look. */
+@media (max-width: 1366px) {
+    .navbar-luxury .mega-promo-card:nth-child(3) { display: none; }
+}
+
 /* ── More ───────────────────────────────────────────────────────────────────
    A narrow panel under the word, not a band across the page: it holds one
    column of names, and full-bleed for four links looks like a fault.
