@@ -11044,6 +11044,42 @@ input.chk-input-error:focus {
     .dv-pager-btn { transition: none; }
 }
 
+/* ── Back to top ───────────────────────────────────────────────────────────
+   Same geometry it always had — 40px, above the WhatsApp button, which sits at
+   bottom 25px and is 50px tall — but declared here instead of in a style
+   attribute, and hidden until the reader is a screenful down.
+
+   visibility, not the hidden attribute, because the two states have to be able
+   to cross-fade; and unlike opacity alone, visibility: hidden also takes the
+   button out of the tab order, so a keyboard reader at the top of the page does
+   not tab onto a control they cannot see. */
+#backToTopBtn {
+    position: fixed;
+    bottom: 85px;
+    right: 25px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    background: var(--color-primary);
+    color: #ffffff;
+    font-size: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    z-index: 998;
+    cursor: pointer;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 220ms ease, visibility 220ms ease, background-color 200ms ease;
+}
+#backToTopBtn.is-visible { opacity: 0.8; visibility: visible; }
+#backToTopBtn.is-visible:hover,
+#backToTopBtn.is-visible:focus-visible { opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+    #backToTopBtn { transition: none; }
+}
+
 /* ── Over a photograph ─────────────────────────────────────────────────────
    The hero is the one band where the pager cannot sit underneath: it is
    full-bleed with the next section hard against its bottom edge, so "under the
@@ -11065,16 +11101,13 @@ input.chk-input-error:focus {
 .dv-pager--onmedia .dv-pager-pill {
     box-shadow: 0 2px 16px rgba(0, 0, 0, 0.45);
 }
-/* Clearance for #backToTopBtn, which is not a neighbour so much as a permanent
-   fixture: includes/footer.php pins it to the viewport at right 25px, 40px
-   wide, with no scroll threshold, so it is on screen at the top of every page.
-   Measured at the gutter alone the two sat 7px apart at 1280, 1440 and 1600 —
-   never overlapping, but two burgundy controls that close read as one cluster
-   that lost its middle. Below 800px the hero is short enough that the pager
-   lands well above the button and the gutter alignment is kept. */
-@media (min-width: 800px) {
-    .dv-pager--onmedia { right: max(var(--dv-gutter), 96px); }
-}
+/* This used to carry a 96px inset to clear #backToTopBtn, which was pinned to
+   the viewport with no scroll threshold and so sat in this corner at the top of
+   every page — the two came within 7px at 1280, 1440 and 1600. That button now
+   appears only after a screenful of scrolling, by which point the hero and its
+   pager are gone from the viewport; measured across scroll positions at five
+   sizes, the two are never on screen together. So the inset is dropped and the
+   pager keeps the page gutter, which is the alignment every other rail uses. */
 
 /* Announced, never shown. The visible counter is aria-hidden because it is
    repainted on resize as well as on a press, and a live region wired to that

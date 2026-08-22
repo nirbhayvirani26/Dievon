@@ -366,9 +366,59 @@ $minimalFooter = !empty($minimalFooter);
 </a>
 <?php endif; ?>
 <!-- Back To Top Widget -->
-<button onclick="window.scrollTo({top:0, behavior:'smooth'})" id="backToTopBtn" style="position:fixed; bottom:85px; right:25px; width:40px; height:40px; background:var(--color-primary); color:#fff; border:none; display:flex; align-items:center; justify-content:center; font-size:16px; box-shadow:0 4px 12px rgba(0,0,0,0.2); z-index:998; cursor:pointer; opacity:0.8;">
-    <i class="fa-solid fa-chevron-up"></i>
+<?php /* Styled from the stylesheet, not from a style attribute. The inline
+         version is why responsive.css had to say `bottom: 70px !important` to
+         move it on a phone — an inline declaration outranks any rule a
+         stylesheet can write, so every adjustment needed a bigger hammer.
+
+         aria-label because the only content is an icon font glyph. Without it a
+         screen reader announced "button" and nothing else. */ ?>
+<button type="button" id="backToTopBtn" aria-label="Back to top">
+    <i class="fa-solid fa-chevron-up" aria-hidden="true"></i>
 </button>
+<script>
+(function () {
+    /* Shown once there is somewhere to go back TO.
+       ─────────────────────────────────────────────────────────────────────
+       This button was pinned to the viewport with no condition at all, so it
+       sat over the bottom-right corner of every page including the very top —
+       offering to return you to where you already were, and competing with
+       whatever the design puts in that corner. On the homepage that is now the
+       hero's pager, which had to be moved 96px inland to keep clear of it.
+
+       One viewport of scrolling is the threshold: below that the top is still
+       a flick away and the button is clutter. The 120px band between showing
+       and hiding stops it blinking when a reader hovers around the boundary. */
+    var btn = document.getElementById('backToTopBtn');
+    if (!btn) { return; }
+
+    var SHOW_AFTER = function () { return Math.max(400, window.innerHeight * 0.9); };
+    var ticking = false, shown = false;
+
+    function update() {
+        ticking = false;
+        var y = window.scrollY || window.pageYOffset || 0;
+        var on = shown ? y > SHOW_AFTER() - 120 : y > SHOW_AFTER();
+        if (on === shown) { return; }
+        shown = on;
+        btn.classList.toggle('is-visible', on);
+    }
+    window.addEventListener('scroll', function () {
+        if (ticking) { return; }
+        ticking = true;
+        window.requestAnimationFrame(update);
+    }, { passive: true });
+    window.addEventListener('resize', update, { passive: true });
+    update();
+
+    btn.addEventListener('click', function () {
+        /* Instant for anyone who asked for less movement — smooth-scrolling a
+           whole page is exactly the kind of motion that setting is about. */
+        var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' });
+    });
+})();
+</script>
 
 <!-- Luxury Glassmorphic Ultra-Slim Header Effect on Scroll -->
 <script>

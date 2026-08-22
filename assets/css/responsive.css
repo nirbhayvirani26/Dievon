@@ -283,9 +283,11 @@
     body.has-pdp-buy-bar .mobile-bottom-dock {
         display: none !important;
     }
-    /* Back-to-top clears the dock by 70px; the buy bar is taller. */
+    /* Back-to-top clears the dock by 70px; the buy bar is taller.
+       The !important on these two went with the inline style they had to beat —
+       the button is styled from style.css now, and this file loads after it. */
     body.has-pdp-buy-bar #backToTopBtn {
-        bottom: 88px !important;
+        bottom: 88px;
     }
 
     .whatsapp-float-btn {
@@ -293,8 +295,8 @@
     }
 
     #backToTopBtn {
-        bottom: 70px !important;
-        right: 15px !important;
+        bottom: 70px;
+        right: 15px;
     }
 
     #recentlyPurchasedToast {
