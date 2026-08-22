@@ -2269,3 +2269,13 @@ html {
         margin-right: 0;
     }
 }
+
+/* The country picker on a phone: same treatment, a touch larger to stay tappable
+   in a 35px strip. It is no longer competing with the icon row for width — that
+   is the whole reason it moved — so it can afford the extra pixel of type. */
+@media (max-width: 640px) {
+    .navbar-luxury .header-top-bar #countrySelector {
+        font-size: 10px !important;
+        padding: 4px 14px 4px 0 !important;
+    }
+}

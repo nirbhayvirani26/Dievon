@@ -9861,3 +9861,59 @@ input.chk-input-error:focus {
 @media (prefers-reduced-motion: reduce) {
     .qty-btn, .cart-qty-btn { transition: none; }
 }
+
+/* The country / currency picker, in the utility strip
+   ───────────────────────────────────────────────────────────────────────────
+   It used to be first in the icon row, and it was the only filled, bordered
+   shape among five 1.4px stroke icons — a <select> dressed as a pill, sitting
+   in a set of drawn glyphs. Two different visual languages a few pixels apart,
+   and the heaviest weight given to the least important control.
+
+   Here it is a preference beside a preference, so it takes the strip's voice
+   exactly: same 9.5px, same 0.18em tracking, same muted ink as the inactive
+   Women / Men tab. The native <select> chrome is stripped and replaced with the
+   same chevron the navigation uses, drawn at the same stroke weight, so the one
+   remaining piece of browser furniture in the header is gone too.
+
+   margin-left:auto rather than justify-content:space-between on the strip: when
+   only one of the two controls is live, space-between would leave a lone item
+   pinned wherever it happened to fall. This keeps Women / Men left and the
+   country right whichever of them exists. */
+.navbar-luxury .header-top-bar .container {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+.navbar-luxury .header-top-bar .currency-selector-wrapper { margin-left: auto; }
+
+.navbar-luxury .header-top-bar #countrySelector {
+    -webkit-appearance: none;
+    appearance: none;
+    background-color: transparent !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    height: auto !important;
+    padding: 0 14px 0 0 !important;
+    font-family: var(--font-body), sans-serif !important;
+    font-size: 9.5px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.18em !important;
+    color: #8a7a63 !important;
+    cursor: pointer;
+    transition: color 0.2s ease;
+    /* The navigation's chevron, same geometry and stroke, as a background so the
+       native select arrow can be removed without losing the affordance. */
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238a7a63' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9.5 6 6 6-6'/></svg>") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 0 center !important;
+    background-size: 9px 9px !important;
+}
+.navbar-luxury .header-top-bar #countrySelector:hover { color: var(--dv-nav-ink) !important; }
+.navbar-luxury .header-top-bar #countrySelector:focus-visible {
+    outline: 2px solid var(--color-secondary);
+    outline-offset: 3px;
+}
+/* The option list is drawn by the operating system and cannot take the strip's
+   type, but it can at least not be white-on-white in a dark theme. */
+.navbar-luxury .header-top-bar #countrySelector option { color: #3a0c1b; background: #fff; }
