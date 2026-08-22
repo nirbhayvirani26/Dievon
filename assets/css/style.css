@@ -9772,49 +9772,53 @@ input.chk-input-error:focus {
 .navbar-luxury .header-top-bar {
     background: #f7f1e8;
     border-bottom: 1px solid rgba(81, 17, 38, 0.07);
+    /* The strip's own height. The links carry no vertical padding of their own
+       so that the underline below sits against the TEXT rather than four pixels
+       further down against the strip's bottom edge. */
+    padding: 9px 0;
     transition: padding 0.3s var(--dv-ease);
 }
+/* Left, aligned with the wordmark under it, not centred. Two small words in the
+   middle of a full-bleed strip read as a stray caption; against the left edge
+   they read as what they are — the switch that governs everything below. */
 .navbar-luxury .header-top-bar .audience-switch {
-    gap: 0;
-    justify-content: center;
+    justify-content: flex-start;
+    gap: 22px;
 }
 .navbar-luxury .header-top-bar .audience-switch-link {
-    padding: 9px 22px;
-    font-size: 10px;
+    padding: 0;
+    font-size: 9.5px;
     font-weight: 600;
-    letter-spacing: 0.22em;
+    letter-spacing: 0.18em;
     color: #8a7a63;
-    border-bottom: 0;
     background: transparent;
-    transition: color 0.2s ease, background-color 0.2s ease;
+    border-bottom: 0;
+    transition: color 0.2s ease;
 }
 .navbar-luxury .header-top-bar .audience-switch-link:hover { color: var(--dv-nav-ink); }
 .navbar-luxury .header-top-bar .audience-switch-link.is-active {
     color: var(--dv-nav-ink);
-    background: var(--dv-header-bg);
+    background: transparent;
     border-bottom: 0;
 }
-/* Compact loses 6px here rather than hiding the strip: it is the one control a
-   shopper may want at any point in a scroll, and a switch that vanishes when
-   the page moves is a switch that cannot be found. */
-.navbar-luxury.header-compact .header-top-bar .audience-switch-link {
-    padding-top: 6px;
-    padding-bottom: 6px;
-}
-/* No sliding underline on this strip.
+/* The site's shared sliding underline, kept here rather than suppressed.
    ─────────────────────────────────────────────────────────────────────────────
-   .audience-switch-link is one of eight selectors sharing the site's ::after
-   underline, which scaleX(1)s on the active one. That is right for a link in a
-   row of links. It is wrong here for two reasons: the active side already
-   changes ground, so the line is a second indicator saying the same thing, and
-   at 34px tall it lands exactly on the strip's bottom edge — closing off the
-   join where the tab should read as continuous with the header beneath it.
+   It was suppressed while the active side was a filled ivory tab: the line was
+   then a second indicator saying the same thing, and with the tab's padding
+   under it the line landed on the strip's bottom edge, closing off the join.
 
-   Ground plus ink carries the state, and aria-current on the active anchor
-   carries it for anyone not looking at either. */
-.navbar-luxury .header-top-bar .audience-switch-link::after { display: none !important; }
-
+   With the tab gone and the links carrying no vertical padding, the underline
+   is the only thing marking the active side and it sits directly beneath the
+   word. Thinner than the 2px default — at this size 2px is a rule under a
+   caption. */
+.navbar-luxury .header-top-bar .audience-switch-link::after {
+    display: block !important;
+    height: 1px;
+    bottom: -4px;
+    border-radius: 0;
+}
+.navbar-luxury.header-compact .header-top-bar { padding: 6px 0; }
 .navbar-luxury .header-top-bar .audience-switch-link:focus-visible {
     outline: 2px solid var(--color-secondary);
-    outline-offset: -3px;
+    outline-offset: 3px;
 }

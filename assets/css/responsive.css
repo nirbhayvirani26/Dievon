@@ -2168,13 +2168,16 @@ html {
     .mobile-drawer-close:hover { background: transparent !important; color: var(--dv-nav-hover) !important; }
 }
 
-/* The top strip on a phone. Wider tap targets, same slim band. */
+/* The top strip on a phone. Same left-aligned pair; the strip takes a little
+   more height so the words stay a comfortable target without the links needing
+   padding of their own, which would push the underline off the text. */
 @media (max-width: 640px) {
-    .navbar-luxury .header-top-bar .audience-switch { gap: 0; }
+    .navbar-luxury .header-top-bar { padding: 10px 0 !important; }
+    .navbar-luxury .header-top-bar .audience-switch { gap: 20px; }
     .navbar-luxury .header-top-bar .audience-switch-link {
         flex: 0 0 auto;
-        padding: 10px 26px !important;
-        font-size: 10px !important;
-        letter-spacing: 0.2em !important;
+        padding: 0 !important;
+        font-size: 9.5px !important;
+        letter-spacing: 0.16em !important;
     }
 }
