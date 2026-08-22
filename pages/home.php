@@ -501,19 +501,23 @@ $heroSlideCount = !empty($heroBanners)
                 return true;
             }));
 
-            /* Every collection is drawn.
+            /* Six tiles, and a button for the rest.
                ────────────────────────────────────────────────────────────────
-               This was capped at five, because the old layout was a fixed
-               five-across row and a sixth collection left a row holding one
-               tile and a gap. The mosaic does not have that problem: it lays
-               out from a count, so six fill the reference arrangement exactly
-               and a seventh continues in an aligned row of three beneath.
+               Six is the mosaic — one large tile, three beside it, two beneath.
+               It was briefly uncapped, continuing into aligned rows of three,
+               and that works, but it makes the section as tall as the catalogue
+               is wide: twelve collections turned this into four rows and pushed
+               everything below it off the first two screens.
 
-               $catTotalCount is kept — the "View All" button below reads it,
-               and with nothing now held back its own condition is false, so it
-               simply stops rendering rather than promising more than is shown. */
+               So the composition IS the limit. Six fill it exactly, and a
+               seventh collection is reached through the button underneath
+               rather than by making the section taller.
+
+               Counted BEFORE the slice, because the button has to say how many
+               there are in total; asking after the cut would always say six. */
             $catTotalCount = count($allCategories);
-            $catShownCount = $catTotalCount;
+            $allCategories = array_slice($allCategories, 0, 6);
+            $catShownCount = count($allCategories);
 
 ?>
         <?php /* data-count is what makes this work with the two collections the
@@ -527,21 +531,7 @@ $heroSlideCount = !empty($heroBanners)
                  The list has to be built BEFORE this div, not inside it: the
                  attribute is written as the tag is emitted, so a count taken
                  from a variable the loop below fills is a count of nothing. */ ?>
-        <?php
-        /* The last row, when the count does not divide.
-           ────────────────────────────────────────────────────────────────────
-           Past the first six the extras run three to a row. Seven collections
-           therefore leave the seventh alone in a row at a third of the width —
-           exactly the "one tile and a gap" the old five-tile cap existed to
-           avoid, just moved further down the page.
-
-           So the remainder is worked out here and the CSS widens the stragglers
-           to fill their row: one leftover spans the full width, two split it in
-           half, three need nothing. Any number of collections now ends on a
-           complete row. */
-        $catTail = $catShownCount > 6 ? (($catShownCount - 6) % 3) : 0;
-        ?>
-        <div class="home-categories-grid" data-count="<?= (int)$catShownCount ?>" data-tail="<?= (int)$catTail ?>">
+        <div class="home-categories-grid" data-count="<?= (int)$catShownCount ?>">
             <?php
             foreach($allCategories as $catIndex => $cat):
                 // The collection's OWN image first, then a product photo, then the

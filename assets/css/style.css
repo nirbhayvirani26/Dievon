@@ -2425,9 +2425,10 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 
    So the arrangement is chosen from the count, which the markup writes onto the
    grid as data-count. Every count from one upward has a composition that fills
-   its rows completely, and past six the extra collections continue in aligned
-   rows of three. The shop can add its third, fourth and fifth collection
-   without anyone touching this file.
+   its rows completely. Six is the largest — the composition IS the limit, and
+   a seventh collection is reached through the button under the grid rather
+   than by making the section taller. The shop can add its third, fourth, fifth
+   and sixth collection without anyone touching this file.
 
    Eighteen columns because that is the smallest number that divides cleanly
    into the reference: the feature takes 6, the three tiles beside it take 4
@@ -2456,15 +2457,16 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
     transition: box-shadow 0.45s ease, transform 0.45s ease;
 }
 
-/* ── The default arrangement: six or more ──────────────────────────────────
+/* ── The full arrangement: six ─────────────────────────────────────────────
    Feature 6 wide and 2 tall; three tiles of 4 beside it; two of 6 beneath.
-   A seventh collection cannot fit either row, so it starts a third — and at
-   6 columns each, rows of three from there on. */
-.home-categories-grid > .category-card                 { grid-column: span 4; }
-.home-categories-grid > .category-card:nth-child(1)    { grid-column: span 6; grid-row: span 2; }
+   Six is also the maximum — pages/home.php slices to it, and a seventh
+   collection is reached through the button below rather than by growing the
+   section. There is deliberately no rule for a seventh tile: if one appeared
+   it would be a bug in the slice, and a silent extra row would hide it. */
+.home-categories-grid > .category-card              { grid-column: span 4; }
+.home-categories-grid > .category-card:nth-child(1) { grid-column: span 6; grid-row: span 2; }
 .home-categories-grid > .category-card:nth-child(5),
-.home-categories-grid > .category-card:nth-child(6),
-.home-categories-grid > .category-card:nth-child(n+7)  { grid-column: span 6; }
+.home-categories-grid > .category-card:nth-child(6) { grid-column: span 6; }
 
 /* ── One collection ── A single tile is a banner, not a mosaic. */
 .home-categories-grid[data-count="1"] { grid-auto-rows: auto; }
@@ -2499,22 +2501,6 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 /* ── Five ── Two and two beside the feature; both rows exactly full. */
 .home-categories-grid[data-count="5"] > .category-card              { grid-column: span 6; }
 .home-categories-grid[data-count="5"] > .category-card:nth-child(1) { grid-column: span 6; grid-row: span 2; }
-
-/* ── The last row, when the count does not divide by three ────────────────
-   Seven collections put the seventh alone in a row at a third of the width.
-   data-tail carries the remainder from the markup, and the stragglers widen to
-   finish their row: one fills it, two halve it. Written as nth-last-child so it
-   is the LAST tiles that grow, whichever they are.
-
-   :nth-child(n+7) on both, so this can never reach the first six — a shop with
-   exactly two collections has data-tail="0" anyway, but a rule that depends on
-   one attribute to stay out of another's way is a rule waiting to misfire. */
-.home-categories-grid[data-tail="1"] > .category-card:nth-child(n+7):nth-last-child(1) {
-    grid-column: span 18;
-}
-.home-categories-grid[data-tail="2"] > .category-card:nth-child(n+7):nth-last-child(-n+2) {
-    grid-column: span 9;
-}
 
 /* ── Hover, on the tile rather than on the photograph ──────────────────────
    All four effects hang off .category-card:hover, so they fire wherever the
