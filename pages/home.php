@@ -610,20 +610,28 @@ $heroSlideCount = !empty($heroBanners)
                  "View All" under a row that already shows everything promises
                  more than the shop has, which is the same fault as a Read more
                  that reveals nothing. */ ?>
-        <?php /* Arrows for the collections rail. The rail is back below 768px, and
-                 with it these: the scrollbar is hidden, so without them the rail
-                 is reachable by touch and by nothing else — no trackpad, no
-                 keyboard, no narrow desktop window. Hidden above 768px, where the
-                 mosaic shows everything and there is nothing to scroll to.
-
-                 syncCatRailArrows() hides them when the rail cannot actually
-                 move, so six collections that happen to fit do not get a pair of
-                 controls that do nothing. */ ?>
-        <div class="cat-rail-nav">
-            <button type="button" class="cat-rail-arrow" aria-label="Previous collections"
-                    onclick="scrollCatRail(-1)"><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></button>
-            <button type="button" class="cat-rail-arrow" aria-label="Next collections"
-                    onclick="scrollCatRail(1)"><i class="fa-solid fa-chevron-right" aria-hidden="true"></i></button>
+        <?php /* Navigation for the collections rail. Below 768px this is a rail
+                 with its scrollbar hidden, so without a control it is reachable
+                 by touch and by nothing else — no trackpad, no keyboard, no
+                 narrow desktop window. Above 768px the same element is a mosaic
+                 grid that shows everything, and the engine retires the control
+                 because the rail measures as unable to move. Measured, not
+                 counted: six collections at 42% each may fit inside a wide
+                 phone, and a control that does nothing is the same fault as a
+                 Read more that reveals nothing. */ ?>
+        <?php /* The shared rail pager — see .dv-pager in style.css. No counter:
+                 this rail slides, it does not page through sets, and a page
+                 number under a row of collections reframes browsing as a chore. */ ?>
+        <div class="dv-pager" data-pager="cat" hidden>
+          <div class="dv-pager-pill">
+            <button type="button" class="dv-pager-btn" data-pager-step="-1" aria-label="Previous collections">
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 5 8 12l7 7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <button type="button" class="dv-pager-btn" data-pager-step="1" aria-label="Next collections">
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 5 7 7-7 7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
+          <span class="dv-sr-only" role="status" aria-live="polite" aria-atomic="true" data-pager-status></span>
         </div>
 
         <?php if ($catTotalCount > count($allCategories)): ?>
@@ -751,16 +759,26 @@ $naFirstPageCount = min(count($naItems), $naPerPage);
                  would on any garment shot the same way. Bottom right inside is
                  worse still: that is where the caption of whichever panel is
                  open appears. */ ?>
-        <div class="na-pager" hidden>
-          <div class="na-pager-pill">
-            <button type="button" class="na-arrow" data-na-step="-1" aria-label="Previous new arrivals">
+        <?php /* The shared rail pager — see .dv-pager in style.css. Same markup,
+                 same classes and same behaviour as the one under Collections,
+                 Trending and Shop by Occasion; only the labels and the mode
+                 differ. This section pages in sets of four, so it opts into the
+                 counter. */ ?>
+        <div class="dv-pager" data-pager-mode="count" data-pager="na" hidden>
+          <div class="dv-pager-pill">
+            <button type="button" class="dv-pager-btn" data-pager-step="-1" aria-label="Previous new arrivals">
                 <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 5 8 12l7 7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </button>
-            <span class="na-count" aria-live="polite">1&#8202;/&#8202;<?= $naPages ?></span>
-            <button type="button" class="na-arrow" data-na-step="1" aria-label="Next new arrivals">
+            <?php /* aria-hidden on the visible digits and a separate sr-only status
+                     region below: the visible text is repainted on resize too, and a
+                     live region that fires on every resize tick machine-guns a screen
+                     reader. Only a button press writes the announcement. */ ?>
+            <span class="dv-pager-count" data-pager-count aria-hidden="true">1&#8202;/&#8202;<?= $naPages ?></span>
+            <button type="button" class="dv-pager-btn" data-pager-step="1" aria-label="Next new arrivals">
                 <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 5 7 7-7 7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </button>
           </div>
+          <span class="dv-sr-only" role="status" aria-live="polite" aria-atomic="true" data-pager-status></span>
         </div>
         <?php endif; ?>
     </div><!-- /.na-stage -->
@@ -782,12 +800,10 @@ $naFirstPageCount = min(count($naItems), $naPerPage);
     var stage = document.querySelector('.na-stage');
     if (!stage) { return; }
     var gallery = stage.querySelector('.na-gallery');
-    var pager   = stage.querySelector('.na-pager');
-    if (!gallery || !pager) { return; }
+    if (!gallery) { return; }
 
     var panels  = Array.prototype.slice.call(gallery.querySelectorAll('.na-panel'));
     var pages   = parseInt(gallery.getAttribute('data-na-pages'), 10) || 1;
-    var counter = pager.querySelector('.na-count');
     var current = 0;
 
     function show(next) {
@@ -810,16 +826,35 @@ $naFirstPageCount = min(count($naItems), $naPerPage);
         if (live === 1) { gallery.style.setProperty('--na-open', '100%'); }
         else            { gallery.style.removeProperty('--na-open'); }
         gallery.style.setProperty('--na-rest', String(Math.max(1, live - 1)));
-        if (counter) { counter.textContent = (current + 1) + '\u200a/\u200a' + pages; }
     }
 
-    pager.addEventListener('click', function (event) {
-        var button = event.target.closest('.na-arrow');
-        if (!button) { return; }
-        show(current + (parseInt(button.getAttribute('data-na-step'), 10) || 1));
-    });
+    /* Registered for the shared pager rather than wired here — see the engine at
+       the foot of this file. The section keeps the part that is genuinely its
+       own (which four panels are in the flow) and hands over the part that is
+       the same everywhere (a prev button, a next button and a counter).
 
-    pager.hidden = false;
+       pages() is a function, not the number: below 1025px this gallery is a
+       swipe rail with every panel in the flow at once, and the engine hides a
+       pager whose rail reports one page. */
+    /* matchMedia rather than a width read, so this agrees with the stylesheet's
+       own breakpoint instead of racing it. Above it the gallery pages in sets of
+       four; below it the same markup is a swipe rail, and the pager scrolls it —
+       which is the point of the exercise. The rail used to have no control at
+       all down here, leaving swipe as the only way through, and swipe is
+       invisible, unreachable by keyboard and impossible on a switch. */
+    function railMode() { return !window.matchMedia('(min-width: 1025px)').matches; }
+
+    window.dvRailDrivers = window.dvRailDrivers || {};
+    window.dvRailDrivers.na = {
+        label: 'New Arrivals',
+        rail:  gallery,
+        pages: function () { return railMode() ? window.dvRail.pages(gallery) : pages; },
+        page:  function () { return railMode() ? window.dvRail.page(gallery)  : current; },
+        go:    function (delta) {
+            if (railMode()) { window.dvRail.go(gallery, delta); } else { show(current + delta); }
+        },
+        onMove: function (cb) { gallery.addEventListener('scroll', cb, { passive: true }); }
+    };
 })();
 </script>
 <?php endif; ?>
@@ -897,6 +932,11 @@ $pfHasBoth = count($pfPanels) > 1;
         <div class="pf-panel<?= $pfFirst ? ' is-active' : '' ?>"
              id="pfPanel-<?= $pfKey ?>"
              data-pf-panel="<?= $pfKey ?>"
+             <?php /* Named for the pager's screen-reader announcement, which reads
+                      "Best Sellers, page 2 of 3" rather than a bare "2 / 3" — and
+                      re-reads correctly after a tab switch because the name comes
+                      from the panel, not from the pager. */ ?>
+             data-pf-label="<?= htmlspecialchars($pfPanel['label'] ?? ucfirst((string)$pfKey)) ?>"
              <?= $pfHasBoth ? 'role="tabpanel" aria-labelledby="pfTab-' . $pfKey . '"' : '' ?>
              <?= $pfFirst ? '' : 'hidden' ?>>
 
@@ -935,20 +975,26 @@ $pfHasBoth = count($pfPanels) > 1;
                 </ul>
             </div>
 
-            <div class="pf-controls">
-                <?php /* aria-live on the counter, not on the track: announcing the
-                         range once per move is the whole story, whereas announcing
-                         twelve cards is noise. */ ?>
-                <span class="pf-counter" data-pf-counter aria-live="polite" aria-atomic="true"></span>
-                <div class="pf-progress" aria-hidden="true"><span class="pf-progress-fill" data-pf-fill></span></div>
+            <?php /* The shared rail pager — see .dv-pager in style.css. It replaces
+                     three separate controls this section used to carry: a pair of
+                     48px circles hung outside the viewport into the page gutter
+                     (and deleted below 767px, leaving the strip swipe-only), a
+                     range counter, and a progress bar. The counter and the bar
+                     said the same thing two pixels apart; the pill says it once,
+                     in the same place and the same words as the other three
+                     rails. Products page in fours, so this one takes the counter. */ ?>
+            <div class="dv-pager" data-pager-mode="count" data-pager="pf-<?= htmlspecialchars($pfKey) ?>" hidden>
+              <div class="dv-pager-pill">
+                <button type="button" class="dv-pager-btn" data-pager-step="-1" aria-label="Previous products">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 5 8 12l7 7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <span class="dv-pager-count" data-pager-count aria-hidden="true"></span>
+                <button type="button" class="dv-pager-btn" data-pager-step="1" aria-label="More products">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 5 7 7-7 7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+              </div>
+              <span class="dv-sr-only" role="status" aria-live="polite" aria-atomic="true" data-pager-status></span>
             </div>
-
-            <button type="button" class="pf-arrow pf-prev" data-pf-prev aria-label="Previous products">
-                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 5 8 12l7 7" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </button>
-            <button type="button" class="pf-arrow pf-next" data-pf-next aria-label="More products">
-                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 5 7 7-7 7" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </button>
         </div>
         <?php $pfFirst = false; endforeach; ?>
 
@@ -1158,6 +1204,91 @@ if ($occasions) {
                 </a>
             <?php endforeach; ?>
     </div>
+
+    <?php /* The shared rail pager — see .dv-pager in style.css. This strip shipped
+             with no control at all and a comment explaining that the clipped tile
+             at the right edge was affordance enough. It is not: a clipped tile is
+             an invitation to drag, and drag is the one gesture a keyboard, a
+             trackpad without horizontal scroll, or a switch cannot perform.
+
+             It is also the section that dictated where the shared pager lives.
+             Owl clips its stage at this element's box and ignores stagePadding
+             under autoWidth, so nothing can hang outside the strip's edges the
+             way Trending's arrows used to, and nothing can sit inside without
+             scrolling away with the tiles. Under it, in normal flow, is the only
+             placement that works here — so it is the placement everywhere.
+
+             No counter: the strip slides, it does not page through sets, and a
+             page number under a curated row of occasions reframes browsing as a
+             chore. */ ?>
+    <div class="container">
+        <div class="dv-pager" data-pager="occ" hidden>
+          <div class="dv-pager-pill">
+            <button type="button" class="dv-pager-btn" data-pager-step="-1" aria-label="Previous occasions">
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 5 8 12l7 7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <button type="button" class="dv-pager-btn" data-pager-step="1" aria-label="Next occasions">
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 5 7 7-7 7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
+          <span class="dv-sr-only" role="status" aria-live="polite" aria-atomic="true" data-pager-status></span>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        var rail = document.querySelector('.occasion-slider');
+        if (!rail) { return; }
+
+        /* Owl or not, without knowing which at registration time.
+           ─────────────────────────────────────────────────────────────────
+           This file's scripts run before includes/footer.php initialises the
+           rail, so the instance does not exist yet — and may never, if jQuery
+           or Owl fails to load. Every method therefore asks at call time and
+           falls back to driving the element as a plain overflow rail, which is
+           exactly what it is until Owl takes it over. */
+        function owl() {
+            if (!window.jQuery) { return null; }
+            var inst = window.jQuery(rail).data('owl.carousel');
+            return (inst && typeof inst.maximum === 'function') ? inst : null;
+        }
+
+        window.dvRailDrivers = window.dvRailDrivers || {};
+        window.dvRailDrivers.occ = {
+            label: 'Shop by Occasion',
+            rail:  rail,
+            pages: function () {
+                var o = owl();
+                /* maximum() is the last index Owl will scroll to, so it is 0
+                   exactly when everything already fits — which is the same
+                   "can this move" test the other rails make with scrollWidth,
+                   and the reason a short list of occasions gets no control. */
+                return o ? Math.max(1, o.maximum() + 1) : window.dvRail.pages(rail);
+            },
+            page: function () {
+                var o = owl();
+                return o ? Math.max(0, Math.min(o.maximum(), o.current())) : window.dvRail.page(rail);
+            },
+            go: function (delta) {
+                var o = owl();
+                if (!o) { window.dvRail.go(rail, delta); return; }
+                var total = o.maximum() + 1;
+                var next  = ((o.current() + delta) % total + total) % total;
+                window.jQuery(rail).trigger('to.owl.carousel', [next, 300]);
+            },
+            onMove: function (cb) {
+                /* Owl announces every settle, including the ones a drag causes,
+                   so the counter cannot go stale. Bound late for the same reason
+                   the instance is looked up late. */
+                window.addEventListener('load', function () {
+                    if (window.jQuery) { window.jQuery(rail).on('translated.owl.carousel initialized.owl.carousel', cb); }
+                    else { rail.addEventListener('scroll', cb, { passive: true }); }
+                    cb();
+                });
+            }
+        };
+    })();
+    </script>
 </section>
 <?php endif; ?>
 
@@ -1645,37 +1776,30 @@ $occIsMen = function_exists('currentShopGender') && currentShopGender() === 'men
         return false;
     }
 
-    /* ── Collections rail arrows ────────────────────────────────────────────
-       These sit in this scope because they are reached from inline onclick
-       attributes and therefore have to be global here. An
-       earlier attempt put them inside a wrapper and every press threw
-       "scrollCatRail is not defined" — a dead control that looked live.
-
-       Hidden when the rail cannot move. Six collections at 42% each may fit
-       inside a wide phone, and a pair of arrows that do nothing is the same
-       fault as a Read more that reveals nothing. Measured, not counted: whether
-       a rail scrolls depends on tile width, gap and viewport together, so
-       scrollWidth against clientWidth is the only honest test. Re-run on resize
-       for the same reason. */
-    function syncCatRailArrows() {
-        const rail = document.querySelector(".home-categories-grid");
-        const nav  = document.querySelector(".cat-rail-nav");
-        if (!rail || !nav) { return; }
-        const scrolls = rail.scrollWidth > rail.clientWidth + 2;
-        nav.hidden = !scrolls;
-    }
-    window.addEventListener("load", syncCatRailArrows);
-    window.addEventListener("resize", syncCatRailArrows);
-    document.addEventListener("DOMContentLoaded", syncCatRailArrows);
-
-    function scrollCatRail(dir) {
+    /* ── Collections rail ───────────────────────────────────────────────────
+       A driver for the shared pager, nothing more. This used to be a pair of
+       globals reached from inline onclick attributes — which is why they could
+       not be wrapped in a scope, and why an earlier attempt to tidy them threw
+       "scrollCatRail is not defined" on every press. The buttons are wired by
+       the engine now, so the scope problem is gone with them. */
+    (function () {
         const rail = document.querySelector(".home-categories-grid");
         if (!rail) { return; }
-        const tile = rail.querySelector(".category-card");
-        const gap  = parseFloat(getComputedStyle(rail).columnGap) || 12;
-        const step = tile ? tile.getBoundingClientRect().width + gap : 200;
-        rail.scrollBy({ left: dir * step, behavior: "smooth" });
-    }
+        window.dvRailDrivers = window.dvRailDrivers || {};
+        window.dvRailDrivers.cat = {
+            label: "Dievon Collections",
+            rail:  rail,
+            /* Above 768 this element is a mosaic GRID, not a rail — scrollWidth
+               equals clientWidth, dvRail reports one page, and the engine
+               retires the control. That is the same measured test this section
+               already used, kept: whether a rail scrolls depends on tile width,
+               gap and viewport together, so counting tiles would be a guess. */
+            pages: function () { return window.dvRail.pages(rail); },
+            page:  function () { return window.dvRail.page(rail); },
+            go:    function (delta) { window.dvRail.go(rail, delta); },
+            onMove: function (cb) { rail.addEventListener("scroll", cb, { passive: true }); }
+        };
+    })();
 
     /* scrollCarousel() drove the New Arrivals rail's arrows. That section is an
        editorial gallery now — four panels side by side, expanded on hover, with
@@ -1704,10 +1828,6 @@ $occIsMen = function_exists('currentShopGender') && currentShopGender() === 'men
         function makeSlider(panel) {
             var track   = panel.querySelector('[data-pf-track]');
             var items   = Array.prototype.slice.call(panel.querySelectorAll('.pf-item'));
-            var prev    = panel.querySelector('[data-pf-prev]');
-            var next    = panel.querySelector('[data-pf-next]');
-            var counter = panel.querySelector('[data-pf-counter]');
-            var fill    = panel.querySelector('[data-pf-fill]');
             var view    = panel.querySelector('.pf-viewport');
             if (!track || !items.length) { return null; }
 
@@ -1728,19 +1848,6 @@ $occIsMen = function_exists('currentShopGender') && currentShopGender() === 'men
             function paint(animate) {
                 track.style.transform = 'translate3d(' + (-index * step) + 'px, 0, 0)';
 
-                var first = index + 1;
-                var last  = Math.min(items.length, index + visible);
-                if (counter) {
-                    counter.textContent = items.length <= visible
-                        ? String(items.length).padStart(2, '0') + ' items'
-                        : String(first).padStart(2, '0') + '–' + String(last).padStart(2, '0') +
-                          ' / ' + String(items.length).padStart(2, '0');
-                }
-                if (fill) { fill.style.width = ((last / items.length) * 100).toFixed(2) + '%'; }
-
-                if (prev) { prev.disabled = index <= 0; }
-                if (next) { next.disabled = index >= maxIndex; }
-
                 /* A card scrolled out of frame must not be reachable by Tab —
                    otherwise the focus ring walks off the side of the screen and
                    the page appears to jump for no reason. inert takes the whole
@@ -1750,7 +1857,10 @@ $occIsMen = function_exists('currentShopGender') && currentShopGender() === 'men
                 for (var i = 0; i < items.length; i++) {
                     var off = (i < index || i > index + visible - 1);
                     if (off && items[i].contains(document.activeElement)) {
-                        if (next && !next.disabled) { next.focus(); } else { view.focus(); }
+                        /* The viewport carries tabindex="-1" for exactly this.
+                           Focus used to be thrown to the next arrow, which no
+                           longer lives inside the panel. */
+                        view.focus();
                     }
                     if (off) { items[i].setAttribute('inert', ''); }
                     else     { items[i].removeAttribute('inert'); }
@@ -1762,9 +1872,6 @@ $occIsMen = function_exists('currentShopGender') && currentShopGender() === 'men
                 index = Math.max(0, Math.min(maxIndex, to));
                 paint(true);
             }
-
-            if (prev) { prev.addEventListener('click', function () { go(index - 1); }); }
-            if (next) { next.addEventListener('click', function () { go(index + 1); }); }
 
             /* Left and right arrows move the strip while the focus is anywhere
                inside this panel. Only those two keys are taken; everything else,
@@ -1819,16 +1926,47 @@ $occIsMen = function_exists('currentShopGender') && currentShopGender() === 'men
                 if (moved) { e.preventDefault(); e.stopPropagation(); moved = false; }
             }, true);
 
-            return {
+            /* Paged for the shared pager rather than stepped one card at a time.
+               The strip still DRAGS by the card — the pointer handler above
+               rounds to whichever card it lands nearest — but a press moves a
+               full screenful, which is what the other three rails do and what
+               the counter has to mean for "2 / 3" to be true. */
+            function pages()    { return Math.max(1, Math.ceil(items.length / visible)); }
+            function pageIndex(){ return Math.min(pages() - 1, Math.round(index / visible)); }
+
+            var api = {
                 panel: panel,
                 reset: function () { index = 0; measure(); paint(false); },
-                refresh: function () { measure(); paint(false); }
+                refresh: function () { measure(); paint(false); },
+                driver: {
+                    label: panel.getAttribute('data-pf-label') || 'Products',
+                    rail:  view,
+                    pages: pages,
+                    page:  pageIndex,
+                    go: function (delta) {
+                        var total = pages();
+                        /* Wrap, like every other rail here. */
+                        var next  = ((pageIndex() + delta) % total + total) % total;
+                        go(next * visible);
+                    },
+                    onMove: function (cb) { api.onPaint = cb; }
+                }
             };
+            api.onPaint = null;
+            /* A drag moves the strip without going through the pager, so the
+               counter is repainted from paint() rather than only from a press. */
+            var basePaint = paint;
+            paint = function (animate) { basePaint(animate); if (api.onPaint) { api.onPaint(); } };
+            return api;
         }
 
+        window.dvRailDrivers = window.dvRailDrivers || {};
         panels.forEach(function (panel) {
             var s = makeSlider(panel);
-            if (s) { sliders.push(s); }
+            if (!s) { return; }
+            sliders.push(s);
+            /* One pager per tab panel, keyed the same way the panel is. */
+            window.dvRailDrivers['pf-' + panel.getAttribute('data-pf-panel')] = s.driver;
         });
 
         /* Measure once the photographs have settled. The cards are 3:4 by CSS so
@@ -1916,6 +2054,165 @@ $occIsMen = function_exists('currentShopGender') && currentShopGender() === 'men
         reviewIndex = (reviewIndex + 1) % 3;
         updateReviewPosition();
     }, 6000);
+</script>
+
+<?php /* ══ The shared rail pager engine ═══════════════════════════════════════
+         One prev button, one next button and one counter, driving four rails
+         that move in four completely different ways: New Arrivals swaps which
+         panels are in the flow, Collections scrolls a native overflow rail,
+         Trending translates a flex track, and Shop by Occasion asks Owl.
+
+         The sections do not share any of that. What they share is the control,
+         so each one registers a tiny driver — pages(), page(), go(delta) — and
+         this engine owns everything else: painting the counter, announcing the
+         move, and retiring a pager whose rail has nowhere to go.
+
+         Placed last on purpose. Sections assign into window.dvRailDrivers as
+         plain data, so no section has to care whether the engine has loaded
+         yet, and the engine runs once when every section has had its say. */ ?>
+<script>
+(function () {
+    /* Native-scroll helpers, published before the drivers are read.
+       ─────────────────────────────────────────────────────────────────────
+       Three of the four rails are, at some breakpoint, an ordinary
+       overflow-x element — Collections on a phone, New Arrivals below 1025,
+       and the Occasion strip if Owl never initialises. Paging one is the same
+       eight lines every time, so they live here once and the drivers borrow
+       them. Drivers reference window.dvRail lazily, from inside their own
+       methods, which the engine only ever calls after this assignment. */
+    window.dvRail = {
+        /* Laid out in ITEMS, not in pixels, because these rails carry
+           scroll-snap-align on their cards. Scrolling to a raw multiple of
+           clientWidth lands between two snap points and the browser drags the
+           rail back to the nearest card — measured on the New Arrivals rail at
+           390px: a press meant for 780 settled at 442, and the counter then
+           disagreed with the rail for the rest of the session. Snapping to the
+           first card of the page is a position the browser already agrees with,
+           so the two never argue. */
+        items: function (el) {
+            return Array.prototype.filter.call(el.children, function (c) {
+                return c.offsetWidth > 0 && getComputedStyle(c).position !== 'absolute';
+            });
+        },
+        /* How many cards are on screen at once. The +(step - firstWidth) term is
+           the gap: without it a rail showing 2.0 cards reports 1. */
+        perPage: function (el) {
+            var it = this.items(el);
+            if (it.length < 2) { return 1; }
+            var step = it[1].offsetLeft - it[0].offsetLeft;
+            if (step < 1) { return 1; }
+            return Math.max(1, Math.floor((el.clientWidth + (step - it[0].offsetWidth)) / step));
+        },
+        pages: function (el) {
+            if (!el || el.clientWidth < 1) { return 1; }
+            /* Whether the thing can move at all is a separate question from how
+               many items it holds, and it has to be asked first. Above 768px the
+               collections element is a mosaic GRID: six tiles that wrap into
+               rows and do not scroll, but whose first two still sit side by side,
+               so an item-and-step count cheerfully reported three pages and put
+               a live control under a grid that cannot move. scrollWidth against
+               clientWidth is the only honest test — the same one this section
+               used before it moved to the shared pager. */
+            if (el.scrollWidth <= el.clientWidth + 2) { return 1; }
+            var it = this.items(el);
+            if (!it.length) { return 1; }
+            return Math.max(1, Math.ceil(it.length / this.perPage(el)));
+        },
+        page: function (el) {
+            if (!el || el.clientWidth < 1) { return 0; }
+            var it = this.items(el), per = this.perPage(el);
+            if (!it.length) { return 0; }
+            /* Read from the rail's real position rather than a remembered index,
+               so a finger swipe and a button press cannot drift apart. */
+            var left = el.scrollLeft;
+            var best = 0, bestD = Infinity;
+            for (var i = 0; i < it.length; i += per) {
+                var d = Math.abs(this.offsetOf(el, it[i]) - left);
+                if (d < bestD) { bestD = d; best = i / per; }
+            }
+            return Math.round(best);
+        },
+        /* Relative to the scroller, whatever the offsetParent happens to be. */
+        offsetOf: function (el, item) {
+            return el.scrollLeft
+                 + (item.getBoundingClientRect().left - el.getBoundingClientRect().left);
+        },
+        go: function (el, delta) {
+            if (!el) { return; }
+            /* Wrap, like every other rail here. A shopper at the end who presses
+               next and gets nothing has been handed a dead control; the pages
+               that disable instead need a disabled style and an explanation. */
+            var it = this.items(el), per = this.perPage(el), total = this.pages(el);
+            if (!it.length) { return; }
+            var next = ((this.page(el) + delta) % total + total) % total;
+            var item = it[Math.min(it.length - 1, next * per)];
+            var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            el.scrollTo({ left: this.offsetOf(el, item), behavior: reduce ? 'auto' : 'smooth' });
+        }
+    };
+
+    var drivers = window.dvRailDrivers || {};
+
+    Array.prototype.forEach.call(document.querySelectorAll('.dv-pager[data-pager]'), function (pager) {
+        var driver = drivers[pager.getAttribute('data-pager')];
+        /* No driver means the section's own script did not run — a PHP guard
+           that printed the markup but not the script, or a JS error above.
+           Leave the control hidden rather than shipping two dead buttons. */
+        if (!driver) { pager.hidden = true; return; }
+
+        var count  = pager.querySelector('[data-pager-count]');
+        var status = pager.querySelector('[data-pager-status]');
+
+        /* paint() is safe to call as often as you like — it is wired to resize.
+           announce() is NOT: it writes a live region, so it is called only from
+           a real button press. A status region fed by a resize listener fires on
+           every address-bar collapse on a phone. */
+        function paint() {
+            var total = driver.pages();
+            /* Measured, not guessed from viewport width. This is what replaces
+               the four unrelated display:none rules that used to strand a rail
+               with no control at all on a phone: the pager goes away only when
+               the rail genuinely cannot move. */
+            pager.hidden = !(total > 1);
+            if (!(total > 1) || !count) { return; }
+            count.textContent = (driver.page() + 1) + '\u200a/\u200a' + total;
+        }
+
+        function announce() {
+            if (!status) { return; }
+            status.textContent = driver.label + ', page ' + (driver.page() + 1)
+                               + ' of ' + driver.pages();
+        }
+
+        pager.addEventListener('click', function (event) {
+            var button = event.target.closest('[data-pager-step]');
+            if (!button) { return; }
+            driver.go(parseInt(button.getAttribute('data-pager-step'), 10) || 1);
+            paint();
+            announce();
+        });
+
+        /* A rail that moves by itself — a swipe, an Owl drag — tells the engine
+           so the counter does not go stale. Still never announces: the shopper
+           who swiped already knows the rail moved. */
+        if (typeof driver.onMove === 'function') { driver.onMove(paint); }
+
+        var resizeTimer;
+        window.addEventListener('resize', function () {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(paint, 150);
+        });
+
+        /* Again after load, because two things settle late: Owl initialises the
+           Occasion strip from includes/footer.php, which runs after this, and a
+           web font arriving can change a card's width and so the page count.
+           Both would otherwise leave a control showing for a rail that cannot
+           move, or hidden for one that can. */
+        window.addEventListener('load', function () { setTimeout(paint, 60); });
+
+        paint();
+    });
+})();
 </script>
 
 <?php

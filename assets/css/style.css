@@ -9204,52 +9204,13 @@ main#mainContent:focus { outline: none; }
    .owl-drag so it only appears on rails Owl has actually made draggable — never
    on a strip that cannot move. */
 
-/* ── The collections rail arrows ──────────────────────────────────────────
-   Hidden by default; the rail only exists below 768px, so above that these
-   would be two controls with nothing to move.
-
-   [hidden] needs saying explicitly. The attribute is only a default of
-   display:none and ANY author display rule beats it — the media query below is
-   exactly such a rule, so without this line syncCatRailArrows() could set
-   nav.hidden and the arrows would stay on screen anyway. This trap has been
-   sprung three times in this stylesheet; the rule is the fix each time. */
-.cat-rail-nav { display: none; }
-.cat-rail-nav[hidden] { display: none !important; }
-
-@media (max-width: 768px) {
-    .cat-rail-nav {
-        display: flex;
-        justify-content: flex-end;
-        gap: 10px;
-        margin-top: 16px;
-    }
-    /* Shaped from .hero-arrow, the arrows already on this page, so the two sets
-       read as one control rather than two designs: a 44px box and a chevron. */
-    .cat-rail-arrow {
-        /* 44, not the hero pair's 50. On a phone those render 40x40 — under the
-           44px minimum a finger needs — so matching them exactly would copy a
-           flaw. */
-        width: 44px;
-        height: 44px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: transparent;
-        border: 1px solid var(--border-strong);
-        color: var(--text-primary);
-        cursor: pointer;
-        transition: 0.3s;
-    }
-    .cat-rail-arrow:hover,
-    .cat-rail-arrow:focus-visible {
-        background: var(--color-primary);
-        border-color: var(--color-primary);
-        color: #fff;
-    }
-}
-@media (prefers-reduced-motion: reduce) {
-    .cat-rail-arrow { transition: none; }
-}
+/* The collections rail's navigation is the shared .dv-pager now. Its old pair
+   of outlined squares lived only inside @media (max-width: 768px), which is
+   half of why this page had five navigations: the control existed on a phone
+   and nowhere else, while New Arrivals' existed on a desktop and nowhere else.
+   The shared pager decides by measuring the rail instead, so the same control
+   appears at whatever width the rail can actually move — and disappears above
+   768 where this element is a mosaic grid, without a breakpoint saying so. */
 
 /* ── One arrow, everywhere ─────────────────────────────────────────────────
    These six controls all do the same job — move a rail, close an overlay — and
@@ -9274,10 +9235,12 @@ main#mainContent:focus { outline: none; }
    them on — the arrows ended up floating between the photograph and the
    video rather than sitting on the image edge. Consistency is not worth
    breaking placement for; those two keep their own shape. */
+/* .cat-rail-arrow was a member until the collections rail moved to the shared
+   .dv-pager; its rules are gone, so it is dropped from the list rather than
+   left as a selector matching nothing. */
 .btn-close-cart,
 .hero-arrow,
-.btn-carousel-arrow,
-.cat-rail-arrow {
+.btn-carousel-arrow {
     border-radius: 2px;
     min-width: 44px;
     min-height: 44px;
@@ -11146,61 +11109,152 @@ input.chk-input-error:focus {
    exists to show. */
 
 
-/* ── Paging the sets of four ───────────────────────────────────────────────
-   Under the photographs, right aligned to the page gutter. Not on them: every
-   corner inside the gallery is taken or unsafe. Bottom right is where the open
-   panel's caption appears. Top right was tried and is where a portrait
-   photograph puts the model's head — the pill sat on her face, and would on any
-   garment shot the same way.
+/* ══════════════════════════════════════════════════════════════════════════
+   ONE PAGER FOR EVERY RAIL  (.dv-pager)
+   ──────────────────────────────────────────────────────────────────────────
+   Five carousels on this page had grown five unrelated navigations: the hero's
+   44px dark squares on the image, Collections' pair of outlined squares that
+   appear ONLY under 768px, New Arrivals' burgundy pill, Trending's 48px circles
+   hung out in the page gutter with a counter and a progress bar under them, and
+   Shop by Occasion with no control at all. Four of the five also deleted their
+   navigation somewhere — .cat-rail-nav above 768, .na-pager below 1024,
+   .pf-arrow below 767, the hero below 480 — so on a phone most of the homepage
+   was swipe-only, which is invisible, unreachable by keyboard, and the one
+   affordance a switch user cannot perform.
 
-   The pill is not decoration. Gold on the page's pale ground is the failure the
-   collection tiles already hit; the brand's burgundy behind it is the same
-   pairing the captions use, and makes the contrast a fixed quantity rather than
-   a property of whatever is nearby. */
-.na-pager {
+   This is the single control they all use instead. It is the New Arrivals pill,
+   generalised: the only one of the five that was a block in NORMAL FLOW carrying
+   its own ground, which is what lets it sit under any rail — including the
+   Occasion strip, where Owl clips its stage at the element's box and ignores
+   stagePadding under autoWidth, so nothing can hang outside the edges and
+   nothing can live inside without scrolling away with the tiles.
+
+   Geometry is flush: a 44px disc in a 44px capsule with no pill padding, so the
+   disc's circle and the capsule's terminal are the same curve. The old pill
+   padded 34px buttons by 5px, which made a 54px pill around a target under the
+   44px floor.
+
+   The counter is opt-in, via data-pager-mode="count". A page number under a
+   curated row of occasion tiles reframes browsing as a chore; it belongs where
+   paging is a real idea (New Arrivals' sets of four, Trending's 12 products)
+   and not where the rail simply slides. */
+.dv-pager {
     display: flex;
     justify-content: flex-end;
     align-items: center;
-    gap: 4px;
     padding: 16px var(--dv-gutter) 0;
 }
-.na-pager-pill {
+/* An author display rule beats the [hidden] attribute, and this element has
+   one — so hidden has to be restated or the pager shows through it. The same
+   trap is documented at .cat-rail-nav. */
+.dv-pager[hidden] { display: none; }
+
+.dv-pager-pill {
     display: flex;
     align-items: center;
-    gap: 4px;
-    padding: 5px;
+    height: 44px;
     border-radius: 999px;
     background: var(--color-primary-dark);
 }
-.na-arrow {
+.dv-pager-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 34px;
-    height: 34px;
+    /* min-* as well as width/height: this stylesheet has had button sizes
+       flattened by a shorthand before, and 44px is the touch floor. */
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
     padding: 0;
+    border: 0;
     border-radius: 50%;
     color: var(--color-accent);
     background: transparent;
     cursor: pointer;
+    /* Kills the 300ms tap delay and the grey iOS flash over a round control. */
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
     transition: background-color 200ms ease, color 200ms ease;
 }
-.na-arrow svg { width: 19px; height: 19px; display: block; }
-.na-arrow:hover,
-.na-arrow:focus-visible {
-    background: var(--color-accent);
-    color: var(--color-primary-dark);
+.dv-pager-btn svg { width: 19px; height: 19px; display: block; }
+.dv-pager-btn:hover { background: var(--color-accent); color: var(--color-primary-dark); }
+/* With the tap highlight suppressed and no :active, a tap on a round button
+   reads as a dead control. */
+.dv-pager-btn:active { background: var(--color-accent); color: var(--color-primary-dark); }
+
+/* Focus, and why it is spelled out rather than inherited.
+   ──────────────────────────────────────────────────────────────────────────
+   The site-wide ring at the top of this file sets `border-radius: 2px` on
+   every :focus-visible element. On a round control that squares the ring off:
+   measured on the old .na-arrow, tabbing to it turned a 50% disc into a 2px
+   square whose corners pushed outside the pill's 999px end and sat on the cream
+   page ground, where white-on-cream is about 1.05:1 — the indicator's outer
+   edge simply vanished at the corners.
+
+   Three fixes, all needed. Restate the radius so the ring follows the disc.
+   Draw it INSIDE (negative offset) so it can never leave the burgundy. And
+   refuse the hover fill on focus: gold ground under a white ring is 2.10:1,
+   where an indicator needs 3:1 — on the burgundy it is 16.82:1. */
+.dv-pager-btn:focus-visible {
+    outline: 2px solid #ffffff;
+    outline-offset: -4px;
+    border-radius: 50%;
+    box-shadow: none;
+    background: transparent;
+    color: var(--color-accent);
 }
-.na-arrow:focus-visible { outline: 2px solid #ffffff; outline-offset: 2px; }
-.na-count {
+
+.dv-pager-count {
     font-family: var(--font-body), sans-serif;
     font-size: 11.5px;
     font-weight: 600;
     letter-spacing: 0.1em;
+    /* The digits change under the reader's eye; without tabular figures the
+       counter jitters horizontally every time a 1 becomes a 4. */
     font-variant-numeric: tabular-nums;
     color: var(--color-accent);
-    padding: 0 2px;
+    min-width: 3.6em;
+    text-align: center;
 }
+.dv-pager:not([data-pager-mode="count"]) .dv-pager-count { display: none; }
+
+/* Windows High Contrast throws background and color away, which would leave an
+   edgeless shape with no boundary between prev and next. */
+@media (forced-colors: active) {
+    .dv-pager-pill { border: 1px solid CanvasText; }
+    .dv-pager-btn + .dv-pager-btn { border-left: 1px solid CanvasText; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .dv-pager-btn { transition: none; }
+}
+
+/* Announced, never shown. The visible counter is aria-hidden because it is
+   repainted on resize as well as on a press, and a live region wired to that
+   would fire on every address-bar collapse on a phone. This region is written
+   ONLY by a button press, and it carries the section name — "New Arrivals,
+   page 2 of 2" is worth the same bytes as "2 / 2" and is far more use.
+   The clip/clip-path pair is the pattern already used by the card's compare
+   label; it is here so the next component does not inline a fourth copy. */
+.dv-sr-only {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* The New Arrivals pager is the shared .dv-pager, defined above. Its placement
+   was decided here and the reasoning is worth keeping: under the photographs,
+   right aligned to the page gutter, never on them. Every corner inside the
+   gallery is taken or unsafe — bottom right is where the open panel's caption
+   appears, and top right is where a portrait photograph puts the model's head,
+   so a pill there sat on her face and would on any garment shot the same way.
+   That is the rule the shared component now applies to all four rails. */
+
 
 /* The whole panel is the link, so the ring has to be on the panel. inset, or a
    ring on a flush panel is clipped by its neighbour. */
@@ -11242,10 +11296,14 @@ input.chk-input-error:focus {
    stylus or a hybrid laptop can produce :hover on a touch layout, and a panel
    that expanded to 50% of the rail would shove its neighbours off screen. */
 @media (max-width: 1024px) {
-    /* No arrows on touch — the rail is swiped. They are also the only thing in
-       here that needs the gallery's dark ground behind it, which is gone. */
-    .na-pager { display: none; }
-
+    /* Every panel selector in here is .na-gallery-scoped, and it has to be.
+       The desktop rules above were all raised to (0,3,0) so they would beat the
+       shared card's own styling — which left this block's bare `.na-panel` at
+       (0,1,0) losing to `.na-gallery .na-panel` whatever the media query said.
+       The rail rendered one 179px card followed by three 60px slivers, on
+       repeat: the desktop gallery's flex-basis leaking through a breakpoint
+       that was supposed to have replaced it. A media query changes which rules
+       are LIVE, never which one wins. */
     .na-gallery {
         /* Authoritative, because the tile width is computed from it below and
            responsive.css loads after this file. */
@@ -11281,11 +11339,11 @@ input.chk-input-error:focus {
        collections rail was rebuilt for exactly this. The third of a tile is
        what tells you the rail scrolls; without it a phone user sees one photo
        and no reason to swipe. */
-    .na-panel,
-    .na-panel.is-default,
-    .na-panel:hover,
-    .na-panel:focus-visible,
-    .na-panel:focus-within,
+    .na-gallery .na-panel,
+    .na-gallery .na-panel.is-default,
+    .na-gallery .na-panel:hover,
+    .na-gallery .na-panel:focus-visible,
+    .na-gallery .na-panel:focus-within,
     .na-gallery:hover .na-panel.is-default:not(:hover),
     .na-gallery:focus-within .na-panel.is-default:not(:focus-within) {
         flex: 0 0 calc((100% - var(--na-rail-gap)) / 1.35);
@@ -11296,11 +11354,11 @@ input.chk-input-error:focus {
 
     /* cover everywhere on touch. contain in a tile this size leaves bars on a
        screen that has no width to spare. */
-    .na-panel .card-img,
-    .na-panel.is-default .card-img,
-    .na-panel:hover .card-img,
-    .na-panel:focus-visible .card-img,
-    .na-panel:focus-within .card-img,
+    .na-gallery .na-panel .card-img,
+    .na-gallery .na-panel.is-default .card-img,
+    .na-gallery .na-panel:hover .card-img,
+    .na-gallery .na-panel:focus-visible .card-img,
+    .na-gallery .na-panel:focus-within .card-img,
     .na-gallery:hover .na-panel.is-default:not(:hover) .card-img,
     .na-gallery:focus-within .na-panel.is-default:not(:focus-within) .card-img {
         object-fit: cover;
@@ -11309,10 +11367,10 @@ input.chk-input-error:focus {
     }
 
     /* Always visible: there is no hover to reveal it. */
-    .na-panel { background: transparent; border: 0; padding: 0; }
-    .na-panel .card-img-container { border-bottom: 0; }
-    .na-panel .product-card-details,
-    .na-panel.is-default .product-card-details,
+    .na-gallery .na-panel { background: transparent; border: 0; padding: 0; }
+    .na-gallery .na-panel .card-img-container { border-bottom: 0; }
+    .na-gallery .na-panel .product-card-details,
+    .na-gallery .na-panel.is-default .product-card-details,
     .na-gallery:hover .na-panel.is-default:not(:hover) .product-card-details,
     .na-gallery:focus-within .na-panel.is-default:not(:focus-within) .product-card-details {
         opacity: 1;
@@ -11328,9 +11386,9 @@ input.chk-input-error:focus {
        tracked over a photograph is under any sensible floor for a link — 10.5
        is what the shop card and the photo fan both use, so the tracking comes
        from the base rule rather than being overridden thinner here. */
-    .na-panel .product-card-title { font-size: clamp(15px, 4vw, 20px); }
-    .na-panel .product-card-price { font-size: 14px; }
-    .na-panel .product-card-cta   { font-size: 10.5px; }
+    .na-gallery .na-panel .product-card-title { font-size: clamp(15px, 4vw, 20px); }
+    .na-gallery .na-panel .product-card-price { font-size: 14px; }
+    .na-gallery .na-panel .product-card-cta   { font-size: 10.5px; }
 }
 
 /* The rail needs no one-column fallback. At the narrowest screen the site
@@ -11371,8 +11429,6 @@ input.chk-input-error:focus {
     /* Room for the lift and the scale, so overflow:hidden on the viewport does
        not shave the top off whichever print is being hovered. */
     --pf-lift-room: 42px;
-    /* The arrows hang into the page gutter but never past it — see .pf-prev. */
-    --pf-arrow-out: min(clamp(14px, 3.4vw, 62px), var(--dv-gutter));
 
     /* Warm ivory, not the white every other band uses. The prints are shot on
        pale studio walls and a white page makes them float with no edge; the
@@ -11821,64 +11877,16 @@ input.chk-input-error:focus {
 .photo-fan-section .pf-card a,
 .photo-fan-section .pf-card img { -webkit-user-drag: none; user-select: none; }
 
-/* ── Controls ──────────────────────────────────────────────────────────── */
-.photo-fan-section .pf-controls {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 18px;
-    margin-top: 26px;
-}
-.photo-fan-section .pf-counter {
-    font-family: var(--font-body), sans-serif;
-    font-size: 11.5px;
-    font-weight: 600;
-    letter-spacing: 0.14em;
-    font-variant-numeric: tabular-nums;
-    color: var(--color-primary-dark);
-}
-.photo-fan-section .pf-progress {
-    width: min(240px, 34vw);
-    height: 2px;
-    background: rgba(58, 12, 27, 0.16);
-    overflow: hidden;
-}
-.photo-fan-section .pf-progress-fill {
-    display: block;
-    height: 100%;
-    width: 0;
-    background: linear-gradient(90deg, var(--color-primary-dark), var(--color-accent));
-    transition: width 420ms cubic-bezier(0.22, 0.61, 0.36, 1);
-}
+/* ── Controls ──────────────────────────────────────────────────────────────
+   The shared .dv-pager, in normal flow under the strip. What was here: a range
+   counter, a progress bar, and a pair of 48px circles absolutely positioned
+   OUTSIDE the viewport edges, hanging into the page gutter — which is why this
+   section needed --pf-arrow-out to stop the circles pushing the whole page into
+   a horizontal scrollbar at 768px, and why the arrows were deleted outright
+   below 767px, leaving the strip swipe-only on every phone.
 
-.photo-fan-section .pf-arrow {
-    position: absolute;
-    top: calc(50% - 26px);       /* the controls row sits below; centre on the prints */
-    transform: translateY(-50%);
-    z-index: 6;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 48px;                 /* comfortably past the 44px minimum */
-    height: 48px;
-    border: 1px solid var(--color-accent-ink);
-    border-radius: 50%;
-    background: var(--bg-surface-soft);
-    color: var(--color-primary-dark);
-    cursor: pointer;
-    transition: background-color 220ms ease, color 220ms ease, opacity 220ms ease;
-}
-.photo-fan-section .pf-arrow svg { width: 20px; height: 20px; }
-/* The arrows hang into the page gutter but never past it. Left to the clamp
-   alone they reached 26px at a 768px screen where the gutter is 24px, putting
-   2px of circle off the glass and giving the whole PAGE a horizontal scrollbar. */
-.photo-fan-section .pf-prev { left: calc(-1 * var(--pf-arrow-out)); }
-.photo-fan-section .pf-next { right: calc(-1 * var(--pf-arrow-out)); }
-.photo-fan-section .pf-arrow:hover:not(:disabled) { background: var(--color-primary-dark); color: var(--color-accent); }
-.photo-fan-section .pf-arrow:focus-visible { outline: 2px solid var(--color-primary-dark); outline-offset: 3px; }
-/* Disabled, not hidden: a control that vanishes at the end of a strip moves the
-   one beside it and makes the shopper re-aim. */
-.photo-fan-section .pf-arrow:disabled { opacity: 0.3; cursor: default; }
+   The counter and the progress bar also said the same thing eighteen pixels
+   apart. The pill says it once. */
 
 /* ── Reduced motion ────────────────────────────────────────────────────── */
 /* The rotations go too. To someone who asked for less movement, a wall of
@@ -11889,7 +11897,6 @@ input.chk-input-error:focus {
        someone who has asked the operating system for less movement. */
     .photo-fan-section .pf-card { transition: none !important; }
     .photo-fan-section .pf-track,
-    .photo-fan-section .pf-progress-fill,
     .photo-fan-section .pf-card .product-card-details,
     .photo-fan-section .pf-card .compare-toggle { transition: none; }
     .photo-fan-section .pf-panel.is-active { animation: none; }
@@ -11944,9 +11951,6 @@ input.chk-input-error:focus {
        photograph cover the garment they are meant to help you reach. The counter
        and the progress bar stay — they are the only thing saying how much
        further the strip goes. */
-    .photo-fan-section .pf-arrow { display: none; }
-    .photo-fan-section .pf-controls { justify-content: space-between; margin-top: 18px; }
-    .photo-fan-section .pf-progress { width: 55%; }
     .photo-fan-section .pf-viewall { padding: 12px 0; }   /* 44px tap target */
 }
 
