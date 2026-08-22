@@ -461,17 +461,35 @@ $heroSlideCount = !empty($heroBanners)
         <?php endif; ?>
     </div>
     
-    <?php // Controls only exist when there is somewhere to go. A single slide
-          // needs no arrows and no dots — and zero slides needs neither markup
-          // nor a row of dots floating over an empty band. ?>
-    <?php if ($heroSlideCount > 1): ?>
-    <button onclick="prevSlide()" class="hero-arrow hero-arrow-left" aria-label="Previous slide"><i class="fa-solid fa-chevron-left"></i></button>
-    <button onclick="nextSlide()" class="hero-arrow hero-arrow-right" aria-label="Next slide"><i class="fa-solid fa-chevron-right"></i></button>
+    <?php /* Controls only exist when there is somewhere to go. A single slide
+             needs none, and zero slides needs neither markup nor a control
+             floating over an empty band.
 
-    <div class="hero-dots-container">
-        <?php for ($i = 0; $i < $heroSlideCount; $i++): ?>
-            <span class="slide-dot <?= $i === 0 ? 'active' : '' ?>" onclick="goToSlide(<?= $i ?>)"></span>
-        <?php endfor; ?>
+             The shared rail pager — see .dv-pager in style.css — so the hero is
+             navigated the same way as Collections, New Arrivals, Trending and
+             Shop by Occasion. It replaces two separate controls this band used
+             to carry: a pair of arrows pinned left and right over the
+             photograph, which were deleted outright below 480px, and a centred
+             row of dots.
+
+             --onmedia because the placement rule cannot be the same here. Every
+             other rail puts the pill in normal flow underneath; the hero is a
+             full-bleed photograph with the next section hard against it, so
+             underneath means on top of Collections. It sits over the image
+             instead, in the same bottom-right corner, with a shadow to hold its
+             edge against whatever banner is uploaded. */ ?>
+    <?php if ($heroSlideCount > 1): ?>
+    <div class="dv-pager dv-pager--onmedia" data-pager-mode="count" data-pager="hero">
+      <div class="dv-pager-pill">
+        <button type="button" class="dv-pager-btn" data-pager-step="-1" aria-label="Previous slide">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 5 8 12l7 7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <span class="dv-pager-count" data-pager-count aria-hidden="true">1&#8202;/&#8202;<?= (int)$heroSlideCount ?></span>
+        <button type="button" class="dv-pager-btn" data-pager-step="1" aria-label="Next slide">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 5 7 7-7 7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+      <span class="dv-sr-only" role="status" aria-live="polite" aria-atomic="true" data-pager-status></span>
     </div>
     <?php endif; ?>
 </section>
@@ -1634,25 +1652,15 @@ $occIsMen = function_exists('currentShopGender') && currentShopGender() === 'men
            the hero until JS ran, and permanently if the library failed. */
         $hero.addClass('owl-carousel');
 
-        var $dots = jQuery('.slide-dot');
-
-        function markActive(idx) {
+        function markActive() {
             // The existing CSS animates .slide.is-active .slide-content children.
             // Owl clones slides for looping, so mark by index within the ORIGINAL
             // items — .owl-item.active carries the currently shown one.
             jQuery('#heroSlider .slide').removeClass('is-active');
             jQuery('#heroSlider .owl-item.active .slide').addClass('is-active');
-
-            /* The class only — the appearance belongs to the stylesheet.
-               This also wrote background inline, white or transparent, which
-               beat any rule CSS could offer: the redesigned dots are a 55% white
-               dot that stretches into a short bar when active, and the inline
-               "transparent" made every inactive one invisible. An inline style
-               is the one thing a stylesheet cannot answer, so the two can never
-               both be right; the class is the honest half. */
-            $dots.each(function (i) {
-                jQuery(this).toggleClass('active', i === idx);
-            });
+            // The dot row this also kept in step is gone; the shared pager's
+            // counter says which slide is showing, and it repaints itself from
+            // Owl's own translated event.
         }
 
         // Same reason as the rails in includes/footer.php: a slide is a link
@@ -1666,7 +1674,10 @@ $occIsMen = function_exists('currentShopGender') && currentShopGender() === 'men
             loop: jQuery('#heroSlider .slide').length > 1,
             nav: false,               // the site draws its own arrows
             dots: false,              // and its own dots
-            autoplay: true,
+            /* Off outright for anyone who has asked the operating system for
+               less movement — a band that changes itself every 5.5 seconds is
+               the motion, not the transition into it. */
+            autoplay: !window.matchMedia('(prefers-reduced-motion: reduce)').matches,
             autoplayTimeout: 5500,
             autoplayHoverPause: true,
             smartSpeed: 800,          // matches the old 0.8s transition
@@ -1727,20 +1738,69 @@ $occIsMen = function_exists('currentShopGender') && currentShopGender() === 'men
         $hero.on('initialized.owl.carousel refreshed.owl.carousel', demoteClonedHeadings);
         demoteClonedHeadings();   // initialized has usually already fired by here
 
-        markActive(0);
-        $hero.on('changed.owl.carousel', function (e) {
-            // Normalise to an index within the real items, not the clones.
-            var count = e.item.count, idx = e.item.index - (e.relatedTarget.clones().length / 2);
-            idx = ((idx % count) + count) % count;
-            // Wait a tick so .owl-item.active reflects the new position.
-            setTimeout(function () { markActive(idx); }, 0);
+        markActive();
+        $hero.on('changed.owl.carousel', function () {
+            // Wait a tick so .owl-item.active reflects the new position. The
+            // clone-index arithmetic that used to live here fed the dot row;
+            // markActive() now reads .owl-item.active directly, and the pager's
+            // own driver does the same normalisation for the counter.
+            setTimeout(markActive, 0);
         });
 
-        /* The three controls in the markup call these by name, so they keep
-           working untouched — the buttons and dots did not change. */
-        window.nextSlide = function () { $hero.trigger('next.owl.carousel'); };
-        window.prevSlide = function () { $hero.trigger('prev.owl.carousel'); };
-        window.goToSlide = function (i) { $hero.trigger('to.owl.carousel', [i, 800]); };
+        /* Registered for the shared pager, like every other rail on this page.
+           The band keeps what is genuinely its own — Owl, the loop, the
+           autoplay, marking the active slide — and hands over the part that is
+           the same everywhere.
+
+           current() is read from Owl rather than remembered, so a drag and a
+           button press cannot drift apart. relative() maps Owl's cloned-slide
+           index back to the real one; without it a looping carousel reports
+           "4 / 3". */
+        function heroCount() { return $hero.find('.owl-item').not('.cloned').length || 1; }
+        function heroIndex() {
+            var owl = $hero.data('owl.carousel');
+            if (!owl) { return 0; }
+            var i = owl.relative(owl.current());
+            return Math.max(0, Math.min(heroCount() - 1, i));
+        }
+
+        /* Once the shopper steers, the band stops steering itself. Owl's
+           autoplayHoverPause is mouse-only, so a keyboard or touch user had no
+           way to stop a slide changing under them mid-read; taking the wheel is
+           the clearest signal that they want it still. */
+        var heroAuto = true;
+        function heroStopAuto() {
+            if (!heroAuto) { return; }
+            heroAuto = false;
+            $hero.trigger('stop.owl.autoplay');
+        }
+
+        window.dvRailDrivers = window.dvRailDrivers || {};
+        window.dvRailDrivers.hero = {
+            /* What a screen reader says. "Hero" is our word for this band, not a
+               shopper's — they see featured pieces. */
+            label: 'Featured',
+            rail:  $hero[0],
+            pages: heroCount,
+            page:  heroIndex,
+            go: function (delta) {
+                heroStopAuto();
+                $hero.trigger(delta < 0 ? 'prev.owl.carousel' : 'next.owl.carousel');
+            },
+            /* Owl announces every settle, autoplay's included, so the counter
+               follows the band whether the shopper moved it or the timer did. */
+            onMove: function (cb) { $hero.on('translated.owl.carousel', cb); }
+        };
+
+        /* A drag is steering too. */
+        $hero.on('drag.owl.carousel', heroStopAuto);
+
+        /* Kept: nothing in this file calls them any more, but they were the
+           documented way to drive the hero from the console and from any
+           banner CTA a future template might add. */
+        window.nextSlide = function () { heroStopAuto(); $hero.trigger('next.owl.carousel'); };
+        window.prevSlide = function () { heroStopAuto(); $hero.trigger('prev.owl.carousel'); };
+        window.goToSlide = function (i) { heroStopAuto(); $hero.trigger('to.owl.carousel', [i, 800]); };
     });
 
     // The Atelier Film lightbox handlers were removed with the section they
@@ -2153,12 +2213,15 @@ $occIsMen = function_exists('currentShopGender') && currentShopGender() === 'men
 
     var drivers = window.dvRailDrivers || {};
 
-    Array.prototype.forEach.call(document.querySelectorAll('.dv-pager[data-pager]'), function (pager) {
+    function wire(pager) {
         var driver = drivers[pager.getAttribute('data-pager')];
-        /* No driver means the section's own script did not run — a PHP guard
-           that printed the markup but not the script, or a JS error above.
-           Leave the control hidden rather than shipping two dead buttons. */
-        if (!driver) { pager.hidden = true; return; }
+        /* A driver can register LATE. Most sections register inline, before this
+           runs, but the hero's lives inside jQuery(document).ready() because it
+           needs Owl — so on the first pass it is not there yet. Hide the control
+           for now and say we could not wire it; the retry on load picks it up.
+           Bailing permanently here is what left the hero with no navigation at
+           all the first time this was built. */
+        if (!driver) { pager.hidden = true; return false; }
 
         var count  = pager.querySelector('[data-pager-count]');
         var status = pager.querySelector('[data-pager-status]');
@@ -2211,7 +2274,22 @@ $occIsMen = function_exists('currentShopGender') && currentShopGender() === 'men
         window.addEventListener('load', function () { setTimeout(paint, 60); });
 
         paint();
-    });
+        return true;
+    }
+
+    var pagers  = Array.prototype.slice.call(document.querySelectorAll('.dv-pager[data-pager]'));
+    var pending = pagers.filter(function (pager) { return !wire(pager); });
+
+    /* One retry, once everything has had a chance to register. Owl is the only
+       thing that needs it today, and it is always up by load. */
+    if (pending.length) {
+        window.addEventListener('load', function () {
+            setTimeout(function () {
+                drivers = window.dvRailDrivers || drivers;
+                pending.forEach(wire);
+            }, 80);
+        });
+    }
 })();
 </script>
 

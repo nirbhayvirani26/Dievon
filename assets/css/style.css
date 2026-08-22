@@ -2985,16 +2985,9 @@ body.admin-wrapper .product-form-grid {
 /* 50px here, and never below 44 at any breakpoint — see the mobile rule in
    responsive.css. These render 40x40 on a phone, under the size a finger needs,
    on the control that moves the shop's main photography. */
-.hero-arrow { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: white; width: 50px; height: 50px; min-width: 44px; min-height: 44px; display: flex; align-items: center; justify-content: center; z-index: 10; cursor: pointer; transition: 0.3s; }
-.hero-arrow:hover { background: rgba(0,0,0,0.6); }
-.hero-arrow-left { left: 20px; }
-.hero-arrow-right { right: 20px; }
 /* A slim dark pill behind the dots: over a bright photograph the outline dots
    used to vanish into the picture. The backdrop guarantees they read on every
    slide. */
-.hero-dots-container { position: absolute; bottom: 28px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; align-items: center; z-index: 10; background: rgba(0,0,0,0.35); padding: 8px 14px; backdrop-filter: blur(4px); }
-.slide-dot { width: 8px; height: 8px; border: 1.5px solid white; cursor: pointer; transition: 0.3s; background: transparent; }
-.slide-dot.active { background: white; }
 
 .section-title-wrapper { text-align: center; margin-bottom: 50px; }
 .section-title-wrapper::after {
@@ -9095,21 +9088,21 @@ main#mainContent:focus { outline: none; }
    34 were under the size a finger reliably hits, and the gallery arrow is how a
    shopper looks at the garment they are deciding to buy.
 
-   Colour is deliberately NOT unified. .hero-arrow and .product-lightbox-nav sit
-   over photographs and need their scrim to stay legible; the rail arrows sit on
-   the page ground where that scrim would be a dark box on cream. Same shape,
-   same size, ground-appropriate contrast. */
+   Colour is deliberately NOT unified. .product-lightbox-nav sits over a
+   photograph and needs its scrim to stay legible; these sit on the page ground
+   where that scrim would be a dark box on cream. Same shape, same size,
+   ground-appropriate contrast. */
 /* .gallery-nav and .product-lightbox-nav are NOT in this list.
    They are absolutely positioned inside the gallery, and resizing them from
    36px round to 44px square moved them off the marks their own rules place
    them on — the arrows ended up floating between the photograph and the
    video rather than sitting on the image edge. Consistency is not worth
    breaking placement for; those two keep their own shape. */
-/* .cat-rail-arrow was a member until the collections rail moved to the shared
-   .dv-pager; its rules are gone, so it is dropped from the list rather than
-   left as a selector matching nothing. */
+/* Two members have left. .cat-rail-arrow went when Collections moved to the
+   shared .dv-pager, and .hero-arrow went when the hero did. Their rules are
+   deleted, so they are dropped from this list rather than left as selectors
+   matching nothing. */
 .btn-close-cart,
-.hero-arrow,
 .btn-carousel-arrow {
     min-width: 44px;
     min-height: 44px;
@@ -10433,57 +10426,9 @@ input.chk-input-error:focus {
 /* Controls, quietened to match. They were dark translucent squares with a
    blurred pill behind the dots — three more surfaces on a banner that is now
    two. Over the picture, so they stay light. */
-/* Both arrows over the photograph, as a pair in its bottom corner.
-   Left/right against the section edges put the previous arrow in the middle of
-   the ivory panel — a white disc on cream, sitting across the subtext. Pairing
-   them keeps them on the one surface they read against and off the type. */
-/* Centred on each edge, as the reference has them. They were paired in the
-   bottom corner while the layout was a split, because the left one would
-   otherwise have sat in the middle of the ivory panel across the subtext. With
-   the photograph running full width there is no panel to land on. */
-.hero-slider-section .hero-arrow {
-    top: 50%;
-    bottom: auto;
-    transform: translateY(-50%);
-    background: rgba(255, 255, 255, 0.86);
-    border: 0;
-    color: var(--color-primary);
-    width: 44px;
-    height: 44px;
-    transition: background-color 0.2s ease;
-}
-.hero-slider-section .hero-arrow-left  { left: 22px; right: auto; }
-.hero-slider-section .hero-arrow-right { right: 22px; left: auto; }
-.hero-slider-section .hero-arrow:hover { background: #ffffff; }
-.hero-slider-section .hero-dots-container {
-    background: none;
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-    padding: 0;
-    bottom: 26px;
-    left: 50%;
-    transform: translateX(-50%);
-}
-/* White, like live's, now that the frame is darkened rather than lightened.
-   The inactive one is an outline so it does not compete with the active pill;
-   the faint dark ring underneath is for the case where the bottom centre of a
-   banner is nearly white — the scrim is thin out there. */
-.hero-slider-section .slide-dot {
-    width: 7px; height: 7px;
-    border: 1px solid rgba(255, 255, 255, 0.75);
-    background: transparent;
-    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.18);
-}
-.hero-slider-section .slide-dot.active {
-    background: #ffffff;
-    border-color: #ffffff;
-    width: 20px;
-}
-
 @media (prefers-reduced-motion: reduce) {
     .hero-slider-section .btn-hero-primary,
-    .hero-slider-section .btn-hero-ghost,
-    .hero-slider-section .hero-arrow { transition: none; }
+    .hero-slider-section .btn-hero-ghost { transition: none; }
 }
 
 
@@ -11097,6 +11042,38 @@ input.chk-input-error:focus {
 }
 @media (prefers-reduced-motion: reduce) {
     .dv-pager-btn { transition: none; }
+}
+
+/* ── Over a photograph ─────────────────────────────────────────────────────
+   The hero is the one band where the pager cannot sit underneath: it is
+   full-bleed with the next section hard against its bottom edge, so "under the
+   rail" would put the control on top of Dievon Collections. It goes in the same
+   bottom-right corner, over the image.
+
+   The shadow is not decoration. The pill's ground is a fixed burgundy and its
+   glyphs are fixed gold, so the TEXT is safe on any banner — but the pill's own
+   EDGE has to be perceivable too, and a burgundy capsule on a dark lehenga shot
+   has no boundary at all. A shadow works where a hairline does not, because it
+   darkens whatever is behind it rather than assuming the banner is light. */
+.dv-pager--onmedia {
+    position: absolute;
+    right: var(--dv-gutter);
+    bottom: clamp(20px, 3.4vw, 40px);
+    z-index: 10;
+    padding: 0;
+}
+.dv-pager--onmedia .dv-pager-pill {
+    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.45);
+}
+/* Clearance for #backToTopBtn, which is not a neighbour so much as a permanent
+   fixture: includes/footer.php pins it to the viewport at right 25px, 40px
+   wide, with no scroll threshold, so it is on screen at the top of every page.
+   Measured at the gutter alone the two sat 7px apart at 1280, 1440 and 1600 —
+   never overlapping, but two burgundy controls that close read as one cluster
+   that lost its middle. Below 800px the hero is short enough that the pager
+   lands well above the button and the gutter alignment is kept. */
+@media (min-width: 800px) {
+    .dv-pager--onmedia { right: max(var(--dv-gutter), 96px); }
 }
 
 /* Announced, never shown. The visible counter is aria-hidden because it is

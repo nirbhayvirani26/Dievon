@@ -623,10 +623,6 @@
     .slide-content h2 { font-size: 32px; margin-bottom: 12px; }
     .slide-content p { font-size: 13px; margin-bottom: 20px; }
     .btn-hero-explore { margin-top: 16px !important; padding: 8px 20px !important; font-size: 11px !important; }
-    .hero-arrow { width: 40px; height: 40px; }
-    .hero-arrow-left { left: 10px; }
-    .hero-arrow-right { right: 10px; }
-    .hero-dots-container { bottom: 20px; padding: 6px 12px; }
 
     /* Occasion banners mobile */
     .occasion-banner { padding: 80px 0; }
@@ -2382,18 +2378,23 @@ html {
     .hero-slider-section .btn-hero-primary,
     .hero-slider-section .btn-hero-ghost { flex: 1 1 0; min-height: 46px; padding: 0 14px; font-size: 10px; }
 
-    /* No arrows on a phone — the slider is swipeable and two discs over the
-       photograph is clutter on a screen this size. The dots stay. */
-    .hero-slider-section .hero-arrow { display: none; }
+    /* Room under the buttons for the pager.
+       ─────────────────────────────────────────────────────────────────────
+       The shared pager sits in the hero's bottom-right corner at every width.
+       On a phone the CTA row reaches far enough right to meet it: measured at
+       320, 360, 390 and 430, "Explore Collection" ended about 10px inside the
+       pill's top edge and the two drew over each other. Above 768 the row is
+       nowhere near it, so this is a phone-only reservation.
 
-    /* Back inside the frame, below the buttons — the seam they used to sit on
-       does not exist any more. */
-    .hero-slider-section .hero-dots-container {
-        top: auto;
-        bottom: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-    }
+       The clearance goes on the content, not the control — moving the pill
+       instead would break the one thing this component is for, which is being
+       in the same corner in every section. */
+    .hero-slider-section .slide-actions { margin-bottom: 34px; }
+
+    /* The phone blackout is gone with the arrows it hid. The hero used to
+       delete its navigation below 480px, leaving swipe as the only way through
+       — which is invisible, unreachable by keyboard, and impossible on a
+       switch. The shared pager stays at every width, like the other four. */
 }
 
 /* Side by side and small, not two stacked bars.
