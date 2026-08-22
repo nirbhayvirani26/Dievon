@@ -11667,40 +11667,25 @@ input.chk-input-error:focus {
     .photo-fan-section .pf-item:hover .pf-card,
     .photo-fan-section .pf-item:focus-within .pf-card { transform: none; }
 
-    /* The caption comes out from under the gradient and sits below the
-       photograph, permanently. It is a SIBLING of the image container, so
-       dropping it back into the flow costs nothing — nothing clips it. */
+    /* The caption stays ON the photograph, exactly as it is on a desktop. The
+       only thing that changes is that it no longer waits for a hover — there
+       isn't one — so it is simply always open.
+
+       It sat below the image at first, which is the conventional touch answer
+       and the wrong one here: the whole idea of this card is that the name, the
+       price and the button live on the picture. Below the image it stops being
+       that card and becomes the shop's card with the box taken off. */
     .photo-fan-section .pf-card .product-card-details {
-        position: static;
         opacity: 1;
         transform: none;
         pointer-events: auto;
-        padding: 14px 2px 0;
+        padding: 18px 16px 16px;
     }
-    /* No scrim — the caption is page text on the ivory ground now, and a black
-       wash behind it would be a rectangle in the middle of the page. */
-    .photo-fan-section .pf-card .product-card-details::before { display: none; }
-    .photo-fan-section .pf-card .product-card-title a { color: var(--text-primary); }
-    .photo-fan-section .pf-card .product-card-price   { color: var(--text-primary); }
-    .photo-fan-section .pf-card .price-mrp-strike     { color: var(--text-muted); }
-    .photo-fan-section .pf-card .product-card-cta     { color: var(--color-accent-ink) !important; border-bottom-color: var(--color-accent-ink); }
-    .photo-fan-section .pf-card .product-card-bag-note { color: var(--color-accent-ink); }
     /* Compare is NOT re-enabled here. The site hides both the toggle and the
        compare bar below 900px on purpose — the bar is fixed at z-index 9500 and
        on a phone it covers the page it is meant to help you shop. This section
        defers to that rather than carving out an exception, so comparing stays a
-       desktop action everywhere, including the home page.
-
-       An earlier attempt did try to fold the toggle into the caption, and it
-       could not have worked anyway: the toggle is a child of the image
-       container, not of the caption, so making it static dropped it inside a
-       box with overflow:hidden and a fixed ratio, where it was clipped to
-       nothing. */
-    .photo-fan-section .pf-card .product-card-cta.sold-out-cta {
-        /* The dark-ground colour would be white on ivory here. */
-        color: var(--text-muted) !important;
-        border-bottom-color: var(--text-muted);
-    }
+       desktop action everywhere, including the home page. */
 
     /* Arrows off: the strip is swiped, and two 48px circles over a full-width
        photograph cover the garment they are meant to help you reach. The counter
