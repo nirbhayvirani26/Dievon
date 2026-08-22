@@ -556,6 +556,44 @@ function removeItem(cartKey) {
 }
 
 // ── Update quantity ───────────────────────────────────────────
+/* The quantity stepper, written once.
+ * ─────────────────────────────────────────────────────────────────────────────
+ * The same control is built in two places — the cart drawer just below, and the
+ * full cart page's own renderer in pages/cart.php — and the two copies had
+ * already parted company. The drawer's buttons carried no aria-label while the
+ * page's did, so the same control was described to a screen reader on one
+ * screen and not the other; and any future change (a stock cap, a different
+ * disabled reason, a busy state) had to be made twice or it would part company
+ * again.
+ *
+ * Both LOOKS are kept. The page's stepper is flat buttons inside one bordered
+ * pill; the drawer's is a pair of circles. Those are two designs of the same
+ * control, not a defect, and choosing between them is not this function's job —
+ * so `variant` selects the class set and the markup is identical either way.
+ *
+ * Defined on window because pages/cart.php builds its rows from its own script;
+ * both call sites fall back to their previous inline markup if this has somehow
+ * not loaded, so a stepper can never fail to render.
+ */
+window.dievonQtyStepper = function (cartKey, qty, opts) {
+    opts = opts || {};
+    const page   = opts.variant === 'page';
+    const cls    = page ? 'qty-controls cart-qty' : 'qty-controls';
+    const btn    = page ? 'cart-qty-btn' : 'qty-btn';
+    const val    = page ? 'cart-qty-value' : 'qty-value';
+    const key    = String(cartKey).replace(/'/g, "\\'");
+    const atLimit = !!opts.atLimit;
+    return `
+            <div class="${cls}">
+                <button type="button" class="${btn}" aria-label="Decrease quantity"
+                        onclick="updateQty('${key}', ${qty - 1})">\u2212</button>
+                <span class="${val}">${qty}</span>
+                <button type="button" class="${btn}" aria-label="Increase quantity"
+                        onclick="updateQty('${key}', ${qty + 1})"
+                        ${atLimit ? 'disabled title="That is all we have left"' : ''}>+</button>
+            </div>`;
+};
+
 function updateQty(cartKey, qty) {
     fetch(getCartApiUrl(), {
         method: 'POST',
@@ -696,12 +734,13 @@ function renderCart() {
                 <div class="cart-item-name">${escHtml(item.name)}${variantLabel ? '<br>' + variantLabel : ''}</div>
                 <div class="cart-item-price">${formatPriceJS(item.subtotal || (item.price * item.quantity))}</div>
             </div>
+${window.dievonQtyStepper ? window.dievonQtyStepper(cartKey, item.quantity, { atLimit }) : `
             <div class="qty-controls">
-                <button class="qty-btn" onclick="updateQty('${cartKey}', ${item.quantity - 1})">−</button>
+                <button class="qty-btn" aria-label="Decrease quantity" onclick="updateQty('${cartKey}', ${item.quantity - 1})">−</button>
                 <span class="qty-value">${item.quantity}</span>
-                <button class="qty-btn" onclick="updateQty('${cartKey}', ${item.quantity + 1})"
+                <button class="qty-btn" aria-label="Increase quantity" onclick="updateQty('${cartKey}', ${item.quantity + 1})"
                         ${atLimit ? 'disabled title="That is all we have left"' : ''}>+</button>
-            </div>
+            </div>`}
             <button class="btn-remove-item" onclick="removeItem('${cartKey}')" title="Remove">
                 <i class="fa-solid fa-xmark"></i>
             </button>

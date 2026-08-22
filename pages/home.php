@@ -1049,49 +1049,22 @@ $occIsMen = function_exists('currentShopGender') && currentShopGender() === 'men
             <h2 class="section-title">Latest Chronicles</h2>
         </div>
         <div class="home-blog-grid">
+            <?php /* Shared partial — see includes/blog_card.php. The rail and the
+                     /blog listing had drifted into two components with the same
+                     name and two sets of CSS; this is the one card. h3 because
+                     these sit under this section's own h2, and a trimmed excerpt
+                     because the rail is three across rather than a full-width
+                     list. */ ?>
             <?php foreach ($latestPosts as $post): ?>
                 <?php
-                    $postUrl = SITE_URL . '/blog-single?id=' . (int)$post['id'];
-
-                    // Same resolution order as pages/blog.php: the post's own
-                    // picture when the file is really there, the shared lookbook
-                    // otherwise — never a src that 404s.
-                    $postImg  = trim((string)($post['image'] ?? ''));
-                    // lookbook_* filenames belong to uploads/gallery/ (the Lookbook
-                    // admin screen writes there); never resolve them against the
-                    // products folder where stale duplicates could shadow the
-                    // updated photograph.
-                    // One resolver, shared with /blog, the article page and the admin
-                    // list. Lookbook filenames are deliberately not honoured — blog and
-                    // lookbook are separate now. See blogImageUrl().
-                    $imgUrl = blogImageUrl($postImg);
-                    $webpUrl  = preg_replace('/\.[^.]+$/', '.webp', $imgUrl);
-                    $webpFile = str_replace(SITE_URL . '/', __DIR__ . '/../', $webpUrl);
-                    $webpUrl  = cacheBustedUploadUrl($webpUrl);
-                    $imgUrl   = cacheBustedUploadUrl($imgUrl);
-
-                    $postDate = !empty($post['published_date'])
-                        ? date('F j', strtotime($post['published_date']))
-                        : '';
+                $blogPost           = $post;
+                $blogCardTitleTag   = 'h3';
+                $blogCardExcerpt    = 120;
+                $blogCardCta        = 'Read Journal';
+                $blogCardDateFormat = 'F j';
+                $blogCardReveal     = false;   // the rail has no scroll-entrance today
+                include __DIR__ . '/../includes/blog_card.php';
                 ?>
-                <article class="blog-card">
-                    <div class="blog-card-media">
-                        <a href="<?= $postUrl ?>">
-                            <picture>
-                                <?php if (webpSourceIsFresh($imgUrl, $webpFile)): ?><source srcset="<?= htmlspecialchars($webpUrl) ?>" type="image/webp"><?php endif; ?>
-                                <img src="<?= htmlspecialchars($imgUrl) ?>" alt="<?= htmlspecialchars($post['title']) ?>" class="blog-card-img" loading="lazy" decoding="async">
-                            </picture>
-                        </a>
-                    </div>
-                    <div class="blog-card-content">
-                        <span class="blog-card-tag">
-                            <?= htmlspecialchars($post['category'] ?: 'Journal') ?><?= $postDate !== '' ? ' &bull; ' . htmlspecialchars($postDate) : '' ?>
-                        </span>
-                        <h3 class="blog-card-title"><a href="<?= $postUrl ?>"><?= htmlspecialchars($post['title']) ?></a></h3>
-                        <p class="blog-card-text"><?= htmlspecialchars(trimToLength((string)$post['excerpt'], 120)) ?></p>
-                        <a href="<?= $postUrl ?>" class="blog-card-link">Read Journal <i class="fa-solid fa-arrow-right-long"></i></a>
-                    </div>
-                </article>
             <?php endforeach; ?>
         </div>
     </div>

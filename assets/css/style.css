@@ -2394,9 +2394,27 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 
 /* ── Compact Purchase Benefits Row ─────────────────────────── */
 .product-benefits-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 4px 0 18px; padding: 16px 4px; border-top: 1px solid var(--border-light); border-bottom: 1px solid var(--border-light); }
-.benefit-item { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; font-size: 11px; color: var(--text-secondary); line-height: 1.35; }
-.benefit-item i { font-size: 18px; color: var(--color-primary); }
-.benefit-item small { color: var(--text-muted); font-size: 10px; }
+/* .benefit-item is TWO different components sharing one name.
+   ─────────────────────────────────────────────────────────────────────────────
+   The compact strip inside the product buy box (Free Shipping / Dispatched /
+   Returns / COD) and the four editorial brand promises on the homepage both
+   call their tiles .benefit-item, and all three blocks of rules for it were
+   written unscoped — so each component silently styled the other:
+
+     · the homepage tiles were picking up this block's font-size: 11px and
+       --text-secondary from the product strip;
+     · the product strip was picking up the homepage's padding: 10px, and its
+       hover lift — translateY(-5px) on a static row of facts that is not a
+       link and cannot be clicked.
+
+   They are not the same component and should not be merged: one is four
+   site-wide promises with an icon, a heading and a sentence; the other is four
+   facts about the item being bought, one of which only appears when COD is
+   available. Scoping each set to its own container is the fix — the names can
+   stay, because they can no longer reach each other. */
+.product-benefits-row .benefit-item { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; font-size: 11px; color: var(--text-secondary); line-height: 1.35; }
+.product-benefits-row .benefit-item i { font-size: 18px; color: var(--color-primary); }
+.product-benefits-row .benefit-item small { color: var(--text-muted); font-size: 10px; }
 @media (max-width: 480px) {
     .product-benefits-row { grid-template-columns: repeat(2, 1fr); gap: 16px 8px; }
 }
@@ -2955,10 +2973,15 @@ body.admin-wrapper .product-form-grid {
 .blog-card-link i { margin-left: 5px; }
 
 .benefits-section { background: var(--bg-surface); border-bottom: 1px solid var(--border-light); font-family: var(--font-body); }
-.benefit-item { padding: 10px; }
-.benefit-icon { font-size: 24px; color: var(--color-accent); margin-bottom: 12px; }
-.benefit-title { font-family: var(--font-heading); font-size: 16px; font-weight: 500; text-transform: uppercase; margin-bottom: 6px; }
-.benefit-text { font-size: 12px; color: var(--text-secondary); }
+/* Scoped for the reason set out beside .product-benefits-row above. The flex
+   column is restated here rather than inherited from that block: these tiles
+   were relying on it, and the moment it stops leaking across they need their
+   own. Same computed result as before for the homepage — the change is that the
+   product strip no longer gets any of it. */
+.home-benefits-grid .benefit-item { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 10px; }
+.home-benefits-grid .benefit-icon { font-size: 24px; color: var(--color-accent); margin-bottom: 12px; }
+.home-benefits-grid .benefit-title { font-family: var(--font-heading); font-size: 16px; font-weight: 500; text-transform: uppercase; margin-bottom: 6px; }
+.home-benefits-grid .benefit-text { font-size: 12px; color: var(--text-secondary); }
 
 /* Product Page Clean Components */
 .badge-product-page { top: 25px; left: 25px; z-index: 10; }
@@ -6666,10 +6689,12 @@ body.welcome-open { overflow: hidden; }
 .blog-card-link { transition: color 0.3s ease, letter-spacing 0.3s ease; }
 .blog-card:hover .blog-card-link { color: var(--color-accent); letter-spacing: 0.2em; }
 
-/* Benefits: gentle lift on hover */
-.benefit-item { transition: transform 0.4s ease; }
-.benefit-item:hover { transform: translateY(-5px); }
-.benefit-item:hover .benefit-icon { color: var(--color-primary); }
+/* Benefits: gentle lift on hover — the homepage tiles only.
+   Unscoped, this also lifted the product page's facts strip, which is not a
+   link, has nothing to open, and sits in the middle of the buy box. */
+.home-benefits-grid .benefit-item { transition: transform 0.4s ease; }
+.home-benefits-grid .benefit-item:hover { transform: translateY(-5px); }
+.home-benefits-grid .benefit-item:hover .benefit-icon { color: var(--color-primary); }
 
 /* Footer: slide-in underline on links, social icon lift, brand hover */
 .footer-col ul li a { position: relative; }
@@ -6702,7 +6727,7 @@ body.welcome-open { overflow: hidden; }
     .luxury-hero p { animation: none; }
     .blog-card:hover { transform: none; box-shadow: none; }
     .blog-card:hover .blog-card-img { transform: none; }
-    .benefit-item:hover { transform: none; }
+    .home-benefits-grid .benefit-item:hover { transform: none; }
     .footer-social a:hover { transform: none; }
 }
 

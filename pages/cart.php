@@ -266,14 +266,20 @@ $cartShipsIntl   = shipsInternationally($pdo);
                     </div>
                 </div>
 
-                <!-- Update Quantity Stepper -->
+                <!-- Update Quantity Stepper — one definition, in includes/footer.php.
+                     The drawer builds the same control; keeping two copies is how the
+                     drawer's buttons ended up without the aria-labels this one has.
+                     variant:'page' selects this screen's flat-buttons-in-a-pill look;
+                     the markup is the same either way. The inline fallback runs only
+                     if footer.php's script has not loaded. -->
+                ${window.dievonQtyStepper ? window.dievonQtyStepper(cartKey, item.quantity, { variant: 'page', atLimit }) : `
                 <div class="qty-controls cart-qty">
                     <button onclick="updateQty('${cartKey}', ${item.quantity - 1})" class="cart-qty-btn" aria-label="Decrease quantity">−</button>
                     <span class="cart-qty-value">${item.quantity}</span>
                     <button onclick="updateQty('${cartKey}', ${item.quantity + 1})" class="cart-qty-btn"
                             aria-label="Increase quantity"
                             ${atLimit ? 'disabled title="That is all we have left"' : ''}>+</button>
-                </div>
+                </div>`}
 
                 <div class="cart-item-subtotal">
                     ${formatPriceJS(itemSubtotalRaw)}
