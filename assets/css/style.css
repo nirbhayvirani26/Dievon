@@ -6805,7 +6805,16 @@ body.welcome-open { overflow: hidden; }
 .product-card.sold-out .card-img,
 .product-card.sold-out .card-img-fallback { filter: grayscale(0.85); opacity: 0.6; }
 .product-card.sold-out .product-card-price { opacity: 0.6; }
-.product-card.sold-out .quick-view-btn { opacity: 0.45; }
+/* Muted by COLOUR, not by group opacity. `opacity: 0.45` fades the chip and
+   its white label together, so the label never gains on its own ground: measured
+   from rendered pixels it came out 2.48:1 on the shop grid and 2.78:1 on a New
+   Arrivals panel, against the 4.5:1 an 11px label needs. Worse, the figure moves
+   with the photograph behind it — 0.45 over a pale garment is the 2.48, over a
+   dark one it is 3.95, so no amount of tuning the alpha fixes it for every
+   upload. An opaque ground does: #6b4a56 is the burgundy desaturated and
+   lightened, still visibly muted next to the live #511126, and white on it is
+   7.6:1 whatever the picture underneath. */
+.product-card.sold-out .quick-view-btn { opacity: 1; background: #6b4a56; }
 .product-card-cta.sold-out-cta {
     pointer-events: none;
     background: var(--bg-muted, #e5e7eb);
@@ -10730,9 +10739,26 @@ input.chk-input-error:focus {
    which is why this is a class and not the hidden attribute. display:none also
    means the browser never fetches those photographs until the set is paged to. */
 @media (min-width: 1025px) {
-    .na-panel.na-off { display: none; }
+    /* .na-gallery-scoped, and it has to be. Every panel rule was raised to
+       (0,3,0) so it would beat the shared card's own styling — which left this
+       one at (0,2,0), tying with `.na-gallery .na-panel { display: block }`,
+       losing on source order, and quietly un-hiding the off-page panels: eight
+       live panels summing to twice the gallery's width, with the counter and
+       the arrows reading from a set that was no longer what was on screen. */
+    .na-gallery .na-panel.na-off { display: none; }
 }
 
+/* ── Specificity note ────────────────────────────────────────────────────────
+   Every panel rule below is written .na-gallery .na-panel, not .na-panel.
+
+   The panel IS the shared product card now, so a rule like
+   `.na-panel .product-card-title` is (0,2,0) — exactly the same weight as the
+   card's own `.product-card .product-card-title`. Ties break on source order,
+   the card block is appended at the end of this file, and the card therefore
+   won every one of them: the caption came out in the card's dark burgundy on
+   top of a dark photograph. The extra class buys the gallery (0,3,0) and the
+   argument is over.
+   ─────────────────────────────────────────────────────────────────────────── */
 .na-gallery {
     position: relative;
     display: flex;
@@ -10786,10 +10812,16 @@ input.chk-input-error:focus {
     .na-gallery { --na-open: 800px; }
 }
 
-.na-panel {
+.na-gallery .na-panel {
     position: relative;
+    /* The panel IS the shared product card now, so the card's own chrome comes
+       off: this is a photograph in a row of photographs, not a tile. */
     display: block;
     overflow: hidden;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    padding: 0;
     text-decoration: none;
     min-width: 0;
     /* The narrow panels share whatever the open one does not take. Both numbers
@@ -10801,14 +10833,14 @@ input.chk-input-error:focus {
     transition: flex-basis 500ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.na-panel.is-default { flex-basis: var(--na-open); }
+.na-gallery .na-panel.is-default { flex-basis: var(--na-open); }
 .na-gallery:hover        .na-panel.is-default:not(:hover),
 .na-gallery:focus-within .na-panel.is-default:not(:focus-within) {
     flex-basis: calc((100% - var(--na-open)) / var(--na-rest));
 }
-.na-panel:hover,
-.na-panel:focus-visible,
-.na-panel:focus-within { flex-basis: var(--na-open); }
+.na-gallery .na-panel:hover,
+.na-gallery .na-panel:focus-visible,
+.na-gallery .na-panel:focus-within { flex-basis: var(--na-open); }
 
 /* ── The photograph ────────────────────────────────────────────────────────
    One fit, everywhere: cover. It is the only one that cannot letterbox, so the
@@ -10827,32 +10859,39 @@ input.chk-input-error:focus {
    frame, so a centred crop takes the shoes AND the top of the head; biased
    upward it keeps the face, the neckline and the embroidery, which is what the
    panel is being looked at for. */
-.na-media {
+.na-gallery .na-panel .card-img-container {
     position: absolute;
     inset: 0;
     display: block;
     overflow: hidden;
+    /* No rule under the picture here — that belongs to the boxed shop card, and
+       this panel has no box for it to divide. */
+    border-bottom: 0;
+    border-radius: 0;
+    aspect-ratio: auto;
+    height: auto;
 }
-.na-media picture { display: contents; }
-.na-img {
+.na-gallery .na-panel .card-img-link { display: block; height: 100%; }
+.na-gallery .na-panel picture { display: contents; }
+.na-gallery .na-panel .card-img {
     width: 100%;
     height: 100%;
     object-fit: cover;
     object-position: center 18%;
     transition: transform 550ms cubic-bezier(0.22, 0.61, 0.36, 1);
 }
-.na-panel:hover .na-img,
-.na-panel:focus-visible .na-img,
-.na-panel:focus-within .na-img,
-.na-panel.is-default .na-img {
+.na-gallery .na-panel:hover .card-img,
+.na-gallery .na-panel:focus-visible .card-img,
+.na-gallery .na-panel:focus-within .card-img,
+.na-gallery .na-panel.is-default .card-img {
     object-position: center 30%;
 }
 /* 1.03, the ceiling the brief sets. */
-.na-panel:hover .na-img,
-.na-panel:focus-visible .na-img,
-.na-panel:focus-within .na-img { transform: scale(1.03); }
+.na-gallery .na-panel:hover .card-img,
+.na-gallery .na-panel:focus-visible .card-img,
+.na-gallery .na-panel:focus-within .card-img { transform: scale(1.03); }
 
-.na-fallback {
+.na-gallery .na-panel .card-img-fallback {
     position: absolute;
     inset: 0;
     display: flex;
@@ -10867,7 +10906,7 @@ input.chk-input-error:focus {
    room for a name and a price, and four captions competing is the card grid
    this replaced. It rises 12px as it fades, so it arrives with the panel
    rather than appearing on top of it. */
-.na-info {
+.na-gallery .na-panel .product-card-details {
     position: absolute;
     inset-inline: 0;
     bottom: 0;
@@ -10889,27 +10928,41 @@ input.chk-input-error:focus {
        own band — the bottom fifth of the panel — is above that, so no upload
        can break it. It clears above the type quickly enough that the garment
        is not dulled: nothing at all by 76% of the way up. */
-    background: linear-gradient(to top,
-        rgba(0, 0, 0, 0.88) 0%,
-        rgba(0, 0, 0, 0.72) 20%,
-        rgba(0, 0, 0, 0.32) 46%,
-        rgba(0, 0, 0, 0) 76%);
     opacity: 0;
     transform: translateY(12px);
     transition: opacity 500ms ease, transform 500ms cubic-bezier(0.22, 0.61, 0.36, 1);
     pointer-events: none;
+    isolation: isolate;
 }
-.na-panel:hover .na-info,
-.na-panel:focus-visible .na-info,
-.na-panel:focus-within .na-info,
-.na-panel.is-default .na-info { opacity: 1; transform: translateY(0); }
-.na-gallery:hover        .na-panel.is-default:not(:hover) .na-info,
-.na-gallery:focus-within .na-panel.is-default:not(:focus-within) .na-info {
+/* The scrim reaches 58px ABOVE the caption rather than being a background on it.
+   Gradient stops are percentages of their own box, and this box is short — so
+   the name, the topmost and therefore weakest line, sat in the thin end of the
+   fade and measured 2.05:1 against the 4.5:1 it needs. Extending the box upward
+   puts every line in the strong part and leaves the fade where there is no text
+   to fail. Same stops the photo fan arrived at, for the same reason. */
+.na-gallery .na-panel .product-card-details::before {
+    content: '';
+    position: absolute;
+    inset: -58px 0 0 0;
+    z-index: -1;
+    background: linear-gradient(to top,
+        rgba(0, 0, 0, 0.88) 0%,
+        rgba(0, 0, 0, 0.80) 34%,
+        rgba(0, 0, 0, 0.68) 58%,
+        rgba(0, 0, 0, 0.24) 84%,
+        rgba(0, 0, 0, 0) 100%);
+}
+.na-gallery .na-panel:hover .product-card-details,
+.na-gallery .na-panel:focus-visible .product-card-details,
+.na-gallery .na-panel:focus-within .product-card-details,
+.na-gallery .na-panel.is-default .product-card-details { opacity: 1; transform: translateY(0); }
+.na-gallery:hover        .na-panel.is-default:not(:hover) .product-card-details,
+.na-gallery:focus-within .na-panel.is-default:not(:focus-within) .product-card-details {
     opacity: 0;
     transform: translateY(12px);
 }
 
-.na-name {
+.na-gallery .na-panel .product-card-title {
     font-family: var(--font-heading);
     font-weight: var(--font-heading-weight);
     font-size: clamp(19px, 1.7vw, 26px);
@@ -10917,18 +10970,66 @@ input.chk-input-error:focus {
     color: #ffffff;
     text-wrap: balance;
 }
-.na-price {
+.na-gallery .na-panel .product-card-price {
     font-family: var(--font-body), sans-serif;
     font-size: 14px;
     font-weight: 500;
     letter-spacing: 0.02em;
     color: rgba(255, 255, 255, 0.92);
 }
-.na-price .na-from { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.75; }
+.na-gallery .na-panel .price-from-label { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.75; }
+
+/* The colour has to go on the elements that actually carry the text, not on
+   their containers. The title is an <a> inside the h3 and the price is a set of
+   spans, and the card styles every one of them by name — so colouring only
+   .product-card-title and .product-card-price left the words themselves in the
+   card's dark burgundy, on top of a dark photograph. Same lesson the photo fan
+   learned; written out here so the next person does not learn it a third time. */
+.na-gallery .na-panel .product-card-title a { color: #ffffff; }
+.na-gallery .na-panel .price-now   { color: rgba(255, 255, 255, 0.92); font-size: 14px; font-weight: 500; }
+.na-gallery .na-panel .price-mrp-strike { color: rgba(255, 255, 255, 0.66); font-size: 12.5px; }
+.na-gallery .na-panel .price-off   { color: var(--color-accent); font-size: 11.5px; }
+.na-gallery .na-panel .product-card-bag-note { color: var(--color-accent); }
+.na-gallery .na-panel .product-card-cta { color: var(--color-accent) !important; border-bottom-color: var(--color-accent); }
+.na-gallery .na-panel .product-card-cta.sold-out-cta { color: rgba(255, 255, 255, 0.78) !important; border-bottom-color: currentColor; }
+/* Sold out over a dark ground, not the shop's white tile: 0.6 opacity reads as
+   a failed image here, exactly as it did in the fan. */
+.na-gallery .na-panel.sold-out .card-img { opacity: 0.82; }
+.na-gallery .na-panel.sold-out .price-now { color: rgba(255, 255, 255, 0.72); }
+
+/* Wishlist and compare pull in from the panel edge, and compare waits for the
+   panel to be the one being looked at — a narrow panel is 200px wide and two
+   round buttons on it is most of the garment. */
+.na-gallery .na-panel .product-card-tools { top: 12px; right: 12px; gap: 7px; z-index: 6; }
+.na-gallery .na-panel .product-card-wishlist-btn,
+.na-gallery .na-panel .compare-toggle { width: 38px; height: 38px; }
+.na-gallery .na-panel .compare-toggle { opacity: 0; transition: opacity 260ms ease; }
+.na-gallery .na-panel:hover .compare-toggle,
+.na-gallery .na-panel:focus-within .compare-toggle,
+.na-gallery .na-panel.is-default .compare-toggle { opacity: 1; }
+.na-gallery .na-panel .badge-luxury { z-index: 6; }
+
+/* Quick View, centred on the picture rather than pinned to its foot. The card
+   puts it 16px off the bottom, which on a panel is exactly where the caption
+   lives — it landed on top of the Details link and hid it. */
+.na-gallery .na-panel .quick-view-btn {
+    top: 50%;
+    bottom: auto;
+    transform: translateY(-50%);
+    z-index: 6;
+}
+/* And not at all on touch. The rail's panels are ~250px wide with the caption
+   already on them; the card's (hover: none) rule forces the button visible, and
+   on a narrow panel it both covered the caption and had its own label clipped
+   to "Q". The caption already offers the product, and a tap on the panel opens
+   it. */
+@media (hover: none) {
+    .na-gallery .na-panel .quick-view-btn { display: none !important; }
+}
 /* Not an anchor — the panel is already the link, and an anchor inside an anchor
    is invalid and gets unnested by the browser. This is the same gold the
    collection tiles use on a dark ground. */
-.na-cta {
+.na-gallery .na-panel .product-card-cta {
     margin-top: 4px;
     font-family: var(--font-body), sans-serif;
     font-size: 10.5px;
@@ -11017,11 +11118,15 @@ input.chk-input-error:focus {
 
 @media (prefers-reduced-motion: reduce) {
     .na-panel,
-    .na-img,
-    .na-info { transition: none; }
-    .na-panel:hover .na-img,
-    .na-panel:focus-visible .na-img,
-    .na-panel:focus-within .na-img { transform: none; }
+    .na-panel .card-img,
+    .na-panel .product-card-details { transition: none; }
+    /* !important, because .product-card carries `transition: all 0.5s
+       !important` and would otherwise keep animating for someone who has asked
+       the operating system for less movement. */
+    .na-panel { transition: none !important; }
+    .na-panel:hover .card-img,
+    .na-panel:focus-visible .card-img,
+    .na-panel:focus-within .card-img { transform: none; }
 }
 
 /* ── Touch: no hover, so no expanding ──────────────────────────────────────
@@ -11098,31 +11203,33 @@ input.chk-input-error:focus {
 
     /* cover everywhere on touch. contain in a tile this size leaves bars on a
        screen that has no width to spare. */
-    .na-img,
-    .na-panel.is-default .na-img,
-    .na-panel:hover .na-img,
-    .na-panel:focus-visible .na-img,
-    .na-panel:focus-within .na-img,
-    .na-gallery:hover .na-panel.is-default:not(:hover) .na-img,
-    .na-gallery:focus-within .na-panel.is-default:not(:focus-within) .na-img {
+    .na-panel .card-img,
+    .na-panel.is-default .card-img,
+    .na-panel:hover .card-img,
+    .na-panel:focus-visible .card-img,
+    .na-panel:focus-within .card-img,
+    .na-gallery:hover .na-panel.is-default:not(:hover) .card-img,
+    .na-gallery:focus-within .na-panel.is-default:not(:focus-within) .card-img {
         object-fit: cover;
         object-position: center 18%;
         transform: none;
     }
 
     /* Always visible: there is no hover to reveal it. */
-    .na-info,
-    .na-panel.is-default .na-info,
-    .na-gallery:hover .na-panel.is-default:not(:hover) .na-info,
-    .na-gallery:focus-within .na-panel.is-default:not(:focus-within) .na-info {
+    .na-panel { background: transparent; border: 0; padding: 0; }
+    .na-panel .card-img-container { border-bottom: 0; }
+    .na-panel .product-card-details,
+    .na-panel.is-default .product-card-details,
+    .na-gallery:hover .na-panel.is-default:not(:hover) .product-card-details,
+    .na-gallery:focus-within .na-panel.is-default:not(:focus-within) .product-card-details {
         opacity: 1;
         transform: none;
         padding: 16px;
         gap: 4px;
     }
-    .na-name  { font-size: clamp(15px, 4vw, 20px); }
-    .na-price { font-size: 13px; }
-    .na-cta   { font-size: 9.5px; letter-spacing: 0.12em; }
+    .na-panel .product-card-title { font-size: clamp(15px, 4vw, 20px); }
+    .na-panel .product-card-price { font-size: 13px; }
+    .na-panel .product-card-cta   { font-size: 9.5px; letter-spacing: 0.12em; }
 }
 
 /* The rail needs no one-column fallback. At the narrowest screen the site
@@ -11430,7 +11537,8 @@ input.chk-input-error:focus {
         margin: 0;
         font-family: var(--font-heading);
         font-weight: var(--font-heading-weight);
-        /* Same clamp shape as .na-name, stepped down for the narrower print. */
+        /* Same clamp shape the New Arrivals gallery uses, stepped down for the
+           narrower print. */
         font-size: clamp(16px, 1.3vw, 20px);
         line-height: 1.15;
         text-wrap: balance;

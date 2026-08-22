@@ -50,6 +50,13 @@ $cardQuickView     = $cardQuickView ?? true;
 $cardExtraClass    = $cardExtraClass ?? '';
 $cardFallbackBadge = $cardFallbackBadge ?? '';
 $cardVariant       = ($cardVariant ?? '') === 'home' ? 'home' : 'default';
+/* Extra attributes for the host section to hang its own state on — the New
+   Arrivals gallery stamps data-na-page here so its pager can key on it. Already
+   escaped by the caller; it is markup, not user input. */
+$cardDataAttrs     = $cardDataAttrs ?? '';
+/* The first photograph of a hero section is worth fetching early; everything
+   else stays lazy. */
+$cardEager         = $cardEager ?? false;
 $cardIsHome        = $cardVariant === 'home';
 
 /* Country pricing and the buyable price, both resolved before anything is
@@ -110,7 +117,7 @@ $cardUrl = productUrl($cardProduct['id'], $cardProduct['name'], $cardProduct['se
          the two cannot drift apart again, and the count stays right the moment
          the bag changes without waiting for a page load. */ ?>
 <article class="product-card reveal-on-scroll<?= $cardIsHome ? ' product-card--home' : '' ?><?= $cardSoldOut ? ' sold-out' : '' ?><?= $cardExtraClass !== '' ? ' ' . htmlspecialchars($cardExtraClass) : '' ?>"
-         data-product-id="<?= (int)$cardProduct['id'] ?>">
+         data-product-id="<?= (int)$cardProduct['id'] ?>"<?= $cardDataAttrs ?>>
     <?php if ($cardNotSoldHere): ?>
         <span class="badge-luxury badge-sold-out">Not Available Here</span>
     <?php elseif ($cardSoldOut): ?>
@@ -150,7 +157,8 @@ $cardUrl = productUrl($cardProduct['id'], $cardProduct['name'], $cardProduct['se
                 <picture>
                     <?php if ($cardWebp): ?><source srcset="<?= htmlspecialchars($cardWebp) ?>" type="image/webp"><?php endif; ?>
                     <img src="<?= SITE_URL ?>/uploads/products/<?= htmlspecialchars($cardProduct['image']) ?>"
-                         alt="<?= htmlspecialchars($cardAlt) ?>" loading="lazy" decoding="async" class="card-img">
+                         alt="<?= htmlspecialchars($cardAlt) ?>" decoding="async" class="card-img"
+                         loading="<?= $cardEager ? 'eager' : 'lazy' ?>"<?= $cardEager ? ' fetchpriority="high"' : '' ?>>
                 </picture>
                 <?php
                 /* The second shot, revealed on hover.
@@ -274,5 +282,5 @@ $cardUrl = productUrl($cardProduct['id'], $cardProduct['name'], $cardProduct['se
 // Clear the per-card options. Without this a caller that sets $cardExtraClass once
 // leaks it into every later include in the same request — the carousel class would
 // end up on the grid below it.
-unset($cardCompare, $cardQuickView, $cardExtraClass, $cardFallbackBadge, $cardVariant, $card);
+unset($cardCompare, $cardQuickView, $cardExtraClass, $cardFallbackBadge, $cardVariant, $cardDataAttrs, $cardEager, $card);
 ?>

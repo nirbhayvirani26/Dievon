@@ -708,64 +708,34 @@ $naFirstPageCount = min(count($naItems), $naPerPage);
     <div class="na-gallery" data-count="<?= $naFirstPageCount ?>" data-na-pages="<?= $naPages ?>" data-na-per-page="<?= $naPerPage ?>">
 
         <?php foreach ($naItems as $naIndex => $naProduct):
-            /* The card partial's own price resolution, called rather than
-               copied — country pricing, colourway overrides and the "From"
-               spread all behave here exactly as they do on a product card.
-               See includes/product_price_resolve.php. */
-            $cardProduct = $naProduct;
-            require __DIR__ . '/../includes/product_price_resolve.php';
-
-            $naUrl  = productUrl($naProduct['id'], $naProduct['name'], $naProduct['seo_url'] ?? null);
-            $naAlt  = productImageAlt($naProduct);
-            $naImg  = trim((string)($naProduct['image'] ?? ''));
-            $naWebp = $naImg !== '' ? webpUrlIfExists('products', $naImg) : '';
+            /* One panel per page is the open one, so it is the first of each set
+               of four, not only the very first product. */
+            $naOnFirstPage = $naIndex < $naPerPage;
+            $naClasses = 'na-panel'
+                . ($naIndex % $naPerPage === 0 ? ' is-default' : '')
+                . ($naOnFirstPage ? '' : ' na-off');
+            /* Stamped on the card by the partial's $cardDataAttrs, because the
+               paging script reads it to decide which set a panel belongs to. */
+            $cardDataAttrs = ' data-na-page="' . intdiv($naIndex, $naPerPage) . '"';
         ?>
-        <?php /* One <a> per panel, so the whole panel is the link. "View Product"
-                 is a span inside it, not a second anchor: an anchor inside an
-                 anchor is invalid and browsers unnest it, which would have left
-                 the CTA outside the clickable area it appears to belong to. */ ?>
-        <?php /* One panel per page is the open one, so it is the first of each
-                 set of four, not only the very first product. */
-              $naOnFirstPage = $naIndex < $naPerPage; ?>
-        <a class="na-panel<?= $naIndex % $naPerPage === 0 ? ' is-default' : '' ?><?= $naOnFirstPage ? '' : ' na-off' ?>"
-           href="<?= htmlspecialchars($naUrl) ?>"
-           data-na-page="<?= intdiv($naIndex, $naPerPage) ?>"
-           aria-label="<?= htmlspecialchars($naProduct['name']) ?>">
-            <span class="na-media">
-                <?php if ($naImg !== ''): ?>
-                <picture>
-                    <?php if ($naWebp): ?><source srcset="<?= htmlspecialchars($naWebp) ?>" type="image/webp"><?php endif; ?>
-                    <?php /* The first panel is the one on screen at rest, so it
-                             loads eagerly; everything else is lazy. The panels
-                             on later pages are display:none until paged to, so
-                             the browser does not fetch them at all until then.
-                             width and height are the intrinsic ratio — the panel
-                             decides the box, but the browser needs them to
-                             reserve it before the file lands. */ ?>
-                    <img class="na-img" src="<?= SITE_URL ?>/uploads/products/<?= htmlspecialchars($naImg) ?>"
-                         alt="<?= htmlspecialchars($naAlt) ?>"
-                         width="800" height="1000" decoding="async"
-                         loading="<?= $naIndex === 0 ? 'eager' : 'lazy' ?>"
-                         <?= $naIndex === 0 ? 'fetchpriority="high"' : '' ?>>
-                </picture>
-                <?php else: ?>
-                <span class="na-fallback"><?= htmlspecialchars($naProduct['emoji'] ?? '&#128087;') ?></span>
-                <?php endif; ?>
-            </span>
+        <?php
+        /* The shared product card in its 'home' variant — the same component the
+           photo fan and the shop grid use. It was bespoke markup here, which
+           meant the price rules, the badge rule and the sold-out state existed
+           twice on one page; now the panel is the card and this section supplies
+           only the shell: how wide a panel is, when it expands, and where the
+           caption sits.
 
-            <span class="na-info">
-                <span class="na-name"><?= htmlspecialchars($naProduct['name']) ?></span>
-                <span class="na-price">
-                    <?php if ($cardNotSoldHere): ?>
-                        Not available here
-                    <?php else: ?>
-                        <?php if (!empty($cardVaries)): ?><span class="na-from">From</span> <?php endif; ?>
-                        <?= formatPrice($cardPrice) ?>
-                    <?php endif; ?>
-                </span>
-                <span class="na-cta">View Product</span>
-            </span>
-        </a>
+           The panel IS the card rather than a wrapper around it. The paging
+           script keys on .na-panel and the CSS sizes it, and adding a div
+           between them would have meant every one of those selectors growing a
+           level for no gain. */
+        $card           = $naProduct;
+        $cardVariant    = 'home';
+        $cardExtraClass = $naClasses;
+        $cardEager      = ($naIndex === 0);
+        include __DIR__ . '/../includes/product_card.php';
+        ?>
         <?php endforeach; ?>
     </div><!-- /.na-gallery -->
 
