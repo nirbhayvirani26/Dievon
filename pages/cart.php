@@ -272,11 +272,11 @@ $cartShipsIntl   = shipsInternationally($pdo);
                      variant:'page' selects this screen's flat-buttons-in-a-pill look;
                      the markup is the same either way. The inline fallback runs only
                      if footer.php's script has not loaded. -->
-                ${window.dievonQtyStepper ? window.dievonQtyStepper(cartKey, item.quantity, { variant: 'page', atLimit }) : `
-                <div class="qty-controls cart-qty">
-                    <button onclick="updateQty('${cartKey}', ${item.quantity - 1})" class="cart-qty-btn" aria-label="Decrease quantity">−</button>
-                    <span class="cart-qty-value">${item.quantity}</span>
-                    <button onclick="updateQty('${cartKey}', ${item.quantity + 1})" class="cart-qty-btn"
+                ${window.dievonQtyStepper ? window.dievonQtyStepper(cartKey, item.quantity, { atLimit }) : `
+                <div class="qty-controls">
+                    <button onclick="updateQty('${cartKey}', ${item.quantity - 1})" class="qty-btn" aria-label="Decrease quantity">−</button>
+                    <span class="qty-value">${item.quantity}</span>
+                    <button onclick="updateQty('${cartKey}', ${item.quantity + 1})" class="qty-btn"
                             aria-label="Increase quantity"
                             ${atLimit ? 'disabled title="That is all we have left"' : ''}>+</button>
                 </div>`}

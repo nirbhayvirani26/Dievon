@@ -1007,16 +1007,9 @@ h1, h2, h3, h4, h5 {
 }
 .cart-item-price { font-size: 13px; color: var(--color-primary); font-weight: 700; }
 
-.qty-controls { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
-.qty-btn {
-    width: 26px; height: 26px; border-radius: 50%;
-    background: var(--bg-main); border: 1px solid var(--border-light);
-    color: var(--text-secondary); font-size: 13px; font-weight: 700;
-    cursor: pointer; display: flex; align-items: center; justify-content: center;
-    transition: var(--transition);
-}
-.qty-btn:hover { background: var(--color-primary-bg); border-color: var(--color-primary); color: var(--color-primary); }
-.qty-value { font-size: 13px; font-weight: 700; min-width: 18px; text-align: center; color: var(--text-primary); }
+/* The stepper's circle-button look lived here. It is now one pill, defined once
+   at the end of this file — leaving a superseded copy behind is the same
+   two-definitions problem the unification was for. */
 
 .btn-remove-item { color: var(--text-muted); font-size: 14px; padding: 4px 6px; cursor: pointer; transition: var(--transition); background: none; border: none; flex-shrink: 0; }
 .btn-remove-item:hover { color: var(--color-danger); }
@@ -5936,16 +5929,14 @@ a.logo {
     min-width: 80px; text-align: right;
 }
 
-.cart-qty {
-    display: flex; align-items: center; border: 1px solid var(--border-strong);
-    background: var(--bg-surface-soft); border-radius: 4px; padding: 2px 6px;
-}
-.cart-qty-btn {
-    background: none; border: none; cursor: pointer; font-size: 16px;
-    width: 30px; height: 32px; display: flex; align-items: center;
-    justify-content: center; color: var(--text-primary);
-}
-.cart-qty-value { font-size: 14px; font-weight: 700; width: 30px; text-align: center; color: var(--text-primary); }
+/* .cart-qty / .cart-qty-btn / .cart-qty-value were the cart page's private copy
+   of the stepper. The control has one look now and one class set — see the
+   block at the end of this file. These selectors are kept, aliased to the same
+   rules, purely so a browser still holding a cached cart page with the old
+   markup renders a correct control instead of an unstyled one; nothing emits
+   them any more and they can be deleted a release later. */
+
+
 
 /* ── shipping estimate / gift card boxes ── */
 .cart-tool-box { background: var(--bg-surface-soft); border: 1px solid var(--border-light); padding: 24px; }
@@ -7339,18 +7330,10 @@ body.welcome-open { overflow: hidden; }
 }
 
 /* A quantity button that has nothing left to add says so by looking spent,
-   rather than staying bright and failing when pressed. */
-.qty-btn:disabled,
-.cart-qty-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-}
-.qty-btn:disabled:hover,
-.cart-qty-btn:disabled:hover {
-    background: inherit;
-    border-color: inherit;
-    color: inherit;
-}
+   rather than staying bright and failing when pressed. That rule now lives in
+   the single stepper block at the end of this file; removing the bodies here
+   left these two selectors dangling, which silently attached them to the
+   .product-card-bag-note rule below. */
 
 /* ── Product card: "already in your bag" ───────────────────────────────
    Filled in by syncBagNotes() in includes/footer.php for both card
@@ -9777,4 +9760,97 @@ input.chk-input-error:focus {
 .navbar-luxury .header-top-bar .audience-switch-link:focus-visible {
     outline: 2px solid var(--color-secondary);
     outline-offset: 3px;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   THE QUANTITY STEPPER — one control, one look, everywhere
+   ───────────────────────────────────────────────────────────────────────────
+   It appeared in three places in two designs: the cart page drew flat buttons
+   inside a bordered pill, while the cart drawer and the product page's picker
+   drew a pair of separate circles. Same control, same job, two appearances —
+   and two sets of CSS to keep in step.
+
+   The pill is the one kept. Two loose circles read as two buttons that happen
+   to sit near a number; a single bordered container reads as one control with a
+   value inside it, which is what it is.
+
+   Sizing is the other half of the change. The circles were 26px and the pill's
+   buttons 30x32 — both under the 44px minimum for a touch target, on the one
+   screen where a mistap costs the shopper money. 36px on a pointer device, 44px
+   the moment the viewport is small enough to be a phone.
+
+   .cart-qty* is aliased here so a cached page with the old markup still renders
+   correctly through a deploy.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.qty-controls,
+.cart-qty {
+    display: inline-flex;
+    align-items: center;
+    gap: 0;
+    flex-shrink: 0;
+    border: 1px solid var(--border-strong);
+    background: var(--bg-surface-soft);
+    border-radius: 4px;
+    padding: 2px 4px;
+}
+.qty-btn,
+.cart-qty-btn {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    border: 0;
+    border-radius: 3px;
+    background: none;
+    color: var(--text-primary);
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.18s ease, color 0.18s ease;
+}
+.qty-btn:hover,
+.cart-qty-btn:hover {
+    background: var(--color-primary-bg);
+    border-color: transparent;
+    color: var(--color-primary);
+}
+.qty-btn:disabled,
+.qty-btn:disabled:hover,
+.cart-qty-btn:disabled,
+.cart-qty-btn:disabled:hover {
+    opacity: 0.4;
+    cursor: not-allowed;
+    background: none;
+    color: var(--text-primary);
+}
+.qty-value,
+.cart-qty-value {
+    font-size: 14px;
+    font-weight: 700;
+    min-width: 30px;
+    width: auto;
+    text-align: center;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+}
+/* The product page's picker is the same control and no longer overrides it. */
+.product-qty-controls .qty-btn { width: 36px; height: 36px; font-size: 16px; }
+.product-qty-controls .qty-value { font-size: 14px; min-width: 30px; }
+
+/* Touch. 44px is the floor Apple and Google both give, and the cart is the
+   worst place on the site to miss a button. */
+@media (max-width: 991px) {
+    .qty-btn,
+    .cart-qty-btn,
+    .product-qty-controls .qty-btn { width: 44px; height: 44px; min-width: 44px; font-size: 18px; }
+    .qty-value,
+    .cart-qty-value,
+    .product-qty-controls .qty-value { min-width: 34px; font-size: 15px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .qty-btn, .cart-qty-btn { transition: none; }
 }

@@ -577,10 +577,14 @@ function removeItem(cartKey) {
  */
 window.dievonQtyStepper = function (cartKey, qty, opts) {
     opts = opts || {};
-    const page   = opts.variant === 'page';
-    const cls    = page ? 'qty-controls cart-qty' : 'qty-controls';
-    const btn    = page ? 'cart-qty-btn' : 'qty-btn';
-    const val    = page ? 'cart-qty-value' : 'qty-value';
+    // One class set now. The variant switch that used to be here existed only
+    // because the cart page and this drawer had two different LOOKS for the same
+    // control; they have one look now, so there is nothing left to switch on.
+    // opts.variant is still accepted and ignored, so an older call site cannot
+    // break during a deploy.
+    const cls    = 'qty-controls';
+    const btn    = 'qty-btn';
+    const val    = 'qty-value';
     const key    = String(cartKey).replace(/'/g, "\\'");
     const atLimit = !!opts.atLimit;
     return `
