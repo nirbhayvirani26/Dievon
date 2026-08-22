@@ -635,46 +635,93 @@ $heroSlideCount = !empty($heroBanners)
          section's own vertical space used to print whatever happened — so a shop
          with no products served a tall empty band titled "New Arrivals", which is
          the same mistake Shop by Occasion below already had fixed. */ ?>
+<?php /* The hover images and price ranges for EVERY grid on this page, primed in
+         one pair of queries rather than a pair per tile — see
+         productHoverImage(). Hoisted above the New Arrivals guard: it used to
+         sit inside that section, so a shop with no new arrivals skipped the
+         priming and Best Sellers below fell back to a query per card. */
+      productHoverImagePrime($homeGrids = array_merge($newArrivals ?? [], $bestSellers ?? [], $trending ?? []));
+      productPriceRangePrime($homeGrids); ?>
+
 <?php if (!empty($newArrivals)): ?>
+<?php
+/* ── New Arrivals: an editorial gallery, not a rail ──────────────────────────
+   Four garments side by side, the first shown large and the other three as
+   narrow panels. Hovering or focusing a panel expands it and collapses the one
+   that was open. Nothing moves on its own and there is no slider underneath:
+   the whole effect is flex-basis and a transition, so there is no library to
+   load, nothing to initialise, and it cannot break if a script fails.
+
+   Four because that is the composition. A fifth panel would make every narrow
+   one 12% of the screen, which is a stripe rather than a garment. */
+$naItems = array_slice($newArrivals, 0, 4);
+?>
 <section class="new-arrivals-section section-space">
-    <div class="container">
-        <div class="home-section-header reveal-on-scroll">
-            <div>
-                <span class="editorial-label">Latest Creations</span>
-                <h2 class="section-title">New Arrivals</h2>
-            </div>
-            <div class="home-section-header-btns">
-                <button onclick="scrollCarousel(-1)" class="btn-carousel-arrow" aria-label="Previous"><i class="fa-solid fa-chevron-left"></i></button>
-                <button onclick="scrollCarousel(1)" class="btn-carousel-arrow" aria-label="Next"><i class="fa-solid fa-chevron-right"></i></button>
-            </div>
+    <?php /* Outside .container by design — the gallery runs edge to edge, and
+             .container is max-width 1440 centred. The heading rides on top of
+             the photographs instead of sitting above them, as the reference has
+             it, and drops back above them on a phone. */ ?>
+    <div class="na-gallery" data-count="<?= count($naItems) ?>">
+
+        <div class="na-heading">
+            <span class="editorial-label">Latest Creations</span>
+            <h2 class="section-title">New Arrivals</h2>
         </div>
 
-    </div><?php /* .container closes here, before the rail.
+        <?php foreach ($naItems as $naIndex => $naProduct):
+            /* The card partial's own price resolution, called rather than
+               copied — country pricing, colourway overrides and the "From"
+               spread all behave here exactly as they do on a product card.
+               See includes/product_price_resolve.php. */
+            $cardProduct = $naProduct;
+            require __DIR__ . '/../includes/product_price_resolve.php';
 
-        The rail runs edge to edge and the container cannot let it: .container is
-        max-width 1440 centred, so anything inside it stops at 1440 however wide
-        the screen is. Closing the container after the heading and reopening it
-        after the rail is the same arrangement .occasion-slider already uses
-        further down this page — one mechanism for full-bleed rails on this site
-        rather than a CSS escape here and a markup one there.
+            $naUrl  = productUrl($naProduct['id'], $naProduct['name'], $naProduct['seo_url'] ?? null);
+            $naAlt  = productImageAlt($naProduct);
+            $naImg  = trim((string)($naProduct['image'] ?? ''));
+            $naWebp = $naImg !== '' ? webpUrlIfExists('products', $naImg) : '';
+        ?>
+        <?php /* One <a> per panel, so the whole panel is the link. "View Product"
+                 is a span inside it, not a second anchor: an anchor inside an
+                 anchor is invalid and browsers unnest it, which would have left
+                 the CTA outside the clickable area it appears to belong to. */ ?>
+        <a class="na-panel<?= $naIndex === 0 ? ' is-default' : '' ?>"
+           href="<?= htmlspecialchars($naUrl) ?>"
+           aria-label="<?= htmlspecialchars($naProduct['name']) ?>">
+            <span class="na-media">
+                <?php if ($naImg !== ''): ?>
+                <picture>
+                    <?php if ($naWebp): ?><source srcset="<?= htmlspecialchars($naWebp) ?>" type="image/webp"><?php endif; ?>
+                    <?php /* The first panel is the one on screen at rest, so it
+                             loads eagerly; the other three are lazy. width and
+                             height are the intrinsic ratio — the panel decides
+                             the box, but the browser needs them to reserve it
+                             before the file lands. */ ?>
+                    <img class="na-img" src="<?= SITE_URL ?>/uploads/products/<?= htmlspecialchars($naImg) ?>"
+                         alt="<?= htmlspecialchars($naAlt) ?>"
+                         width="800" height="1000" decoding="async"
+                         loading="<?= $naIndex === 0 ? 'eager' : 'lazy' ?>"
+                         <?= $naIndex === 0 ? 'fetchpriority="high"' : '' ?>>
+                </picture>
+                <?php else: ?>
+                <span class="na-fallback"><?= htmlspecialchars($naProduct['emoji'] ?? '&#128087;') ?></span>
+                <?php endif; ?>
+            </span>
 
-        The heading above stays inside the container, so it keeps its alignment
-        with every other section heading on the page. */ ?>
-
-        <div id="newArrivalsCarousel" class="new-arrivals-carousel hide-scrollbar js-owl-rail dv-rail-bleed">
-            <?php // Shared partial — see includes/product_card.php. Each of these grids
-                  // carried its own copy of the card markup, so none served the WebP image,
-                  // offered Compare, or used the product's own alt text. ?>
-            <?php /* One pair of queries for every card on the page, rather than a
-                     pair per tile — see productHoverImage(). */
-                  productHoverImagePrime($homeGrids = array_merge($newArrivals ?? [], $bestSellers ?? [], $trending ?? []));
-                  productPriceRangePrime($homeGrids); ?>
-            <?php foreach ($newArrivals as $p): ?>
-                <?php $card = $p; $cardExtraClass = 'product-card-carousel'; $cardFallbackBadge = 'New'; $cardCompare = false; include __DIR__ . '/../includes/product_card.php'; ?>
-            <?php endforeach; ?>
-        </div>
-    <div class="container"><?php /* reopened, so anything added below the rail is
-        back on the page's normal measure. */ ?>
+            <span class="na-info">
+                <span class="na-name"><?= htmlspecialchars($naProduct['name']) ?></span>
+                <span class="na-price">
+                    <?php if ($cardNotSoldHere): ?>
+                        Not available here
+                    <?php else: ?>
+                        <?php if (!empty($cardVaries)): ?><span class="na-from">From</span> <?php endif; ?>
+                        <?= formatPrice($cardPrice) ?>
+                    <?php endif; ?>
+                </span>
+                <span class="na-cta">View Product</span>
+            </span>
+        </a>
+        <?php endforeach; ?>
     </div>
 </section>
 
@@ -1415,8 +1462,8 @@ $occIsMen = function_exists('currentShopGender') && currentShopGender() === 'men
     }
 
     /* ── Collections rail arrows ────────────────────────────────────────────
-       These sit here, beside scrollCarousel, because that one is reached from an
-       inline onclick and is therefore demonstrably global in this scope. An
+       These sit in this scope because they are reached from inline onclick
+       attributes and therefore have to be global here. An
        earlier attempt put them inside a wrapper and every press threw
        "scrollCatRail is not defined" — a dead control that looked live.
 
@@ -1446,24 +1493,9 @@ $occIsMen = function_exists('currentShopGender') && currentShopGender() === 'men
         rail.scrollBy({ left: dir * step, behavior: "smooth" });
     }
 
-    function scrollCarousel(dir) {
-        const carousel = document.getElementById('newArrivalsCarousel');
-        if (!carousel) return;
-        // Measure the real card pitch (card width + gap) instead of hardcoding it — the
-        // hardcoded 310 no longer matched the CSS after the gap changed to 24px, so every
-        // arrow click drifted ~6px out of alignment.
-        /* Owl drives the rail now — see the shared initialiser in
-           includes/footer.php. owlRailStep() returns false if Owl is not
-           running (library blocked, JS error), and the original scroll-snap
-           behaviour below still works in that case, so an arrow click is never
-           a dead click. */
-        if (typeof owlRailStep === 'function' && owlRailStep(carousel, dir)) { return; }
-
-        const card = carousel.querySelector('.product-card-carousel');
-        const gap = parseFloat(getComputedStyle(carousel).columnGap) || 0;
-        const scrollAmount = card ? card.getBoundingClientRect().width + gap : 304;
-        carousel.scrollBy({ left: dir * scrollAmount, behavior: 'smooth' });
-    }
+    /* scrollCarousel() drove the New Arrivals rail's arrows. That section is an
+       editorial gallery now — four panels side by side, expanded on hover, with
+       nothing to scroll — so the arrows and this function went with it. */
 
     // ── Tabbed Collections ───────────────────────────────────
     function toggleTabs(tab) {

@@ -941,7 +941,11 @@ document.addEventListener('keydown', e => {
         // hidden). The delay is inline-important so it wins over the product
         // card's own `transition: all ... !important`, and the observer
         // removes it again once the entrance has played.
-        ['.home-categories-grid', '.home-best-sellers-grid', '.new-arrivals-carousel',
+        /* '.new-arrivals-carousel' is gone from this list with the rail it named.
+           The editorial gallery that replaced it must NOT be staggered in: its
+           four panels are one composition, and revealing them one at a time
+           would animate the layout apart before it settles. */
+        ['.home-categories-grid', '.home-best-sellers-grid',
          '.home-blog-grid', '.editorial-grid', '.products-grid',
          '.newsletter-container', '.home-benefits-grid', '.footer-top', '.footer-bottom-bar'].forEach(sel => {
             document.querySelectorAll(sel + ' > *').forEach((el, i) => {
