@@ -542,26 +542,18 @@ $searchHint = $searchHintNames
                 </a>
             </div>
 
-            <!-- Center Search Bar (Desktop) -->
-            <div class="header-search-wrap" onclick="openSearchOverlay()">
-                <i class="fa-solid fa-magnifying-glass search-icon"></i>
-                <?php // Names real categories only. The old text offered "dupattas and
-                      // dresses", neither of which the catalogue has ever stocked, and its
-                      // mobile twin below listed different clothes again — the same search
-                      // box disagreeing with itself about what the shop sells. ?>
-                <?php // This box never takes typing: it is a doorway that opens the real
-                      // search overlay, which is why it is readonly. Two consequences had
-                      // been missed. It carried no name, so it was announced as an unnamed
-                      // text field whose placeholder rotates with the hint. And the opener
-                      // lived on the wrapping div's onclick, so a mouse worked and a
-                      // keyboard did not — tab to it, press Enter, nothing happened. ?>
-                <input type="text" id="inlineSearchInput" aria-label="Search products" readonly
-                       placeholder="<?= htmlspecialchars($searchHint) ?>"
-                       onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openSearchOverlay(); }">
-                <button class="header-image-search-btn" type="button">
-                    <i class="fa-solid fa-camera"></i> <span class="hide-mobile">Image Search</span>
-                </button>
-            </div>
+            <?php /* The centre search pill became an icon in the right-hand cluster.
+                     ────────────────────────────────────────────────────────────────
+                     It was a readonly text box that took no typing — a doorway that
+                     opened the real overlay below — dressed as a marketplace search
+                     bar, and it sat in the middle of the row where the brand wants
+                     air. The icon opens exactly the same overlay, and the rotating
+                     category hint it used to show as a placeholder is now the
+                     button's title, so nothing it told a shopper is lost.
+
+                     The "Image Search" button that lived inside it was never wired
+                     to anything: it had no onclick of its own and simply inherited
+                     the wrapper's openSearchOverlay(). It is gone with the pill. */ ?>
 
             <!-- Right Action Icons -->
             <div class="nav-actions">
@@ -617,16 +609,34 @@ $searchHint = $searchHintNames
                 <!-- Multi-Language Translator Widget Slot -->
                 <div class="nav-action-item hide-mobile" id="google_translate_element" style="padding:0;"></div>
 
-                <a href="<?= SITE_URL ?>/contact" class="nav-action-item" title="Contact Us" aria-label="Contact Us">
-                    <i class="fa-solid fa-location-dot"></i>
+                <?php /* One drawn set, one weight.
+                         ────────────────────────────────────────────────────────────
+                         These five were Font Awesome, and Font Awesome Free ships
+                         only Solid and a partial Regular: the heart and the logged-out
+                         user had outline cuts, the bag, the pin, the magnifier and the
+                         logged-in user did not. So the row mixed filled and outlined
+                         glyphs at different optical weights, and it CHANGED as a
+                         shopper logged in — the user icon alone went from outline to
+                         solid. No arrangement of Free classes fixes that.
+
+                         Inline strokes instead: one 22px box, one 1.4 stroke, one
+                         round join, all inheriting currentColor. Consistent by
+                         construction, and they no longer wait on the icon font to
+                         load. Every href, id, aria-label and handler is unchanged. */ ?>
+                <button type="button" class="nav-action-item" onclick="openSearchOverlay()"
+                        aria-label="Search" title="<?= htmlspecialchars($searchHint) ?>">
+                    <svg class="dv-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7.25"/><path d="M16.5 16.5 21 21"/></svg>
+                </button>
+                <a href="<?= SITE_URL ?>/contact" class="nav-action-item hide-mobile" title="Contact Us" aria-label="Contact Us">
+                    <svg class="dv-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 10.4c0 5.6-8 12.1-8 12.1s-8-6.5-8-12.1a8 8 0 0 1 16 0z"/><circle cx="12" cy="10.2" r="2.7"/></svg>
                 </a>
                 <?php if (isset($_SESSION['customer_id'])): ?>
                     <a href="<?= SITE_URL ?>/account" class="nav-action-item" title="My Account" aria-label="My Account">
-                        <i class="fa-solid fa-user"></i>
+                        <svg class="dv-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="7.8" r="3.9"/><path d="M4.6 20.6a7.4 7.4 0 0 1 14.8 0"/></svg>
                     </a>
                 <?php else: ?>
                     <a href="<?= SITE_URL ?>/login" class="nav-action-item" title="Login / Register" aria-label="Login / Register">
-                        <i class="fa-regular fa-user"></i>
+                        <svg class="dv-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="7.8" r="3.9"/><path d="M4.6 20.6a7.4 7.4 0 0 1 14.8 0"/></svg>
                     </a>
                 <?php endif; ?>
                 <?php // Both badges start HIDDEN and are shown by JS only when the
@@ -635,12 +645,12 @@ $searchHint = $searchHintNames
                       // script runs, it would flash even for a shopper who does have
                       // items. The wishlist badge always had this rule in JS; the
                       // cart one did not, which is why the two looked different. ?>
-                <a href="<?= SITE_URL ?>/wishlist" class="nav-action-item" aria-label="Wishlist">
-                    <i class="fa-regular fa-heart"></i>
+                <a href="<?= SITE_URL ?>/wishlist" class="nav-action-item" title="Wishlist" aria-label="Wishlist">
+                    <svg class="dv-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 20.6 4.7 13.3a4.6 4.6 0 0 1 6.5-6.5l.8.8.8-.8a4.6 4.6 0 0 1 6.5 6.5z"/></svg>
                     <span class="action-badge" id="wishlistBadge" style="display:none;">0</span>
                 </a>
-                <button class="nav-action-item btn-cart-trigger" id="cartToggle" onclick="openCart()" aria-label="View cart">
-                    <i class="fa-solid fa-bag-shopping"></i>
+                <button class="nav-action-item btn-cart-trigger" id="cartToggle" onclick="openCart()" title="Shopping Bag" aria-label="View cart">
+                    <svg class="dv-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5.6 7.6h12.8l1 13.1H4.6z"/><path d="M9 9.4V6.9a3 3 0 0 1 6 0v2.5"/></svg>
                     <span class="action-badge" id="cartBadge"<?= $cartCount > 0 ? '' : ' style="display:none;"' ?>><?php echo $cartCount; ?></span>
                 </button>
             </div>
@@ -719,12 +729,20 @@ $searchHint = $searchHintNames
      * ever hidden — the mobile menu below still lists every one, and the
      * collections grid on the homepage is unaffected.
      *
-     * 7 is what fits alongside NEW / JOURNAL / OUR STORY / SALE at the narrowest
-     * desktop width the layout supports, with the longest current collection
-     * name. The CSS also gained flex-wrap as a last-resort net, so an
-     * exceptionally long name drops to a second line rather than off the page.
+     * This cap is now the NO-JAVASCRIPT floor rather than the whole answer. The
+     * bar runs edge to edge instead of inside a 1440px container, and the
+     * measuring script at the foot of this file moves whatever genuinely does
+     * not fit into the same More menu at the width it stops fitting — which a
+     * fixed number cannot do, because it cannot know the viewport, the font or
+     * how long these particular collection names are.
+     *
+     * So the number only has to be a sane starting point: 10 fits a full-width
+     * bar at 1440px with the current names, and anything past that is measured
+     * away on the client. With scripting off the old behaviour is intact — the
+     * first ten stay on the bar, the rest are already in More, and nothing is
+     * unreachable either way.
      */
-    const HEADER_NAV_MAX = 7;
+    const HEADER_NAV_MAX = 10;
     $headerNavParents  = array_slice($headerParents, 0, HEADER_NAV_MAX);
     $headerMoreParents = array_slice($headerParents, HEADER_NAV_MAX);
     ?>
@@ -771,9 +789,18 @@ $searchHint = $searchHintNames
                     $pActive = ($curCat === $pCat['name'] || strpos($curUri, 'category=' . urlencode($pCat['name'])) !== false);
                     ?>
                     <!-- Dynamic Mega Menu for <?= $pName ?> -->
-                    <li class="has-mega-menu">
+                    <?php /* data-nav-collapsible marks this row as one the measuring
+                             script may fold into More when the bar runs out of width.
+                             NEW, JOURNAL, OUR STORY and SALE deliberately carry no such
+                             attribute: they are short, they are not collections, and
+                             SALE in particular must never be the item that disappears.
+                             The name and href are carried here so the script can build
+                             the More entry without reaching into the mega menu. */ ?>
+                    <li class="has-mega-menu" data-nav-collapsible
+                        data-nav-name="<?= $pName ?>"
+                        data-nav-href="<?= htmlspecialchars(categoryUrlByName($pdo, $pCat['name'])) ?>">
                         <a href="<?= htmlspecialchars(categoryUrlByName($pdo, $pCat['name'])) ?>" class="nav-link-item <?= $pActive ? 'active' : '' ?>">
-                            <?= strtoupper($pName) ?> <i class="fa-solid fa-angle-down nav-arrow"></i>
+                            <?= strtoupper($pName) ?><svg class="nav-arrow" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 9.5 6 6 6-6"/></svg>
                         </a>
                         <div class="mega-dropdown">
                             <div class="container mega-dropdown-container">
@@ -808,42 +835,26 @@ $searchHint = $searchHintNames
                                 <?php endif; ?>
 
                                 <?php
-                                /* Two photographs and a third tile that is not a photograph.
+                                /* One photograph, not three.
                                    ────────────────────────────────────────────────────────
-                                   A single card 802 x 210 was a 3.8:1 letterbox holding
-                                   portrait photography, so object-fit: cover kept a strip of
-                                   background and threw the model away. Upright cards match
-                                   the shape the pictures actually are.
+                                   This was a row of three cards: two product shots and a
+                                   third tile carrying a piece count, built that way so the
+                                   row would reach across the menu without any card having
+                                   to stretch. Filling width was the whole reason for it.
 
-                                   Three of them is what makes the row reach across the menu
-                                   without any card having to grow — but a third PHOTOGRAPH
-                                   cannot be relied on. Most collections here have exactly two
-                                   distinct product images, and galleries are empty, so the
-                                   third slot would vanish on nearly every menu and the empty
-                                   band would come straight back.
+                                   The menu is not trying to fill that width any more. Its
+                                   job is a calm column of links with one picture beside
+                                   them, so the second shot and the counting tile were
+                                   solving a problem the layout no longer has — and three
+                                   competing images next to a list of names is the busiest
+                                   thing a luxury menu can do.
 
-                                   So the third slot is a designed tile instead: the piece
-                                   count and a way in. It is always available, it never
-                                   duplicates a photograph, and it tells the shopper something
-                                   the pictures cannot. */
-                                $pAllImgs = $categoryPromos[$pId] ?? [];
-                                $pPromoImgs = [];
-                                foreach (array_slice($pAllImgs, 0, 2) as $pImg) {
-                                    $pPromoImgs[] = SITE_URL . '/uploads/products/' . rawurlencode($pImg);
-                                }
-                                /* The third slot always carries a photograph.
-                                   ────────────────────────────────────────────────────────
-                                   A flat panel beside two photographs reads as an image that
-                                   failed to load. A third distinct photo is used whenever the
-                                   collection has one — but most hold only two, so rather than
-                                   fall back to a blank block it reuses the first under a heavy
-                                   burgundy wash. At that strength the picture is texture, not
-                                   a recognisable repeat, and the tile still reads as its own
-                                   panel. The moment a third product is listed the wash lifts
-                                   and it becomes a real third photograph on its own. */
-                                $pTileSrc = $pAllImgs[2] ?? ($pAllImgs[0] ?? '');
-                                $pTileImg = $pTileSrc !== ''
-                                    ? SITE_URL . '/uploads/products/' . rawurlencode($pTileSrc)
+                                   The count was the one piece of information the tile
+                                   carried that the photographs could not, so it moves into
+                                   the caption as a line of text and nothing is lost. */
+                                $pAllImgs   = $categoryPromos[$pId] ?? [];
+                                $pHeroImg   = !empty($pAllImgs[0])
+                                    ? SITE_URL . '/uploads/products/' . rawurlencode($pAllImgs[0])
                                     : '';
                                 $pShopUrl   = categoryUrlByName($pdo, $pCat['name']);
                                 $pLiveCount = (int)($subtreeCounts[$pId] ?? 0);
@@ -853,32 +864,18 @@ $searchHint = $searchHintNames
                                           that has nothing in it, and the same stand-in appeared under
                                           several menus at once. With no products to show, the menu
                                           simply shows its links — which is the honest answer. */ ?>
-                                <?php if ($pPromoImgs): ?>
+                                <?php if ($pHeroImg): ?>
                                 <div class="mega-promo-column">
-                                    <div class="mega-promo-grid">
-                                        <?php foreach ($pPromoImgs as $pIdx => $pSrc): ?>
-                                        <a href="<?= htmlspecialchars($pShopUrl) ?>" class="mega-promo-card"
-                                           aria-label="Shop <?= htmlspecialchars($pName) ?>"<?= $pIdx ? ' tabindex="-1" aria-hidden="true"' : '' ?>>
-                                            <img src="<?= htmlspecialchars($pSrc) ?>" alt="<?= htmlspecialchars($pName) ?>" loading="lazy">
-                                        </a>
-                                        <?php endforeach; ?>
-
-                                        <a href="<?= htmlspecialchars($pShopUrl) ?>"
-                                           class="mega-promo-card mega-promo-tile<?= $pTileImg ? ' mega-promo-tile--photo' : '' ?>"
-                                           aria-label="View all <?= htmlspecialchars($pName) ?>">
-                                            <?php if ($pTileImg): ?>
-                                            <img src="<?= htmlspecialchars($pTileImg) ?>" alt="" loading="lazy">
-                                            <?php endif; ?>
-                                            <span class="mega-promo-tile-body">
-                                                <span class="mega-promo-tile-count"><?= $pLiveCount ?></span>
-                                                <span class="mega-promo-tile-label"><?= $pLiveCount === 1 ? 'piece' : 'pieces' ?></span>
-                                                <span class="mega-promo-tile-cta">View all <i class="fa-solid fa-arrow-right"></i></span>
-                                            </span>
-                                        </a>
-                                    </div>
+                                    <a href="<?= htmlspecialchars($pShopUrl) ?>" class="mega-promo-card"
+                                       aria-label="Shop <?= htmlspecialchars($pName) ?>">
+                                        <img src="<?= htmlspecialchars($pHeroImg) ?>" alt="<?= htmlspecialchars($pName) ?>" loading="lazy">
+                                    </a>
                                     <div class="mega-promo-caption">
                                         <div class="mega-promo-title"><?= htmlspecialchars($pName) ?> Collection</div>
-                                        <a href="<?= htmlspecialchars($pShopUrl) ?>" class="btn-mega-shop">Shop Now <i class="fa-solid fa-arrow-right"></i></a>
+                                        <?php if ($pLiveCount > 0): ?>
+                                        <div class="mega-promo-meta"><?= $pLiveCount ?> <?= $pLiveCount === 1 ? 'piece' : 'pieces' ?></div>
+                                        <?php endif; ?>
+                                        <a href="<?= htmlspecialchars($pShopUrl) ?>" class="btn-mega-shop">Shop Now</a>
                                     </div>
                                 </div>
                                 <?php endif; ?>
@@ -890,26 +887,37 @@ $searchHint = $searchHintNames
                 <?php // Collections that did not fit on the bar. Same dropdown
                       // styling as a collection's own menu, so it does not read
                       // as a different kind of control. ?>
-                <?php if (!empty($headerMoreParents)): ?>
-                <li class="has-mega-menu">
-                    <a href="<?= SITE_URL ?>/shop" class="nav-link-item">
-                        MORE <i class="fa-solid fa-angle-down nav-arrow"></i>
+                <?php /* Always in the DOM, hidden until it holds something.
+                         ────────────────────────────────────────────────────────────
+                         It used to render only when PHP's fixed cap had spilled some
+                         collections into it. The measuring script needs somewhere to
+                         put what does not fit at the CURRENT width, though, and it
+                         cannot create a menu that was never printed — so the element
+                         is always here and .nav-more-empty hides it while it is
+                         empty. With scripting off and nothing spilled it stays hidden
+                         exactly as before.
+
+                         A narrow panel rather than a full-bleed mega menu: it holds a
+                         single column of names, and a band across the whole page for
+                         four links looks like a mistake. */ ?>
+                <li class="has-mega-menu nav-more<?= empty($headerMoreParents) ? ' nav-more-empty' : '' ?>" id="navMoreItem">
+                    <a href="<?= SITE_URL ?>/shop" class="nav-link-item" aria-haspopup="true">
+                        MORE<svg class="nav-arrow" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 9.5 6 6 6-6"/></svg>
                     </a>
-                    <div class="mega-dropdown">
-                        <div class="container mega-dropdown-container">
+                    <div class="mega-dropdown mega-dropdown-compact">
+                        <div class="mega-dropdown-container">
                             <div class="mega-column">
                                 <div class="mega-heading">More Collections</div>
-                                <ul>
+                                <ul id="navMoreList">
                                     <?php foreach ($headerMoreParents as $mCat): ?>
                                     <li><a href="<?= htmlspecialchars(categoryUrlByName($pdo, $mCat['name'])) ?>"><?= htmlspecialchars($mCat['name']) ?></a></li>
                                     <?php endforeach; ?>
-                                    <li><a href="<?= SITE_URL ?>/shop"><strong>Shop All</strong></a></li>
                                 </ul>
+                                <a class="mega-shop-all" href="<?= SITE_URL ?>/shop">Shop All</a>
                             </div>
                         </div>
                     </div>
                 </li>
-                <?php endif; ?>
 
                 <li><a href="<?= SITE_URL ?>/blog" class="nav-link-item <?= $isJournalAct ? 'active' : '' ?>">JOURNAL</a></li>
                 <li><a href="<?= SITE_URL ?>/about" class="nav-link-item <?= $isStoryAct ? 'active' : '' ?>">OUR STORY</a></li>
@@ -1112,6 +1120,107 @@ function toggleMobileCategoryMenu(el) {
         });
     }
 }
+
+/* Fold whatever does not fit into More — measured, not guessed.
+ * ─────────────────────────────────────────────────────────────────────────────
+ * The PHP above keeps the first HEADER_NAV_MAX collections on the bar and puts
+ * the rest in More. That is a fixed number, and the thing it is trying to
+ * predict is not fixed: how many fit depends on the viewport, on how long these
+ * particular collection names are, and on whether Marcellus has finished
+ * loading — a serif at the same size is wider than the fallback, so the row
+ * grows after the font arrives.
+ *
+ * Guessing low wastes a full-width bar. Guessing high overflows it. So this
+ * measures instead: hide the last collection, re-measure, repeat, until the row
+ * fits. Each one hidden gains a plain text entry in the More panel, so nothing
+ * becomes unreachable — and the mobile drawer lists every category regardless.
+ *
+ * Only rows carrying data-nav-collapsible are eligible. NEW, JOURNAL, OUR STORY
+ * and SALE are not: they are short, and SALE disappearing into a submenu is the
+ * one thing this must never do.
+ *
+ * The row is left wrapping until this script takes over. That is deliberate —
+ * with scripting off, a long name still drops to a second line rather than off
+ * the side of the page, which is what the CSS net was there for.
+ */
+(function () {
+    var list     = document.querySelector('.bottom-header-bar .nav-links');
+    var moreItem = document.getElementById('navMoreItem');
+    var moreList = document.getElementById('navMoreList');
+    if (!list || !moreItem || !moreList) { return; }
+
+    var items = Array.prototype.slice.call(list.querySelectorAll('li[data-nav-collapsible]'));
+    if (!items.length) { return; }
+
+    // Whether More was empty as PHP printed it. Restoring has to return it to
+    // that state, not to "visible", or it would stay on the bar as an empty menu
+    // after a window is widened again.
+    var startedEmpty = moreItem.classList.contains('nav-more-empty');
+
+    // Switches the row from wrapping to a single line. Only from here on, so the
+    // no-JavaScript net above stays intact.
+    list.classList.add('nav-links-managed');
+
+    function overflows() {
+        return (list.scrollWidth - list.clientWidth) > 1;
+    }
+
+    function layout() {
+        // Always start from the full row: what fits at 1200px is not what fits at
+        // 1600px, and collapsing further from an already-collapsed state can only
+        // ever remove more.
+        for (var i = 0; i < items.length; i++) { items[i].hidden = false; }
+        var clones = moreList.querySelectorAll('li[data-nav-clone]');
+        for (var c = 0; c < clones.length; c++) { clones[c].parentNode.removeChild(clones[c]); }
+        moreItem.classList.toggle('nav-more-empty', startedEmpty);
+
+        // Below 992px the bar is replaced by the drawer, which lists everything.
+        if (!window.matchMedia('(min-width: 992px)').matches) { return; }
+
+        var folded = [];
+        var n = items.length - 1;
+        while (n >= 0 && overflows()) {
+            // More costs width of its own, so it has to be on the bar before the
+            // next measurement or the last item folded would be one too few.
+            moreItem.classList.remove('nav-more-empty');
+            items[n].hidden = true;
+            folded.push(items[n]);
+            n--;
+        }
+        if (!folded.length) { return; }
+
+        folded.reverse();
+        var frag = document.createDocumentFragment();
+        for (var f = 0; f < folded.length; f++) {
+            var li = document.createElement('li');
+            li.setAttribute('data-nav-clone', '');
+            var a = document.createElement('a');
+            a.href = folded[f].getAttribute('data-nav-href') || '#';
+            // The raw name, not the bar's uppercase label: inside the panel these
+            // sit alongside whatever PHP already spilled there, and those are
+            // printed as stored. Two cases in one short list reads as a fault.
+            a.textContent = folded[f].getAttribute('data-nav-name') || '';
+            li.appendChild(a);
+            frag.appendChild(li);
+        }
+        // Ahead of anything PHP already spilled, so the panel reads in the same
+        // order as the bar it came off.
+        moreList.insertBefore(frag, moreList.firstChild);
+    }
+
+    var pending = false;
+    function schedule() {
+        if (pending) { return; }
+        pending = true;
+        window.requestAnimationFrame(function () { pending = false; layout(); });
+    }
+
+    layout();
+    window.addEventListener('resize', schedule, { passive: true });
+    // Marcellus lands after first paint and widens every label on the bar, so the
+    // measurement taken before it arrives is of the fallback face, not this one.
+    if (document.fonts && document.fonts.ready) { document.fonts.ready.then(schedule).catch(function () {}); }
+})();
 </script>
 
 

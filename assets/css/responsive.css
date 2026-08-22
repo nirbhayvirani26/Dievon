@@ -2025,3 +2025,145 @@ html {
        came to buy. */
     .product-benefits-row { order: 1; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   HEADER — 2026 REDESIGN, small screens
+   ───────────────────────────────────────────────────────────────────────────
+   Companion to the block at the end of style.css. Same rule about placement:
+   appended last so it beats the earlier !important header rules in this file
+   at equal specificity, and prefixed with .navbar-luxury where it has to win
+   outright.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 991px) {
+    /* Hamburger · DIEVON · search · account · wishlist · bag.
+       Search is new to this row. The desktop pill it replaces carried
+       display:none below 991px, so on a phone — most of this shop's traffic —
+       the header had no search at all and the only way in was the bottom dock
+       or opening the drawer first. The icon calls the same openSearchOverlay(). */
+    .navbar-luxury .main-header-bar { padding: 8px 0 !important; }
+    /* 16px each side, stated with !important because the earlier mobile header
+       rule in this file sets `padding: 6px 16px !important` on this same element
+       — the shorthand, so it has to be beaten outright rather than added to.
+       Zeroing it (which is what this rule did first) put the hamburger and the
+       bag hard against the edges of the screen with no gutter at all. */
+    .navbar-luxury .main-header-container {
+        padding: 0 16px !important;
+        gap: 8px !important;
+    }
+
+    .navbar-luxury .logo img { height: 34px; max-width: 150px; }
+
+    .navbar-luxury .nav-actions { gap: 2px !important; }
+    .navbar-luxury .nav-action-item { width: 38px; height: 38px; }
+    .navbar-luxury .dv-icon { width: 20px; height: 20px; }
+    .navbar-luxury.header-compact .logo img { height: 30px; }
+
+    /* The hamburger's three bars were 2px at full opacity — heavier than the
+       1.4px strokes they now sit beside. */
+    .navbar-luxury .nav-hamburger span {
+        height: 1.4px !important;
+        background: var(--dv-nav-ink) !important;
+    }
+}
+
+/* ── The drawer ─────────────────────────────────────────────────────────────
+   Already a full-height panel with working accordions, so this is paint only:
+   the ivory ground the header uses, quieter rules, and rows tall enough to be
+   comfortable tap targets. */
+@media (max-width: 991px) {
+    .mobile-drawer,
+    .mobile-nav-panel { background: var(--dv-header-bg) !important; }
+
+    .mobile-drawer-header {
+        padding: 14px 20px !important;
+        border-bottom: 1px solid var(--dv-header-line-lo) !important;
+    }
+    .mobile-drawer-logo-link img { height: 34px !important; width: auto !important; }
+
+    .mobile-drawer-search-bar {
+        margin: 16px 20px 4px !important;
+        padding: 12px 16px !important;
+        border: 1px solid var(--dv-header-line) !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+    }
+    .mobile-drawer-search-bar .search-placeholder {
+        font-size: 12.5px !important;
+        letter-spacing: 0.02em !important;
+        color: var(--dv-nav-ink-soft) !important;
+    }
+
+    .mobile-nav-links li { border-bottom: 1px solid var(--dv-header-line-lo) !important; }
+    .mobile-nav-links a,
+    .mobile-accordion-header {
+        padding: 15px 0 !important;
+        font-family: var(--font-body), sans-serif !important;
+        font-size: 12px !important;
+        font-weight: 500 !important;
+        letter-spacing: 0.14em !important;
+        text-transform: uppercase !important;
+        color: var(--dv-nav-ink) !important;
+    }
+    .mobile-accordion-header {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        cursor: pointer;
+    }
+    /* Rotation and the open state live in CSS so toggleMobileCategoryMenu()
+       only has to move the class — see the note on that function. */
+    .mobile-accordion-header .accordion-arrow {
+        font-size: 12px !important;
+        color: var(--dv-nav-ink-soft) !important;
+        transition: transform 0.3s var(--dv-ease);
+    }
+    .mobile-nav-accordion.is-open > .mobile-accordion-header { color: var(--dv-nav-hover) !important; }
+    .mobile-nav-accordion.is-open .accordion-arrow { transform: rotate(180deg); }
+
+    .mobile-subnav-list { padding: 2px 0 14px 2px !important; }
+    .mobile-subnav-list li { border-bottom: 0 !important; }
+    .mobile-subnav-list a {
+        padding: 9px 0 !important;
+        font-size: 13px !important;
+        font-weight: 400 !important;
+        letter-spacing: 0.01em !important;
+        text-transform: none !important;
+        color: var(--dv-nav-ink-soft) !important;
+    }
+    .mobile-subnav-divider {
+        padding: 14px 0 6px !important;
+        font-size: 9.5px !important;
+        font-weight: 600 !important;
+        letter-spacing: 0.2em !important;
+        text-transform: uppercase !important;
+        color: var(--dv-nav-ink-soft) !important;
+        border-bottom: 0 !important;
+    }
+
+    .mobile-drawer-footer {
+        padding: 16px 20px calc(16px + env(safe-area-inset-bottom)) !important;
+        border-top: 1px solid var(--dv-header-line-lo) !important;
+        background: var(--dv-header-bg) !important;
+    }
+}
+
+/* The drawer's close control.
+   ─────────────────────────────────────────────────────────────────────────────
+   A filled dark rounded square — the last container of that kind left anywhere
+   in the header once the search pill and the SALE capsule went. It is the only
+   way out of a full-screen panel, so it keeps a 40px target; it just stops
+   being a button-shaped object to do it. */
+@media (max-width: 991px) {
+    .mobile-drawer-close {
+        width: 40px !important;
+        height: 40px !important;
+        background: transparent !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        color: var(--dv-nav-ink) !important;
+        font-size: 20px !important;
+    }
+    .mobile-drawer-close:hover { background: transparent !important; color: var(--dv-nav-hover) !important; }
+}

@@ -9344,3 +9344,411 @@ input.chk-input-error:focus {
     border: 1px solid #991b1b !important;
     box-shadow: 0 0 0 3px rgba(153, 27, 27, .12);
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   HEADER — 2026 REDESIGN
+   ───────────────────────────────────────────────────────────────────────────
+   A restyle of the header that was already here, not a replacement for it.
+   Every element, id, handler and link is the one includes/header.php always
+   printed; what changed is spacing, type, colour and how the row behaves when
+   there are more collections than fit.
+
+   Appended at the end on purpose. The header's original rules are spread over
+   three places in this file — a block near the top that sets the bar's height
+   with !important, a second .navbar-luxury further down that repaints the
+   background, and the main run around line 3070 — and several of them are
+   !important, so a rule placed anywhere earlier would lose. Last wins at equal
+   specificity, which is why this sits here rather than beside what it edits.
+
+   The four things the brief ruled out, and where each is enforced:
+     · no gradients      — flat --dv-header-bg throughout
+     · no heavy shadows  — one hairline divider; the mega menu's is a 20px
+                           spread at 12% and nothing else casts at all
+     · no rounded shell  — no radius on any header container
+     · no wrapped nav    — the row is one line, and overflow goes to More
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+    /* Warm ivory rather than pure white: against #fdfbf9 page stock a #ffffff
+       header reads as a cold panel laid on top of the site. Two points warmer
+       than the body and the join stops announcing itself. */
+    --dv-header-bg:      #fffdfa;
+    --dv-header-line:    rgba(81, 17, 38, 0.10);
+    --dv-header-line-lo: rgba(81, 17, 38, 0.06);
+    --dv-nav-ink:        #3a0c1b;
+    --dv-nav-ink-soft:   #7a674f;
+    /* The accessible gold. --color-accent (#D4AF37) measures 2.09:1 on this
+       ground and is a WCAG AA failure as text; --color-accent-ink is 5.06:1 on
+       white. Hover and active states are text, so they use the ink. */
+    --dv-nav-hover:      #8a6a12;
+    --dv-ease:           cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ── The shell ──────────────────────────────────────────────────────────────
+   Flat, opaque, one hairline underneath. The old header was rgba white at 80%
+   over a 5px backdrop blur with a 15px drop shadow: the blur dragged whatever
+   was scrolling underneath into the header as a smear of colour, and the
+   shadow put a grey band across the top of every page. Neither survives a
+   "minimal, not marketplace-like" brief. */
+.navbar-luxury,
+.navbar-luxury.header-compact {
+    background: var(--dv-header-bg) !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    box-shadow: none !important;
+    border-bottom: 1px solid var(--dv-header-line) !important;
+    border-radius: 0 !important;
+    transition: box-shadow 0.3s var(--dv-ease), border-color 0.3s var(--dv-ease) !important;
+}
+
+/* Full bleed. Every other .container on the site is capped at 1440px and that
+   is right for reading; a navigation row is not reading. With twelve
+   collections the cap was throwing away 300px of usable bar on a wide screen
+   and forcing items into More that had somewhere to go. The gutter scales with
+   the viewport so the logo still has air at 1024px. */
+.navbar-luxury .container {
+    max-width: none;
+    padding-inline: clamp(20px, 3.2vw, 60px);
+}
+
+/* ── Tier 1: logo · actions ─────────────────────────────────────────────────
+   The centre of this row is deliberately empty. It held a readonly search pill
+   that took no typing, and clearing it is most of what makes the header read as
+   a fashion house rather than a storefront. */
+.navbar-luxury .main-header-bar {
+    padding: 18px 0 !important;
+    border-bottom: 1px solid var(--dv-header-line-lo) !important;
+    transition: padding 0.3s var(--dv-ease) !important;
+}
+.navbar-luxury .main-header-container { gap: 24px; }
+
+.navbar-luxury a.logo { max-width: none; }
+.navbar-luxury .logo img {
+    height: 44px;
+    width: auto;
+    max-width: 200px;
+    object-fit: contain;
+    transition: height 0.3s var(--dv-ease) !important;
+}
+
+/* ── The action cluster ─────────────────────────────────────────────────────
+   Search, account, wishlist, bag — one row, one rhythm. The old items were
+   flex COLUMNS carrying an optional caption under each glyph, so the icons sat
+   at different heights depending on whether a label was present. */
+.navbar-luxury .nav-actions { gap: clamp(14px, 1.5vw, 24px); }
+.navbar-luxury .nav-action-item {
+    flex-direction: row;
+    width: 40px;
+    height: 40px;
+    justify-content: center;
+    color: var(--dv-nav-ink);
+    transition: color 0.2s ease;
+}
+.navbar-luxury .nav-action-item:hover,
+.navbar-luxury .nav-action-item:focus-visible { color: var(--dv-nav-hover); }
+
+/* One drawn set at one weight — see the note in includes/header.php for why
+   these are inline SVG and not Font Awesome. vector-effect keeps the hairline
+   at 1.4px however the box is scaled. */
+.dv-icon {
+    width: 22px;
+    height: 22px;
+    display: block;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* The count. Was an 18px filled disc that sat level with the icon's own weight
+   and read as part of the glyph; this is smaller, tighter and ringed in the
+   header's own ivory so it lifts off the bag cleanly. */
+.navbar-luxury .action-badge {
+    top: 2px;
+    right: 2px;
+    min-width: 16px;
+    width: auto;
+    height: 16px;
+    padding: 0 4px;
+    font-size: 9.5px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    background: var(--color-primary);
+    box-shadow: 0 0 0 2px var(--dv-header-bg);
+}
+
+/* ── Tier 2: Women / Men ────────────────────────────────────────────────────
+   Kept exactly as it works — two real hrefs — and quietened to a pair of
+   letter-spaced words with a hairline under the active one. */
+.navbar-luxury .audience-switch-bar { border-bottom: 1px solid var(--dv-header-line-lo); }
+.navbar-luxury .audience-switch { gap: 30px; }
+.navbar-luxury .audience-switch-link {
+    padding: 9px 2px;
+    font-family: var(--font-body), sans-serif;
+    font-size: 10.5px;
+    font-weight: 500;
+    letter-spacing: 0.20em;
+    text-transform: uppercase;
+    color: var(--dv-nav-ink-soft);
+    border-bottom: 1px solid transparent;
+    transition: color 0.2s ease, border-color 0.2s ease;
+}
+.navbar-luxury .audience-switch-link.is-active {
+    color: var(--dv-nav-ink);
+    border-bottom-color: var(--dv-nav-ink);
+    background: none;
+}
+
+/* ── Tier 3: the collections bar ────────────────────────────────────────────
+   One line, centred, edge to edge. The gap is fluid rather than a fixed 32px:
+   at 1024px it closes to 16px so more names survive on the bar, and on a wide
+   screen it opens to 30px so twelve items still look composed instead of
+   huddled in the middle. */
+.navbar-luxury .bottom-header-bar { padding: 11px 0 13px !important; }
+.navbar-luxury .nav-links {
+    column-gap: clamp(16px, 1.9vw, 30px);
+    row-gap: 8px;
+}
+/* Applied by the measuring script, never by the server: with scripting off the
+   row keeps the wrap that stops a long name running off the page. */
+.navbar-luxury .nav-links.nav-links-managed { flex-wrap: nowrap; }
+.navbar-luxury .nav-links > li[hidden] { display: none !important; }
+
+.navbar-luxury .nav-link-item {
+    font-family: var(--font-body), sans-serif;
+    font-size: 11.5px;
+    font-weight: 500;
+    letter-spacing: 0.13em;
+    color: var(--dv-nav-ink);
+    padding: 5px 0;
+    gap: 5px;
+    white-space: nowrap;
+}
+/* The old hover swapped weight 600 for 700, which reflows the row on every
+   pass of the mouse and nudges its neighbours sideways. Colour only. */
+.navbar-luxury .nav-link-item:hover,
+.navbar-luxury .nav-link-item.active {
+    color: var(--dv-nav-hover) !important;
+    font-weight: 500 !important;
+}
+.navbar-luxury .nav-link-item.active::after {
+    height: 1px;
+    bottom: -3px;
+    background-color: var(--dv-nav-hover);
+    border-radius: 0;
+}
+.navbar-luxury .nav-highlight-new { color: var(--dv-nav-hover); font-weight: 500; }
+/* SALE stays the one coloured word on the bar — it is the only item whose
+   meaning is time-limited. */
+.navbar-luxury .nav-link-sale { color: var(--color-primary); }
+.navbar-luxury .nav-arrow {
+    width: 9px;
+    height: 9px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: 0.5;
+    transition: transform 0.25s var(--dv-ease), opacity 0.2s ease;
+}
+.navbar-luxury .has-mega-menu:hover .nav-arrow { opacity: 1; }
+
+/* ── The mega menu ──────────────────────────────────────────────────────────
+   Whitespace, small headings, plain links, one photograph. */
+.navbar-luxury .mega-dropdown {
+    background: var(--dv-header-bg) !important;
+    border-top: 1px solid var(--dv-header-line-lo) !important;
+    border-bottom: 1px solid var(--dv-header-line) !important;
+    /* A 45px spread at 12% under a full-bleed panel is a grey wash across the
+       page. This one only has to separate the panel from what is behind it. */
+    box-shadow: 0 20px 30px -24px rgba(58, 12, 27, 0.25) !important;
+    padding: 44px 0 48px !important;
+    transform: translateY(10px);
+    transition: opacity 0.26s var(--dv-ease), visibility 0.26s var(--dv-ease), transform 0.26s var(--dv-ease) !important;
+}
+.navbar-luxury .mega-dropdown-container {
+    grid-template-columns: minmax(190px, 230px) minmax(190px, 230px) minmax(0, 1fr);
+    gap: clamp(40px, 5vw, 96px);
+}
+.navbar-luxury .mega-column .mega-heading {
+    font-family: var(--font-body), sans-serif;
+    font-size: 9.5px;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    color: var(--dv-nav-ink-soft);
+    border-bottom: 0;
+    padding-bottom: 0;
+    margin-bottom: 20px;
+}
+.navbar-luxury .mega-column ul li { margin-bottom: 13px; }
+.navbar-luxury .mega-column ul li a {
+    font-size: 13.5px;
+    font-weight: 400;
+    color: var(--dv-nav-ink);
+    letter-spacing: 0.01em;
+    transition: color 0.2s ease;
+}
+/* padding-left on hover shifted every link 4px sideways and the column jittered
+   under the cursor. Colour only, same as the bar above. */
+.navbar-luxury .mega-column ul li a:hover {
+    color: var(--dv-nav-hover);
+    font-weight: 400;
+    padding-left: 0;
+}
+.navbar-luxury .mega-shop-all {
+    display: inline-block;
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px solid var(--dv-header-line-lo);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--dv-nav-ink);
+    text-decoration: none;
+}
+.navbar-luxury .mega-shop-all:hover { color: var(--dv-nav-hover); }
+
+/* The single photograph. Portrait, because that is the shape the product
+   photography actually is. */
+.navbar-luxury .mega-promo-column {
+    width: 100%;
+    max-width: 320px;
+    justify-self: end;
+}
+.navbar-luxury .mega-promo-card {
+    display: block;
+    height: auto;
+    aspect-ratio: 4 / 5;
+    border-radius: 0;
+    overflow: hidden;
+    background: var(--bg-surface-soft);
+}
+.navbar-luxury .mega-promo-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.9s var(--dv-ease);
+}
+.navbar-luxury .mega-promo-card:hover img { transform: scale(1.03); }
+.navbar-luxury .mega-promo-caption {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 14px;
+}
+.navbar-luxury .mega-promo-caption .mega-promo-title {
+    font-family: var(--font-heading);
+    font-size: 15px;
+    font-weight: var(--font-heading-weight);
+    letter-spacing: 0.02em;
+    color: var(--dv-nav-ink);
+    margin: 0;
+}
+.navbar-luxury .mega-promo-meta {
+    font-size: 11px;
+    color: var(--dv-nav-ink-soft);
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+}
+.navbar-luxury .btn-mega-shop {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    color: var(--dv-nav-ink);
+    border-bottom: 1px solid var(--dv-nav-ink);
+    padding-bottom: 2px;
+    gap: 0;
+}
+.navbar-luxury .btn-mega-shop:hover {
+    color: var(--dv-nav-hover);
+    border-bottom-color: var(--dv-nav-hover);
+}
+
+/* ── More ───────────────────────────────────────────────────────────────────
+   A narrow panel under the word, not a band across the page: it holds one
+   column of names, and full-bleed for four links looks like a fault.
+   .has-mega-menu is position:static !important so the mega panels can span the
+   viewport — this one has to opt back out of that to anchor itself. */
+.navbar-luxury .nav-more { position: relative !important; }
+.navbar-luxury .nav-more.nav-more-empty { display: none !important; }
+.navbar-luxury .mega-dropdown-compact {
+    left: 50% !important;
+    right: auto !important;
+    width: max-content !important;
+    min-width: 220px !important;
+    max-width: 300px !important;
+    padding: 26px 30px !important;
+    transform: translateX(-50%) translateY(10px) !important;
+}
+.navbar-luxury .nav-more:hover .mega-dropdown-compact,
+.navbar-luxury .nav-more:focus-within .mega-dropdown-compact,
+.navbar-luxury .mega-dropdown-compact:hover {
+    transform: translateX(-50%) translateY(0) !important;
+}
+.navbar-luxury .mega-dropdown-compact .mega-dropdown-container { display: block; }
+
+/* ── Sticky, compact ────────────────────────────────────────────────────────
+   The .header-compact class is added past 80px of scroll by the script in
+   includes/footer.php and removed under 30px — untouched, only restyled. The
+   bar loses 16px of padding and the logo 8px of height, all on the same easing
+   so it reads as one movement rather than three. */
+.navbar-luxury.header-compact { border-bottom-color: var(--dv-header-line) !important; }
+.navbar-luxury.header-compact .main-header-bar { padding: 10px 0 !important; }
+.navbar-luxury.header-compact .logo img { height: 36px; }
+.navbar-luxury.header-compact .audience-switch-link { padding-top: 6px; padding-bottom: 6px; }
+.navbar-luxury.header-compact .bottom-header-bar { padding: 7px 0 9px !important; }
+
+/* Focus has to stay visible on a header this quiet. */
+.navbar-luxury .nav-link-item:focus-visible,
+.navbar-luxury .nav-action-item:focus-visible,
+.navbar-luxury .mega-column ul li a:focus-visible,
+.navbar-luxury .mega-shop-all:focus-visible {
+    outline: 2px solid var(--color-secondary);
+    outline-offset: 3px;
+    border-radius: 1px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .navbar-luxury,
+    .navbar-luxury .main-header-bar,
+    .navbar-luxury .logo img,
+    .navbar-luxury .mega-dropdown,
+    .navbar-luxury .mega-promo-card img,
+    .navbar-luxury .nav-arrow {
+        transition: none !important;
+    }
+    .navbar-luxury .mega-dropdown { transform: none !important; }
+    .navbar-luxury .mega-dropdown-compact { transform: translateX(-50%) !important; }
+}
+
+/* SALE, without the pill.
+   ─────────────────────────────────────────────────────────────────────────────
+   It rendered as a filled rounded capsule in --color-danger at 10% — the only
+   shape on a bar of plain words, in a red that belongs to error messages, and a
+   rounded container of exactly the kind this redesign removes everywhere else.
+   It also ran at weight 700 against everything else's 500.
+
+   Kept as the one coloured word on the bar, because it is the only item whose
+   meaning expires — but in the brand burgundy, at the same weight and tracking
+   as its neighbours, and with the active underline the pill used to suppress. */
+.navbar-luxury .nav-link-item.nav-link-sale {
+    color: var(--color-primary) !important;
+    background: none !important;
+    padding: 5px 0 !important;
+    border-radius: 0 !important;
+    font-weight: 500 !important;
+}
+.navbar-luxury .nav-link-item.nav-link-sale:hover,
+.navbar-luxury .nav-link-item.nav-link-sale.active {
+    color: var(--color-primary-dark) !important;
+    background: none !important;
+}
+.navbar-luxury .nav-link-item.nav-link-sale::after {
+    display: block !important;
+    background-color: var(--color-primary);
+}
+.navbar-luxury .nav-link-item.nav-link-sale:not(.active)::after { display: none !important; }
