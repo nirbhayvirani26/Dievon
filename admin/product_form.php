@@ -1590,7 +1590,7 @@ require_once __DIR__ . '/includes/header.php';
 
 
         <?php if (!empty($_SESSION['admin_flash_error'])): ?>
-        <div style="padding:12px 16px; border-radius:8px; margin:0 0 16px; background:#fef2f2; border:1px solid #fecaca; color:#991b1b; font-size:13px;">
+        <div style="padding:12px 16px; margin:0 0 16px; background:#fef2f2; border:1px solid #fecaca; color:#991b1b; font-size:13px;">
             <?= htmlspecialchars($_SESSION['admin_flash_error']) ?>
         </div>
         <?php unset($_SESSION['admin_flash_error']); endif; ?>
@@ -2649,7 +2649,7 @@ require_once __DIR__ . '/includes/header.php';
                               // they attach as soon as the product actually saves. ?>
                         <?php $heldGallery = (array)($_SESSION['dv_pending_gallery'] ?? []); ?>
                         <?php if ($heldGallery): ?>
-                        <div class="admin-section-mt" style="padding:12px 14px; background:var(--bg-surface-soft); border:1px solid var(--border-light); border-left:3px solid var(--color-secondary); border-radius:8px;">
+                        <div class="admin-section-mt" style="padding:12px 14px; background:var(--bg-surface-soft); border:1px solid var(--border-light); border-left:3px solid var(--color-secondary);">
                             <p style="margin:0 0 10px; font-size:12.5px; color:var(--text-secondary);">
                                 <i class="fa-solid fa-clock-rotate-left" style="color:var(--color-secondary);"></i>
                                 <strong><?= count($heldGallery) ?> image<?= count($heldGallery) === 1 ? '' : 's' ?> waiting</strong>
@@ -2659,7 +2659,7 @@ require_once __DIR__ . '/includes/header.php';
                             <div class="admin-gallery-wrap-flex">
                                 <?php foreach ($heldGallery as $hg): ?>
                                 <img src="<?= SITE_URL ?>/uploads/products/<?= htmlspecialchars(rawurlencode(basename((string)$hg))) ?>"
-                                     alt="" style="width:64px; height:64px; object-fit:cover; border-radius:8px; border:1px solid var(--border-light);">
+                                     alt="" style="width:64px; height:64px; object-fit:cover; border:1px solid var(--border-light);">
                                 <?php endforeach; ?>
                             </div>
                         </div>
@@ -2952,7 +2952,7 @@ require_once __DIR__ . '/includes/header.php';
                 $vBase        = (float)($product['price'] ?? 0);
                 $vHasOverride = $vPrice > 0 && abs($vPrice - $vBase) > 0.005;
                 ?>
-                <div class="variant-row" id="vrow-<?= $v['id'] ?>" style="display:flex; align-items:center; gap:12px; padding:12px 16px; background:var(--bg-main); border-radius:var(--radius-sm); margin-bottom:10px; border:1px solid var(--border-light); flex-wrap:wrap;">
+                <div class="variant-row" id="vrow-<?= $v['id'] ?>" style="display:flex; align-items:center; gap:12px; padding:12px 16px; background:var(--bg-main); margin-bottom:10px; border:1px solid var(--border-light); flex-wrap:wrap;">
                     <i class="fa-solid fa-grip-vertical" style="color:var(--text-muted); font-size:14px;"></i>
                     <input type="text" id="vn-<?= $v['id'] ?>" value="<?= htmlspecialchars($v['name']) ?>" placeholder="Size name (e.g. M, 34/M, Free Size)"
                         class="form-control" style="flex:1; min-width:120px;"
@@ -2983,7 +2983,7 @@ require_once __DIR__ . '/includes/header.php';
                 <?php endforeach; ?>
             </div>
 
-            <div style="display:flex; align-items:center; gap:12px; margin-top:14px; padding:14px 16px; border:2px dashed var(--border-strong); border-radius:var(--radius-sm); background:var(--bg-surface);">
+            <div style="display:flex; align-items:center; gap:12px; margin-top:14px; padding:14px 16px; border:2px dashed var(--border-strong); background:var(--bg-surface);">
                 <i class="fa-solid fa-plus-circle" style="color:var(--color-secondary); font-size:18px; flex-shrink:0;"></i>
                 <input type="text" id="newVariantName" placeholder="Free Size, One Size, 500ml…" class="form-control" style="flex:1;">
                 <div style="display:flex; align-items:center; gap:4px;">
@@ -3031,7 +3031,7 @@ require_once __DIR__ . '/includes/header.php';
                 $cAvailableSizes = count(array_filter($c['sizes'] ?? [], fn($s) => (int)($s['available'] ?? 0) === 1));
                 $cImageCount     = count($c['images'] ?? []);
                 ?>
-                <div class="color-card" id="ccard-<?= $c['id'] ?>" style="border:1px solid var(--border-light); border-radius:var(--radius-md); padding:20px; margin-bottom:18px; background:var(--bg-main);">
+                <div class="color-card" id="ccard-<?= $c['id'] ?>" style="border:1px solid var(--border-light); padding:20px; margin-bottom:18px; background:var(--bg-main);">
                     <?php if ($cAvailableSizes === 0): ?>
                     <div class="color-warn color-warn--blocking" id="cwarn-size-<?= $c['id'] ?>">
                         <i class="fa-solid fa-circle-exclamation"></i>
@@ -3050,8 +3050,8 @@ require_once __DIR__ . '/includes/header.php';
                     <div style="display:flex; align-items:flex-start; gap:16px; flex-wrap:wrap;">
                         <div style="text-align:center; flex-shrink:0;">
                             <img id="cthumb-<?= $c['id'] ?>" src="<?= !empty($c['thumbnail']) ? SITE_URL . '/uploads/products/' . htmlspecialchars($c['thumbnail']) : '' ?>"
-                                style="width:72px; height:72px; border-radius:50%; object-fit:cover; border:3px solid <?= !empty($c['thumbnail']) ? 'var(--color-primary)' : 'var(--border-light)' ?>; background:var(--bg-surface); <?= empty($c['thumbnail']) ? 'display:none;' : '' ?>">
-                            <div id="cthumb-placeholder-<?= $c['id'] ?>" style="width:72px; height:72px; border-radius:50%; border:2px dashed var(--border-strong); display:<?= empty($c['thumbnail']) ? 'flex' : 'none' ?>; align-items:center; justify-content:center; color:var(--text-muted); font-size:11px; text-align:center;">No<br>thumb</div>
+                                style="width:72px; height:72px; object-fit:cover; border:3px solid <?= !empty($c['thumbnail']) ? 'var(--color-primary)' : 'var(--border-light)' ?>; background:var(--bg-surface); <?= empty($c['thumbnail']) ? 'display:none;' : '' ?>">
+                            <div id="cthumb-placeholder-<?= $c['id'] ?>" style="width:72px; height:72px; border:2px dashed var(--border-strong); display:<?= empty($c['thumbnail']) ? 'flex' : 'none' ?>; align-items:center; justify-content:center; color:var(--text-muted); font-size:11px; text-align:center;">No<br>thumb</div>
                             <label style="display:block; margin-top:6px; font-size:11px; color:var(--color-secondary); cursor:pointer;">
                                 Upload
                                 <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" style="display:none;" onchange="uploadColorThumbnail(<?= $c['id'] ?>, this)">
@@ -3111,12 +3111,12 @@ require_once __DIR__ . '/includes/header.php';
                         <div id="cgallery-<?= $c['id'] ?>" style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:8px;">
                             <?php foreach ($c['images'] as $img): ?>
                             <div class="color-gallery-item" id="cimg-<?= $img['id'] ?>" style="position:relative; width:64px; height:64px;">
-                                <img src="<?= SITE_URL ?>/uploads/products/<?= htmlspecialchars($img['image']) ?>" style="width:100%; height:100%; object-fit:cover; border-radius:8px; cursor:pointer; border:2px solid <?= ($c['thumbnail'] === $img['image']) ? 'var(--color-primary)' : 'transparent' ?>;" title="Click to set as thumbnail" onclick="setColorThumbnail(<?= $c['id'] ?>, '<?= htmlspecialchars($img['image'], ENT_QUOTES) ?>')">
-                                <button type="button" onclick="deleteColorImage(<?= $img['id'] ?>, <?= $c['id'] ?>)" style="position:absolute; top:-6px; right:-6px; width:18px; height:18px; border-radius:50%; background:#c0392b; color:#fff; border:none; font-size:10px; cursor:pointer; line-height:1;">×</button>
+                                <img src="<?= SITE_URL ?>/uploads/products/<?= htmlspecialchars($img['image']) ?>" style="width:100%; height:100%; object-fit:cover; cursor:pointer; border:2px solid <?= ($c['thumbnail'] === $img['image']) ? 'var(--color-primary)' : 'transparent' ?>;" title="Click to set as thumbnail" onclick="setColorThumbnail(<?= $c['id'] ?>, '<?= htmlspecialchars($img['image'], ENT_QUOTES) ?>')">
+                                <button type="button" onclick="deleteColorImage(<?= $img['id'] ?>, <?= $c['id'] ?>)" style="position:absolute; top:-6px; right:-6px; width:18px; height:18px; background:#c0392b; color:#fff; border:none; font-size:10px; cursor:pointer; line-height:1;">×</button>
                             </div>
                             <?php endforeach; ?>
                         </div>
-                        <label style="display:inline-flex; align-items:center; gap:6px; font-size:12px; color:var(--color-secondary); cursor:pointer; padding:6px 12px; border:1px dashed var(--border-strong); border-radius:6px;">
+                        <label style="display:inline-flex; align-items:center; gap:6px; font-size:12px; color:var(--color-secondary); cursor:pointer; padding:6px 12px; border:1px dashed var(--border-strong);">
                             <i class="fa-solid fa-upload"></i> Add gallery images
                             <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple style="display:none;" onchange="uploadColorGallery(<?= $c['id'] ?>, this)">
                         </label>
@@ -3138,7 +3138,7 @@ require_once __DIR__ . '/includes/header.php';
                         <?php if (!empty($additionalImages) || !empty($product['image'])): ?>
                         <button type="button" id="cadopt-<?= $c['id'] ?>"
                                 onclick="adoptProductImages(<?= $c['id'] ?>, this)"
-                                style="display:inline-flex; align-items:center; gap:6px; font-size:12px; color:var(--color-primary); cursor:pointer; padding:6px 12px; margin-left:8px; border:1px dashed var(--color-primary); border-radius:6px; background:var(--bg-surface);">
+                                style="display:inline-flex; align-items:center; gap:6px; font-size:12px; color:var(--color-primary); cursor:pointer; padding:6px 12px; margin-left:8px; border:1px dashed var(--color-primary); background:var(--bg-surface);">
                             <?php /* fa-photo-film, matching this section's own heading. It was
                                      fa-arrow-down-long — the same arrow the "use the product's
                                      sizes" button below uses — so two buttons a few lines apart
@@ -3350,7 +3350,7 @@ require_once __DIR__ . '/includes/header.php';
                 </div>
             <?php endif; ?>
 
-            <div style="display:flex; align-items:center; gap:12px; margin-top:14px; padding:14px 16px; border:2px dashed var(--border-strong); border-radius:var(--radius-sm); background:var(--bg-surface); flex-wrap:wrap;">
+            <div style="display:flex; align-items:center; gap:12px; margin-top:14px; padding:14px 16px; border:2px dashed var(--border-strong); background:var(--bg-surface); flex-wrap:wrap;">
                 <input type="text" id="newColorName" list="dv-color-options" placeholder="Colour name (e.g. Green)" class="form-control" style="flex:1; min-width:140px;">
                 <input type="text" id="newColorSku" placeholder="Variant SKU (optional)" class="form-control" style="width:160px;">
                 <input type="number" step="0.01" min="0" id="newColorPrice" placeholder="Price override (optional)" class="form-control" style="width:170px;">
@@ -3374,7 +3374,7 @@ require_once __DIR__ . '/includes/header.php';
 
             <div id="generalSpecsList">
                 <?php foreach ($existingGeneralSpecs as $spec): ?>
-                <div class="spec-row" id="gspec-<?= $spec['id'] ?>" style="display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--bg-main); border-radius:var(--radius-sm); margin-bottom:10px; border:1px solid var(--border-light); flex-wrap:wrap;">
+                <div class="spec-row" id="gspec-<?= $spec['id'] ?>" style="display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--bg-main); margin-bottom:10px; border:1px solid var(--border-light); flex-wrap:wrap;">
                     <div style="display:flex; flex-direction:column; gap:2px;">
                         <button type="button" title="Move up" onclick="moveGeneralSpec(<?= $spec['id'] ?>, 'up')" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:0;line-height:1;"><i class="fa-solid fa-caret-up"></i></button>
                         <button type="button" title="Move down" onclick="moveGeneralSpec(<?= $spec['id'] ?>, 'down')" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:0;line-height:1;"><i class="fa-solid fa-caret-down"></i></button>
@@ -3389,7 +3389,7 @@ require_once __DIR__ . '/includes/header.php';
                 <?php endforeach; ?>
             </div>
 
-            <div style="display:flex; align-items:center; gap:10px; margin-top:14px; padding:14px 16px; border:2px dashed var(--border-strong); border-radius:var(--radius-sm); background:var(--bg-surface); flex-wrap:wrap;">
+            <div style="display:flex; align-items:center; gap:10px; margin-top:14px; padding:14px 16px; border:2px dashed var(--border-strong); background:var(--bg-surface); flex-wrap:wrap;">
                 <input type="text" id="newGeneralSpecLabel" list="specLabelSuggestions" placeholder="Label (e.g. Fabric)" class="form-control" style="flex:1; min-width:120px;">
                 <input type="text" id="newGeneralSpecValue" placeholder="Value (e.g. Pure Cotton)" class="form-control" style="flex:1; min-width:140px;">
                 <input type="text" id="newGeneralSpecUnit" list="specUnitSuggestions" placeholder="Unit (optional)" class="form-control" style="width:110px;">
@@ -3413,7 +3413,7 @@ require_once __DIR__ . '/includes/header.php';
 
             <div id="componentsList">
                 <?php foreach ($existingComponents as $comp): ?>
-                <div class="component-card" id="comp-<?= $comp['id'] ?>" style="border:1px solid var(--border-light); border-radius:var(--radius-md); padding:18px; margin-bottom:16px; background:var(--bg-main);">
+                <div class="component-card" id="comp-<?= $comp['id'] ?>" style="border:1px solid var(--border-light); padding:18px; margin-bottom:16px; background:var(--bg-main);">
                     <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
                         <div style="display:flex; flex-direction:column; gap:2px;">
                             <button type="button" title="Move up" onclick="moveComponent(<?= $comp['id'] ?>, 'up')" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:0;line-height:1;"><i class="fa-solid fa-caret-up"></i></button>
@@ -3427,7 +3427,7 @@ require_once __DIR__ . '/includes/header.php';
 
                     <div id="compSpecsList-<?= $comp['id'] ?>">
                         <?php foreach ($comp['specs'] as $spec): ?>
-                        <div class="spec-row" id="cspec-<?= $spec['id'] ?>" style="display:flex; align-items:center; gap:10px; padding:10px 14px; background:var(--bg-surface); border-radius:var(--radius-sm); margin-bottom:8px; border:1px solid var(--border-light); flex-wrap:wrap;">
+                        <div class="spec-row" id="cspec-<?= $spec['id'] ?>" style="display:flex; align-items:center; gap:10px; padding:10px 14px; background:var(--bg-surface); margin-bottom:8px; border:1px solid var(--border-light); flex-wrap:wrap;">
                             <div style="display:flex; flex-direction:column; gap:2px;">
                                 <button type="button" title="Move up" onclick="moveComponentSpec(<?= $spec['id'] ?>, <?= $comp['id'] ?>, 'up')" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:0;line-height:1;font-size:11px;"><i class="fa-solid fa-caret-up"></i></button>
                                 <button type="button" title="Move down" onclick="moveComponentSpec(<?= $spec['id'] ?>, <?= $comp['id'] ?>, 'down')" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:0;line-height:1;font-size:11px;"><i class="fa-solid fa-caret-down"></i></button>
@@ -3442,7 +3442,7 @@ require_once __DIR__ . '/includes/header.php';
                         <?php endforeach; ?>
                     </div>
 
-                    <div style="display:flex; align-items:center; gap:8px; margin-top:10px; padding:10px 14px; border:1.5px dashed var(--border-strong); border-radius:var(--radius-sm); background:var(--bg-surface); flex-wrap:wrap;">
+                    <div style="display:flex; align-items:center; gap:8px; margin-top:10px; padding:10px 14px; border:1.5px dashed var(--border-strong); background:var(--bg-surface); flex-wrap:wrap;">
                         <input type="text" id="newCompSpecLabel-<?= $comp['id'] ?>" list="componentLabelSuggestions" placeholder="Label" class="form-control" style="flex:1; min-width:110px; font-size:13px;">
                         <input type="text" id="newCompSpecValue-<?= $comp['id'] ?>" placeholder="Value" class="form-control" style="flex:1; min-width:120px; font-size:13px;">
                         <input type="text" id="newCompSpecUnit-<?= $comp['id'] ?>" list="specUnitSuggestions" placeholder="Unit" class="form-control" style="width:90px; font-size:13px;">
@@ -3454,7 +3454,7 @@ require_once __DIR__ . '/includes/header.php';
                 <?php endforeach; ?>
             </div>
 
-            <div style="display:flex; align-items:center; gap:12px; margin-top:14px; padding:14px 16px; border:2px dashed var(--border-strong); border-radius:var(--radius-sm); background:var(--bg-surface);">
+            <div style="display:flex; align-items:center; gap:12px; margin-top:14px; padding:14px 16px; border:2px dashed var(--border-strong); background:var(--bg-surface);">
                 <input type="text" id="newComponentName" list="componentNameSuggestions" placeholder="Component name (e.g. Kurti, Palazzo, Dupatta)" class="form-control" style="flex:1;">
                 <button type="button" class="btn-primary" style="padding:10px 18px; flex-shrink:0;" onclick="addComponent(<?= (int)$product['id'] ?>)">
                     <i class="fa-solid fa-plus"></i> Add Component
@@ -3797,7 +3797,7 @@ function addVariant(productId) {
         const row = document.createElement('div');
         row.className = 'variant-row';
         row.id = 'vrow-' + id;
-        row.style.cssText = 'display:flex; align-items:center; gap:12px; padding:12px 16px; background:var(--bg-main); border-radius:var(--radius-sm); margin-bottom:10px; border:1px solid var(--border-light);';
+        row.style.cssText = 'display:flex; align-items:center; gap:12px; padding:12px 16px; background:var(--bg-main); margin-bottom:10px; border:1px solid var(--border-light);';
         // The price box stays EMPTY when no override was typed, matching how the
         // server-rendered rows above decide: a filled box would claim this size
         // has its own price when it is simply inheriting the product's.
@@ -4356,9 +4356,9 @@ function adoptProductImages(colorId, btn) {
                 wrap.id = 'cimg-' + item.id;
                 wrap.style.cssText = 'position:relative; width:64px; height:64px;';
                 wrap.innerHTML =
-                    '<img src="<?= SITE_URL ?>/uploads/products/' + item.image + '" style="width:100%; height:100%; object-fit:cover; border-radius:8px; cursor:pointer; border:2px solid transparent;"' +
+                    '<img src="<?= SITE_URL ?>/uploads/products/' + item.image + '" style="width:100%; height:100%; object-fit:cover; cursor:pointer; border:2px solid transparent;"' +
                     ' title="Click to set as thumbnail" onclick="setColorThumbnail(' + colorId + ', \'' + item.image + '\')">' +
-                    '<button type="button" onclick="deleteColorImage(' + item.id + ', ' + colorId + ')" style="position:absolute; top:-6px; right:-6px; width:18px; height:18px; border-radius:50%; background:#c0392b; color:#fff; border:none; font-size:10px; cursor:pointer; line-height:1;">×</button>';
+                    '<button type="button" onclick="deleteColorImage(' + item.id + ', ' + colorId + ')" style="position:absolute; top:-6px; right:-6px; width:18px; height:18px; background:#c0392b; color:#fff; border:none; font-size:10px; cursor:pointer; line-height:1;">×</button>';
                 gallery.appendChild(wrap);
             });
 
@@ -4425,8 +4425,8 @@ async function uploadColorGallery(colorId, input) {
                 wrap.id = 'cimg-' + item.id;
                 wrap.style.cssText = 'position:relative; width:64px; height:64px;';
                 wrap.innerHTML = `
-                    <img src="<?= SITE_URL ?>/uploads/products/${escHtml(item.image)}" style="width:100%; height:100%; object-fit:cover; border-radius:8px; cursor:pointer; border:2px solid transparent;" title="Click to set as thumbnail" onclick="setColorThumbnail(${colorId}, '${escHtml(item.image)}')">
-                    <button type="button" onclick="deleteColorImage(${item.id}, ${colorId})" style="position:absolute; top:-6px; right:-6px; width:18px; height:18px; border-radius:50%; background:#c0392b; color:#fff; border:none; font-size:10px; cursor:pointer; line-height:1;">×</button>`;
+                    <img src="<?= SITE_URL ?>/uploads/products/${escHtml(item.image)}" style="width:100%; height:100%; object-fit:cover; cursor:pointer; border:2px solid transparent;" title="Click to set as thumbnail" onclick="setColorThumbnail(${colorId}, '${escHtml(item.image)}')">
+                    <button type="button" onclick="deleteColorImage(${item.id}, ${colorId})" style="position:absolute; top:-6px; right:-6px; width:18px; height:18px; background:#c0392b; color:#fff; border:none; font-size:10px; cursor:pointer; line-height:1;">×</button>`;
                 gallery.appendChild(wrap);
             });
             input.value = '';

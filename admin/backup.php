@@ -126,7 +126,7 @@ require_once __DIR__ . '/includes/header.php';
     </p>
 
     <?php if ($flash): ?>
-    <div style="padding:12px 16px; border-radius:8px; margin-bottom:18px; font-size:13px;
+    <div style="padding:12px 16px; margin-bottom:18px; font-size:13px;
                 <?= $flash[0] === 'ok'
                     ? 'background:#ecfdf5; border:1px solid #a7f3d0; color:#065f46;'
                     : 'background:#fef2f2; border:1px solid #fecaca; color:#991b1b;' ?>">
@@ -181,7 +181,7 @@ require_once __DIR__ . '/includes/header.php';
                             <summary class="btn-sm btn-sm-danger" style="cursor:pointer; display:inline-block;">
                                 <i class="fa-solid fa-rotate-left"></i> Restore…
                             </summary>
-                            <form method="POST" style="margin-top:10px; padding:12px; border:1px solid #fecaca; border-radius:8px; background:#fff7f7; min-width:340px; text-align:left;"
+                            <form method="POST" style="margin-top:10px; padding:12px; border:1px solid #fecaca; background:#fff7f7; min-width:340px; text-align:left;"
                                   onsubmit="return dvConfirmForm(this, 'This replaces the ENTIRE database with the selected backup.\n\nEvery product, order and setting is overwritten by whatever the backup holds. This cannot be undone.', { confirmText: 'Replace database' });">
                                 <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
                                 <input type="hidden" name="action" value="restore">
@@ -206,7 +206,7 @@ require_once __DIR__ . '/includes/header.php';
     </div>
     <?php endif; ?>
 
-    <div style="margin-top:28px; padding:16px; background:var(--bg-main); border:1px solid var(--border-light); border-radius:10px;">
+    <div style="margin-top:28px; padding:16px; background:var(--bg-main); border:1px solid var(--border-light);">
         <h4 style="margin:0 0 8px; font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--color-primary);">
             Scheduled (automatic) backups
         </h4>
@@ -214,7 +214,7 @@ require_once __DIR__ . '/includes/header.php';
             Point a cron job at <code>admin/auto_backup.php</code>. It saves a backup to this
             folder and keeps the latest 14 automatically. Examples:
         </p>
-        <pre style="font-size:12px; background:#0f172a; color:#a5f3fc; padding:12px; border-radius:8px; overflow-x:auto; line-height:1.5;"># Every night at 2:10am, server-side (Hostinger / cPanel cron, PHP):
+        <pre style="font-size:12px; background:#0f172a; color:#a5f3fc; padding:12px; overflow-x:auto; line-height:1.5;"># Every night at 2:10am, server-side (Hostinger / cPanel cron, PHP):
 10 2 * * * /usr/bin/php /home/&lt;user&gt;/public_html/admin/auto_backup.php
 
 # Or a web-cron hitting the URL with the token from .env (BACKUP_CRON_TOKEN):

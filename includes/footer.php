@@ -361,12 +361,12 @@ $minimalFooter = !empty($minimalFooter);
 
 <!-- Floating WhatsApp Concierge & Back To Top Widgets -->
 <?php if (defined('SHOP_WHATSAPP') && SHOP_WHATSAPP !== ''): ?>
-<a href="https://wa.me/<?= SHOP_WHATSAPP ?>?text=Hello%20Dievon%20Concierge" target="_blank" rel="noopener" class="whatsapp-float-btn" title="Chat on WhatsApp" style="position:fixed; bottom:25px; right:25px; width:50px; height:50px; background:#25d366; color:#fff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:26px; box-shadow:0 4px 12px rgba(0,0,0,0.25); z-index:998; text-decoration:none;">
+<a href="https://wa.me/<?= SHOP_WHATSAPP ?>?text=Hello%20Dievon%20Concierge" target="_blank" rel="noopener" class="whatsapp-float-btn" title="Chat on WhatsApp" style="position:fixed; bottom:25px; right:25px; width:50px; height:50px; background:#25d366; color:#fff; display:flex; align-items:center; justify-content:center; font-size:26px; box-shadow:0 4px 12px rgba(0,0,0,0.25); z-index:998; text-decoration:none;">
     <i class="fa-brands fa-whatsapp"></i>
 </a>
 <?php endif; ?>
 <!-- Back To Top Widget -->
-<button onclick="window.scrollTo({top:0, behavior:'smooth'})" id="backToTopBtn" style="position:fixed; bottom:85px; right:25px; width:40px; height:40px; background:var(--color-primary); color:#fff; border:none; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:16px; box-shadow:0 4px 12px rgba(0,0,0,0.2); z-index:998; cursor:pointer; opacity:0.8;">
+<button onclick="window.scrollTo({top:0, behavior:'smooth'})" id="backToTopBtn" style="position:fixed; bottom:85px; right:25px; width:40px; height:40px; background:var(--color-primary); color:#fff; border:none; display:flex; align-items:center; justify-content:center; font-size:16px; box-shadow:0 4px 12px rgba(0,0,0,0.2); z-index:998; cursor:pointer; opacity:0.8;">
     <i class="fa-solid fa-chevron-up"></i>
 </button>
 

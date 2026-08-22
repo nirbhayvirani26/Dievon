@@ -731,12 +731,12 @@ document.addEventListener('DOMContentLoaded', function() {
               // one, this one where it does not. ?>
         <?php if (empty($hideHeaderTitle)): ?>
             <?php if ($successMsg): ?>
-            <div class="alert alert-success" style="margin-bottom:24px; background: #ecfdf5; border: 1px solid #10b981; color: #065f46; padding: 12px 16px; border-radius: 8px;">
+            <div class="alert alert-success" style="margin-bottom:24px; background: #ecfdf5; border: 1px solid #10b981; color: #065f46; padding: 12px 16px;">
                 <i class="fa-solid fa-circle-check"></i> <?= htmlspecialchars($successMsg) ?>
             </div>
             <?php endif; ?>
             <?php if ($errorMsg): ?>
-            <div class="alert alert-danger" style="margin-bottom:24px; background: #fef2f2; border: 1px solid #ef4444; color: #991b1b; padding: 12px 16px; border-radius: 8px;">
+            <div class="alert alert-danger" style="margin-bottom:24px; background: #fef2f2; border: 1px solid #ef4444; color: #991b1b; padding: 12px 16px;">
                 <i class="fa-solid fa-triangle-exclamation"></i> <?= htmlspecialchars($errorMsg) ?>
             </div>
             <?php endif; ?>

@@ -400,10 +400,10 @@ require_once __DIR__ . '/includes/header.php';
                     <div style="margin-top:10px;">
                         <?php if ($bpUrl !== ''): ?>
                             <img src="<?= htmlspecialchars($bpUrl) ?>" alt="Current cover image"
-                                 style="max-width:220px; width:100%; height:auto; border:1px solid var(--border-light); border-radius:6px; display:block;">
+                                 style="max-width:220px; width:100%; height:auto; border:1px solid var(--border-light); display:block;">
                         <?php endif; ?>
                         <?php if ($bpIsFallbk): ?>
-                            <div style="margin-top:6px; padding:9px 11px; background:#fff7ed; border:1px solid #fed7aa; border-radius:6px; font-size:12px; color:#9a3412;">
+                            <div style="margin-top:6px; padding:9px 11px; background:#fff7ed; border:1px solid #fed7aa; font-size:12px; color:#9a3412;">
                                 This article has <strong>no cover picture of its own</strong> — the shared default is
                                 shown above, and on the Journal page and in every shared link. Upload one below.
                             </div>
@@ -466,7 +466,7 @@ require_once __DIR__ . '/includes/header.php';
         </div>
 
         <!-- SEO Fields -->
-        <div style="background:var(--bg-surface-soft); padding:16px; border-radius:6px; border:1px solid var(--border-light); margin-bottom:20px;">
+        <div style="background:var(--bg-surface-soft); padding:16px; border:1px solid var(--border-light); margin-bottom:20px;">
             <strong style="font-size:13px; color:var(--color-primary); text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:12px;">🌐 Article SEO Overrides (Optional)</strong>
             <div class="form-row">
                 <div class="form-group" style="margin:0;">
@@ -520,16 +520,16 @@ require_once __DIR__ . '/includes/header.php';
                         <tr>
                             <td>
                                 <?php if ($imgSrc): ?>
-                                    <img src="<?= $imgSrc ?>" style="width:55px; height:40px; object-fit:cover; border-radius:4px; border:1px solid var(--border-light);">
+                                    <img src="<?= $imgSrc ?>" style="width:55px; height:40px; object-fit:cover; border:1px solid var(--border-light);">
                                 <?php else: ?>
-                                    <div style="width:55px; height:40px; background:var(--bg-surface-soft); border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:16px;">📰</div>
+                                    <div style="width:55px; height:40px; background:var(--bg-surface-soft); display:flex; align-items:center; justify-content:center; font-size:16px;">📰</div>
                                 <?php endif; ?>
                             </td>
                             <td>
                                 <strong style="font-size:14px; color:var(--text-primary); display:block;"><?= htmlspecialchars($p['title']) ?></strong>
                                 <span style="font-size:12px; color:var(--text-muted); max-width:350px; display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><?= htmlspecialchars($p['excerpt']) ?></span>
                             </td>
-                            <td><span style="font-size:12px; font-weight:700; background:var(--bg-surface-soft); padding:4px 8px; border-radius:4px; color:var(--color-primary);"><?= htmlspecialchars($p['category']) ?></span></td>
+                            <td><span style="font-size:12px; font-weight:700; background:var(--bg-surface-soft); padding:4px 8px; color:var(--color-primary);"><?= htmlspecialchars($p['category']) ?></span></td>
                             <td style="font-size:12px; color:var(--text-muted);"><?= date('d M Y', strtotime($p['published_date'])) ?></td>
                             <td>
                                 <?php /* The same bug the Delete button below had, in the same table.

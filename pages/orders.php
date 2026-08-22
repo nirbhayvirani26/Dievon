@@ -205,25 +205,25 @@ require_once __DIR__ . '/../includes/header.php';
 
                             <!-- Step 1 -->
                             <div style="z-index: 3; text-align: center;">
-                                <div style="width: 26px; height: 26px; border-radius: 50%; background: <?= $step >= 1 ? 'var(--color-accent)' : 'var(--bg-surface)' ?>; border: 2px solid var(--color-accent); display: flex; align-items: center; justify-content: center; margin: 0 auto; color: <?= $step >= 1 ? 'white' : 'var(--color-accent)' ?>; font-size: 11px; font-weight: 700;">✓</div>
+                                <div style="width: 26px; height: 26px; background: <?= $step >= 1 ? 'var(--color-accent)' : 'var(--bg-surface)' ?>; border: 2px solid var(--color-accent); display: flex; align-items: center; justify-content: center; margin: 0 auto; color: <?= $step >= 1 ? 'white' : 'var(--color-accent)' ?>; font-size: 11px; font-weight: 700;">✓</div>
                                 <span style="font-size: 11px; text-transform: uppercase; font-weight: 600; display: block; margin-top: 8px; color: <?= $step >= 1 ? 'var(--text-primary)' : 'var(--text-muted)' ?>;">Placed</span>
                             </div>
 
                             <!-- Step 2 -->
                             <div style="z-index: 3; text-align: center;">
-                                <div style="width: 26px; height: 26px; border-radius: 50%; background: <?= $step >= 2 ? 'var(--color-accent)' : 'var(--bg-surface)' ?>; border: 2px solid <?= $step >= 2 ? 'var(--color-accent)' : 'var(--border-strong)' ?>; display: flex; align-items: center; justify-content: center; margin: 0 auto; color: <?= $step >= 2 ? 'white' : 'var(--text-muted)' ?>; font-size: 11px; font-weight: 700;">2</div>
+                                <div style="width: 26px; height: 26px; background: <?= $step >= 2 ? 'var(--color-accent)' : 'var(--bg-surface)' ?>; border: 2px solid <?= $step >= 2 ? 'var(--color-accent)' : 'var(--border-strong)' ?>; display: flex; align-items: center; justify-content: center; margin: 0 auto; color: <?= $step >= 2 ? 'white' : 'var(--text-muted)' ?>; font-size: 11px; font-weight: 700;">2</div>
                                 <span style="font-size: 11px; text-transform: uppercase; font-weight: 600; display: block; margin-top: 8px; color: <?= $step >= 2 ? 'var(--text-primary)' : 'var(--text-muted)' ?>;">Processing</span>
                             </div>
 
                             <!-- Step 3 -->
                             <div style="z-index: 3; text-align: center;">
-                                <div style="width: 26px; height: 26px; border-radius: 50%; background: <?= $step >= 3 ? 'var(--color-accent)' : 'var(--bg-surface)' ?>; border: 2px solid <?= $step >= 3 ? 'var(--color-accent)' : 'var(--border-strong)' ?>; display: flex; align-items: center; justify-content: center; margin: 0 auto; color: <?= $step >= 3 ? 'white' : 'var(--text-muted)' ?>; font-size: 11px; font-weight: 700;">3</div>
+                                <div style="width: 26px; height: 26px; background: <?= $step >= 3 ? 'var(--color-accent)' : 'var(--bg-surface)' ?>; border: 2px solid <?= $step >= 3 ? 'var(--color-accent)' : 'var(--border-strong)' ?>; display: flex; align-items: center; justify-content: center; margin: 0 auto; color: <?= $step >= 3 ? 'white' : 'var(--text-muted)' ?>; font-size: 11px; font-weight: 700;">3</div>
                                 <span style="font-size: 11px; text-transform: uppercase; font-weight: 600; display: block; margin-top: 8px; color: <?= $step >= 3 ? 'var(--text-primary)' : 'var(--text-muted)' ?>;">Shipped</span>
                             </div>
 
                             <!-- Step 4 -->
                             <div style="z-index: 3; text-align: center;">
-                                <div style="width: 26px; height: 26px; border-radius: 50%; background: <?= $step >= 4 ? 'var(--color-accent)' : 'var(--bg-surface)' ?>; border: 2px solid <?= $step >= 4 ? 'var(--color-accent)' : 'var(--border-strong)' ?>; display: flex; align-items: center; justify-content: center; margin: 0 auto; color: <?= $step >= 4 ? 'white' : 'var(--text-muted)' ?>; font-size: 11px; font-weight: 700;">4</div>
+                                <div style="width: 26px; height: 26px; background: <?= $step >= 4 ? 'var(--color-accent)' : 'var(--bg-surface)' ?>; border: 2px solid <?= $step >= 4 ? 'var(--color-accent)' : 'var(--border-strong)' ?>; display: flex; align-items: center; justify-content: center; margin: 0 auto; color: <?= $step >= 4 ? 'white' : 'var(--text-muted)' ?>; font-size: 11px; font-weight: 700;">4</div>
                                 <span style="font-size: 11px; text-transform: uppercase; font-weight: 600; display: block; margin-top: 8px; color: <?= $step >= 4 ? 'var(--text-primary)' : 'var(--text-muted)' ?>;">Delivered</span>
                             </div>
                         </div>

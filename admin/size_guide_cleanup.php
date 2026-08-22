@@ -204,14 +204,14 @@ require_once __DIR__ . '/includes/header.php';
 
 <style>
 .sgc-safe { background:var(--bg-surface-soft); border:1px solid var(--border-light); border-left:3px solid var(--color-success);
-            border-radius:8px; padding:15px 18px; margin-bottom:22px; max-width:900px; }
+ padding:15px 18px; margin-bottom:22px; max-width:900px; }
 .sgc-safe h3 { margin:0 0 9px; font-size:12px; text-transform:uppercase; letter-spacing:.07em; color:var(--color-success); }
 .sgc-safe ul { margin:0; padding-left:20px; }
 .sgc-safe li { font-size:13px; line-height:1.65; color:var(--text-secondary); margin-bottom:4px; }
 .sgc-clear { display:flex; gap:12px; align-items:flex-start; font-size:14px; color:var(--text-secondary); line-height:1.6; }
 .sgc-clear i { color:var(--color-success); font-size:18px; margin-top:2px; }
 .sgc-tag { display:inline-block; font-size:10.5px; font-weight:700; letter-spacing:.04em; padding:2px 8px;
-           border-radius:20px; background:rgba(197,155,75,.15); color:var(--color-secondary); margin-left:6px; }
+ background:rgba(197,155,75,.15); color:var(--color-secondary); margin-left:6px; }
 .sgc-tag.is-gone { background:rgba(169,68,66,.12); color:var(--color-danger); }
 .sgc-note { font-size:11.5px; color:var(--text-muted); margin-top:3px; }
 </style>

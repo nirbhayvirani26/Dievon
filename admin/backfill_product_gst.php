@@ -68,12 +68,12 @@ if ($didRun && $plan) {
 <style>
  body{font-family:system-ui,sans-serif;max-width:820px;margin:40px auto;padding:0 20px;color:#3a0c1b;line-height:1.6}
  h1{font-size:22px}
- .panel{background:#fbf8f3;border-left:3px solid #C59B4B;padding:14px 18px;border-radius:4px;margin:18px 0}
+ .panel{background:#fbf8f3;border-left:3px solid #C59B4B;padding:14px 18px;margin:18px 0}
  .done{background:#f1f8f1;border-left-color:#2e7d32}
  table{border-collapse:collapse;width:100%;font-size:13px;margin:14px 0}
  th,td{text-align:left;padding:6px 10px;border-bottom:1px solid #eee}
- button{background:#511126;color:#fff;border:0;padding:11px 22px;border-radius:4px;font-size:14px;cursor:pointer}
- code{background:#f5eee8;padding:1px 5px;border-radius:3px}
+ button{background:#511126;color:#fff;border:0;padding:11px 22px;font-size:14px;cursor:pointer}
+ code{background:#f5eee8;padding:1px 5px;}
 </style>
 <h1>Refresh the stored GST rate on products</h1>
 

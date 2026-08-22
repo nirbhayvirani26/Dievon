@@ -304,7 +304,7 @@ require_once __DIR__ . '/../includes/header.php';
                     <?php if (empty($orders)): ?>
                         <p class="acc-note">No recent orders placed.</p>
                     <?php else: ?>
-                        <div style="padding: 18px; background: var(--bg-surface-soft); border: 1px solid var(--border-light); border-radius: 6px; font-size: 13px;">
+                        <div style="padding: 18px; background: var(--bg-surface-soft); border: 1px solid var(--border-light); font-size: 13px;">
                             <strong>Latest Order Code:</strong> <span style="color: var(--color-primary); font-weight: 700;"><?= htmlspecialchars((string)($orders[0]['order_code'] ?? '')) ?></span><br>
                             <strong>Date:</strong> <?= date('M d, Y', strtotime($orders[0]['created_at'])) ?> | <strong>Total:</strong> <?= orderCurrencySymbol($orders[0]) . number_format($orders[0]['total_price'], 2) ?><br>
                             <strong>Status:</strong> <span style="font-weight: 700; color: #2e7d32;"><?= htmlspecialchars((string)($orders[0]['status'] ?? '')) ?></span>
@@ -365,7 +365,7 @@ require_once __DIR__ . '/../includes/header.php';
                                 $ordGroup = orderStatusGroup((string)($o['status'] ?? ''));
                                 [$ordBadgeBg, $ordBadgeFg] = orderStatusBadgeColours((string)($o['status'] ?? ''));
                             ?>
-                            <div class="acc-order-card" data-order-group="<?= htmlspecialchars($ordGroup) ?>" style="border: 1px solid var(--border-strong); border-radius: 6px; padding: 20px; background: var(--bg-surface);">
+                            <div class="acc-order-card" data-order-group="<?= htmlspecialchars($ordGroup) ?>" style="border: 1px solid var(--border-strong); padding: 20px; background: var(--bg-surface);">
                                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-light); padding-bottom: 12px; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
                                     <div>
                                         <strong style="font-size: 15px; color: var(--color-primary);"><?= htmlspecialchars((string)($o['order_code'] ?? '')) ?></strong>
@@ -376,7 +376,7 @@ require_once __DIR__ . '/../includes/header.php';
                                                  and "Refunded" both announced themselves in the colour that
                                                  means "all good" — telling the customer the opposite of what
                                                  happened. Colour now follows the status. */ ?>
-                                        <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 4px 12px; border-radius: 4px; background: <?= $ordBadgeBg ?>; color: <?= $ordBadgeFg ?>;">
+                                        <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 4px 12px; background: <?= $ordBadgeBg ?>; color: <?= $ordBadgeFg ?>;">
                                             <?= htmlspecialchars((string)($o['status'] ?? '')) ?>
                                         </span>
                                         <span style="font-size: 15px; font-weight: 700; display: block; margin-top: 4px; color: var(--text-primary);"><?= $ordSym . number_format($o['total_price'], 2) ?></span>
@@ -386,7 +386,7 @@ require_once __DIR__ . '/../includes/header.php';
                                 <!-- Line Items List -->
                                 <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px;">
                                     <?php foreach ($orderItems as $it): ?>
-                                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px; background: var(--bg-surface-soft); padding: 10px 14px; border-radius: 4px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px; background: var(--bg-surface-soft); padding: 10px 14px;">
                                         <div>
                                             <strong><?= htmlspecialchars((string)($it['name'] ?? '')) ?></strong>
                                             <?php if (!empty($it['color_name']) || !empty($it['variant_name'])): ?>
@@ -571,10 +571,10 @@ require_once __DIR__ . '/../includes/header.php';
                             <h3 class="acc-card-title">Active Return Requests</h3>
                             <div class="acc-stack">
                                 <?php foreach ($returns as $r): ?>
-                                <div style="border: 1px solid var(--border-light); padding: 15px; border-radius: 6px; background: var(--bg-surface-soft); font-size: 13px;">
+                                <div style="border: 1px solid var(--border-light); padding: 15px; background: var(--bg-surface-soft); font-size: 13px;">
                                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
                                         <strong>RMA Code: <?= htmlspecialchars((string)($r['return_code'] ?? '')) ?></strong> (Order: <?= htmlspecialchars((string)($r['order_code'] ?? '')) ?>)
-                                        <span style="font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 4px 10px; border-radius: 4px; background: #fff8e1; color: #b7791f;">
+                                        <span style="font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 4px 10px; background: #fff8e1; color: #b7791f;">
                                             <?= htmlspecialchars((string)($r['status'] ?? '')) ?>
                                         </span>
                                     </div>
@@ -728,13 +728,13 @@ require_once __DIR__ . '/../includes/header.php';
                     <h2 class="acc-tab-title">Refund Status &amp; Credit Information</h2>
                     <p class="acc-intro">Track full and partial refund processing details for returned orders.</p>
                     <?php if (empty($refundedOrders)): ?>
-                    <div style="background: var(--bg-surface-soft); border: 1px solid var(--border-light); padding: 20px; border-radius: 6px; font-size: 13px;">
+                    <div style="background: var(--bg-surface-soft); border: 1px solid var(--border-light); padding: 20px; font-size: 13px;">
                         <p style="margin: 0 0 10px; color: var(--text-muted);">No active refund transactions pending. Approved refunds deposit directly to your original payment card within 3–5 business days.</p>
                     </div>
                     <?php else: ?>
                     <div class="acc-stack">
                         <?php foreach ($refundedOrders as $ro): $rSym = orderCurrencySymbol($ro); ?>
-                        <div style="border: 1px solid var(--border-light); padding: 16px; border-radius: 6px; background: var(--bg-surface-soft); font-size: 13px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                        <div style="border: 1px solid var(--border-light); padding: 16px; background: var(--bg-surface-soft); font-size: 13px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                             <div>
                                 <strong>Order <?= htmlspecialchars($ro['order_code']) ?></strong>
                                 <span style="display: block; font-size: 11px; color: var(--text-muted); margin-top: 2px;">Refunded on <?= date('d M Y', strtotime($ro['created_at'])) ?></span>
@@ -958,7 +958,7 @@ require_once __DIR__ . '/../includes/header.php';
     border: 1px solid var(--border-light);
     padding: 20px;
     text-align: center;
-    border-radius: 6px;
+
 }
 
 /* Data & Privacy tab. showAccountTab() sets style.display directly when a tab
@@ -978,7 +978,7 @@ require_once __DIR__ . '/../includes/header.php';
     border: 1px solid var(--border-light);
     background: var(--bg-surface-soft);
     padding: 20px;
-    border-radius: 6px;
+
 }
 .acc-privacy-card-danger { border-color: var(--color-danger); }
 .acc-privacy-title {

@@ -649,7 +649,7 @@ async function confirmEmail2fa() {
     const panel = document.getElementById('au2faSetup');
     panel.innerHTML =
         '<p style="font-size:13px; font-weight:700; margin:0 0 8px;">Save these recovery codes now — they will not be shown again.</p>' +
-        '<pre style="background:var(--bg-surface-soft); border:1px solid var(--border-light); border-radius:8px; ' +
+        '<pre style="background:var(--bg-surface-soft); border:1px solid var(--border-light); ' +
              'padding:14px; font-size:13px; line-height:1.9; margin:0 0 12px;">' +
              (data.recovery || []).join('\n') + '</pre>' +
         '<button type="button" class="btn-primary" onclick="location.reload()">Done</button>';
@@ -723,21 +723,21 @@ async function saveStaffPerms(id) {
 .au-perms-rolelabel { font-size:11px; text-transform:uppercase; letter-spacing:.08em; font-weight:700; color:var(--text-muted); display:flex; flex-direction:column; gap:6px; min-width:220px; }
 .au-perms-hint { font-size:12.5px; color:var(--text-secondary); margin:0; flex:1; min-width:240px; line-height:1.55; }
 .au-perms-groups { display:grid; grid-template-columns:repeat(auto-fit, minmax(250px, 1fr)); gap:12px; }
-.au-perms-group { border:1px solid var(--border-light); border-radius:8px; padding:10px 12px; background:var(--bg-surface); }
+.au-perms-group { border:1px solid var(--border-light); padding:10px 12px; background:var(--bg-surface); }
 .au-perms-group legend { font-size:10.5px; text-transform:uppercase; letter-spacing:.08em; font-weight:700; color:var(--color-primary); padding:0 6px; }
 .au-perms-cap { display:flex; align-items:flex-start; gap:9px; font-size:12.5px; padding:4px 0; cursor:pointer; line-height:1.45; }
 .au-perms-cap input { margin-top:2px; flex-shrink:0; }
 .au-perms-actions { margin-top:14px; display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
 .au-perms-link { font-size:12.5px; color:var(--color-primary); }
 .au-flow { font-size:13px; line-height:1.6; color:var(--text-secondary); background:var(--bg-surface-soft);
-           border:1px solid var(--border-light); border-radius:8px; padding:11px 14px; margin:12px 0 0; max-width:820px; }
+           border:1px solid var(--border-light); padding:11px 14px; margin:12px 0 0; max-width:820px; }
 .au-flow a { color:var(--color-primary); font-weight:700; }
 .au-2fa-choice { display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:14px; margin-top:12px; }
-.au-2fa-option { border:1px solid var(--border-light); border-radius:10px; padding:16px 18px; background:var(--bg-surface); }
+.au-2fa-option { border:1px solid var(--border-light); padding:16px 18px; background:var(--bg-surface); }
 .au-2fa-option h4 { margin:0 0 7px; font-size:14px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 .au-2fa-option p { font-size:12.5px; line-height:1.6; color:var(--text-secondary); margin:0 0 12px; }
 .au-2fa-best { font-size:9.5px; font-weight:700; letter-spacing:.07em; text-transform:uppercase;
-               padding:2px 8px; border-radius:20px; background:rgba(46,125,50,.12); color:var(--color-success); }
+               padding:2px 8px; background:rgba(46,125,50,.12); color:var(--color-success); }
 .au-2fa-option button[disabled] { opacity:.55; cursor:not-allowed; }
 </style>
 

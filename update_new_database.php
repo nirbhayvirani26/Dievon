@@ -1735,10 +1735,10 @@ $failed = array_filter($results, fn($r) => !$r['ok']);
 <link rel="stylesheet" href="<?= SITE_URL ?>/assets/css/style.css">
 <style>
     body { background:#faf8f5; font-family:system-ui,-apple-system,"Segoe UI",sans-serif; color:#241017; margin:0; padding:40px 20px; }
-    .wrap { max-width:780px; margin:0 auto; background:#fff; border:1px solid #eae4dc; border-radius:8px; padding:32px; box-shadow:0 10px 40px rgba(40,12,24,.06); }
+    .wrap { max-width:780px; margin:0 auto; background:#fff; border:1px solid #eae4dc; padding:32px; box-shadow:0 10px 40px rgba(40,12,24,.06); }
     h1 { font-family:Georgia,serif; font-weight:400; font-size:26px; margin:0 0 6px; color:#511126; }
     .sub { color:#6b5b62; font-size:14px; margin:0 0 24px; }
-    .box { border-radius:6px; padding:14px 16px; margin-bottom:18px; font-size:14px; line-height:1.6; }
+    .box { padding:14px 16px; margin-bottom:18px; font-size:14px; line-height:1.6; }
     .ok { background:rgba(16,185,129,.09); border-left:3px solid #10b981; }
     .warn { background:rgba(245,158,11,.10); border-left:3px solid #f59e0b; }
     .err { background:rgba(239,68,68,.09); border-left:3px solid #ef4444; }
@@ -1750,11 +1750,11 @@ $failed = array_filter($results, fn($r) => !$r['ok']);
     .dot  { color:#b9a9b0; }
     .cross{ color:#ef4444; font-weight:700; }
     .muted{ color:#8a8a8a; font-size:12px; }
-    button { background:#511126; color:#fff; border:none; padding:14px 30px; border-radius:4px; font-size:13px; font-weight:600;
+    button { background:#511126; color:#fff; border:none; padding:14px 30px; font-size:13px; font-weight:600;
              letter-spacing:.08em; text-transform:uppercase; cursor:pointer; margin-top:22px; }
     button:hover { background:#6d1832; }
     a.back { display:inline-block; margin-top:18px; color:#511126; font-size:13px; }
-    code { background:#faf8f5; padding:1px 5px; border-radius:3px; font-size:12px; }
+    code { background:#faf8f5; padding:1px 5px; font-size:12px; }
 </style>
 </head>
 <body>

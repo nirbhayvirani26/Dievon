@@ -32,7 +32,7 @@ try {
             </div>
 
             <!-- Create new promo code -->
-            <div style="background:var(--bg-main); border-radius:var(--radius-md); padding:24px; border:1px solid var(--border-light); margin-bottom:28px;">
+            <div style="background:var(--bg-main); padding:24px; border:1px solid var(--border-light); margin-bottom:28px;">
                 <h3 style="margin:0 0 18px; font-size:15px; display:flex; align-items:center; gap:8px;">
                     <i class="fa-solid fa-plus-circle" style="color:var(--color-secondary);"></i> Create New Promo Code
                 </h3>
@@ -107,7 +107,7 @@ try {
                         <?php foreach ($promoCodes as $p): ?>
                         <tr id="promorow-<?= $p['id'] ?>">
                             <td>
-                                <code style="font-size:14px; font-weight:800; color:var(--color-primary); background:var(--color-primary-bg); padding:3px 10px; border-radius:6px; letter-spacing:1px;"><?= htmlspecialchars($p['code']) ?></code>
+                                <code style="font-size:14px; font-weight:800; color:var(--color-primary); background:var(--color-primary-bg); padding:3px 10px; letter-spacing:1px;"><?= htmlspecialchars($p['code']) ?></code>
                                 <?php if (!empty($p['description'])): ?>
                                 <div style="font-size:11px; color:var(--text-muted); margin-top:4px;"><?= htmlspecialchars($p['description']) ?></div>
                                 <?php endif; ?>
@@ -181,7 +181,7 @@ try {
                             </td>
                             <td><?= !empty($p['expires_at']) ? date('d M Y', strtotime($p['expires_at'])) : '<span style="color:var(--text-muted);">Never</span>' ?></td>
                             <td>
-                                <span id="promo-badge-<?= $p['id'] ?>" style="font-size:11px; font-weight:700; padding:3px 10px; border-radius:20px;
+                                <span id="promo-badge-<?= $p['id'] ?>" style="font-size:11px; font-weight:700; padding:3px 10px;
                                     <?= $p['active'] ? 'background:rgba(16,185,129,0.15); color:#10b981;' : 'background:rgba(100,100,100,0.12); color:var(--text-muted);' ?>">
                                     <?= $p['active'] ? 'Active' : 'Disabled' ?>
                                 </span>

@@ -2227,10 +2227,10 @@ if (function_exists('currentShopGender') && currentShopGender() === 'men') {
             <div class="refine-tab-pane" id="tabPrice">
                 <div style="padding: 10px 0;">
                     <label style="font-size: 12px; font-weight: 700; color: #475569; display: block; margin-bottom: 6px;">Min Price (<?= currencySymbol() ?>)</label>
-                    <input type="number" id="mMinPrice" placeholder="0" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; margin-bottom: 14px; font-size: 14px;">
+                    <input type="number" id="mMinPrice" placeholder="0" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; margin-bottom: 14px; font-size: 14px;">
                     
                     <label style="font-size: 12px; font-weight: 700; color: #475569; display: block; margin-bottom: 6px;">Max Price (<?= currencySymbol() ?>)</label>
-                    <input type="number" id="mMaxPrice" placeholder="1000" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px;">
+                    <input type="number" id="mMaxPrice" placeholder="1000" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; font-size: 14px;">
                 </div>
             </div>
 

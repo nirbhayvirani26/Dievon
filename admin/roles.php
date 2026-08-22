@@ -161,19 +161,19 @@ if ($rolesReady) {
 </div>
 
 <style>
-.rl-role { border:1px solid var(--border-light); border-radius:10px; padding:20px; margin-bottom:18px; background:var(--bg-surface-soft); }
+.rl-role { border:1px solid var(--border-light); padding:20px; margin-bottom:18px; background:var(--bg-surface-soft); }
 .rl-role-head { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:14px; flex-wrap:wrap; }
 .rl-role-name { margin:0; font-size:16px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 .rl-role-desc { margin:4px 0 0; font-size:12.5px; color:var(--text-muted); }
-.rl-owner-note { font-size:13px; color:var(--text-secondary); background:var(--bg-surface); border:1px dashed var(--border-strong); padding:12px 14px; border-radius:8px; margin:0; }
+.rl-owner-note { font-size:13px; color:var(--text-secondary); background:var(--bg-surface); border:1px dashed var(--border-strong); padding:12px 14px; margin:0; }
 .rl-cap-groups { display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:14px; }
-.rl-cap-group { border:1px solid var(--border-light); border-radius:8px; padding:12px 14px; background:var(--bg-surface); }
+.rl-cap-group { border:1px solid var(--border-light); padding:12px 14px; background:var(--bg-surface); }
 .rl-cap-group legend { font-size:11px; text-transform:uppercase; letter-spacing:.08em; font-weight:700; color:var(--color-primary); padding:0 6px; }
 .rl-cap { display:flex; align-items:flex-start; gap:9px; font-size:13px; padding:5px 0; cursor:pointer; line-height:1.45; }
 .rl-cap input { margin-top:2px; flex-shrink:0; }
 .rl-role-actions { margin-top:14px; }
 .rl-flow { font-size:13px; line-height:1.6; color:var(--text-secondary); background:var(--bg-surface-soft);
-           border:1px solid var(--border-light); border-radius:8px; padding:11px 14px; margin:12px 0 0; max-width:760px; }
+           border:1px solid var(--border-light); padding:11px 14px; margin:12px 0 0; max-width:760px; }
 .rl-flow a { color:var(--color-primary); font-weight:700; }
 .rl-assign-link { font-size:12.5px; color:var(--text-muted); }
 .rl-assign-link:hover { color:var(--color-primary); }

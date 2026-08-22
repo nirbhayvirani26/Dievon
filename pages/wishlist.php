@@ -42,7 +42,7 @@ require_once __DIR__ . '/../includes/header.php';
         <p id="wishlistUnavailable" role="status"
            style="display:none; text-align:center; margin:0 0 26px; padding:12px 16px;
                   background:var(--bg-surface, #faf8f6); border:1px solid var(--border-light);
-                  border-radius:8px; color:var(--text-secondary); font-size:13px; line-height:1.6;"></p>
+ color:var(--text-secondary); font-size:13px; line-height:1.6;"></p>
 
         <!-- Grid of Wishlisted Items -->
         <div class="products-grid" id="wishlistGrid">

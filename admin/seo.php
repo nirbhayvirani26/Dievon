@@ -303,7 +303,7 @@ require_once __DIR__ . '/includes/header.php';
 <?php endif; ?>
 
 <!-- Educational Guide Box -->
-<div style="background:var(--bg-surface-soft); border:1px solid var(--border-light); border-radius:8px; padding:20px; margin-bottom:24px;">
+<div style="background:var(--bg-surface-soft); border:1px solid var(--border-light); padding:20px; margin-bottom:24px;">
     <h3 style="font-size:15px; font-weight:700; color:var(--text-primary); margin-top:0; margin-bottom:8px;">💡 How to Use SEO Meta &amp; OpenGraph Settings:</h3>
     <ul style="margin:0; padding-left:20px; font-size:13px; color:var(--text-secondary); line-height:1.7;">
         <li><strong>Meta Title:</strong> The blue title link that appears on Google Search results (keep under 60 characters).</li>
@@ -419,7 +419,7 @@ require_once __DIR__ . '/includes/header.php';
 
         <div style="padding:24px; display:flex; flex-direction:column; gap:24px;">
             <?php foreach ($seoPages as $sp): ?>
-                <div style="background:#ffffff; border:1px solid var(--border-light); border-radius:8px; padding:20px;">
+                <div style="background:#ffffff; border:1px solid var(--border-light); padding:20px;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid var(--border-light); padding-bottom:10px;">
                         <span style="font-size:16px; font-weight:700; color:var(--color-primary); text-transform:uppercase; letter-spacing:1px;">
                             📄 <?= htmlspecialchars(strtoupper($sp['page_slug'])) ?> PAGE

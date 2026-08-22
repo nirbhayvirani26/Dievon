@@ -48,14 +48,14 @@ try {
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f4f2ee; margin: 0; padding: 40px 20px; color: #2b080f; }
         .wrap { max-width: 640px; margin: 0 auto; }
-        .card { background: #ffffff; border: 1px solid #e5e1da; border-radius: 10px; padding: 32px; box-shadow: 0 4px 20px rgba(43,8,15,0.06); }
+        .card { background: #ffffff; border: 1px solid #e5e1da; padding: 32px; box-shadow: 0 4px 20px rgba(43,8,15,0.06); }
         .status-icon { font-size: 40px; margin-bottom: 8px; }
         h1 { font-size: 22px; margin: 0 0 8px; }
         p.sub { color: #6b6459; font-size: 14px; margin: 0 0 24px; line-height: 1.6; }
-        .table-list { background: #faf9f6; border: 1px solid #e5e1da; border-radius: 6px; padding: 16px; max-height: 320px; overflow-y: auto; font-size: 13px; line-height: 1.9; color: #4a453d; }
+        .table-list { background: #faf9f6; border: 1px solid #e5e1da; padding: 16px; max-height: 320px; overflow-y: auto; font-size: 13px; line-height: 1.9; color: #4a453d; }
         .table-count { font-weight: 700; color: #2b080f; }
-        .error-box { background: #fdf2f2; border: 1px solid #f5c6cb; color: #a94442; padding: 14px 16px; border-radius: 6px; font-size: 13px; }
-        .btn-back { display: inline-block; margin-top: 24px; background: #2b080f; color: #fff; text-decoration: none; padding: 12px 22px; border-radius: 6px; font-size: 13px; font-weight: 600; }
+        .error-box { background: #fdf2f2; border: 1px solid #f5c6cb; color: #a94442; padding: 14px 16px; font-size: 13px; }
+        .btn-back { display: inline-block; margin-top: 24px; background: #2b080f; color: #fff; text-decoration: none; padding: 12px 22px; font-size: 13px; font-weight: 600; }
         .timestamp { color: #a39d90; font-size: 12px; margin-top: 20px; }
     </style>
 </head>

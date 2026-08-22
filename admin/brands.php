@@ -73,15 +73,15 @@ require_once __DIR__ . '/../config/config.php';
 
 ?>
 
-<div style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 24px; margin-bottom: 24px;">
+<div style="background: white; border: 1px solid #e5e7eb; padding: 24px; margin-bottom: 24px;">
     <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 16px;">Add New Brand</h3>
     <form action="brands.php" method="POST" style="display: flex; gap: 12px; max-width: 500px;">
-        <input type="text" name="name" placeholder="Brand Name (e.g. Dievon, Gucci)" required style="flex: 1; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;">
-        <button type="submit" name="add_brand" style="background: #111827; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer;">Add Brand</button>
+        <input type="text" name="name" placeholder="Brand Name (e.g. Dievon, Gucci)" required style="flex: 1; padding: 10px; border: 1px solid #d1d5db;">
+        <button type="submit" name="add_brand" style="background: #111827; color: white; border: none; padding: 10px 20px; font-weight: 600; cursor: pointer;">Add Brand</button>
     </form>
 </div>
 
-<div style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
+<div style="background: white; border: 1px solid #e5e7eb; overflow: hidden;">
     <table style="width: 100%; border-collapse: collapse; font-size: 14px; text-align: left;">
         <thead style="background: #f9fafb; border-bottom: 1px solid #e5e7eb;">
             <tr>
@@ -100,7 +100,7 @@ require_once __DIR__ . '/../config/config.php';
                     <tr style="border-bottom: 1px solid #f3f4f6;">
                         <td style="padding: 14px 16px; color: #9ca3af;">#<?= $b['id'] ?></td>
                         <td style="padding: 14px 16px; font-weight: 600; color: #111827;"><?= htmlspecialchars($b['name']) ?></td>
-                        <td style="padding: 14px 16px;"><span style="background: #ecfdf5; color: #065f46; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 700;"><?= $b['status'] ?></span></td>
+                        <td style="padding: 14px 16px;"><span style="background: #ecfdf5; color: #065f46; padding: 4px 8px; font-size: 11px; font-weight: 700;"><?= $b['status'] ?></span></td>
                         <td style="padding: 14px 16px; color: #6b7280;"><?= date('M d, Y', strtotime($b['created_at'])) ?></td>
                         <td style="padding: 14px 16px;">
                             <form method="POST" action="brands.php" style="display:inline;" onsubmit="return dvConfirmForm(this,'Delete this brand?');">

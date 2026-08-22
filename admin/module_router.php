@@ -49,14 +49,14 @@ require_once __DIR__ . '/includes/header.php';
 <div class="glass-panel" style="padding: 28px;">
 
     <?php if ($module === 'admin_users'): ?>
-        <div style="margin-bottom: 20px; padding: 18px; background: var(--bg-surface-soft); border: 1px solid var(--border-light); border-radius: 8px;">
+        <div style="margin-bottom: 20px; padding: 18px; background: var(--bg-surface-soft); border: 1px solid var(--border-light);">
             <strong style="display: block; margin-bottom: 6px; font-size: 14px; color: var(--color-primary);">Active Super Admin Account:</strong>
             <span style="font-size: 13px; color: var(--text-secondary);"><i class="fa-solid fa-user-shield"></i> <strong><?= htmlspecialchars((string)($_SESSION['admin_username'] ?? ADMIN_USERNAME)) ?></strong> (<?= htmlspecialchars(ucfirst((string)currentAdminRole())) ?>)</span>
         </div>
     <?php endif; ?>
 
     <?php if ($module === 'newsletter'): ?>
-        <div style="margin-bottom: 20px; padding: 16px; background: #ecfdf5; border: 1px solid #10b981; border-radius: 8px; color: #065f46; font-size: 13px; font-weight: 600;">
+        <div style="margin-bottom: 20px; padding: 16px; background: #ecfdf5; border: 1px solid #10b981; color: #065f46; font-size: 13px; font-weight: 600;">
             <i class="fa-solid fa-circle-check"></i> Newsletter subscriptions automatically sync with registered customer accounts.
         </div>
     <?php endif; ?>
@@ -69,7 +69,7 @@ require_once __DIR__ . '/includes/header.php';
             </a>
         </div>
     <?php else: ?>
-        <div style="padding: 24px; background: var(--bg-surface-soft); border: 1px dashed var(--border-strong); border-radius: 8px; text-align: center; color: var(--text-muted); font-size: 14px;">
+        <div style="padding: 24px; background: var(--bg-surface-soft); border: 1px dashed var(--border-strong); text-align: center; color: var(--text-muted); font-size: 14px;">
             <i class="fa-solid fa-circle-check" style="color: #10b981; margin-right: 8px;"></i> 
             This module is active and synchronized live with database settings.
         </div>
