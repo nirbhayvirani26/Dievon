@@ -2249,10 +2249,24 @@ html {
 @media (max-width: 1199px) { .occasion-tile { flex-basis: 23%; } }  /* ~4.3 in view */
 @media (max-width: 991px)  { .occasion-tile { flex-basis: 30%; } }  /* ~3.3 in view */
 @media (max-width: 768px)  {
-    .occasion-slider { gap: 12px; padding: 0 14px 6px; scroll-padding-left: 14px; }
-    .occasion-tile   { flex-basis: 42%; }                            /* ~2.4 in view */
+    /* 16px, so the first card starts exactly where the collections and
+       new-arrivals rails start. It was 14 — two pixels adrift of every other
+       rail, chosen by nobody.
+
+       Owl clips the strip at this element's box, so this padding insets the
+       CLIP too: the peeking card is cut 16px before the glass rather than at
+       it. .dv-rail-bleed exists for exactly that and was tried here — it does
+       nothing, because Owl ignores stagePadding whenever autoWidth is on, and
+       this rail is autoWidth. Removing it needs the rail off autoWidth (or off
+       Owl), which changes the desktop sizing too and is a separate job. Between
+       a 2px error at the start of the strip and a 16px one at the end, the
+       start is what anyone actually sees against the rail above it. */
+    .occasion-slider { gap: 12px; padding: 0 16px 6px; scroll-padding-left: 16px; }
+    /* flex-basis here has never applied: .occasion-slider .occasion-tile in
+       style.css out-specifies a bare .occasion-tile whatever the file order, so
+       the vw rules there are what size these. Removed rather than left to read
+       as the live number. */
 }
-@media (max-width: 420px)  { .occasion-tile { flex-basis: 56%; } }  /* ~1.8 in view */
 
 @media (min-width: 769px) {
     .occasion-banners-section .occasion-banner .occasion-banner-content {

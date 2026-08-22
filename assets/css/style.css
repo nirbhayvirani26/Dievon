@@ -7722,8 +7722,25 @@ body.welcome-open { overflow: hidden; }
 .occasion-slider .occasion-tile { flex: 0 0 18vw; width: 18vw; }
 @media (max-width: 1199px) { .occasion-slider .occasion-tile { flex-basis: 23vw; width: 23vw; } }
 @media (max-width: 991px)  { .occasion-slider .occasion-tile { flex-basis: 30vw; width: 30vw; } }
-@media (max-width: 768px)  { .occasion-slider .occasion-tile { flex-basis: 42vw; width: 42vw; } }
-@media (max-width: 420px)  { .occasion-slider .occasion-tile { flex-basis: 56vw; width: 56vw; } }
+/* Below 768 this is the same rail as Dievon Collections and should read as it,
+   so it is sized by the same solved formula rather than a percentage guess:
+   two whole tiles and a third of the next, at every width. 56px is the two 16px
+   stage insets plus the two 12px gaps that sit inside the visible strip.
+
+   vw, not %. Owl wraps every card in an .owl-item and autoWidth measures the
+   card — a percentage would resolve against that wrapper rather than the rail,
+   which is how this strip once ended up an 888px row inside a 560px stage. A
+   viewport unit cannot be fooled by the wrapper.
+
+   It was 42vw, stepping to 56vw under 420px, which put 1.63 tiles on a 390px
+   phone against the collections rail's 2.38 directly above it. Neither number
+   was chosen; they were what the percentages happened to produce. */
+@media (max-width: 768px) {
+    .occasion-slider .occasion-tile {
+        flex: 0 0 calc((100vw - 56px) / 2.3);
+        width: calc((100vw - 56px) / 2.3);
+    }
+}
 
 .occasion-slider.owl-loaded { display: block; overflow: visible; gap: 0; }
 .occasion-slider.owl-loaded .owl-stage-outer { overflow: hidden; }
