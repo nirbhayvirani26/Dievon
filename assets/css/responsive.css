@@ -2192,3 +2192,20 @@ html {
         letter-spacing: 0.16em !important;
     }
 }
+
+/* Compact has to be smaller on a phone too.
+   ─────────────────────────────────────────────────────────────────────────────
+   The desktop rules — .navbar-luxury.header-compact .main-header-bar at 10px,
+   and .header-top-bar at 6px — carry more specificity than the plain mobile
+   padding above, so on scroll the bar went from 8px to 10px and the strip did
+   not move at all. Measured: the header grew from 93px to 97px on scrolling
+   down, which is the opposite of what the class is for.
+
+   Both restated here with the reach to win, and below the values they are
+   shrinking from. */
+@media (max-width: 991px) {
+    .navbar-luxury.header-compact .main-header-bar { padding: 4px 0 !important; }
+}
+@media (max-width: 640px) {
+    .navbar-luxury.header-compact .header-top-bar { padding: 6px 0 !important; }
+}
