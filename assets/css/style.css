@@ -10691,6 +10691,11 @@ input.chk-input-error:focus {
    edge in any meaningful sense; 16px is enough to keep the first tile off the
    glass without pretending to be a margin. The heading above keeps the real
    gutter, because it is still page text. */
+/* Nothing carries this class at the moment, and that is not an oversight. The
+   one rail that wants it is Shop by Occasion, and Owl ignores stagePadding
+   whenever autoWidth is on — see the note in responsive.css. Kept because the
+   initialiser reads it (includes/footer.php) and any future rail that is not
+   autoWidth gets the bleed by adding the class alone. */
 .dv-rail-bleed {
     padding-inline: 16px;
     scroll-padding-inline-start: 16px;
