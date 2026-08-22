@@ -186,7 +186,7 @@ $fmt = fn($n) => $sym . number_format((float)$n, 2);
                   // rendered once a state was set, so the one time the owner
                   // needed telling was the one time nothing was said. ?>
             <?php if ($sellerState === ''): ?>
-                <div style="margin-top:10px; padding:12px 14px; background:#fffbeb; border:1px solid #fcd34d; border-radius:6px; font-size:13px; color:#92400e; line-height:1.6;">
+                <div style="margin-top:10px; padding:12px 14px; background:#fffbeb; border:1px solid #fcd34d; font-size:13px; color:#92400e; line-height:1.6;">
                     <strong><i class="fa-solid fa-triangle-exclamation"></i> These figures are all IGST, and that is probably wrong.</strong><br>
                     Your registered state is not set, so every sale is being treated as
                     interstate. Sales inside your own state should be split into CGST + SGST.

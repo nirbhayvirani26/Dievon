@@ -153,12 +153,12 @@ $inv_paid = strtolower((string)($order['payment_status'] ?? '')) === 'paid'
   body{ background:#f3f4f6; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
         color:var(--ink); margin:0; padding:30px 16px; font-size:14px; line-height:1.5; }
   .print-bar{ max-width:800px; margin:0 auto 14px; }
-  .print-btn{ background:var(--brand); color:#fff; border:none; padding:10px 20px; border-radius:6px;
+  .print-btn{ background:var(--brand); color:#fff; border:none; padding:10px 20px;
               font-size:13px; font-weight:600; cursor:pointer; }
   .print-btn:hover{ background:#6d1832; }
 
   .dn-container{ max-width:800px; margin:0 auto; background:#fff; border:1px solid #e5e7eb;
-                 padding:40px; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,.04); }
+                 padding:40px; box-shadow:0 4px 12px rgba(0,0,0,.04); }
   .dn-header{ display:flex; justify-content:space-between; align-items:flex-start;
               border-bottom:2px solid var(--brand); padding-bottom:20px; margin-bottom:24px; gap:24px; }
   .dn-logo-img{ height:80px; width:auto; max-width:230px; object-fit:contain; display:block; margin-bottom:10px; }
@@ -166,14 +166,14 @@ $inv_paid = strtolower((string)($order['payment_status'] ?? '')) === 'paid'
   .muted-note strong{ color:var(--ink); }
   .align-right{ text-align:right; flex-shrink:0; }
   .doc-title{ font-size:22px; font-weight:800; letter-spacing:.04em; margin:0 0 10px; color:var(--ink); }
-  .dn-badge{ background:var(--brand); color:#fff; padding:4px 12px; border-radius:20px;
+  .dn-badge{ background:var(--brand); color:#fff; padding:4px 12px;
              font-size:11px; font-weight:700; display:inline-block; letter-spacing:.05em; }
   .dn-badge--due{ background:#b45309; }
   .doc-code{ font-size:13px; margin-top:9px; }
   .doc-date{ font-size:12px; color:var(--muted); }
 
   .dn-grid{ display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-bottom:28px; }
-  .dn-card{ background:#f9fafb; border:1px solid #f3f4f6; padding:16px; border-radius:8px; }
+  .dn-card{ background:#f9fafb; border:1px solid #f3f4f6; padding:16px; }
   .dn-card h3{ margin:0 0 9px; font-size:10px; letter-spacing:.12em; text-transform:uppercase;
                color:var(--brand); font-weight:800; }
   .who{ font-weight:700; font-size:14px; margin-bottom:4px; }
@@ -191,7 +191,7 @@ $inv_paid = strtolower((string)($order['payment_status'] ?? '')) === 'paid'
 
   .totals-wrap{ display:flex; justify-content:space-between; gap:24px; align-items:flex-start; margin-bottom:30px; }
   .words{ flex:1; background:#f9fafb; border-left:3px solid var(--gold); padding:12px 14px;
-          border-radius:6px; font-size:12.5px; }
+ font-size:12.5px; }
   .words span{ display:block; font-size:9.5px; letter-spacing:.12em; text-transform:uppercase;
                color:var(--muted); margin-bottom:3px; }
   .dn-totals{ width:260px; flex-shrink:0; }
@@ -216,7 +216,7 @@ $inv_paid = strtolower((string)($order['payment_status'] ?? '')) === 'paid'
 
   @media print{
     body{ background:#fff; padding:0; }
-    .dn-container{ border:none; box-shadow:none; padding:0; border-radius:0; }
+    .dn-container{ border:none; box-shadow:none; padding:0; }
     .no-print{ display:none !important; }
   }
   @media (max-width:640px){

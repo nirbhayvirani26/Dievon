@@ -108,12 +108,12 @@ if ($didRun && $fields) {
     body { font-family: system-ui, sans-serif; max-width: 760px; margin: 40px auto; padding: 0 20px;
            color: #3a0c1b; line-height: 1.6; }
     h1 { font-size: 22px; }
-    .panel { background: #fbf8f3; border-left: 3px solid #C59B4B; padding: 14px 18px; border-radius: 4px; margin: 18px 0; }
+    .panel { background: #fbf8f3; border-left: 3px solid #C59B4B; padding: 14px 18px; margin: 18px 0; }
     .done  { background: #f1f8f1; border-left-color: #2e7d32; }
-    button { background: #511126; color: #fff; border: 0; padding: 11px 22px; border-radius: 4px;
+    button { background: #511126; color: #fff; border: 0; padding: 11px 22px;
              font-size: 14px; cursor: pointer; }
     ul { padding-left: 20px; }
-    code { background: #f5eee8; padding: 1px 5px; border-radius: 3px; }
+    code { background: #f5eee8; padding: 1px 5px; }
 </style>
 <h1>Backfill <code>order_items</code> from the order snapshots</h1>
 

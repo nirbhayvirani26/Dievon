@@ -326,7 +326,7 @@ require_once __DIR__ . '/includes/header.php';
                          nothing in the shop can put back detail the photograph never
                          had. A 896x1200 portrait upload, which is what happened, is
                          stretched about 1.6x on a normal laptop. */ ?>
-                <div class="banner-size-hint" style="margin-top:8px; padding:10px 12px; background:rgba(197,155,75,0.08); border:1px solid rgba(197,155,75,0.28); border-radius:6px; font-size:12.5px; line-height:1.7; color:var(--text-secondary);">
+                <div class="banner-size-hint" style="margin-top:8px; padding:10px 12px; background:rgba(197,155,75,0.08); border:1px solid rgba(197,155,75,0.28); font-size:12.5px; line-height:1.7; color:var(--text-secondary);">
                     <strong style="color:var(--text-primary);"><i class="fa-solid fa-image"></i> Best size: 2000 &times; 1100 pixels, landscape</strong><br>
                     The banner is stretched across the full width of the screen, so a
                     <strong>wide</strong> picture stays sharp and a small or tall one looks blurry.
@@ -364,9 +364,9 @@ require_once __DIR__ . '/includes/header.php';
                     <div style="margin-top:10px;">
                         <?php if ($bImgSrc !== ''): ?>
                             <img src="<?= htmlspecialchars($bImgSrc) ?>" alt="Current banner image"
-                                 style="max-width:260px; width:100%; height:auto; border:1px solid var(--border-light); border-radius:6px; display:block;">
+                                 style="max-width:260px; width:100%; height:auto; border:1px solid var(--border-light); display:block;">
                         <?php else: ?>
-                            <div style="padding:10px 12px; background:#fff7ed; border:1px solid #fed7aa; border-radius:6px; font-size:12px; color:#9a3412;">
+                            <div style="padding:10px 12px; background:#fff7ed; border:1px solid #fed7aa; font-size:12px; color:#9a3412;">
                                 The file named on this banner is <strong>missing from the server</strong>, so the slide
                                 shows nothing on the homepage. Upload a replacement below.
                             </div>
@@ -414,9 +414,9 @@ require_once __DIR__ . '/includes/header.php';
                         <tr>
                             <td>
                                 <?php if ($imgSrc): ?>
-                                    <img src="<?= $imgSrc ?>" style="width:60px; height:45px; object-fit:cover; border-radius:4px; border:1px solid var(--border-light);">
+                                    <img src="<?= $imgSrc ?>" style="width:60px; height:45px; object-fit:cover; border:1px solid var(--border-light);">
                                 <?php else: ?>
-                                    <div style="width:60px; height:45px; background:var(--bg-surface-soft); border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:18px;">✨</div>
+                                    <div style="width:60px; height:45px; background:var(--bg-surface-soft); display:flex; align-items:center; justify-content:center; font-size:18px;">✨</div>
                                 <?php endif; ?>
                             </td>
                             <td>
@@ -424,7 +424,7 @@ require_once __DIR__ . '/includes/header.php';
                                 <span style="font-size:12px; color:var(--text-muted);"><?= htmlspecialchars($b['subtitle']) ?></span>
                             </td>
                             <td>
-                                <code style="font-size:12px; background:var(--bg-surface-soft); padding:4px 8px; border-radius:4px; color:var(--color-primary);"><?= htmlspecialchars($b['link']) ?></code>
+                                <code style="font-size:12px; background:var(--bg-surface-soft); padding:4px 8px; color:var(--color-primary);"><?= htmlspecialchars($b['link']) ?></code>
                             </td>
                             <td>
                                 <a href="banners.php?toggle=<?= $b['id'] ?>" style="text-decoration:none;">

@@ -278,6 +278,44 @@ $minimalFooter = !empty($minimalFooter);
             <div class="footer-bottom">
                 <p>&copy; <?= date('Y') ?> Dievon. ALL RIGHTS RESERVED.</p>
             </div>
+            <?php /* Where the country is actually READABLE.
+                     ──────────────────────────────────────────────────────────
+                     The header's picker is a globe, chosen because two letters
+                     among five drawn glyphs never sat right — but a globe cannot
+                     tell a shopper that they are seeing rupee prices. This can,
+                     in full, and the footer is where most shops keep the setting
+                     anyway.
+
+                     It writes the same cookie through the same changeCountry()
+                     the header calls, so there is one code path and the two
+                     controls cannot disagree. Its own id, because the header's
+                     is already on the page. Rendered only when a second country
+                     is enabled, matching the header exactly. */ ?>
+            <?php if (function_exists('countrySelectorEnabled') && countrySelectorEnabled()):
+                $fCode = currentCountryCode();
+                $fList = enabledCountries(); ?>
+            <div class="footer-country">
+                <label for="footerCountrySelector">Shipping to</label>
+                <?php /* The value is drawn as text with the <select> invisible over it,
+                         the same arrangement as the header's globe. A native select is
+                         as wide as its LONGEST option, so left to itself this one is
+                         sized for "United Kingdom — GBP" whichever country is chosen —
+                         which strands the chevron and runs the underline past the end
+                         of the words. A span is exactly as wide as what it says. */ ?>
+                <span class="footer-country-value" aria-hidden="true">
+                    <?= htmlspecialchars(($fList[$fCode]['country_name'] ?? $fCode) . ' — ' . ($fList[$fCode]['currency_code'] ?? '')) ?>
+                    <svg viewBox="0 0 24 24" focusable="false"><path d="m6 9.5 6 6 6-6"/></svg>
+                </span>
+                <select id="footerCountrySelector" onchange="changeCountry(this.value)"
+                        aria-label="Select country and currency">
+                    <?php foreach ($fList as $fc => $frow): ?>
+                    <option value="<?= htmlspecialchars($fc) ?>" <?= $fCode === $fc ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($frow['country_name'] . ' — ' . $frow['currency_code']) ?>
+                    </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <?php endif; ?>
             <!-- Secure Payments -->
             <div class="footer-secure-payments">
                 <div class="secure-payments-label"><i class="fa-solid fa-lock"></i> 100% Secure Payments</div>
@@ -323,14 +361,64 @@ $minimalFooter = !empty($minimalFooter);
 
 <!-- Floating WhatsApp Concierge & Back To Top Widgets -->
 <?php if (defined('SHOP_WHATSAPP') && SHOP_WHATSAPP !== ''): ?>
-<a href="https://wa.me/<?= SHOP_WHATSAPP ?>?text=Hello%20Dievon%20Concierge" target="_blank" rel="noopener" class="whatsapp-float-btn" title="Chat on WhatsApp" style="position:fixed; bottom:25px; right:25px; width:50px; height:50px; background:#25d366; color:#fff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:26px; box-shadow:0 4px 12px rgba(0,0,0,0.25); z-index:998; text-decoration:none;">
+<a href="https://wa.me/<?= SHOP_WHATSAPP ?>?text=Hello%20Dievon%20Concierge" target="_blank" rel="noopener" class="whatsapp-float-btn" title="Chat on WhatsApp" style="position:fixed; bottom:25px; right:25px; width:50px; height:50px; background:#25d366; color:#fff; display:flex; align-items:center; justify-content:center; font-size:26px; box-shadow:0 4px 12px rgba(0,0,0,0.25); z-index:998; text-decoration:none;">
     <i class="fa-brands fa-whatsapp"></i>
 </a>
 <?php endif; ?>
 <!-- Back To Top Widget -->
-<button onclick="window.scrollTo({top:0, behavior:'smooth'})" id="backToTopBtn" style="position:fixed; bottom:85px; right:25px; width:40px; height:40px; background:var(--color-primary); color:#fff; border:none; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:16px; box-shadow:0 4px 12px rgba(0,0,0,0.2); z-index:998; cursor:pointer; opacity:0.8;">
-    <i class="fa-solid fa-chevron-up"></i>
+<?php /* Styled from the stylesheet, not from a style attribute. The inline
+         version is why responsive.css had to say `bottom: 70px !important` to
+         move it on a phone — an inline declaration outranks any rule a
+         stylesheet can write, so every adjustment needed a bigger hammer.
+
+         aria-label because the only content is an icon font glyph. Without it a
+         screen reader announced "button" and nothing else. */ ?>
+<button type="button" id="backToTopBtn" aria-label="Back to top">
+    <i class="fa-solid fa-chevron-up" aria-hidden="true"></i>
 </button>
+<script>
+(function () {
+    /* Shown once there is somewhere to go back TO.
+       ─────────────────────────────────────────────────────────────────────
+       This button was pinned to the viewport with no condition at all, so it
+       sat over the bottom-right corner of every page including the very top —
+       offering to return you to where you already were, and competing with
+       whatever the design puts in that corner. On the homepage that is now the
+       hero's pager, which had to be moved 96px inland to keep clear of it.
+
+       One viewport of scrolling is the threshold: below that the top is still
+       a flick away and the button is clutter. The 120px band between showing
+       and hiding stops it blinking when a reader hovers around the boundary. */
+    var btn = document.getElementById('backToTopBtn');
+    if (!btn) { return; }
+
+    var SHOW_AFTER = function () { return Math.max(400, window.innerHeight * 0.9); };
+    var ticking = false, shown = false;
+
+    function update() {
+        ticking = false;
+        var y = window.scrollY || window.pageYOffset || 0;
+        var on = shown ? y > SHOW_AFTER() - 120 : y > SHOW_AFTER();
+        if (on === shown) { return; }
+        shown = on;
+        btn.classList.toggle('is-visible', on);
+    }
+    window.addEventListener('scroll', function () {
+        if (ticking) { return; }
+        ticking = true;
+        window.requestAnimationFrame(update);
+    }, { passive: true });
+    window.addEventListener('resize', update, { passive: true });
+    update();
+
+    btn.addEventListener('click', function () {
+        /* Instant for anyone who asked for less movement — smooth-scrolling a
+           whole page is exactly the kind of motion that setting is about. */
+        var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' });
+    });
+})();
+</script>
 
 <!-- Luxury Glassmorphic Ultra-Slim Header Effect on Scroll -->
 <script>
@@ -556,6 +644,48 @@ function removeItem(cartKey) {
 }
 
 // ── Update quantity ───────────────────────────────────────────
+/* The quantity stepper, written once.
+ * ─────────────────────────────────────────────────────────────────────────────
+ * The same control is built in two places — the cart drawer just below, and the
+ * full cart page's own renderer in pages/cart.php — and the two copies had
+ * already parted company. The drawer's buttons carried no aria-label while the
+ * page's did, so the same control was described to a screen reader on one
+ * screen and not the other; and any future change (a stock cap, a different
+ * disabled reason, a busy state) had to be made twice or it would part company
+ * again.
+ *
+ * Both LOOKS are kept. The page's stepper is flat buttons inside one bordered
+ * pill; the drawer's is a pair of circles. Those are two designs of the same
+ * control, not a defect, and choosing between them is not this function's job —
+ * so `variant` selects the class set and the markup is identical either way.
+ *
+ * Defined on window because pages/cart.php builds its rows from its own script;
+ * both call sites fall back to their previous inline markup if this has somehow
+ * not loaded, so a stepper can never fail to render.
+ */
+window.dievonQtyStepper = function (cartKey, qty, opts) {
+    opts = opts || {};
+    // One class set now. The variant switch that used to be here existed only
+    // because the cart page and this drawer had two different LOOKS for the same
+    // control; they have one look now, so there is nothing left to switch on.
+    // opts.variant is still accepted and ignored, so an older call site cannot
+    // break during a deploy.
+    const cls    = 'qty-controls';
+    const btn    = 'qty-btn';
+    const val    = 'qty-value';
+    const key    = String(cartKey).replace(/'/g, "\\'");
+    const atLimit = !!opts.atLimit;
+    return `
+            <div class="${cls}">
+                <button type="button" class="${btn}" aria-label="Decrease quantity"
+                        onclick="updateQty('${key}', ${qty - 1})">\u2212</button>
+                <span class="${val}">${qty}</span>
+                <button type="button" class="${btn}" aria-label="Increase quantity"
+                        onclick="updateQty('${key}', ${qty + 1})"
+                        ${atLimit ? 'disabled title="That is all we have left"' : ''}>+</button>
+            </div>`;
+};
+
 function updateQty(cartKey, qty) {
     fetch(getCartApiUrl(), {
         method: 'POST',
@@ -696,12 +826,13 @@ function renderCart() {
                 <div class="cart-item-name">${escHtml(item.name)}${variantLabel ? '<br>' + variantLabel : ''}</div>
                 <div class="cart-item-price">${formatPriceJS(item.subtotal || (item.price * item.quantity))}</div>
             </div>
+${window.dievonQtyStepper ? window.dievonQtyStepper(cartKey, item.quantity, { atLimit }) : `
             <div class="qty-controls">
-                <button class="qty-btn" onclick="updateQty('${cartKey}', ${item.quantity - 1})">−</button>
+                <button class="qty-btn" aria-label="Decrease quantity" onclick="updateQty('${cartKey}', ${item.quantity - 1})">−</button>
                 <span class="qty-value">${item.quantity}</span>
-                <button class="qty-btn" onclick="updateQty('${cartKey}', ${item.quantity + 1})"
+                <button class="qty-btn" aria-label="Increase quantity" onclick="updateQty('${cartKey}', ${item.quantity + 1})"
                         ${atLimit ? 'disabled title="That is all we have left"' : ''}>+</button>
-            </div>
+            </div>`}
             <button class="btn-remove-item" onclick="removeItem('${cartKey}')" title="Remove">
                 <i class="fa-solid fa-xmark"></i>
             </button>
@@ -716,20 +847,32 @@ function renderCart() {
 // ── Badge helpers ────────────────────────────────────────────
 function updateBadge() {
     const count = (cartState && typeof cartState.cart_count !== 'undefined') ? parseInt(cartState.cart_count, 10) : 0;
-    const badges = document.querySelectorAll('#cartBadge, #mobileCartCount');
-    badges.forEach(b => {
-        if (b) {
-            b.textContent = count;
-            // Hidden at zero, exactly as updateWishlistBadge() already does.
-            //
-            // This forced display:flex unconditionally, so an empty bag wore a
-            // filled maroon "0" permanently. Beside a wishlist heart that
-            // correctly shows nothing at zero, it read as a bug rather than a
-            // count — a badge is a notification, and "you have zero things" is
-            // not something to notify anybody about.
-            b.style.display = count > 0 ? 'flex' : 'none';
-        }
-    });
+    /* Two counts, two different things — they used to share one loop.
+     * ─────────────────────────────────────────────────────────────────────
+     * #cartBadge is the round disc on the bag icon. Hidden at zero, exactly as
+     * updateWishlistBadge() already does: it forced display:flex
+     * unconditionally, so an empty bag wore a filled maroon "0" permanently.
+     * Beside a wishlist heart that correctly shows nothing at zero, that read
+     * as a bug rather than a count — a badge is a notification, and "you have
+     * zero things" is not something to notify anybody about.
+     *
+     * #mobileCartCount is a number inside a sentence, in the drawer's Shopping
+     * Bag button. Sharing the rule above gave it both of that rule's
+     * assumptions and neither of them holds: display:flex turned an inline
+     * count into a flex container in the middle of the button's text, and
+     * hiding it at zero left the brackets around it stranded — "Shopping Bag ()".
+     * It takes the hidden attribute instead, and the brackets are on the span
+     * in CSS so they go with it. */
+    const badge = document.getElementById('cartBadge');
+    if (badge) {
+        badge.textContent = count;
+        badge.style.display = count > 0 ? 'flex' : 'none';
+    }
+    const inlineCount = document.getElementById('mobileCartCount');
+    if (inlineCount) {
+        inlineCount.textContent = count;
+        inlineCount.hidden = count === 0;
+    }
 
     // Update sticky floating view cart bar
     const stickyBar = document.getElementById('stickyViewCartBar');
@@ -761,6 +904,9 @@ function bumpBadge() {
     document.querySelectorAll('#cartBadge, #mobileCartCount').forEach(badge => {
         if (!badge) return;
         badge.textContent = count;
+        // The drawer's inline count carries its own visibility; the bump must not
+        // reveal a zero that updateBadge() has just hidden.
+        if (badge.id === 'mobileCartCount') { badge.hidden = count === 0; }
         // Removing first and forcing a reflow lets the pop replay when items
         // are added one after another; re-adding a class the element already
         // carries does not restart a CSS animation on its own.
@@ -845,7 +991,11 @@ document.addEventListener('keydown', e => {
         // hidden). The delay is inline-important so it wins over the product
         // card's own `transition: all ... !important`, and the observer
         // removes it again once the entrance has played.
-        ['.home-categories-grid', '.home-best-sellers-grid', '.new-arrivals-carousel',
+        /* '.new-arrivals-carousel' is gone from this list with the rail it named.
+           The editorial gallery that replaced it must NOT be staggered in: its
+           four panels are one composition, and revealing them one at a time
+           would animate the layout apart before it settles. */
+        ['.home-categories-grid', '.home-best-sellers-grid',
          '.home-blog-grid', '.editorial-grid', '.products-grid',
          '.newsletter-container', '.home-benefits-grid', '.footer-top', '.footer-bottom-bar'].forEach(sel => {
             document.querySelectorAll(sel + ' > *').forEach((el, i) => {
@@ -1062,7 +1212,19 @@ document.addEventListener('DOMContentLoaded', function () {
         var autoWidth = $rail.data('owl-autowidth') === 1 || $rail.data('owl-autowidth') === '1';
         var gap       = parseFloat(getComputedStyle(this).columnGap) || 24;
 
+        /* stagePadding, not CSS padding, for a full-bleed rail.
+           ─────────────────────────────────────────────────────────────────────
+           A rail marked .dv-rail-bleed runs to the edge of the screen, and the
+           first card should not sit against the glass. CSS padding on the
+           element cannot do it: Owl clips the strip at the element's box, so
+           padding insets the CLIP too and the last card is cut 16px early
+           instead of at the edge. stagePadding insets the cards inside a stage
+           that still clips at the element's edge, which is the whole point.
+
+           Read from the class rather than passed per call site, so any rail that
+           opts into the bleed gets the inset automatically. */
         $rail.owlCarousel({
+            stagePadding: $rail.hasClass('dv-rail-bleed') ? 16 : 0,
             // autoWidth keeps each card at the width the CSS already gives it,
             // which is what preserves the existing look (and the peek of the
             // next card) instead of Owl stretching items to fill the row.

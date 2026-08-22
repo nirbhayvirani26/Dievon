@@ -40,7 +40,9 @@ try {
     // available = 0. A row archived while still marked available would have been
     // offered by the autocomplete and 404-adjacent everywhere else.
     $stmt = $pdo->prepare("
-        SELECT id, name, price, image, emoji, category
+        -- seo_url so productUrl() below can honour the owner's own slug; the
+        -- dropdown used to link to product.php?id= and take a 301 on every click.
+        SELECT id, name, seo_url, price, image, emoji, category
         FROM products
         WHERE available = 1
           AND (is_deleted = 0 OR is_deleted IS NULL)
@@ -114,6 +116,18 @@ try {
         $range  = productPriceRange($r);
         $shown  = $range['min'] > 0 ? (float)$range['min'] : (float)$r['price'];
         $r['formatted_price'] = ($range['varies'] ? 'From ' : '') . formatPrice($shown);
+
+        /* The canonical address, built by productUrl() — not by the browser.
+           ────────────────────────────────────────────────────────────────────
+           assets/js/search.js linked to SITE_URL + '/product.php?id=' + id, so
+           every result in the dropdown cost a 301 to the real /product/<slug>-<id>
+           before the page could start loading. The wishlist's old renderer had
+           the same defect and it was fixed there by rendering server-side.
+
+           Computed here rather than slugified again in JavaScript: productUrl()
+           already knows that the owner's seo_url wins over the name, and a second
+           implementation of that rule is exactly the kind of copy that drifts. */
+        $r['product_url'] = productUrl($r['id'], $r['name'], $r['seo_url'] ?? null);
         // Absolute URLs. These were relative, and the browser resolves a relative
         // src against the CURRENT page — so a search run from /product/<slug>-<id>
         // asked for /product/uploads/products/x.jpg and every result rendered as a

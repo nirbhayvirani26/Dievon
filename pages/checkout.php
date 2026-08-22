@@ -287,7 +287,7 @@ $storeCodMax       = (float)storeSetting($pdo, 'cod_max_order_value', COD_MAX_OR
                 <?php endif; ?>
 
                 <!-- Guest Checkout / Account Login Header Banner -->
-                <div class="checkout-auth-banner" style="background: var(--bg-surface-soft); border: 1px solid var(--border-light); padding: 20px; border-radius: 6px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                <div class="checkout-auth-banner" style="background: var(--bg-surface-soft); border: 1px solid var(--border-light); padding: 20px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
                     <div>
                         <?php if ($customer): ?>
                             <span style="font-size: 14px; font-weight: 600; color: var(--color-primary);"><i class="fa-solid fa-circle-check"></i> Logged in as <?= htmlspecialchars($customer['name']) ?></span>
@@ -319,7 +319,7 @@ $storeCodMax       = (float)storeSetting($pdo, 'cod_max_order_value', COD_MAX_OR
                       // log them in here. The warning is deliberate: leaving checkout loses
                       // the form, so they should be told before they go, not after. ?>
                 <?php if (!$customer): ?>
-                <div id="checkoutLoginBox" style="display: none; background: #fafafa; border: 1px solid var(--border-strong); padding: 25px; margin-bottom: 30px; border-radius: 6px;">
+                <div id="checkoutLoginBox" style="display: none; background: #fafafa; border: 1px solid var(--border-strong); padding: 25px; margin-bottom: 30px;">
                     <h4 style="font-family: var(--font-heading); font-size: 16px; margin-bottom: 15px;">Already have an account?</h4>
                     <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 16px;">
                         Signing in fills your saved details in automatically.
@@ -351,7 +351,7 @@ $storeCodMax       = (float)storeSetting($pdo, 'cod_max_order_value', COD_MAX_OR
                         
                         <!-- Saved Address Book Picker (Logged In Users) -->
                         <?php if ($customer && !empty($savedAddresses)): ?>
-                        <div class="address-book-picker" style="background: var(--bg-surface-soft); border: 1px solid var(--border-light); padding: 20px; margin-bottom: 25px; border-radius: 6px;">
+                        <div class="address-book-picker" style="background: var(--bg-surface-soft); border: 1px solid var(--border-light); padding: 20px; margin-bottom: 25px;">
                             <label style="display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-primary); margin-bottom: 8px;">
                                 <i class="fa-solid fa-address-book"></i> Select from Address Book
                             </label>
@@ -412,7 +412,7 @@ $storeCodMax       = (float)storeSetting($pdo, 'cod_max_order_value', COD_MAX_OR
 
                         <!-- Register Account Checkbox (For Guest) -->
                         <?php if (!$customer): ?>
-                        <div style="margin-bottom: 20px; background: #fafafa; border: 1px solid var(--border-light); padding: 15px; border-radius: 4px;">
+                        <div style="margin-bottom: 20px; background: #fafafa; border: 1px solid var(--border-light); padding: 15px;">
                             <label style="display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 600; cursor: pointer;">
                                 <input type="checkbox" name="create_account" value="1" onchange="document.getElementById('passwordGroup').style.display = this.checked ? 'block' : 'none'">
                                 Create a Dievon account for fast 1-click checkout &amp; order tracking
@@ -517,7 +517,7 @@ $storeCodMax       = (float)storeSetting($pdo, 'cod_max_order_value', COD_MAX_OR
                         </div>
 
                         <!-- Gift Packaging & Gift Message Section -->
-                        <div class="gift-options-box" style="background: var(--bg-surface-soft); border: 1px solid var(--border-light); padding: 25px; border-radius: 6px; margin-bottom: 30px;">
+                        <div class="gift-options-box" style="background: var(--bg-surface-soft); border: 1px solid var(--border-light); padding: 25px; margin-bottom: 30px;">
                             <h3 style="font-family: var(--font-heading); font-size: 16px; font-weight: 400; text-transform: uppercase; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
                                 <i class="fa-solid fa-gift chk-accent"></i> Luxury Gift Packaging &amp; Personal Message
                             </h3>
@@ -561,7 +561,7 @@ $storeCodMax       = (float)storeSetting($pdo, 'cod_max_order_value', COD_MAX_OR
                         <p class="section-summary" id="step3Summary"></p>
                         
                         <div class="payment-mode-grid" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 25px;">
-                            <label onclick="selectPaymentMode('online')" class="payment-mode-label active-pm" id="pmOnlineLabel" style="display: flex; align-items: center; gap: 12px; border: 1.5px solid var(--color-primary); padding: 16px 20px; border-radius: 6px; background: var(--bg-surface); cursor: pointer;">
+                            <label onclick="selectPaymentMode('online')" class="payment-mode-label active-pm" id="pmOnlineLabel" style="display: flex; align-items: center; gap: 12px; border: 1.5px solid var(--color-primary); padding: 16px 20px; background: var(--bg-surface); cursor: pointer;">
                                 <input type="radio" name="payment_method" value="online" id="pmOnlineRadio" checked>
                                 <div>
                                     <strong class="chk-line">Card / UPI / Netbanking (Razorpay)</strong>
@@ -569,7 +569,7 @@ $storeCodMax       = (float)storeSetting($pdo, 'cod_max_order_value', COD_MAX_OR
                                 </div>
                             </label>
 
-                            <label onclick="selectPaymentMode('cod')" class="payment-mode-label" id="pmCodLabel" style="display: flex; align-items: center; gap: 12px; border: 1px solid var(--border-strong); padding: 16px 20px; border-radius: 6px; background: var(--bg-surface); cursor: pointer;">
+                            <label onclick="selectPaymentMode('cod')" class="payment-mode-label" id="pmCodLabel" style="display: flex; align-items: center; gap: 12px; border: 1px solid var(--border-strong); padding: 16px 20px; background: var(--bg-surface); cursor: pointer;">
                                 <input type="radio" name="payment_method" value="cod" id="pmCodRadio">
                                 <div>
                                     <strong class="chk-line">Cash on Delivery (COD)</strong>
@@ -577,7 +577,7 @@ $storeCodMax       = (float)storeSetting($pdo, 'cod_max_order_value', COD_MAX_OR
                                 </div>
                             </label>
 
-                            <label onclick="selectPaymentMode('later')" class="payment-mode-label" id="pmLaterLabel" style="display: flex; align-items: center; gap: 12px; border: 1px solid var(--border-strong); padding: 16px 20px; border-radius: 6px; background: var(--bg-surface); cursor: pointer;">
+                            <label onclick="selectPaymentMode('later')" class="payment-mode-label" id="pmLaterLabel" style="display: flex; align-items: center; gap: 12px; border: 1px solid var(--border-strong); padding: 16px 20px; background: var(--bg-surface); cursor: pointer;">
                                 <input type="radio" name="payment_method" value="later" id="pmLaterRadio">
                                 <div>
                                     <strong class="chk-line">Private Tax Invoice &amp; Direct Bank Wire</strong>
@@ -587,14 +587,14 @@ $storeCodMax       = (float)storeSetting($pdo, 'cod_max_order_value', COD_MAX_OR
                         </div>
 
                         <!-- Razorpay Panel -->
-                        <div id="razorpayPanel" class="razorpay-panel" style="margin-bottom: 25px; background: #fafafa; border: 1px solid var(--border-light); padding: 20px; border-radius: 6px;">
+                        <div id="razorpayPanel" class="razorpay-panel" style="margin-bottom: 25px; background: #fafafa; border: 1px solid var(--border-light); padding: 20px;">
                             <div id="razorpayStatusMsg" style="font-size: 13px; color: var(--text-muted);">
                                 <i class="fa-solid fa-lock chk-accent"></i> You'll enter your card, UPI, or netbanking details in Razorpay's secure checkout window after you click "Place Secure Order".
                             </div>
                         </div>
 
                         <!-- Tax Invoice / Billing Address Structure -->
-                        <div class="invoice-section-box" style="background: var(--bg-surface-soft); border: 1px solid var(--border-light); padding: 20px; border-radius: 6px; margin-bottom: 30px;">
+                        <div class="invoice-section-box" style="background: var(--bg-surface-soft); border: 1px solid var(--border-light); padding: 20px; margin-bottom: 30px;">
                             <h3 style="font-family: var(--font-heading); font-size: 15px; font-weight: 400; text-transform: uppercase; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
                                 <i class="fa-solid fa-file-invoice chk-accent"></i> Tax Invoice &amp; Billing Details
                             </h3>
@@ -656,7 +656,7 @@ $storeCodMax       = (float)storeSetting($pdo, 'cod_max_order_value', COD_MAX_OR
                             <div class="summary-item-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 13px; border-bottom: 1px dashed var(--border-light); padding-bottom: 8px;">
                                 <div style="display: flex; gap: 10px; align-items: center;">
                                     <?php if (!empty($item['image'])): ?>
-                                        <img src="<?= SITE_URL ?>/uploads/products/<?= htmlspecialchars($item['image']) ?>" alt="<?= htmlspecialchars($item['name']) ?>" style="width: 40px; height: 50px; object-fit: cover; border-radius: 3px;"
+                                        <img src="<?= SITE_URL ?>/uploads/products/<?= htmlspecialchars($item['image']) ?>" alt="<?= htmlspecialchars($item['name']) ?>" style="width: 40px; height: 50px; object-fit: cover;"
                                              onerror="this.outerHTML='<span style=&quot;font-size:24px; width:40px; display:inline-block; text-align:center;&quot;><?= htmlspecialchars($item['emoji'] ?? '👗') ?></span>';">
                                     <?php endif; ?>
                                     <div>

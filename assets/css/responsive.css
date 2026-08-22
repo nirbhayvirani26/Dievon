@@ -249,7 +249,6 @@
            first — and it is the least important control there. */
         background-color: transparent !important;
         border: 1px solid rgba(197, 155, 75, 0.28) !important;
-        border-radius: 16px !important;
         box-shadow: none !important;
         /* Sized to sit level with the icons beside it. The text was 11px
            against 18-20px glyphs, so the control read as a small grey label
@@ -284,9 +283,11 @@
     body.has-pdp-buy-bar .mobile-bottom-dock {
         display: none !important;
     }
-    /* Back-to-top clears the dock by 70px; the buy bar is taller. */
+    /* Back-to-top clears the dock by 70px; the buy bar is taller.
+       The !important on these two went with the inline style they had to beat —
+       the button is styled from style.css now, and this file loads after it. */
     body.has-pdp-buy-bar #backToTopBtn {
-        bottom: 88px !important;
+        bottom: 88px;
     }
 
     .whatsapp-float-btn {
@@ -294,8 +295,8 @@
     }
 
     #backToTopBtn {
-        bottom: 70px !important;
-        right: 15px !important;
+        bottom: 70px;
+        right: 15px;
     }
 
     #recentlyPurchasedToast {
@@ -344,7 +345,6 @@
         color: var(--text-primary) !important;
         width: 36px;
         height: 36px;
-        border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -361,7 +361,6 @@
         margin: 16px 20px 8px;
         background: var(--bg-surface-soft);
         border: 1px solid var(--border-strong);
-        border-radius: 25px;
         padding: 12px 18px;
         display: flex;
         align-items: center;
@@ -487,7 +486,6 @@
         align-items: center;
         justify-content: center;
         gap: 10px;
-        border-radius: 4px;
         font-size: 13px;
         font-weight: 500;
         text-transform: uppercase;
@@ -506,7 +504,6 @@
         align-items: center;
         justify-content: center;
         gap: 10px;
-        border-radius: 4px;
         font-size: 13px;
         font-weight: 500;
         text-transform: uppercase;
@@ -628,10 +625,6 @@
     .slide-content h2 { font-size: 32px; margin-bottom: 12px; }
     .slide-content p { font-size: 13px; margin-bottom: 20px; }
     .btn-hero-explore { margin-top: 16px !important; padding: 8px 20px !important; font-size: 11px !important; }
-    .hero-arrow { width: 40px; height: 40px; }
-    .hero-arrow-left { left: 10px; }
-    .hero-arrow-right { right: 10px; }
-    .hero-dots-container { bottom: 20px; padding: 6px 12px; }
 
     /* Occasion banners mobile */
     .occasion-banner { padding: 80px 0; }
@@ -899,7 +892,6 @@ body.admin-wrapper .table-wrapper {
     width: 100%;
     overflow-x: auto; 
     -webkit-overflow-scrolling: touch; 
-    border-radius: 8px;
 }
 
 @media (max-width: 900px) {
@@ -1049,22 +1041,22 @@ body.admin-wrapper .table-wrapper {
 .acc-address-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
 .acc-form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
 .acc-form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px; }
-.acc-form-card { border: 1px solid var(--border-light); padding: 25px; border-radius: 6px; background: var(--bg-surface); }
+.acc-form-card { border: 1px solid var(--border-light); padding: 25px; background: var(--bg-surface); }
 .acc-card-title { font-family: var(--font-heading); font-size: 16px; margin-bottom: 15px; text-transform: uppercase; }
 .form-label-sm { display: block; font-size: 11px; text-transform: uppercase; margin-bottom: 6px; }
 .acc-tab-desc { color: var(--text-secondary); font-size: 13px; margin-bottom: 20px; }
-.acc-address-card { border: 1px solid var(--border-strong); padding: 20px; border-radius: 6px; background: var(--bg-surface-soft); position: relative; }
-.badge-default-addr { position: absolute; top: 12px; right: 12px; background: var(--color-primary); color: #fff; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 3px; text-transform: uppercase; }
+.acc-address-card { border: 1px solid var(--border-strong); padding: 20px; background: var(--bg-surface-soft); position: relative; }
+.badge-default-addr { position: absolute; top: 12px; right: 12px; background: var(--color-primary); color: #fff; font-size: 10px; font-weight: 700; padding: 3px 8px; text-transform: uppercase; }
 .addr-name { margin: 0 0 8px; font-size: 14px; text-transform: uppercase; color: var(--color-primary); }
 .addr-text { font-size: 13px; color: var(--text-secondary); margin-bottom: 15px; line-height: 1.6; }
-.account-nav-sidebar { background: var(--bg-surface); border: 1px solid var(--border-strong); padding: 25px 0; border-radius: 6px; height: fit-content; }
+.account-nav-sidebar { background: var(--bg-surface); border: 1px solid var(--border-strong); padding: 25px 0; height: fit-content; }
 .account-user-header { padding: 0 20px 20px; border-bottom: 1px solid var(--border-light); margin-bottom: 15px; }
 .account-user-header strong { font-family: var(--font-heading); font-size: 16px; display: block; text-transform: uppercase; color: var(--color-primary); }
 .account-user-header span { font-size: 12px; color: var(--text-muted); word-break: break-all; }
 .account-menu-list { list-style: none; padding: 0; margin: 0; }
 .signout-item { border-top: 1px solid var(--border-light); margin-top: 15px; padding-top: 10px; }
 .signout-btn { color: var(--color-danger) !important; }
-.account-content-panel { background: var(--bg-surface); border: 1px solid var(--border-strong); padding: 35px; border-radius: 6px; }
+.account-content-panel { background: var(--bg-surface); border: 1px solid var(--border-strong); padding: 35px; }
 
 /* Site-wide Overflow Prevention */
 html, body {
@@ -1108,7 +1100,6 @@ html {
     
     .account-nav-sidebar {
         padding: 10px 12px !important;
-        border-radius: 8px !important;
         position: sticky !important;
         top: calc(var(--header-height, 65px) + 5px) !important;
         z-index: 95 !important;
@@ -1154,7 +1145,6 @@ html {
 
     .account-menu-list li a.acc-tab-btn {
         padding: 8px 16px !important;
-        border-radius: 25px !important;
         background: var(--bg-surface-soft, #f8fafc) !important;
         border: 1px solid var(--border-light, #cbd5e1) !important;
         font-size: 12px !important;
@@ -1179,7 +1169,6 @@ html {
 
     .account-content-panel {
         padding: 20px 14px !important;
-        border-radius: 8px !important;
     }
 
     .acc-tab-title { font-size: 20px !important; }
@@ -1226,7 +1215,6 @@ html {
 .contact-form-card {
     background: var(--bg-surface);
     border: 1px solid var(--border-light);
-    border-radius: 8px;
     padding: 25px;
     box-shadow: var(--shadow-xs);
 }
@@ -1237,7 +1225,6 @@ html {
     align-items: center;
     border: 1px solid var(--border-strong);
     padding: 18px 20px;
-    border-radius: 6px;
     background: var(--bg-surface);
     cursor: pointer;
     transition: all 0.2s ease;
@@ -1342,7 +1329,6 @@ html {
     .step-nav-tab {
         padding: 8px 14px !important;
         font-size: 11px !important;
-        border-radius: 20px !important;
         background: var(--bg-surface-soft, #f8f5f0) !important;
         border: 1px solid var(--border-light, #e2e8f0) !important;
         margin-bottom: 0 !important;
@@ -1419,7 +1405,6 @@ html {
     .contact-form-card {
         padding: 15px !important;
         margin-bottom: 15px !important;
-        border-radius: 8px !important;
     }
 
     /* Form Input & Label Gaps */
@@ -1448,33 +1433,12 @@ html {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   GLOBAL CARD RADIUS
-   Single source of truth: every storefront card container is 4px.
-   Lives at the end of responsive.css because this file loads AFTER
-   style.css, so this reliably wins over the per-card radii that were
-   previously scattered across both files (6px, 8px, var(--radius-sm)
-   which is 0px, etc.). Admin cards are intentionally excluded — their
-   `body.admin-wrapper .stat-card` rule has higher specificity and keeps
-   its own radius.
+   GLOBAL CARD RADIUS — retired
+   This block existed to force every storefront card to one 4px radius,
+   because per-card radii (6px, 8px, var(--radius-sm)) had scattered
+   across both files. The site has no rounded corners at all now, so
+   there is nothing left for it to unify.
    ═══════════════════════════════════════════════════════════ */
-.product-card,
-.category-card,
-.blog-card,
-.mega-promo-card,
-.compact-product-card,
-.review-card-item,
-.search-product-card,
-.product-modal-card,
-.auth-card-box,
-.stat-card,
-.acc-form-card,
-.acc-address-card,
-.acc-stat-card,
-.acc-wishlist-card,
-.cart-summary-card,
-.checkout-summary-card {
-    border-radius: 4px;
-}
 
 /* ═══════════════════════════════════════════════════════════
    BUTTONS ON MOBILE — 13px down to 12px
@@ -1521,10 +1485,6 @@ html {
    Replaces five scattered rules across two files, four of which
    never applied because the base rule carried !important.
    ═══════════════════════════════════════════════════════════ */
-@media (max-width: 1200px) { .container { padding: 0 2rem; } }     /* 32px */
-@media (max-width: 900px)  { .container { padding: 0 1.5rem; } }   /* 24px */
-@media (max-width: 640px)  { .container { padding: 0 1rem; } }     /* 16px */
-@media (max-width: 380px)  { .container { padding: 0 0.75rem; } }  /* 12px */
 
 /* ═══════════════════════════════════════════════════════════
    LEGAL PANELS ON MOBILE
@@ -1600,7 +1560,6 @@ html {
         padding: 8px 5px;
         font-size: 8.5px;
         line-height: 1;
-        border-radius: 12px;
     }
     .compare-toggle span {
         writing-mode: vertical-rl;
@@ -1825,31 +1784,7 @@ html {
 
    nth-of-type(odd/even) rather than :first/:last-of-type so a third panel
    would keep the rhythm instead of breaking it. */
-@media (min-width: 769px) {
-    .occasion-banners-section .occasion-banner .occasion-banner-content {
-        max-width: 1080px;
-    }
-    .occasion-banners-section .occasion-banner .occasion-banner-content h2,
-    .occasion-banners-section .occasion-banner .occasion-banner-content p {
-        max-width: 560px;
-    }
-    .occasion-banners-section .occasion-banner:nth-of-type(odd) .occasion-banner-content {
-        text-align: left;
-    }
-    .occasion-banners-section .occasion-banner:nth-of-type(odd) .occasion-banner-content h2,
-    .occasion-banners-section .occasion-banner:nth-of-type(odd) .occasion-banner-content p {
-        margin-left: 0;
-        margin-right: auto;
-    }
-    .occasion-banners-section .occasion-banner:nth-of-type(even) .occasion-banner-content {
-        text-align: right;
-    }
-    .occasion-banners-section .occasion-banner:nth-of-type(even) .occasion-banner-content h2,
-    .occasion-banners-section .occasion-banner:nth-of-type(even) .occasion-banner-content p {
-        margin-left: auto;
-        margin-right: 0;
-    }
-}
+
 
 /* On a phone there is no width to alternate into — right-aligned body copy on a
    375px screen just looks like a mistake — so the panels stay centred and a
@@ -1869,13 +1804,6 @@ html {
    showing at the right edge — that clipped sliver is the only thing telling the
    shopper the strip scrolls, since there are no arrows and no dots. A width that
    divides evenly into 100% would end the row flush and kill the affordance. */
-@media (max-width: 1199px) { .occasion-tile { flex-basis: 23%; } }  /* ~4.3 in view */
-@media (max-width: 991px)  { .occasion-tile { flex-basis: 30%; } }  /* ~3.3 in view */
-@media (max-width: 768px)  {
-    .occasion-slider { gap: 12px; padding: 0 14px 6px; scroll-padding-left: 14px; }
-    .occasion-tile   { flex-basis: 42%; }                            /* ~2.4 in view */
-}
-@media (max-width: 420px)  { .occasion-tile { flex-basis: 56%; } }  /* ~1.8 in view */
 
 /* ── Reduced motion ────────────────────────────────────────────────────────
    The mobile accordion animates height and an arrow rotation. Someone who has
@@ -2024,4 +1952,496 @@ html {
        first; the reassurances are worth reading, but not before the thing they
        came to buy. */
     .product-benefits-row { order: 1; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   HEADER — 2026 REDESIGN, small screens
+   ───────────────────────────────────────────────────────────────────────────
+   Companion to the block at the end of style.css. Same rule about placement:
+   appended last so it beats the earlier !important header rules in this file
+   at equal specificity, and prefixed with .navbar-luxury where it has to win
+   outright.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 991px) {
+    /* Hamburger · DIEVON · search · account · wishlist · bag.
+       Search is new to this row. The desktop pill it replaces carried
+       display:none below 991px, so on a phone — most of this shop's traffic —
+       the header had no search at all and the only way in was the bottom dock
+       or opening the drawer first. The icon calls the same openSearchOverlay(). */
+    .navbar-luxury .main-header-bar { padding: 8px 0 !important; }
+    /* 16px each side, stated with !important because the earlier mobile header
+       rule in this file sets `padding: 6px 16px !important` on this same element
+       — the shorthand, so it has to be beaten outright rather than added to.
+       Zeroing it (which is what this rule did first) put the hamburger and the
+       bag hard against the edges of the screen with no gutter at all. */
+    .navbar-luxury .main-header-container {
+        padding: 0 16px !important;
+        gap: 8px !important;
+    }
+
+    .navbar-luxury .logo img { height: 34px; max-width: 150px; }
+
+    /* 2px between the glyphs is fine — each one is centred in its own 36px box,
+       so the drawn shapes are already 14px apart. It is NOT fine either side of
+       the country label, which is type and sits flush to the edge of its text:
+       at 2px the N ran into the magnifier. The unit gets its own margin, and
+       the boxes give up 2px each to pay for it. */
+    .navbar-luxury .nav-actions { gap: 2px !important; }
+    .navbar-luxury .nav-action-item { width: 36px; height: 38px; }
+    .navbar-luxury .nav-actions .currency-selector-wrapper { margin-right: 8px; }
+    .navbar-luxury .dv-icon { width: 20px; height: 20px; }
+    .navbar-luxury.header-compact .logo img { height: 30px; }
+
+    /* The hamburger's three bars were 2px at full opacity — heavier than the
+       1.4px strokes they now sit beside. */
+    .navbar-luxury .nav-hamburger span {
+        height: 1.4px !important;
+        background: var(--dv-nav-ink) !important;
+    }
+}
+
+/* ── The drawer ─────────────────────────────────────────────────────────────
+   Already a full-height panel with working accordions, so this is paint only:
+   the ivory ground the header uses, quieter rules, and rows tall enough to be
+   comfortable tap targets. */
+@media (max-width: 991px) {
+    .mobile-drawer,
+    .mobile-nav-panel { background: var(--dv-header-bg) !important; }
+
+    .mobile-drawer-header {
+        padding: 14px 20px !important;
+        border-bottom: 1px solid var(--dv-header-line-lo) !important;
+    }
+    .mobile-drawer-logo-link img { height: 34px !important; width: auto !important; }
+
+    .mobile-drawer-search-bar {
+        margin: 16px 20px 4px !important;
+        padding: 12px 16px !important;
+        border: 1px solid var(--dv-header-line) !important;
+        background: transparent !important;
+    }
+    .mobile-drawer-search-bar .search-placeholder {
+        font-size: 12.5px !important;
+        letter-spacing: 0.02em !important;
+        color: var(--dv-nav-ink-soft) !important;
+    }
+
+    .mobile-nav-links li { border-bottom: 1px solid var(--dv-header-line-lo) !important; }
+    .mobile-nav-links a,
+    .mobile-accordion-header {
+        padding: 15px 0 !important;
+        font-family: var(--font-body), sans-serif !important;
+        font-size: 12px !important;
+        font-weight: 500 !important;
+        letter-spacing: 0.14em !important;
+        text-transform: uppercase !important;
+        color: var(--dv-nav-ink) !important;
+    }
+    .mobile-accordion-header {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        cursor: pointer;
+    }
+    /* Rotation and the open state live in CSS so toggleMobileCategoryMenu()
+       only has to move the class — see the note on that function. */
+    .mobile-accordion-header .accordion-arrow {
+        font-size: 12px !important;
+        color: var(--dv-nav-ink-soft) !important;
+        transition: transform 0.3s var(--dv-ease);
+    }
+    .mobile-nav-accordion.is-open > .mobile-accordion-header { color: var(--dv-nav-hover) !important; }
+    .mobile-nav-accordion.is-open .accordion-arrow { transform: rotate(180deg); }
+
+    .mobile-subnav-list { padding: 2px 0 14px 2px !important; }
+    .mobile-subnav-list li { border-bottom: 0 !important; }
+    .mobile-subnav-list a {
+        padding: 9px 0 !important;
+        font-size: 13px !important;
+        font-weight: 400 !important;
+        letter-spacing: 0.01em !important;
+        text-transform: none !important;
+        color: var(--dv-nav-ink-soft) !important;
+    }
+    .mobile-subnav-divider {
+        padding: 14px 0 6px !important;
+        font-size: 9.5px !important;
+        font-weight: 600 !important;
+        letter-spacing: 0.2em !important;
+        text-transform: uppercase !important;
+        color: var(--dv-nav-ink-soft) !important;
+        border-bottom: 0 !important;
+    }
+
+    .mobile-drawer-footer {
+        padding: 16px 20px calc(16px + env(safe-area-inset-bottom)) !important;
+        border-top: 1px solid var(--dv-header-line-lo) !important;
+        background: var(--dv-header-bg) !important;
+    }
+}
+
+/* The drawer's close control.
+   ─────────────────────────────────────────────────────────────────────────────
+   A filled dark rounded square — the last container of that kind left anywhere
+   in the header once the search pill and the SALE capsule went. It is the only
+   way out of a full-screen panel, so it keeps a 40px target; it just stops
+   being a button-shaped object to do it. */
+@media (max-width: 991px) {
+    .mobile-drawer-close {
+        width: 40px !important;
+        height: 40px !important;
+        background: transparent !important;
+        border: 0 !important;
+        box-shadow: none !important;
+        color: var(--dv-nav-ink) !important;
+        font-size: 20px !important;
+    }
+    .mobile-drawer-close:hover { background: transparent !important; color: var(--dv-nav-hover) !important; }
+}
+
+/* The top strip on a phone. Same left-aligned pair; the strip takes a little
+   more height so the words stay a comfortable target without the links needing
+   padding of their own, which would push the underline off the text. */
+/* Line the strip up with the row beneath it.
+   ─────────────────────────────────────────────────────────────────────────────
+   The strip's gutter comes from .navbar-luxury .container, which is a fluid
+   clamp(20px, 3.2vw, 60px) — but below 991px the header row underneath uses a
+   flat 16px instead. So the switch sat four to nine pixels inboard of the
+   hamburger directly below it: left-aligned, but visibly not aligned WITH
+   anything, which reads as a mistake rather than a margin. */
+@media (max-width: 991px) {
+    .navbar-luxury .header-top-bar > .container { padding-inline: 16px; }
+}
+
+@media (max-width: 640px) {
+    .navbar-luxury .header-top-bar { padding: 10px 0 !important; }
+    .navbar-luxury .header-top-bar .audience-switch { gap: 20px; }
+    .navbar-luxury .header-top-bar .audience-switch-link {
+        flex: 0 0 auto;
+        padding: 0 !important;
+        font-size: 9.5px !important;
+        letter-spacing: 0.16em !important;
+    }
+}
+
+/* Compact has to be smaller on a phone too.
+   ─────────────────────────────────────────────────────────────────────────────
+   The desktop rules — .navbar-luxury.header-compact .main-header-bar at 10px,
+   and .header-top-bar at 6px — carry more specificity than the plain mobile
+   padding above, so on scroll the bar went from 8px to 10px and the strip did
+   not move at all. Measured: the header grew from 93px to 97px on scrolling
+   down, which is the opposite of what the class is for.
+
+   Both restated here with the reach to win, and below the values they are
+   shrinking from. */
+@media (max-width: 991px) {
+    .navbar-luxury.header-compact .main-header-bar { padding: 4px 0 !important; }
+}
+@media (max-width: 640px) {
+    .navbar-luxury.header-compact .header-top-bar { padding: 6px 0 !important; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CLOSES @media (max-width: 991px), OPENED AT LINE 184
+   ───────────────────────────────────────────────────────────────────────────
+   That block was never closed, so every rule written after it — around 2000
+   lines, the rest of this file — was absorbed into it. Most of them are mobile
+   rules and belong there, which is why nothing looked obviously wrong and why it
+   survived this long.
+
+   The brace changes nothing by itself: a browser already closes an unterminated
+   block at end of file, so the nesting is identical either side of this line.
+   What it changes is that the file is valid, and anything appended below sits at
+   the top level where its author will expect it rather than being silently made
+   mobile-only.
+   ═══════════════════════════════════════════════════════════════════════════ */
+}
+
+/* ── Lifted back out of that block ──────────────────────────────────────────
+   Three things were written for ranges reaching above 991px, and the wrapper cut
+   each one off:
+
+     · the .container gutter never stepped down to 2rem between 992 and 1200, so
+       a small laptop kept the full 3.5rem desktop gutter;
+     · the occasion tile basis for <=1199px was shadowed by the <=991 step and
+       never applied at all;
+     · the occasion banner block, meant for every width from 769px up, ran only
+       to 991 — so DESKTOP banners fell back to a 600px centred column while the
+       tablet got the 1080px alternating layout they were designed for.
+       Backwards, and the most visible of the three.
+
+   Both ladders move WHOLE and in their original order. Moving only the top step
+   was tried first and was wrong: with equal specificity the later declaration
+   wins, so a <=1200px rule sitting after the <=900px one re-widened the gutter
+   at 800px. Measured, not reasoned about — 800px read 32px where the file says
+   24px. Order is the rule here, not range. */
+/* The gutter ladder, re-spaced for the 4.5rem base.
+   ─────────────────────────────────────────────────────────────────────────────
+   The base was 3.5rem and the first step down was 2rem — a 24px drop at a single
+   breakpoint, which was already the largest in the ladder. Raising the base to
+   4.5rem without touching the steps would have made it a 40px cliff at 1200px:
+   a window dragged one pixel narrower would jump the content edge by forty.
+
+   So the two upper steps move up with the base, and a 768px step is added to
+   carry the difference. That extra step is not a new behaviour — it holds 24px,
+   which is exactly what 641-768px already had from the old 900px rule. Every
+   width at or below 768px is therefore untouched, which matters: that is the
+   phone range, and it is most of this shop's traffic.
+
+   What actually changes:
+       769- 900px   24px -> 32px
+       901-1200px   32px -> 48px
+          > 1200px   56px -> 72px
+
+   Order is load-bearing. These four have equal specificity, so the widest
+   condition must come first — see the note above about a <=1200 rule that ended
+   up after the <=900 one and re-widened the gutter at 800px. */
+/* Stepping --dv-gutter rather than .container's padding: the homepage hero's
+   text panel is full bleed and reads the same variable, so its headline steps
+   with every contained section instead of needing its own copy of this ladder.
+   Same five values, same order, same result for .container. */
+@media (max-width: 1200px) { :root { --dv-gutter: 3rem; } }     /* 48px */
+@media (max-width: 900px)  { :root { --dv-gutter: 2rem; } }     /* 32px */
+@media (max-width: 768px)  { :root { --dv-gutter: 1.5rem; } }   /* 24px */
+@media (max-width: 640px)  { :root { --dv-gutter: 1rem; } }     /* 16px */
+@media (max-width: 380px)  { :root { --dv-gutter: 0.75rem; } }  /* 12px */
+
+@media (max-width: 1199px) { .occasion-tile { flex-basis: 23%; } }  /* ~4.3 in view */
+@media (max-width: 991px)  { .occasion-tile { flex-basis: 30%; } }  /* ~3.3 in view */
+@media (max-width: 768px)  {
+    /* 16px, so the first card starts exactly where the collections and
+       new-arrivals rails start. It was 14 — two pixels adrift of every other
+       rail, chosen by nobody.
+
+       Owl clips the strip at this element's box, so this padding insets the
+       CLIP too: the peeking card is cut 16px before the glass rather than at
+       it. .dv-rail-bleed exists for exactly that and was tried here — it does
+       nothing, because Owl ignores stagePadding whenever autoWidth is on, and
+       this rail is autoWidth. Removing it needs the rail off autoWidth (or off
+       Owl), which changes the desktop sizing too and is a separate job. Between
+       a 2px error at the start of the strip and a 16px one at the end, the
+       start is what anyone actually sees against the rail above it. */
+    .occasion-slider { gap: 12px; padding: 0 16px 6px; scroll-padding-left: 16px; }
+    /* flex-basis here has never applied: .occasion-slider .occasion-tile in
+       style.css out-specifies a bare .occasion-tile whatever the file order, so
+       the vw rules there are what size these. Removed rather than left to read
+       as the live number. */
+}
+
+@media (min-width: 769px) {
+    .occasion-banners-section .occasion-banner .occasion-banner-content {
+        max-width: 1080px;
+    }
+    .occasion-banners-section .occasion-banner .occasion-banner-content h2,
+    .occasion-banners-section .occasion-banner .occasion-banner-content p {
+        max-width: 560px;
+    }
+    .occasion-banners-section .occasion-banner:nth-of-type(odd) .occasion-banner-content {
+        text-align: left;
+    }
+    .occasion-banners-section .occasion-banner:nth-of-type(odd) .occasion-banner-content h2,
+    .occasion-banners-section .occasion-banner:nth-of-type(odd) .occasion-banner-content p {
+        margin-left: 0;
+        margin-right: auto;
+    }
+    .occasion-banners-section .occasion-banner:nth-of-type(even) .occasion-banner-content {
+        text-align: right;
+    }
+    .occasion-banners-section .occasion-banner:nth-of-type(even) .occasion-banner-content h2,
+    .occasion-banners-section .occasion-banner:nth-of-type(even) .occasion-banner-content p {
+        margin-left: auto;
+        margin-right: 0;
+    }
+}
+
+/* The country picker is a glyph now, so on a phone it just tracks the icon
+   boxes beside it — see the 991px block above for where those are set. Nothing
+   to re-type or re-space: the <select> over it is invisible at every width. */
+@media (max-width: 991px) {
+    .navbar-luxury .nav-actions .currency-selector-wrapper { height: 38px; }
+}
+
+/* Five controls on a narrow phone.
+   ─────────────────────────────────────────────────────────────────────────────
+   The row carried four; the country picker makes five, and at 38px boxes that
+   is 195px of cluster against roughly 150px of clear space on a 320px screen —
+   the bag ended up 32px off the right edge. Measured, not guessed: scrollWidth
+   353 against a 320 client width.
+
+   The glyphs themselves are not the problem, the boxes around them are. 38px of
+   box for a 20px icon is 9px of padding a side; at 30px it is 5, which is still
+   a 30px target with 2px between them and reads no tighter because the drawn
+   size does not change. */
+@media (max-width: 420px) {
+    .navbar-luxury .nav-action-item { width: 30px; }
+    .navbar-luxury .nav-actions .dv-country-glyph { gap: 5px; padding: 0; }
+    .navbar-luxury .nav-actions .dv-country-code { font-size: 11.5px; letter-spacing: 0.1em; margin-right: -0.1em; }
+}
+
+/* Narrower still: the wordmark gives up four pixels of height so the cluster
+   keeps its targets rather than the other way round. */
+/* Narrowest step: the code goes, the glyph stays. Five controls, a hamburger
+   and the wordmark do not fit on a 320px screen with two extra characters in
+   the row — and the footer states the country in full anyway. */
+@media (max-width: 345px) {
+    .navbar-luxury .nav-action-item { width: 27px; }
+    /* No label here, so no type to keep clear of — the margin goes back. */
+    .navbar-luxury .nav-actions .dv-country-code { display: none; }
+    .navbar-luxury .nav-actions .currency-selector-wrapper { margin-right: 0; }
+    .navbar-luxury .dv-icon { width: 19px; height: 19px; }
+    .navbar-luxury .logo img { height: 30px; }
+}
+
+/* ═════════════════════════════════════════════════════════════════════════
+   HOMEPAGE HERO on small screens — the words stay ON the banner
+   ─────────────────────────────────────────────────────────────────────────
+   This was two rows for a while: the photograph, then the copy on an ivory
+   panel below it. That was the safe answer while the scrim was light, because
+   a light wash cannot rescue dark type over a bright portrait crop.
+
+   With the scrim dark the reason is gone. White type over black reads on any
+   upload, at any crop, so the phone can do what the desktop does and what the
+   live site has always done — the copy sits inside the banner.
+
+   Live puts it at bottom-left, 5% in, and that is right for a portrait frame:
+   the model occupies the middle of the crop and the quiet ground is underneath.
+   So the panel keeps its full-bleed box and pushes its contents to the bottom,
+   and the gradient turns through 90 degrees — bottom-up here, left-to-right on
+   desktop — because that is where the words moved to.
+   ═════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 991px) {
+    /* 65vh is live's own hero height on a phone. The floor is for a short
+       landscape viewport, where 65vh is not enough to hold the type and the
+       buttons. */
+    .hero-slider-section {
+        height: 65vh !important;
+        min-height: 460px;
+    }
+    .slider-container,
+    .slider-container.owl-loaded .owl-item,
+    .slider-container.owl-loaded .slide { height: 100% !important; }
+
+    .slide { position: relative; height: 100% !important; }
+
+    /* object-position keeps the top of the frame: on a tall crop of a landscape
+       upload it is the hem that should go, not the face. */
+    .slide-media { position: absolute; inset: 0; }
+    .slide-img { object-position: center 18%; }
+
+    /* Bottom-up, mirroring live's overlay — but held near full strength further
+       up the frame than live holds it.
+       ───────────────────────────────────────────────────────────────────────
+       Live only has to cover one line and one button at bottom:18%. This hero
+       stacks an eyebrow, a headline, two lines of subtext and two buttons, and
+       on a 390px screen that column is about 45% of the frame. So the scrim has
+       to stay heavy to roughly 55% and only then fall away.
+
+       The numbers are set for the worst ground there is, not for the banners
+       uploaded today: a pure white studio shot. White type needs the ground at
+       or below about 118 to clear 4.5:1, and 0.60 alpha over #fff gives 102.
+       Every stop up to 55% is at or above that, so no upload can break it —
+       which is the whole reason the scrim went dark in the first place. Above
+       78% it is almost gone, so the model's face keeps its own light. */
+    .slide-panel {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: flex-end;
+        background: linear-gradient(
+            to top,
+            rgba(0, 0, 0, 0.85) 0%,
+            rgba(0, 0, 0, 0.76) 30%,
+            rgba(0, 0, 0, 0.60) 55%,
+            rgba(0, 0, 0, 0.22) 78%,
+            rgba(0, 0, 0, 0.04) 100%
+        );
+        padding: 0 var(--dv-gutter) clamp(54px, 13vw, 76px);
+        pointer-events: none;
+    }
+    .slide-content {
+        max-width: 100%;
+        margin-left: 0;
+        pointer-events: auto;
+    }
+    .hero-slider-section .slide-content h1,
+    .hero-slider-section .slide-content h2 { font-size: clamp(30px, 8.5vw, 44px) !important; }
+    .hero-slider-section .slide-content p {
+        font-size: 13.5px;
+        max-width: 30rem;
+        margin-bottom: clamp(20px, 4vw, 28px);
+    }
+
+    /* Tablet has the width for two buttons side by side. A phone does not:
+       "Explore Collection" at 10px with 0.18em tracking needs about 175px of
+       line, and half of a 390px screen leaves 146px inside the padding — so the
+       label was being clipped. Stacked below 640px, side by side above it. */
+    .slide-actions { gap: 10px; }
+    .hero-slider-section .btn-hero-primary,
+    .hero-slider-section .btn-hero-ghost { flex: 1 1 0; min-height: 46px; padding: 0 14px; font-size: 10px; }
+
+    /* Room under the buttons for the pager.
+       ─────────────────────────────────────────────────────────────────────
+       The shared pager sits in the hero's bottom-right corner at every width.
+       On a phone the CTA row reaches far enough right to meet it: measured at
+       320, 360, 390 and 430, "Explore Collection" ended about 10px inside the
+       pill's top edge and the two drew over each other. Above 768 the row is
+       nowhere near it, so this is a phone-only reservation.
+
+       The clearance goes on the content, not the control — moving the pill
+       instead would break the one thing this component is for, which is being
+       in the same corner in every section. */
+    .hero-slider-section .slide-actions { margin-bottom: 34px; }
+
+    /* The phone blackout is gone with the arrows it hid. The hero used to
+       delete its navigation below 480px, leaving swipe as the only way through
+       — which is invisible, unreachable by keyboard, and impossible on a
+       switch. The shared pager stays at every width, like the other four. */
+}
+
+/* Side by side and small, not two stacked bars.
+   ───────────────────────────────────────────────────────────────────────────
+   Stacked full-width, the pair read as a bar bolted to the foot of the
+   photograph rather than as two buttons on it. They fit in a row once the
+   type gives up a little size and tracking: "Explore Collection" is 18
+   characters, and at 9.5px with 0.12em it measures about 139px inside its
+   padding, against the 156px each button gets inside a 320px cap on a 390px
+   screen. The cap is what keeps them off the gutters. */
+@media (max-width: 640px) {
+    .hero-slider-section .slide-actions {
+        flex-direction: row;
+        align-items: stretch;
+        flex-wrap: nowrap;
+        max-width: 320px;
+        gap: 8px;
+    }
+    .hero-slider-section .btn-hero-primary,
+    .hero-slider-section .btn-hero-ghost {
+        flex: 1 1 0;
+        min-width: 0;
+        width: auto;
+        /* 44, not the 40 this first shrank to. Narrower is what was asked for;
+           shorter than a fingertip is not, and this is the banner's main call
+           to action. The same floor the hero arrows carry. */
+        min-height: 44px;
+        padding: 0 8px;
+        font-size: 9.5px;
+        letter-spacing: 0.12em;
+        white-space: nowrap;
+    }
+}
+
+/* Very narrow: the same column of type over a shorter frame, so it occupies a
+   larger share of it and the scrim has to hold higher still. */
+@media (max-width: 380px) {
+    .slide-panel {
+        background: linear-gradient(
+            to top,
+            rgba(0, 0, 0, 0.87) 0%,
+            rgba(0, 0, 0, 0.80) 34%,
+            rgba(0, 0, 0, 0.64) 62%,
+            rgba(0, 0, 0, 0.24) 82%,
+            rgba(0, 0, 0, 0.04) 100%
+        );
+    }
 }

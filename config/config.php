@@ -1536,7 +1536,7 @@ function requireAdminCapability(string $capability, bool $asJson = false): void 
     echo '<!doctype html><meta charset="utf-8"><meta name="robots" content="noindex, nofollow">'
        . '<title>Not permitted</title>'
        . '<div style="font-family:system-ui,sans-serif;max-width:520px;margin:80px auto;padding:28px;'
-       . 'border:1px solid #e5e7eb;border-radius:10px;line-height:1.7;">'
+       . 'border:1px solid #e5e7eb;line-height:1.7;">'
        . '<h1 style="font-size:19px;margin:0 0 10px;">You do not have permission to open this page</h1>'
        . '<p style="color:#555;margin:0 0 18px;">Your account is set up as <strong>'
        . htmlspecialchars(currentAdminRole()) . '</strong>. Ask the shop owner if you need access.</p>'
@@ -1881,6 +1881,188 @@ function homeCountryRow(): ?array {
 function countrySelectorEnabled(): bool {
     return count(enabledCountries()) > 1;
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   EXCHANGE RATES — for SUGGESTING an international price, nothing else
+   ──────────────────────────────────────────────────────────────────────────
+   Read this before using any of it: no rate here is ever applied to a price a
+   shopper sees. productCountryPricing() still reads product_country_prices and
+   only that. These functions exist so the product form can PRE-FILL the
+   international boxes when a price is typed in rupees; the admin can overwrite
+   the suggestion, and whatever is in the box is what gets stored.
+
+   That separation is deliberate. A live rate moving overnight must never
+   silently change what a garment costs — a shopper who saw £68 yesterday sees
+   £68 today. Converting at display time would also mean a rate outage changes
+   prices, which is the worst possible failure for a shop.
+
+   The rate is expressed as UNITS OF THE FOREIGN CURRENCY PER 1 INR, because
+   INR is the home currency and the product form types rupees first.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/** Rates older than this are refetched; anything newer is served from the DB. */
+define('DIEVON_FX_MAX_AGE_HOURS', 12);
+
+/**
+ * Ask an exchange-rate service for the current rates against INR.
+ *
+ * Returns [CURRENCY => rate] for whatever it could get, or [] on any failure.
+ * Never throws and never blocks for long: this runs inside an admin page load,
+ * so a slow or dead service must cost a couple of seconds, not the page.
+ *
+ * open.er-api.com is used because it needs no API key and covers the
+ * currencies an Indian shop actually exports to — including AED, which the
+ * ECB-backed alternatives do not publish.
+ */
+function fxFetchLiveRates(array $currencies): array {
+    $currencies = array_values(array_unique(array_filter(array_map(
+        static fn($c) => strtoupper(trim((string)$c)), $currencies
+    ))));
+    if (!$currencies) { return []; }
+
+    $url  = 'https://open.er-api.com/v6/latest/INR';
+    $body = null;
+
+    if (function_exists('curl_init')) {
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_CONNECTTIMEOUT => 4,
+            CURLOPT_TIMEOUT        => 8,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_MAXREDIRS      => 3,
+            CURLOPT_USERAGENT      => 'Dievon/1.0 (+admin exchange rates)',
+        ]);
+        $body = curl_exec($ch);
+        $err  = curl_error($ch);
+        $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        if ($body === false || $code < 200 || $code >= 300) {
+            error_log('fxFetchLiveRates: HTTP ' . $code . ' ' . $err);
+            $body = null;
+        }
+    }
+
+    // Shared hosting sometimes has cURL off but allow_url_fopen on.
+    if ($body === null && ini_get('allow_url_fopen')) {
+        $ctx  = stream_context_create(['http' => ['timeout' => 8, 'header' => "User-Agent: Dievon/1.0\r\n"]]);
+        $body = @file_get_contents($url, false, $ctx);
+        if ($body === false) { $body = null; }
+    }
+
+    if ($body === null) { return []; }
+
+    $json = json_decode($body, true);
+    if (!is_array($json) || ($json['result'] ?? '') !== 'success' || !is_array($json['rates'] ?? null)) {
+        error_log('fxFetchLiveRates: unexpected payload');
+        return [];
+    }
+
+    $out = [];
+    foreach ($currencies as $cur) {
+        $rate = $json['rates'][$cur] ?? null;
+        if (is_numeric($rate) && (float)$rate > 0) { $out[$cur] = (float)$rate; }
+    }
+    return $out;
+}
+
+/**
+ * Refresh the stored rate for every enabled country, and hand back what is
+ * now on record.
+ *
+ * $force ignores the age check — that is the "Refresh rates now" button. Left
+ * alone it only calls out when the oldest rate is over DIEVON_FX_MAX_AGE_HOURS,
+ * so opening the product form twenty times in an afternoon makes one request.
+ *
+ * A failed fetch is NOT an error state. The previously stored rate stays in
+ * place and is returned marked stale, so the form still suggests something and
+ * the admin screens can say how old it is. That is the whole reason the rate
+ * is a column rather than a transient.
+ *
+ * Returns [CODE => ['rate'=>float|null, 'updated_at'=>?string, 'stale'=>bool]].
+ */
+function fxRatesForCountries(?PDO $pdo = null, bool $force = false): array {
+    $pdo = $pdo ?: ($GLOBALS['pdo'] ?? null);
+    if (!($pdo instanceof PDO)) { return []; }
+
+    static $cache = null;
+    if ($cache !== null && !$force) { return $cache; }
+
+    try {
+        $rows = $pdo->query(
+            "SELECT country_code, currency_code, is_home, fx_rate, fx_rate_updated_at
+               FROM store_countries WHERE is_enabled = 1"
+        )->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        // Column missing means update_new_database.php has not been run yet.
+        return $cache = [];
+    }
+
+    $maxAge  = DIEVON_FX_MAX_AGE_HOURS * 3600;
+    $now     = time();
+    $wanted  = [];
+    foreach ($rows as $r) {
+        if ((int)$r['is_home'] === 1) { continue; }
+        $age = $r['fx_rate_updated_at'] ? ($now - strtotime((string)$r['fx_rate_updated_at'])) : PHP_INT_MAX;
+        if ($force || $r['fx_rate'] === null || $age > $maxAge) {
+            $wanted[] = strtoupper((string)$r['currency_code']);
+        }
+    }
+
+    if ($wanted) {
+        $live = fxFetchLiveRates($wanted);
+        if ($live) {
+            $upd = $pdo->prepare(
+                "UPDATE store_countries SET fx_rate = :r, fx_rate_updated_at = NOW() WHERE country_code = :c"
+            );
+            foreach ($rows as &$r) {
+                $cur = strtoupper((string)$r['currency_code']);
+                if ((int)$r['is_home'] === 1 || !isset($live[$cur])) { continue; }
+                try {
+                    $upd->execute([':r' => $live[$cur], ':c' => strtoupper((string)$r['country_code'])]);
+                    $r['fx_rate']            = $live[$cur];
+                    $r['fx_rate_updated_at'] = date('Y-m-d H:i:s');
+                } catch (PDOException $e) { /* keep the old rate */ }
+            }
+            unset($r);
+        }
+    }
+
+    $out = [];
+    foreach ($rows as $r) {
+        $code = strtoupper((string)$r['country_code']);
+        $rate = $r['fx_rate'] !== null ? (float)$r['fx_rate'] : null;
+        if ((int)$r['is_home'] === 1) { $rate = 1.0; }
+        $age  = $r['fx_rate_updated_at'] ? ($now - strtotime((string)$r['fx_rate_updated_at'])) : null;
+        $out[$code] = [
+            'rate'       => $rate,
+            'currency'   => strtoupper((string)$r['currency_code']),
+            'updated_at' => $r['fx_rate_updated_at'],
+            'stale'      => (int)$r['is_home'] !== 1 && ($age === null || $age > $maxAge),
+        ];
+    }
+
+    if (!$force) { $cache = $out; }
+    return $out;
+}
+
+/**
+ * Convert a rupee amount into a country's currency, rounded the way a price
+ * tag is rounded.
+ *
+ * ceil to a whole unit, not round(): 7230 INR at 0.0094 is 67.96, and rounding
+ * down to 67 gives away margin on every single sale of that garment. Rounding
+ * up costs the shopper 4p and keeps the intended markup. It is a suggestion in
+ * a form either way — the admin sees the number before it is saved.
+ *
+ * Returns null when there is no usable rate, which the caller must treat as
+ * "leave the box empty" rather than as zero.
+ */
+function fxConvertFromInr(float $inr, ?float $rate): ?float {
+    if ($rate === null || $rate <= 0 || $inr <= 0) { return null; }
+    return (float)ceil($inr * $rate);
+}
+
 
 /**
  * The country this visitor is shopping in.

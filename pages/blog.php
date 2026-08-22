@@ -39,41 +39,10 @@ require_once __DIR__ . '/../includes/header.php';
             </div>
         <?php else: ?>
             <div class="blog-list-grid">
-                <?php foreach ($articles as $a): 
-                    // One resolver, shared with the article page, the homepage and the
-                    // admin list — so all four cannot disagree again. Lookbook filenames
-                    // are deliberately NOT honoured here; see blogImageUrl().
-                    $imgUrl = blogImageUrl($a['image'] ?? '');
-                ?>
-                    <article class="reveal-on-scroll blog-card">
-                        <div class="blog-card-media">
-                            <a href="<?= SITE_URL ?>/blog-single?id=<?= $a['id'] ?>">
-                                <?php $cardWebpUrl = preg_replace('/\.[^.]+$/', '.webp', $imgUrl);
-                                      $cardWebpFile = str_replace(SITE_URL . '/', __DIR__ . '/../', $cardWebpUrl); ?>
-                                <picture>
-                                    <?php if (webpSourceIsFresh($imgUrl, $cardWebpFile)): ?><source srcset="<?= htmlspecialchars(cacheBustedUploadUrl($cardWebpUrl)) ?>" type="image/webp"><?php endif; ?>
-                                    <img src="<?= htmlspecialchars(cacheBustedUploadUrl($imgUrl)) ?>" alt="<?= htmlspecialchars($a['title']) ?>" class="blog-card-img" loading="lazy" decoding="async">
-                                </picture>
-                            </a>
-                        </div>
-                        <div class="blog-card-body">
-                            <div class="blog-card-meta">
-                                <span class="blog-card-category"><?= htmlspecialchars($a['category'] ?? 'Style Guide') ?></span> &bull; 
-                                <span class="blog-card-date"><?= date('F d, Y', strtotime($a['published_date'])) ?></span>
-                            </div>
-                            <h2 class="blog-card-title">
-                                <a href="<?= SITE_URL ?>/blog-single?id=<?= $a['id'] ?>"><?= htmlspecialchars($a['title']) ?></a>
-                            </h2>
-                            <p class="blog-card-excerpt">
-                                <?= htmlspecialchars($a['excerpt']) ?>
-                            </p>
-                            <div>
-                                <a href="<?= SITE_URL ?>/blog-single?id=<?= $a['id'] ?>" class="blog-card-link">
-                                    Read Article <i class="fa-solid fa-arrow-right-long"></i>
-                                </a>
-                            </div>
-                        </div>
-                    </article>
+                <?php // Shared partial — see includes/blog_card.php. Defaults are
+                      // this listing's own shape, so nothing is passed but the row. ?>
+                <?php foreach ($articles as $a): ?>
+                    <?php $blogPost = $a; include __DIR__ . '/../includes/blog_card.php'; ?>
                 <?php endforeach; ?>
             </div>
         <?php endif; ?>

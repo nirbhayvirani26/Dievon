@@ -551,114 +551,37 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
         // productHoverImage(). Without this each card below would prime itself.
         productHoverImagePrime($products);
         productPriceRangePrime($products);
+        /* One card per product, and nothing else.
+           ────────────────────────────────────────────────────────────────────
+           This loop used to compute the whole card by hand — country override,
+           price range, "From" prefix, discount percentage, formatted MRP, WebP
+           path, alt text, sold-out — and ship the result as fields for
+           createProductCard() to assemble in the browser. Every one of those
+           lines was a second implementation of something includes/product_card.php
+           already does, kept in step by hand; the file's own comments recorded
+           each occasion one of them had fallen out of step.
+
+           With the card rendered here, all of it is the partial's work. What
+           remains is the id, so the grid can key what it has loaded, and the
+           markup.
+
+           $card is set from the row exactly as it comes out of the query,
+           before anything touches it — the same pristine row the static grid
+           three hundred lines below hands the partial. The earlier version of
+           this change rendered AFTER the country override had already rewritten
+           $p['price'], which the partial reads directly; it happened to come out
+           right, but only because productCountryPricing() re-derives the figure
+           from the product id. Rendering from the untouched row means the two
+           grids cannot disagree whatever the country settings are, rather than
+           agreeing by luck. */
         foreach ($products as $p) {
-            $p['variants'] = isset($variantsByProduct[$p['id']]) ? $variantsByProduct[$p['id']] : [];
-            // Same country override as includes/product_card.php: a shopper abroad
-            // sees the flat product_country_prices figure, or nothing to buy at all
-            // when the product has no row for their country yet. Without this, the
-            // AJAX "Load More" / sort / filter grid disagreed with the first page
-            // of server-rendered cards the moment a second country was enabled.
-            $pNotSoldHere = false;
-            if (function_exists('countrySelectorEnabled') && countrySelectorEnabled()) {
-                $pCountryPricing = productCountryPricing($p);
-                if ($pCountryPricing === null) {
-                    $pNotSoldHere = true;
-                } else {
-                    $p['price']     = $pCountryPricing['price'];
-                    $p['mrp_price'] = $pCountryPricing['mrp'];
-                }
-            }
-            $p['not_sold_here'] = $pNotSoldHere;
-            // Never left empty: createProductCard() below falls back to a raw,
-            // un-converted p.price when formatted_price is falsy, which would
-            // print the INR figure with no symbol fix — the exact bug this whole
-            // change exists to remove.
-            /* The buyable figure, matching the server-rendered card.
-               includes/product_card.php was fixed to show the lowest price a
-               shopper can actually pay; this JSON feeds the Load More cards,
-               and still sent products.price — so the first page of a grid read
-               "From ₹10" and everything after it read "₹10" for the same
-               product. One grid, two prices. */
-            $pRange = function_exists('productPriceRange')
-                ? productPriceRange($p)
-                : ['min' => (float)$p['price'], 'varies' => false];
-            $pShown = $pRange['min'] > 0 ? $pRange['min'] : (float)$p['price'];
-            $p['price_varies']    = $pRange['varies'] ? 1 : 0;
-            $p['formatted_price'] = $pNotSoldHere ? 'Not available in your country' : formatPrice($pShown);
-            $pMrp = (float)($p['mrp_price'] ?? 0);
-            /* The saving is measured against the price actually shown, and is
-               withdrawn entirely once that price is a "From".
-               ────────────────────────────────────────────────────────────────
-               These three lines read products.price while formatted_price above
-               already carried the buyable figure, so a Load More card claimed
-               "22% OFF" over "₹1,600 ₹1,100" — a genuine 31% — and a card whose
-               price had become a floor still showed a strikethrough MRP that
-               only holds for one size. includes/product_card.php settles it the
-               same way; the two renderers of this grid have to agree. */
-            $pVaries      = (bool)$pRange['varies'];
-            $pHasDiscount = !$pNotSoldHere && !$pVaries && $pMrp > $pShown && $pShown > 0;
-            $p['has_discount'] = $pHasDiscount;
-            $p['discount_percent'] = $pHasDiscount ? (int)round((($pMrp - $pShown) / $pMrp) * 100) : 0;
-            $p['formatted_mrp'] = $pHasDiscount ? formatPrice($pMrp) : '';
-            // Same two things the server-rendered card uses (includes/product_card.php):
-            // the WebP copy, and real alt text. Without them the cards appended by
-            // "load more" served the full-size original and described it only by name.
-            $p['image_webp'] = !empty($p['image']) ? webpUrlIfExists('products', $p['image']) : null;
-            $p['image_alt']  = productImageAlt($p);
-            // Sold-out state, worked out the same way includes/product_card.php
-            // does it. Without this the JSON carried no notion of stock at all,
-            // so a card appended by Load More — or the whole grid after a sort or
-            // a filter, which re-renders through this path — lost its "Sold Out"
-            // badge and offered a normal Add to Bag on something unbuyable.
-            $p['is_sold_out'] = ((int)($p['available'] ?? 1) === 1 && !empty($p['track_stock']))
-                ? (productSellableStock($pdo, $p) <= 0)
-                : false;
-
-            // Only what the card actually draws leaves the server.
-            //
-            // The whole products row went out as JSON to any visitor — 63 fields,
-            // including cost_price, total_stock, damage_stock, sold_offline,
-            // sold_online, stock_qty, hsn_code, gst_rate, atelier_code and
-            // sourcing. Anyone could read the shop's margins, its true inventory
-            // position and its suppliers by opening /shop?ajax=1, and this path
-            // serves the whole grid after every sort, filter and Load More.
-            //
-            // The stock columns are still needed ABOVE, because productSellableStock()
-            // and the sold-out flag are computed server-side — so the projection
-            // happens here, at the encode boundary, rather than by narrowing the
-            // SELECT. The field list is what createProductCard() reads, nothing more.
-            $cardFields = [
-                'id', 'name', 'seo_url', 'category', 'price', 'image', 'image_webp', 'image_alt',
-                'emoji', 'badge', 'video_url', 'available', 'is_deleted',
-                'formatted_price', 'formatted_mrp', 'has_discount', 'discount_percent', 'price_varies',
-                'is_sold_out', 'not_sold_here',
+            $card = $p;
+            ob_start();
+            include __DIR__ . '/../includes/product_card.php';
+            $formattedProducts[] = [
+                'id'   => (int)$p['id'],
+                'html' => ob_get_clean(),
             ];
-            $card = array_intersect_key($p, array_flip($cardFields));
-
-            // "New" expires — see productBadge() in config/config.php. Applied
-            // here, at the encode boundary, so the cards that arrive from Load
-            // More and from every filter say exactly what the server-rendered
-            // ones say. createProductCard() needed no change for it.
-            $card['badge'] = productBadge($p);
-
-            // The hover photograph, so a Load More card behaves like one that
-            // arrived with the page. Only the filename leaves the server, the
-            // same as 'image' above — nothing about stock or cost is added here.
-            $hoverImg = productHoverImage($p);
-            if ($hoverImg !== null) {
-                $card['image_hover']      = $hoverImg;
-                $card['image_hover_webp'] = webpUrlIfExists('products', $hoverImg) ?: null;
-            }
-
-            // Variants likewise: the card prints size names and nothing else, but
-            // these rows were emitted by SELECT *, carrying per-size stock_qty and
-            // cost figures with them.
-            $card['variants'] = array_map(
-                static fn(array $v): array => ['name' => $v['name'] ?? ''],
-                $p['variants'] ?? []
-            );
-
-            $formattedProducts[] = $card;
         }
 
         @ob_clean();
@@ -2139,13 +2062,18 @@ if (function_exists('currentShopGender') && currentShopGender() === 'men') {
                     // Render products
                     data.products.forEach(p => {
                         allLoadedProducts[p.id] = p;
-                        const card = createProductCard(p);
+                        // The server sent the finished card, built by the same
+                        // partial as the grid already on the page — see the
+                        // render note in the ajax branch above. Nothing is
+                        // rebuilt here any more.
+                        grid.insertAdjacentHTML('beforeend', p.html || '');
+                        const card = grid.lastElementChild;
+                        if (!card) { return; }
                         // Same scroll-entrance as the static grid: hidden briefly
                         // then revealed by the site's observer (footer.php). New
                         // cards without this class stay plainly visible, so a
                         // failure here can never hide products.
                         card.classList.add('reveal-on-scroll');
-                        grid.appendChild(card);
                         if (typeof dievonObserveReveal === 'function') dievonObserveReveal(card);
                     });
 
@@ -2184,92 +2112,19 @@ if (function_exists('currentShopGender') && currentShopGender() === 'men') {
         return `${window.SITE_URL}/product/${slugify(p.seo_url || p.name)}-${p.id}`;
     }
 
-    function createProductCard(p) {
-        const article = document.createElement('article');
-        article.className = 'product-card reveal-on-scroll';
-        // Matches includes/product_card.php. syncBagNotes() in includes/footer.php
-        // fills the bag note on both renderers from the same code, so the card a
-        // shopper gets from "load more" says the same thing as the one that
-        // arrived with the page.
-        article.dataset.productId = p.id;
 
-        let imgHtml = '';
-        if (p.image) {
-            // Mirrors includes/product_card.php — keep the two in step, or a product
-            // looks different depending on whether it arrived with the page or with
-            // "load more".
-            const alt = escHtml(p.image_alt || p.name);
-            const src = `<?= SITE_URL ?>/uploads/products/${escHtml(p.image)}`;
-            const webpSource = p.image_webp
-                ? `<source srcset="${escHtml(p.image_webp)}" type="image/webp">` : '';
-            imgHtml = `<picture>${webpSource}<img src="${src}" alt="${alt}" loading="lazy" decoding="async" class="card-img"></picture>`;
-            // The hover layer, matching includes/product_card.php: empty src,
-            // real path in data-src, filled in by the delegated listener in
-            // includes/footer.php the first time a pointer reaches the tile.
-            if (p.image_hover) {
-                const hSrc  = `<?= SITE_URL ?>/uploads/products/${escHtml(p.image_hover)}`;
-                const hWebp = p.image_hover_webp ? ` data-webp="${escHtml(p.image_hover_webp)}"` : '';
-                imgHtml += `<img class="card-img card-img-hover" alt="" aria-hidden="true" decoding="async" data-src="${hSrc}"${hWebp}>`;
-            }
-        } else if (p.video_url) {
-            const vSrc = (p.video_url.startsWith('http://') || p.video_url.startsWith('https://')) ? p.video_url : `${window.SITE_URL}/uploads/products/${p.video_url}`;
-            imgHtml = `<video src="${escHtml(vSrc)}" autoplay loop muted playsinline class="card-img"></video>`;
-        } else {
-            imgHtml = `<div class="card-img-fallback" aria-label="No image available">${escHtml(p.emoji)}</div>`;
-        }
+    /* createProductCard() lived here.
+       ────────────────────────────────────────────────────────────────────────
+       It was a second, hand-written copy of includes/product_card.php, carried
+       so that cards arriving by filter, sort or Load More would look like the
+       ones rendered with the page. Its own comment set the terms — "keep the two
+       in step, or a product looks like a different component depending on how it
+       arrived" — and that is a contract no comment can enforce. The equivalent
+       copy on the product page had already lost its sold-out state.
 
-        // Sold Out wins over any other badge, exactly as the server card orders
-        // them (includes/product_card.php:60-64). Kept first for the same reason:
-        // a discount badge on something that cannot be bought is worse than no
-        // badge at all.
-        const badgeHtml = p.not_sold_here ? `<span class="badge-luxury badge-sold-out">Not Available Here</span>` : (p.is_sold_out ? `<span class="badge-luxury badge-sold-out">Sold Out</span>` : (p.has_discount ? `<span class="badge-luxury badge-sale">${p.discount_percent}% OFF</span>` : (p.badge ? `<span class="badge-luxury">${escHtml(p.badge)}</span>` : '')));
+       The ajax branch now renders each card through the partial and sends the
+       markup, so there is one definition again and nothing left here to drift. */
 
-        // Sizing indicator
-        let sizeInfo = '';
-        if (p.variants && p.variants.length > 0) {
-            const sizes = p.variants.map(v => v.name.replace('Size: ', '')).join(', ');
-            sizeInfo = `<span class="product-card-sizes">Sizes: ${escHtml(sizes)}</span>`;
-        }
-
-        // Wishlist active check
-        const isWishlisted = getWishlist().indexOf(p.id.toString()) > -1;
-        const wishlistClass = isWishlisted ? 'fa-solid fa-heart wishlist-btn-active' : 'fa-regular fa-heart';
-
-        article.innerHTML = `
-            ${badgeHtml}
-
-            <button class="product-card-wishlist-btn" onclick="event.preventDefault(); handleWishlistClick(${p.id}, this)" aria-label="Add to Wishlist">
-                <i class="${wishlistClass}"></i>
-            </button>
-
-            <div class="card-img-container">
-                <a href="${productUrl(p)}" class="card-img-link">
-                    ${imgHtml}
-                </a>
-                <label class="compare-toggle" title="Compare (up to 3)" onclick="event.stopPropagation()">
-                    <input type="checkbox" class="compare-check" value="${p.id}" data-name="${escHtml(p.name)}" onchange="toggleCompare(this)">
-                    <span>Compare</span>
-                </label>
-                <button onclick="event.preventDefault(); openQuickView(${p.id})" class="quick-view-btn">Quick View</button>
-            </div>
-            <div class="product-card-details">
-                <p class="product-card-bag-note" data-bag-note hidden></p>
-                <span class="product-card-category">${escHtml(p.category)}</span>
-                <h3 class="product-card-title">
-                    <a href="${productUrl(p)}">${escHtml(p.name)}</a>
-                </h3>
-                ${sizeInfo}
-                <div class="product-card-price">
-                    ${p.has_discount ? `<span class="price-mrp-strike">${escHtml(p.formatted_mrp)}</span>` : ''}
-                    ${p.price_varies ? '<span class="price-from-label">From</span> ' : ''}${p.formatted_price ? escHtml(p.formatted_price) : (typeof formatPriceJS === 'function' ? formatPriceJS(p.price) : '<?= currencySymbol() ?>' + parseFloat(p.price).toFixed(2))}
-                </div>
-                <a href="${productUrl(p)}" class="btn-luxury product-card-cta">
-                    Details
-                </a>
-            </div>
-        `;
-        return article;
-    }
 </script>
 
 
@@ -2372,10 +2227,10 @@ if (function_exists('currentShopGender') && currentShopGender() === 'men') {
             <div class="refine-tab-pane" id="tabPrice">
                 <div style="padding: 10px 0;">
                     <label style="font-size: 12px; font-weight: 700; color: #475569; display: block; margin-bottom: 6px;">Min Price (<?= currencySymbol() ?>)</label>
-                    <input type="number" id="mMinPrice" placeholder="0" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; margin-bottom: 14px; font-size: 14px;">
+                    <input type="number" id="mMinPrice" placeholder="0" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; margin-bottom: 14px; font-size: 14px;">
                     
                     <label style="font-size: 12px; font-weight: 700; color: #475569; display: block; margin-bottom: 6px;">Max Price (<?= currencySymbol() ?>)</label>
-                    <input type="number" id="mMaxPrice" placeholder="1000" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px;">
+                    <input type="number" id="mMaxPrice" placeholder="1000" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; font-size: 14px;">
                 </div>
             </div>
 

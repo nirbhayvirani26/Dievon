@@ -894,7 +894,7 @@ require_once __DIR__ . '/includes/header.php';
 
             <!-- Setup warning -->
             <?php if (!$stockMigrationDone || !$stockV2Done): ?>
-            <div style="background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.4); border-radius:var(--radius-sm); padding:14px 18px; margin-bottom:20px; font-size:13px; color:var(--text-secondary); display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap;">
+            <div style="background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.4); padding:14px 18px; margin-bottom:20px; font-size:13px; color:var(--text-secondary); display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap;">
                 <div style="display:flex; align-items:flex-start; gap:12px;">
                     <i class="fa-solid fa-triangle-exclamation" style="color:#f59e0b; margin-top:2px; flex-shrink:0; font-size:16px;"></i>
                     <div><strong style="color:#f59e0b; font-size:14px;">Database setup required</strong><br>Some stock columns are missing. <a href="setup_stock_v3.php">Run Setup Now →</a></div>
@@ -903,7 +903,7 @@ require_once __DIR__ . '/includes/header.php';
             <?php endif; ?>
 
             <!-- Info note -->
-            <div style="background:rgba(139,92,246,0.08); border:1px solid rgba(139,92,246,0.2); border-radius:var(--radius-sm); padding:12px 16px; margin-bottom:20px; font-size:13px; color:var(--text-secondary); display:flex; align-items:flex-start; gap:10px;">
+            <div style="background:rgba(139,92,246,0.08); border:1px solid rgba(139,92,246,0.2); padding:12px 16px; margin-bottom:20px; font-size:13px; color:var(--text-secondary); display:flex; align-items:flex-start; gap:10px;">
                 <i class="fa-solid fa-circle-info" style="color:#8b5cf6; margin-top:2px; flex-shrink:0;"></i>
                 <span><strong>Click ‘Edit Stock’ to add new stock, damage, or offline sales.</strong> Grand Total, In Stock, Damage and Sold columns are all read-only — updated when you save via the Edit button. Sold Online auto-counts when an order is marked Delivered.</span>
             </div>
@@ -1290,7 +1290,7 @@ onclick="openStockEdit(<?= $sp['id'] ?>, '<?= htmlspecialchars(addslashes($sp['n
                      bottom where it can always be reached however tall the content gets.
                      The four quantities sit in a 2x2 grid because they are peers — the
                      stacked layout implied an order of importance that does not exist. */ ?>
-            <div class="stk-dialog" style="background:var(--bg-surface); border-radius:var(--radius-lg); min-width:320px; max-width:460px; width:92%; max-height:88vh; display:flex; flex-direction:column; box-shadow:0 20px 60px rgba(0,0,0,0.4); position:relative; overflow:hidden;">
+            <div class="stk-dialog" style="background:var(--bg-surface); min-width:320px; max-width:460px; width:92%; max-height:88vh; display:flex; flex-direction:column; box-shadow:0 20px 60px rgba(0,0,0,0.4); position:relative; overflow:hidden;">
                 <button onclick="closeStockEdit()" style="position:absolute; top:12px; right:14px; background:none; border:none; font-size:20px; color:var(--text-muted); cursor:pointer; line-height:1; z-index:2;">&#x2715;</button>
 
                 <div style="padding:20px 24px 12px; border-bottom:1px solid var(--border-light); flex:0 0 auto;">
@@ -1331,7 +1331,7 @@ onclick="openStockEdit(<?= $sp['id'] ?>, '<?= htmlspecialchars(addslashes($sp['n
                                    text-transform:uppercase; margin-bottom:4px; }
                     .stk-f input, .stk-f select {
                         width:100%; padding:8px 10px; font-size:15px; font-weight:700; text-align:center;
-                        border:1px solid var(--border-strong); border-radius:6px; background:var(--bg-surface);
+                        border:1px solid var(--border-strong); background:var(--bg-surface);
                         color:var(--text-primary);
                     }
                     .stk-f select { font-size:12.5px; font-weight:600; text-align:left; }

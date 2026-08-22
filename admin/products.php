@@ -605,7 +605,7 @@ require_once __DIR__ . '/includes/header.php';
       // simply sort by entry order and the shop's size filter cannot group them. ?>
 <?php if ($sizeCodeGaps > 0): ?>
 <div style="margin-bottom:20px; padding:12px 16px; background:var(--bg-surface-soft); border:1px solid var(--border-light);
-            border-left:3px solid var(--color-secondary); border-radius:8px; font-size:13px; line-height:1.6; color:var(--text-secondary);">
+            border-left:3px solid var(--color-secondary); font-size:13px; line-height:1.6; color:var(--text-secondary);">
     <i class="fa-solid fa-ruler-combined" style="color:var(--color-secondary);"></i>
     <?= $sizeCodeGaps ?> product size<?= $sizeCodeGaps === 1 ? '' : 's' ?>
     <?= $sizeCodeGaps === 1 ? 'has' : 'have' ?> no ladder code yet, so <?= $sizeCodeGaps === 1 ? 'it sorts' : 'they sort' ?>
@@ -676,7 +676,7 @@ require_once __DIR__ . '/includes/header.php';
     <?php else: ?>
     
     <!-- Filter & Sort Bar -->
-    <div style="display:flex; align-items:center; gap:16px; margin-bottom:20px; flex-wrap:wrap; background:var(--bg-surface-soft); padding:14px; border-radius:var(--radius-sm); border:1px solid var(--border-light);">
+    <div style="display:flex; align-items:center; gap:16px; margin-bottom:20px; flex-wrap:wrap; background:var(--bg-surface-soft); padding:14px; border:1px solid var(--border-light);">
         <div style="display:flex; align-items:center; gap:8px;">
             <label for="prodFilterCategory" style="font-size:12px; font-weight:700; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.5px;">Category:</label>
             <select id="prodFilterCategory" class="form-control" style="font-size:13px; padding:6px 12px; height:auto; width:auto; min-width:160px;" onchange="filterAndSortProducts()">
@@ -761,9 +761,9 @@ require_once __DIR__ . '/includes/header.php';
                 <tr data-category="<?= htmlspecialchars($p['category']) ?>" data-name="<?= htmlspecialchars(strtolower($p['name'])) ?>" data-price="<?= $p['price'] ?>" data-stock="<?= $stockSort ?>" data-seq="<?= (int)$rowSeq ?>" data-id="<?= (int)$p['id'] ?>">
                     <td>
                         <?php if ($imgSrc): ?>
-                            <img src="<?= $imgSrc ?>" style="width:55px; height:65px; object-fit:cover; border-radius:4px; border:1px solid var(--border-light);">
+                            <img src="<?= $imgSrc ?>" style="width:55px; height:65px; object-fit:cover; border:1px solid var(--border-light);">
                         <?php else: ?>
-                            <div style="width:55px; height:65px; background:var(--bg-surface-soft); border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:20px;"><?= htmlspecialchars($p['emoji'] ?? '✨') ?></div>
+                            <div style="width:55px; height:65px; background:var(--bg-surface-soft); display:flex; align-items:center; justify-content:center; font-size:20px;"><?= htmlspecialchars($p['emoji'] ?? '✨') ?></div>
                         <?php endif; ?>
                     </td>
                     <td>
@@ -846,7 +846,7 @@ require_once __DIR__ . '/includes/header.php';
                         <?php endif; ?>
                     </td>
                     <td>
-                        <span style="font-size:12px; font-weight:700; background:var(--bg-surface-soft); padding:4px 8px; border-radius:4px; color:var(--color-primary);"><?= htmlspecialchars($p['category']) ?></span>
+                        <span style="font-size:12px; font-weight:700; background:var(--bg-surface-soft); padding:4px 8px; color:var(--color-primary);"><?= htmlspecialchars($p['category']) ?></span>
                         <?php
                         /* Who the product is for, shown beside the category rather than
                            in a column of its own — because it IS the category. A product

@@ -20,6 +20,26 @@
  *   $cardQuickView     — false to hide Quick View (default true)
  *   $cardExtraClass    — extra class on the <article>, e.g. 'product-card-carousel'
  *   $cardFallbackBadge — badge to show when the product has none and is not on sale
+ *   $cardVariant       — 'default' (the shop, category pages, search, the wishlist
+ *                        and the related strip) or 'home'. See below.
+ *
+ * TWO DESIGNS, ONE COMPONENT.
+ * ─────────────────────────────────────────────────────────────────────────────
+ * The home page wants a different card from the shop: no category line, "View
+ * Product" rather than "Details", and a caption that lies over the photograph
+ * instead of sitting under it in the flow. That is a presentation difference,
+ * not a different product — every rule about what a card may SAY is identical.
+ *
+ * So it is one file with a variant, not two files. Country pricing, the "From"
+ * spread across sizes, the strike-through MRP and the percentage it is measured
+ * against, the New badge that expires by itself, sold out, "not sold in your
+ * country", the wishlist heart, the compare toggle and the "in your bag" note
+ * are written once here. A second component would have meant every one of those
+ * rules existing twice, and the first time one was fixed in one copy and not the
+ * other, the same product would quote two different prices on two pages.
+ *
+ * The 'home' variant changes three things in this file — a class, the category
+ * line, and the button's wording. Everything else about it is CSS.
  */
 
 $cardProduct = $card ?? null;
@@ -29,54 +49,20 @@ $cardCompare       = $cardCompare   ?? true;
 $cardQuickView     = $cardQuickView ?? true;
 $cardExtraClass    = $cardExtraClass ?? '';
 $cardFallbackBadge = $cardFallbackBadge ?? '';
+$cardVariant       = ($cardVariant ?? '') === 'home' ? 'home' : 'default';
+/* Extra attributes for the host section to hang its own state on — the New
+   Arrivals gallery stamps data-na-page here so its pager can key on it. Already
+   escaped by the caller; it is markup, not user input. */
+$cardDataAttrs     = $cardDataAttrs ?? '';
+/* The first photograph of a hero section is worth fetching early; everything
+   else stays lazy. */
+$cardEager         = $cardEager ?? false;
+$cardIsHome        = $cardVariant === 'home';
 
-// Country pricing: product_country_prices carries one flat price per
-// product (see productCountryPricing() in config.php), so a shopper abroad
-// either sees that figure or, with no row for their country yet, the card
-// behaves like a sold-out one rather than showing an untranslated INR price.
-$cardNotSoldHere = false;
-if (function_exists('countrySelectorEnabled') && countrySelectorEnabled()) {
-    $cardCountryPricing = productCountryPricing($cardProduct);
-    if ($cardCountryPricing === null) {
-        $cardNotSoldHere = true;
-        $cardPrice = (float)($cardProduct['price'] ?? 0);
-        $cardMrp   = (float)($cardProduct['mrp_price'] ?? 0);
-    } else {
-        $cardPrice = $cardCountryPricing['price'];
-        $cardMrp   = $cardCountryPricing['mrp'];
-    }
-} else {
-    $cardPrice = (float)($cardProduct['price'] ?? 0);
-    $cardMrp   = (float)($cardProduct['mrp_price'] ?? 0);
-}
-
-/* The price a shopper can actually pay — resolved BEFORE anything is drawn.
-   ────────────────────────────────────────────────────────────────────────────
-   This used to sit further down, beside the price line, which put it AFTER the
-   badge at the top of the card. So the badge was worked out from
-   products.price while the price line beneath it showed the cheapest buyable
-   figure, and the two disagreed on every product with a colourway override:
-   trousers listed at 1250 with an MRP of 1600 and an Ivory colourway at 1100
-   rendered "22% OFF" over "₹1,600 ₹1,100" — a real saving of 31%, understated
-   by nine points by the card's own two halves not agreeing.
-
-   Resolving it once, first, is what makes the badge, the strikethrough and the
-   price a single consistent statement.
-
-   Country pricing is one flat figure per product and overrides sizes entirely
-   (see productCountryPricing), so it is left exactly as it was — the spread
-   only applies where the product's own columns are the ones in play. */
-$cardRange  = $cardCountryPricing ?? null;
-$cardVaries = false;
-$cardDearest = $cardPrice;   // the priciest size, needed to keep a "From" saving honest
-if ($cardRange === null && !$cardNotSoldHere) {
-    $r = productPriceRange($cardProduct);
-    if ($r['varies'] || $r['min'] < $cardPrice - 0.005) {
-        $cardPrice  = $r['min'];
-        $cardVaries = $r['varies'];
-    }
-    $cardDearest = max((float)($r['max'] ?? $cardPrice), $cardPrice);
-}
+/* Country pricing and the buyable price, both resolved before anything is
+   drawn — see includes/product_price_resolve.php for why, and for the bug that
+   comes of resolving them later. Shared with the New Arrivals gallery. */
+require __DIR__ . '/product_price_resolve.php';
 
 // A "discount" is only real when the compare-at price is genuinely higher.
 // Equal values would render as "0% OFF", which reads as a bug.
@@ -130,8 +116,8 @@ $cardUrl = productUrl($cardProduct['id'], $cardProduct['name'], $cardProduct['se
          renderers — this partial and createProductCard() in pages/shop.php — so
          the two cannot drift apart again, and the count stays right the moment
          the bag changes without waiting for a page load. */ ?>
-<article class="product-card reveal-on-scroll<?= $cardSoldOut ? ' sold-out' : '' ?><?= $cardExtraClass !== '' ? ' ' . htmlspecialchars($cardExtraClass) : '' ?>"
-         data-product-id="<?= (int)$cardProduct['id'] ?>">
+<article class="product-card reveal-on-scroll<?= $cardIsHome ? ' product-card--home' : '' ?><?= $cardSoldOut ? ' sold-out' : '' ?><?= $cardExtraClass !== '' ? ' ' . htmlspecialchars($cardExtraClass) : '' ?>"
+         data-product-id="<?= (int)$cardProduct['id'] ?>"<?= $cardDataAttrs ?>>
     <?php if ($cardNotSoldHere): ?>
         <span class="badge-luxury badge-sold-out">Not Available Here</span>
     <?php elseif ($cardSoldOut): ?>
@@ -152,12 +138,6 @@ $cardUrl = productUrl($cardProduct['id'], $cardProduct['name'], $cardProduct['se
         <span class="badge-luxury"><?= htmlspecialchars($cardFallback) ?></span>
     <?php endif; ?>
 
-    <button class="product-card-wishlist-btn"
-            onclick="event.preventDefault(); handleWishlistClick(<?= (int)$cardProduct['id'] ?>, this)"
-            aria-label="Add to Wishlist">
-        <i class="fa-regular fa-heart"></i>
-    </button>
-
     <div class="card-img-container">
         <a href="<?= $cardUrl ?>" class="card-img-link">
             <?php if (!empty($cardProduct['image'])):
@@ -177,7 +157,8 @@ $cardUrl = productUrl($cardProduct['id'], $cardProduct['name'], $cardProduct['se
                 <picture>
                     <?php if ($cardWebp): ?><source srcset="<?= htmlspecialchars($cardWebp) ?>" type="image/webp"><?php endif; ?>
                     <img src="<?= SITE_URL ?>/uploads/products/<?= htmlspecialchars($cardProduct['image']) ?>"
-                         alt="<?= htmlspecialchars($cardAlt) ?>" loading="lazy" decoding="async" class="card-img">
+                         alt="<?= htmlspecialchars($cardAlt) ?>" decoding="async" class="card-img"
+                         loading="<?= $cardEager ? 'eager' : 'lazy' ?>"<?= $cardEager ? ' fetchpriority="high"' : '' ?>>
                 </picture>
                 <?php
                 /* The second shot, revealed on hover.
@@ -213,23 +194,55 @@ $cardUrl = productUrl($cardProduct['id'], $cardProduct['name'], $cardProduct['se
             <?php endif; ?>
         </a>
 
-        <?php if ($cardCompare): ?>
-        <label class="compare-toggle" title="Compare (up to 3)" onclick="event.stopPropagation()">
-            <input type="checkbox" class="compare-check" value="<?= (int)$cardProduct['id'] ?>"
-                   data-name="<?= htmlspecialchars($cardProduct['name'], ENT_QUOTES) ?>"
-                   onchange="toggleCompare(this)">
-            <span>Compare</span>
-        </label>
-        <?php endif; ?>
+        <?php /* Wishlist and Compare together in a row of round buttons at
+                 the top right, and INSIDE the image container rather than beside
+                 it: they belong to the photograph, and the container is what
+                 gives them something to be positioned against.
+
+                 Compare is still a checkbox. The control looks like a button
+                 now, but toggleCompare() reads input.value and input.dataset.name
+                 and dievon-compare.js clears selections by walking
+                 .compare-check — so the input stays exactly as it was and only
+                 its wrapper is restyled. A <button> here would have needed all
+                 of that rewritten to gain nothing. */ ?>
+        <div class="product-card-tools">
+            <button type="button" class="product-card-wishlist-btn"
+                    onclick="event.preventDefault(); handleWishlistClick(<?= (int)$cardProduct['id'] ?>, this)"
+                    aria-label="Add <?= htmlspecialchars($cardProduct['name'], ENT_QUOTES) ?> to wishlist">
+                <i class="fa-regular fa-heart" aria-hidden="true"></i>
+            </button>
+
+            <?php if ($cardCompare): ?>
+            <label class="compare-toggle" title="Compare (up to 3)" onclick="event.stopPropagation()">
+                <input type="checkbox" class="compare-check" value="<?= (int)$cardProduct['id'] ?>"
+                       data-name="<?= htmlspecialchars($cardProduct['name'], ENT_QUOTES) ?>"
+                       onchange="toggleCompare(this)">
+                <?php /* The word is still here for a screen reader; the circle
+                         shows the glyph. */ ?>
+                <span class="compare-toggle-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" focusable="false"><path d="M4 8h13m0 0-3.2-3.2M17 8l-3.2 3.2M20 16H7m0 0 3.2-3.2M7 16l3.2 3.2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </span>
+                <span class="compare-toggle-word">Compare</span>
+            </label>
+            <?php endif; ?>
+        </div>
 
         <?php if ($cardQuickView): ?>
-        <button onclick="event.preventDefault(); openQuickView(<?= (int)$cardProduct['id'] ?>)" class="quick-view-btn">Quick View</button>
+        <button type="button" onclick="event.preventDefault(); openQuickView(<?= (int)$cardProduct['id'] ?>)" class="quick-view-btn">
+            <svg class="quick-view-eye" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2 12s3.8-6.4 10-6.4S22 12 22 12s-3.8 6.4-10 6.4S2 12 2 12Z" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12" r="2.6" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>
+            Quick View
+        </button>
         <?php endif; ?>
     </div>
 
     <div class="product-card-details">
         <p class="product-card-bag-note" data-bag-note hidden></p>
+        <?php /* Dropped on the home page. There the photograph is doing the
+                 categorising, and the line is one more thing to read on top of a
+                 picture. */ ?>
+        <?php if (!$cardIsHome): ?>
         <span class="product-card-category"><?= htmlspecialchars($cardProduct['category'] ?? '') ?></span>
+        <?php endif; ?>
         <h3 class="product-card-title">
             <a href="<?= $cardUrl ?>"><?= htmlspecialchars($cardProduct['name']) ?></a>
         </h3>
@@ -240,19 +253,28 @@ $cardUrl = productUrl($cardProduct['id'], $cardProduct['name'], $cardProduct['se
             <?php if ($cardNotSoldHere): ?>
                 Not available in your country
             <?php else: ?>
+                <?php if ($cardVaries): ?><span class="price-from-label">From</span> <?php endif; ?>
+                <span class="price-now"><?= formatPrice($cardPrice) ?></span>
+                <?php /* Struck price and saving AFTER the price being charged, not
+                         before it. The number a shopper is deciding on is the one
+                         they will pay; leading with the old price makes them read
+                         two figures to find it. */ ?>
                 <?php if ($cardHasDiscount): ?>
                     <span class="price-mrp-strike"><?= formatPrice($cardMrp) ?></span>
+                    <span class="price-off"><?= $cardDiscountPercent ?>% OFF</span>
                 <?php endif; ?>
-                <?php if ($cardVaries): ?><span class="price-from-label">From</span> <?php endif; ?>
-                <?= formatPrice($cardPrice) ?>
             <?php endif; ?>
         </div>
+<?php /* One word, everywhere. It used to read "View Product" on the home page
+         and "Details" on the shop, which is two names for the same click.
+         Sold Out still wins over it — that is a state, not a label. */
+      $cardCtaWord = 'Details'; ?>
         <?php if ($cardNotSoldHere): ?>
-        <a href="<?= $cardUrl ?>" class="btn-luxury product-card-cta">Details</a>
+        <a href="<?= $cardUrl ?>" class="btn-luxury product-card-cta"><?= $cardCtaWord ?></a>
         <?php elseif ($cardSoldOut): ?>
         <span class="btn-luxury product-card-cta sold-out-cta" aria-disabled="true">Sold Out</span>
         <?php else: ?>
-        <a href="<?= $cardUrl ?>" class="btn-luxury product-card-cta">Details</a>
+        <a href="<?= $cardUrl ?>" class="btn-luxury product-card-cta"><?= $cardCtaWord ?></a>
         <?php endif; ?>
     </div>
 </article>
@@ -260,5 +282,5 @@ $cardUrl = productUrl($cardProduct['id'], $cardProduct['name'], $cardProduct['se
 // Clear the per-card options. Without this a caller that sets $cardExtraClass once
 // leaks it into every later include in the same request — the carousel class would
 // end up on the grid below it.
-unset($cardCompare, $cardQuickView, $cardExtraClass, $cardFallbackBadge, $card);
+unset($cardCompare, $cardQuickView, $cardExtraClass, $cardFallbackBadge, $cardVariant, $cardDataAttrs, $cardEager, $card);
 ?>

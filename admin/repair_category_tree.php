@@ -311,7 +311,7 @@ require_once __DIR__ . '/includes/header.php';
 .rct-diag-num { font-size:24px; font-weight:700; color:var(--text-primary); font-variant-numeric:tabular-nums; }
 .rct-diag-num.is-bad { color:var(--color-danger); }
 .rct-note { font-size:13px; line-height:1.6; color:var(--text-secondary); background:var(--bg-surface-soft);
-            border:1px solid var(--border-light); border-radius:8px; padding:12px 15px; margin:0; }
+            border:1px solid var(--border-light); padding:12px 15px; margin:0; }
 .rct-note.is-bad { border-color:rgba(169,68,66,.35); background:rgba(169,68,66,.06); }
 </style>
 

@@ -272,6 +272,18 @@ if (isset($editPid) && $editPid > 0) {
 }
 $sellableCountries = array_filter(enabledCountries(), fn($c) => (int)$c['is_home'] !== 1);
 
+/* Today's exchange rates, for SUGGESTING the international prices below.
+   ────────────────────────────────────────────────────────────────────────────
+   Nothing here is applied to a price automatically. The rate is handed to the
+   page so the Convert buttons can pre-fill a box; what is stored is whatever
+   the box contains when the form is submitted, converted or typed.
+
+   Called without force, so this is one HTTP request every twelve hours across
+   the whole admin, not one per product opened. If it cannot reach the service
+   the last stored rate comes back marked stale and the buttons still work —
+   they just say how old the number is. */
+$fxRates = function_exists('fxRatesForCountries') ? fxRatesForCountries($pdo) : [];
+
 $specSuggestions      = require __DIR__ . '/../config/spec_suggestions.php';
 $existingGeneralSpecs = $existingGeneralSpecs ?? [];
 $existingComponents   = $existingComponents ?? [];
@@ -1578,7 +1590,7 @@ require_once __DIR__ . '/includes/header.php';
 
 
         <?php if (!empty($_SESSION['admin_flash_error'])): ?>
-        <div style="padding:12px 16px; border-radius:8px; margin:0 0 16px; background:#fef2f2; border:1px solid #fecaca; color:#991b1b; font-size:13px;">
+        <div style="padding:12px 16px; margin:0 0 16px; background:#fef2f2; border:1px solid #fecaca; color:#991b1b; font-size:13px;">
             <?= htmlspecialchars($_SESSION['admin_flash_error']) ?>
         </div>
         <?php unset($_SESSION['admin_flash_error']); endif; ?>
@@ -1647,9 +1659,25 @@ require_once __DIR__ . '/includes/header.php';
                         </div>
 
                         <?php if ($sellableCountries): ?>
-                        <?php // Prices are set per country, not converted (see admin/countries.php).
-                              // A blank price here means the product is simply not sold in that
-                              // country — the same rule the storefront country picker follows. ?>
+                        <?php /* Prices are STORED per country. Convert only fills the boxes.
+                                 ─────────────────────────────────────────────────────────────
+                                 A blank price still means the product is not sold in that
+                                 country — that rule is unchanged, and it is why the boxes are
+                                 not filled automatically the moment a rupee price is typed.
+                                 Auto-filling every enabled country would quietly put every new
+                                 product on sale in every market, which is a catalogue decision,
+                                 not a convenience. So each country has its own button and there
+                                 is one for all of them; pressing it is the decision.
+
+                                 The two boxes are NOT "price" and "discount" in the order they
+                                 read. productCountryPricing() charges sale_price when it is set
+                                 and below price, and shows price as the strikethrough — so the
+                                 first box is the LIST price and matches MRP, and the second is
+                                 what is actually charged. Convert fills them that way round:
+                                 with an MRP set, MRP goes to the first and the selling price to
+                                 the second; with no MRP, the selling price goes to the first
+                                 and the second stays empty. Filling them the way they read
+                                 would invert every international sale. */ ?>
                         <div class="form-group" style="grid-column: 1 / -1;">
                             <label class="form-label">International Pricing</label>
                             <p class="form-hint" style="margin-top:-4px;">
@@ -1657,18 +1685,98 @@ require_once __DIR__ . '/includes/header.php';
                                 Manage which countries are enabled under
                                 <a href="countries.php" target="_blank">Countries We Sell To</a>.
                             </p>
-                            <div class="form-row" style="grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));">
+
+                            <?php
+                            // One line about the rate, so a suggested price is never a mystery
+                            // number. Staleness is shown rather than hidden: a rate that could
+                            // not be refreshed still converts, and the admin should know.
+                            $fxAny = false; $fxStale = false; $fxWhen = null;
+                            foreach ($sellableCountries as $ccode => $crow) {
+                                $fi = $fxRates[strtoupper($ccode)] ?? null;
+                                if ($fi && $fi['rate']) {
+                                    $fxAny = true;
+                                    if (!empty($fi['stale'])) { $fxStale = true; }
+                                    if ($fi['updated_at'] && (!$fxWhen || $fi['updated_at'] < $fxWhen)) { $fxWhen = $fi['updated_at']; }
+                                }
+                            }
+                            ?>
+                            <div class="pf-fx-bar">
+                                <?php if ($fxAny): ?>
+                                    <button type="button" class="btn-secondary btn-sm" onclick="dievonConvertAll()">
+                                        <i class="fa-solid fa-arrow-right-arrow-left"></i> Convert all from &#8377;
+                                    </button>
+                                    <span class="pf-fx-note<?= $fxStale ? ' pf-fx-stale' : '' ?>">
+                                        <?php if ($fxStale): ?>
+                                            Rates could not be refreshed &mdash; using the last known rate<?= $fxWhen ? ' from ' . htmlspecialchars(date('j M Y, H:i', strtotime($fxWhen))) : '' ?>. Check the figures before saving.
+                                        <?php else: ?>
+                                            Rates as of <?= $fxWhen ? htmlspecialchars(date('j M Y, H:i', strtotime($fxWhen))) : 'today' ?>. Converted amounts are rounded up to a whole unit &mdash; edit any of them freely.
+                                        <?php endif; ?>
+                                    </span>
+                                <?php else: ?>
+                                    <span class="pf-fx-note pf-fx-stale">
+                                        No exchange rate on record yet, so prices must be typed in by hand.
+                                        Set or refresh rates under <a href="countries.php" target="_blank">Countries We Sell To</a>.
+                                    </span>
+                                <?php endif; ?>
+                            </div>
+
+                            <?php /* One row per country, two boxes side by side.
+                                     ───────────────────────────────────────────────────────
+                                     This was a stacked column per country: name, label, box,
+                                     label, box, button — six rows tall each. With one foreign
+                                     market that was merely roomy; with three it pushed the tax
+                                     settings most of a screen down the page, on a form that is
+                                     already long. Side by side it is two rows per country, and
+                                     they read as the pair they are. */ ?>
+                            <div class="pf-countries">
                                 <?php foreach ($sellableCountries as $ccode => $crow):
                                     $existingCp = $existingCountryPrices[$ccode] ?? null;
+                                    $fxInfo     = $fxRates[strtoupper($ccode)] ?? null;
+                                    $fxRate     = $fxInfo['rate'] ?? null;
                                 ?>
-                                <div class="form-group">
-                                    <label class="form-label"><?= htmlspecialchars($crow['country_name']) ?> (<?= htmlspecialchars($crow['currency_symbol']) ?> <?= htmlspecialchars($crow['currency_code']) ?>)</label>
-                                    <input type="number" name="country_price[<?= htmlspecialchars($ccode) ?>]" class="form-control"
-                                        step="0.01" min="0" placeholder="Not sold here"
-                                        value="<?= $existingCp ? htmlspecialchars($existingCp['price']) : '' ?>">
-                                    <input type="number" name="country_sale_price[<?= htmlspecialchars($ccode) ?>]" class="form-control"
-                                        step="0.01" min="0" placeholder="Sale price (optional)" style="margin-top:6px;"
-                                        value="<?= ($existingCp && $existingCp['sale_price'] !== null) ? htmlspecialchars($existingCp['sale_price']) : '' ?>">
+                                <div class="pf-country" data-cc="<?= htmlspecialchars($ccode) ?>"
+                                     data-rate="<?= $fxRate !== null ? htmlspecialchars((string)$fxRate) : '' ?>"
+                                     data-symbol="<?= htmlspecialchars($crow['currency_symbol']) ?>"
+                                     data-name="<?= htmlspecialchars($crow['country_name']) ?>">
+                                    <div class="pf-country-head">
+                                        <?php /* Some currencies have no symbol of their own and the
+                                                 field simply holds the code — AED and CHF are the
+                                                 usual ones. Printing both gave "AED AED". Show the
+                                                 symbol only when it is actually a different mark. */
+                                        $curSym  = trim((string)$crow['currency_symbol']);
+                                        $curCode = trim((string)$crow['currency_code']);
+                                        $curLabel = (strcasecmp($curSym, $curCode) === 0 || $curSym === '')
+                                                  ? $curCode
+                                                  : $curSym . ' ' . $curCode;
+                                        ?>
+                                        <span class="pf-country-name"><?= htmlspecialchars($crow['country_name']) ?>
+                                            <span class="pf-country-cur"><?= htmlspecialchars($curLabel) ?></span>
+                                        </span>
+                                        <?php if ($fxRate !== null): ?>
+                                        <button type="button" class="pf-fx-btn" onclick="dievonConvertCountry('<?= htmlspecialchars($ccode, ENT_QUOTES) ?>')">
+                                            <i class="fa-solid fa-arrow-right-arrow-left"></i> Convert from &#8377;
+                                        </button>
+                                        <?php endif; ?>
+                                    </div>
+                                    <?php /* The captions are not decoration. These two boxes are
+                                             list-then-sale, the opposite order to the rupee fields
+                                             above them (Selling Price, then MRP). An admin reading
+                                             "56 / 44" with no labels has no way to tell which one
+                                             the customer actually pays. */ ?>
+                                    <div class="pf-country-fields">
+                                        <div>
+                                            <label class="pf-cp-cap" for="cp_<?= htmlspecialchars($ccode) ?>">Full price</label>
+                                            <input type="number" id="cp_<?= htmlspecialchars($ccode) ?>" name="country_price[<?= htmlspecialchars($ccode) ?>]" class="form-control pf-cp-list"
+                                                step="0.01" min="0" placeholder="Not sold here"
+                                                value="<?= $existingCp ? htmlspecialchars($existingCp['price']) : '' ?>">
+                                        </div>
+                                        <div>
+                                            <label class="pf-cp-cap" for="cps_<?= htmlspecialchars($ccode) ?>">Sale price <span>&mdash; what is charged</span></label>
+                                            <input type="number" id="cps_<?= htmlspecialchars($ccode) ?>" name="country_sale_price[<?= htmlspecialchars($ccode) ?>]" class="form-control pf-cp-sale"
+                                                step="0.01" min="0" placeholder="Optional"
+                                                value="<?= ($existingCp && $existingCp['sale_price'] !== null) ? htmlspecialchars($existingCp['sale_price']) : '' ?>">
+                                        </div>
+                                    </div>
                                 </div>
                                 <?php endforeach; ?>
                             </div>
@@ -2541,7 +2649,7 @@ require_once __DIR__ . '/includes/header.php';
                               // they attach as soon as the product actually saves. ?>
                         <?php $heldGallery = (array)($_SESSION['dv_pending_gallery'] ?? []); ?>
                         <?php if ($heldGallery): ?>
-                        <div class="admin-section-mt" style="padding:12px 14px; background:var(--bg-surface-soft); border:1px solid var(--border-light); border-left:3px solid var(--color-secondary); border-radius:8px;">
+                        <div class="admin-section-mt" style="padding:12px 14px; background:var(--bg-surface-soft); border:1px solid var(--border-light); border-left:3px solid var(--color-secondary);">
                             <p style="margin:0 0 10px; font-size:12.5px; color:var(--text-secondary);">
                                 <i class="fa-solid fa-clock-rotate-left" style="color:var(--color-secondary);"></i>
                                 <strong><?= count($heldGallery) ?> image<?= count($heldGallery) === 1 ? '' : 's' ?> waiting</strong>
@@ -2551,7 +2659,7 @@ require_once __DIR__ . '/includes/header.php';
                             <div class="admin-gallery-wrap-flex">
                                 <?php foreach ($heldGallery as $hg): ?>
                                 <img src="<?= SITE_URL ?>/uploads/products/<?= htmlspecialchars(rawurlencode(basename((string)$hg))) ?>"
-                                     alt="" style="width:64px; height:64px; object-fit:cover; border-radius:8px; border:1px solid var(--border-light);">
+                                     alt="" style="width:64px; height:64px; object-fit:cover; border:1px solid var(--border-light);">
                                 <?php endforeach; ?>
                             </div>
                         </div>
@@ -2844,7 +2952,7 @@ require_once __DIR__ . '/includes/header.php';
                 $vBase        = (float)($product['price'] ?? 0);
                 $vHasOverride = $vPrice > 0 && abs($vPrice - $vBase) > 0.005;
                 ?>
-                <div class="variant-row" id="vrow-<?= $v['id'] ?>" style="display:flex; align-items:center; gap:12px; padding:12px 16px; background:var(--bg-main); border-radius:var(--radius-sm); margin-bottom:10px; border:1px solid var(--border-light); flex-wrap:wrap;">
+                <div class="variant-row" id="vrow-<?= $v['id'] ?>" style="display:flex; align-items:center; gap:12px; padding:12px 16px; background:var(--bg-main); margin-bottom:10px; border:1px solid var(--border-light); flex-wrap:wrap;">
                     <i class="fa-solid fa-grip-vertical" style="color:var(--text-muted); font-size:14px;"></i>
                     <input type="text" id="vn-<?= $v['id'] ?>" value="<?= htmlspecialchars($v['name']) ?>" placeholder="Size name (e.g. M, 34/M, Free Size)"
                         class="form-control" style="flex:1; min-width:120px;"
@@ -2875,7 +2983,7 @@ require_once __DIR__ . '/includes/header.php';
                 <?php endforeach; ?>
             </div>
 
-            <div style="display:flex; align-items:center; gap:12px; margin-top:14px; padding:14px 16px; border:2px dashed var(--border-strong); border-radius:var(--radius-sm); background:var(--bg-surface);">
+            <div style="display:flex; align-items:center; gap:12px; margin-top:14px; padding:14px 16px; border:2px dashed var(--border-strong); background:var(--bg-surface);">
                 <i class="fa-solid fa-plus-circle" style="color:var(--color-secondary); font-size:18px; flex-shrink:0;"></i>
                 <input type="text" id="newVariantName" placeholder="Free Size, One Size, 500ml…" class="form-control" style="flex:1;">
                 <div style="display:flex; align-items:center; gap:4px;">
@@ -2923,7 +3031,7 @@ require_once __DIR__ . '/includes/header.php';
                 $cAvailableSizes = count(array_filter($c['sizes'] ?? [], fn($s) => (int)($s['available'] ?? 0) === 1));
                 $cImageCount     = count($c['images'] ?? []);
                 ?>
-                <div class="color-card" id="ccard-<?= $c['id'] ?>" style="border:1px solid var(--border-light); border-radius:var(--radius-md); padding:20px; margin-bottom:18px; background:var(--bg-main);">
+                <div class="color-card" id="ccard-<?= $c['id'] ?>" style="border:1px solid var(--border-light); padding:20px; margin-bottom:18px; background:var(--bg-main);">
                     <?php if ($cAvailableSizes === 0): ?>
                     <div class="color-warn color-warn--blocking" id="cwarn-size-<?= $c['id'] ?>">
                         <i class="fa-solid fa-circle-exclamation"></i>
@@ -2942,8 +3050,8 @@ require_once __DIR__ . '/includes/header.php';
                     <div style="display:flex; align-items:flex-start; gap:16px; flex-wrap:wrap;">
                         <div style="text-align:center; flex-shrink:0;">
                             <img id="cthumb-<?= $c['id'] ?>" src="<?= !empty($c['thumbnail']) ? SITE_URL . '/uploads/products/' . htmlspecialchars($c['thumbnail']) : '' ?>"
-                                style="width:72px; height:72px; border-radius:50%; object-fit:cover; border:3px solid <?= !empty($c['thumbnail']) ? 'var(--color-primary)' : 'var(--border-light)' ?>; background:var(--bg-surface); <?= empty($c['thumbnail']) ? 'display:none;' : '' ?>">
-                            <div id="cthumb-placeholder-<?= $c['id'] ?>" style="width:72px; height:72px; border-radius:50%; border:2px dashed var(--border-strong); display:<?= empty($c['thumbnail']) ? 'flex' : 'none' ?>; align-items:center; justify-content:center; color:var(--text-muted); font-size:11px; text-align:center;">No<br>thumb</div>
+                                style="width:72px; height:72px; object-fit:cover; border:3px solid <?= !empty($c['thumbnail']) ? 'var(--color-primary)' : 'var(--border-light)' ?>; background:var(--bg-surface); <?= empty($c['thumbnail']) ? 'display:none;' : '' ?>">
+                            <div id="cthumb-placeholder-<?= $c['id'] ?>" style="width:72px; height:72px; border:2px dashed var(--border-strong); display:<?= empty($c['thumbnail']) ? 'flex' : 'none' ?>; align-items:center; justify-content:center; color:var(--text-muted); font-size:11px; text-align:center;">No<br>thumb</div>
                             <label style="display:block; margin-top:6px; font-size:11px; color:var(--color-secondary); cursor:pointer;">
                                 Upload
                                 <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" style="display:none;" onchange="uploadColorThumbnail(<?= $c['id'] ?>, this)">
@@ -3003,12 +3111,12 @@ require_once __DIR__ . '/includes/header.php';
                         <div id="cgallery-<?= $c['id'] ?>" style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:8px;">
                             <?php foreach ($c['images'] as $img): ?>
                             <div class="color-gallery-item" id="cimg-<?= $img['id'] ?>" style="position:relative; width:64px; height:64px;">
-                                <img src="<?= SITE_URL ?>/uploads/products/<?= htmlspecialchars($img['image']) ?>" style="width:100%; height:100%; object-fit:cover; border-radius:8px; cursor:pointer; border:2px solid <?= ($c['thumbnail'] === $img['image']) ? 'var(--color-primary)' : 'transparent' ?>;" title="Click to set as thumbnail" onclick="setColorThumbnail(<?= $c['id'] ?>, '<?= htmlspecialchars($img['image'], ENT_QUOTES) ?>')">
-                                <button type="button" onclick="deleteColorImage(<?= $img['id'] ?>, <?= $c['id'] ?>)" style="position:absolute; top:-6px; right:-6px; width:18px; height:18px; border-radius:50%; background:#c0392b; color:#fff; border:none; font-size:10px; cursor:pointer; line-height:1;">×</button>
+                                <img src="<?= SITE_URL ?>/uploads/products/<?= htmlspecialchars($img['image']) ?>" style="width:100%; height:100%; object-fit:cover; cursor:pointer; border:2px solid <?= ($c['thumbnail'] === $img['image']) ? 'var(--color-primary)' : 'transparent' ?>;" title="Click to set as thumbnail" onclick="setColorThumbnail(<?= $c['id'] ?>, '<?= htmlspecialchars($img['image'], ENT_QUOTES) ?>')">
+                                <button type="button" onclick="deleteColorImage(<?= $img['id'] ?>, <?= $c['id'] ?>)" style="position:absolute; top:-6px; right:-6px; width:18px; height:18px; background:#c0392b; color:#fff; border:none; font-size:10px; cursor:pointer; line-height:1;">×</button>
                             </div>
                             <?php endforeach; ?>
                         </div>
-                        <label style="display:inline-flex; align-items:center; gap:6px; font-size:12px; color:var(--color-secondary); cursor:pointer; padding:6px 12px; border:1px dashed var(--border-strong); border-radius:6px;">
+                        <label style="display:inline-flex; align-items:center; gap:6px; font-size:12px; color:var(--color-secondary); cursor:pointer; padding:6px 12px; border:1px dashed var(--border-strong);">
                             <i class="fa-solid fa-upload"></i> Add gallery images
                             <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple style="display:none;" onchange="uploadColorGallery(<?= $c['id'] ?>, this)">
                         </label>
@@ -3030,7 +3138,7 @@ require_once __DIR__ . '/includes/header.php';
                         <?php if (!empty($additionalImages) || !empty($product['image'])): ?>
                         <button type="button" id="cadopt-<?= $c['id'] ?>"
                                 onclick="adoptProductImages(<?= $c['id'] ?>, this)"
-                                style="display:inline-flex; align-items:center; gap:6px; font-size:12px; color:var(--color-primary); cursor:pointer; padding:6px 12px; margin-left:8px; border:1px dashed var(--color-primary); border-radius:6px; background:var(--bg-surface);">
+                                style="display:inline-flex; align-items:center; gap:6px; font-size:12px; color:var(--color-primary); cursor:pointer; padding:6px 12px; margin-left:8px; border:1px dashed var(--color-primary); background:var(--bg-surface);">
                             <?php /* fa-photo-film, matching this section's own heading. It was
                                      fa-arrow-down-long — the same arrow the "use the product's
                                      sizes" button below uses — so two buttons a few lines apart
@@ -3242,7 +3350,7 @@ require_once __DIR__ . '/includes/header.php';
                 </div>
             <?php endif; ?>
 
-            <div style="display:flex; align-items:center; gap:12px; margin-top:14px; padding:14px 16px; border:2px dashed var(--border-strong); border-radius:var(--radius-sm); background:var(--bg-surface); flex-wrap:wrap;">
+            <div style="display:flex; align-items:center; gap:12px; margin-top:14px; padding:14px 16px; border:2px dashed var(--border-strong); background:var(--bg-surface); flex-wrap:wrap;">
                 <input type="text" id="newColorName" list="dv-color-options" placeholder="Colour name (e.g. Green)" class="form-control" style="flex:1; min-width:140px;">
                 <input type="text" id="newColorSku" placeholder="Variant SKU (optional)" class="form-control" style="width:160px;">
                 <input type="number" step="0.01" min="0" id="newColorPrice" placeholder="Price override (optional)" class="form-control" style="width:170px;">
@@ -3266,7 +3374,7 @@ require_once __DIR__ . '/includes/header.php';
 
             <div id="generalSpecsList">
                 <?php foreach ($existingGeneralSpecs as $spec): ?>
-                <div class="spec-row" id="gspec-<?= $spec['id'] ?>" style="display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--bg-main); border-radius:var(--radius-sm); margin-bottom:10px; border:1px solid var(--border-light); flex-wrap:wrap;">
+                <div class="spec-row" id="gspec-<?= $spec['id'] ?>" style="display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--bg-main); margin-bottom:10px; border:1px solid var(--border-light); flex-wrap:wrap;">
                     <div style="display:flex; flex-direction:column; gap:2px;">
                         <button type="button" title="Move up" onclick="moveGeneralSpec(<?= $spec['id'] ?>, 'up')" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:0;line-height:1;"><i class="fa-solid fa-caret-up"></i></button>
                         <button type="button" title="Move down" onclick="moveGeneralSpec(<?= $spec['id'] ?>, 'down')" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:0;line-height:1;"><i class="fa-solid fa-caret-down"></i></button>
@@ -3281,7 +3389,7 @@ require_once __DIR__ . '/includes/header.php';
                 <?php endforeach; ?>
             </div>
 
-            <div style="display:flex; align-items:center; gap:10px; margin-top:14px; padding:14px 16px; border:2px dashed var(--border-strong); border-radius:var(--radius-sm); background:var(--bg-surface); flex-wrap:wrap;">
+            <div style="display:flex; align-items:center; gap:10px; margin-top:14px; padding:14px 16px; border:2px dashed var(--border-strong); background:var(--bg-surface); flex-wrap:wrap;">
                 <input type="text" id="newGeneralSpecLabel" list="specLabelSuggestions" placeholder="Label (e.g. Fabric)" class="form-control" style="flex:1; min-width:120px;">
                 <input type="text" id="newGeneralSpecValue" placeholder="Value (e.g. Pure Cotton)" class="form-control" style="flex:1; min-width:140px;">
                 <input type="text" id="newGeneralSpecUnit" list="specUnitSuggestions" placeholder="Unit (optional)" class="form-control" style="width:110px;">
@@ -3305,7 +3413,7 @@ require_once __DIR__ . '/includes/header.php';
 
             <div id="componentsList">
                 <?php foreach ($existingComponents as $comp): ?>
-                <div class="component-card" id="comp-<?= $comp['id'] ?>" style="border:1px solid var(--border-light); border-radius:var(--radius-md); padding:18px; margin-bottom:16px; background:var(--bg-main);">
+                <div class="component-card" id="comp-<?= $comp['id'] ?>" style="border:1px solid var(--border-light); padding:18px; margin-bottom:16px; background:var(--bg-main);">
                     <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
                         <div style="display:flex; flex-direction:column; gap:2px;">
                             <button type="button" title="Move up" onclick="moveComponent(<?= $comp['id'] ?>, 'up')" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:0;line-height:1;"><i class="fa-solid fa-caret-up"></i></button>
@@ -3319,7 +3427,7 @@ require_once __DIR__ . '/includes/header.php';
 
                     <div id="compSpecsList-<?= $comp['id'] ?>">
                         <?php foreach ($comp['specs'] as $spec): ?>
-                        <div class="spec-row" id="cspec-<?= $spec['id'] ?>" style="display:flex; align-items:center; gap:10px; padding:10px 14px; background:var(--bg-surface); border-radius:var(--radius-sm); margin-bottom:8px; border:1px solid var(--border-light); flex-wrap:wrap;">
+                        <div class="spec-row" id="cspec-<?= $spec['id'] ?>" style="display:flex; align-items:center; gap:10px; padding:10px 14px; background:var(--bg-surface); margin-bottom:8px; border:1px solid var(--border-light); flex-wrap:wrap;">
                             <div style="display:flex; flex-direction:column; gap:2px;">
                                 <button type="button" title="Move up" onclick="moveComponentSpec(<?= $spec['id'] ?>, <?= $comp['id'] ?>, 'up')" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:0;line-height:1;font-size:11px;"><i class="fa-solid fa-caret-up"></i></button>
                                 <button type="button" title="Move down" onclick="moveComponentSpec(<?= $spec['id'] ?>, <?= $comp['id'] ?>, 'down')" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:0;line-height:1;font-size:11px;"><i class="fa-solid fa-caret-down"></i></button>
@@ -3334,7 +3442,7 @@ require_once __DIR__ . '/includes/header.php';
                         <?php endforeach; ?>
                     </div>
 
-                    <div style="display:flex; align-items:center; gap:8px; margin-top:10px; padding:10px 14px; border:1.5px dashed var(--border-strong); border-radius:var(--radius-sm); background:var(--bg-surface); flex-wrap:wrap;">
+                    <div style="display:flex; align-items:center; gap:8px; margin-top:10px; padding:10px 14px; border:1.5px dashed var(--border-strong); background:var(--bg-surface); flex-wrap:wrap;">
                         <input type="text" id="newCompSpecLabel-<?= $comp['id'] ?>" list="componentLabelSuggestions" placeholder="Label" class="form-control" style="flex:1; min-width:110px; font-size:13px;">
                         <input type="text" id="newCompSpecValue-<?= $comp['id'] ?>" placeholder="Value" class="form-control" style="flex:1; min-width:120px; font-size:13px;">
                         <input type="text" id="newCompSpecUnit-<?= $comp['id'] ?>" list="specUnitSuggestions" placeholder="Unit" class="form-control" style="width:90px; font-size:13px;">
@@ -3346,7 +3454,7 @@ require_once __DIR__ . '/includes/header.php';
                 <?php endforeach; ?>
             </div>
 
-            <div style="display:flex; align-items:center; gap:12px; margin-top:14px; padding:14px 16px; border:2px dashed var(--border-strong); border-radius:var(--radius-sm); background:var(--bg-surface);">
+            <div style="display:flex; align-items:center; gap:12px; margin-top:14px; padding:14px 16px; border:2px dashed var(--border-strong); background:var(--bg-surface);">
                 <input type="text" id="newComponentName" list="componentNameSuggestions" placeholder="Component name (e.g. Kurti, Palazzo, Dupatta)" class="form-control" style="flex:1;">
                 <button type="button" class="btn-primary" style="padding:10px 18px; flex-shrink:0;" onclick="addComponent(<?= (int)$product['id'] ?>)">
                     <i class="fa-solid fa-plus"></i> Add Component
@@ -3417,6 +3525,119 @@ function updatePreviewPrice(val) {
     const p = parseFloat(val) || 0;
     document.getElementById('previewPrice').textContent = '₹' + p.toFixed(2);
 }
+
+/* ── International price suggestions ────────────────────────────────────────
+   Fills the per-country boxes from the rupee price at today's rate. Only ever
+   writes into the form; the value that gets saved is whatever is in the box
+   when the form is submitted, so any of this can be typed over.
+
+   Two rules that are easy to get backwards, both deliberate:
+
+   1. The FIRST box is the LIST price, the second is what is charged.
+      productCountryPricing() charges sale_price when it is set and lower, and
+      strikes through price. So with an MRP set, MRP -> box 1 and the selling
+      price -> box 2; with no MRP, the selling price -> box 1 and box 2 is left
+      alone. Filling them in the order they read would invert every sale.
+
+   2. A box that already has a number is never overwritten silently. On a
+      product being edited, that number was very likely set by hand, and losing
+      it to a stray click is worse than one confirm dialog.
+   ─────────────────────────────────────────────────────────────────────────── */
+function dievonFxAmounts(rate) {
+    const price = parseFloat(document.querySelector('input[name="price"]')?.value) || 0;
+    const mrp   = parseFloat(document.querySelector('input[name="mrp_price"]')?.value) || 0;
+    if (price <= 0) { return null; }
+
+    // Round UP to a whole unit. 7230 INR at 0.00766 is 55.38 — rounding down to
+    // 55 gives away margin on every sale; up costs the shopper 62 paise.
+    const up = (inr) => Math.ceil(inr * rate);
+
+    return (mrp > price)
+        ? { list: up(mrp),   sale: up(price) }   // on sale abroad as it is at home
+        : { list: up(price), sale: null };       // one price, no strikethrough
+}
+
+/* assets/js/dievon-dialog.js overrides window.alert but explicitly cannot
+   override window.confirm — its own header says each call site has to be
+   converted to `await dievonConfirm(...)` by hand. This is those call sites.
+   Falls back to the native confirm if the dialog script has not loaded, so the
+   guard can never silently disappear. */
+function dievonFxAsk(message) {
+    return (typeof window.dievonConfirm === 'function')
+        ? window.dievonConfirm(message)
+        : Promise.resolve(window.confirm(message));
+}
+
+async function dievonConvertCountry(code, opts) {
+    opts = opts || {};
+    const wrap = document.querySelector('.pf-country[data-cc="' + code + '"]');
+    if (!wrap) { return false; }
+
+    const rate = parseFloat(wrap.dataset.rate);
+    if (!rate || rate <= 0) { return false; }
+
+    const amounts = dievonFxAmounts(rate);
+    if (!amounts) {
+        if (!opts.quiet) { alert('Enter the Selling Price in rupees first — that is what gets converted.'); }
+        return false;
+    }
+
+    const listEl = wrap.querySelector('.pf-cp-list');
+    const saleEl = wrap.querySelector('.pf-cp-sale');
+    const filled = (el) => el && el.value.trim() !== '';
+
+    if (!opts.force && (filled(listEl) || filled(saleEl))) {
+        const sym = wrap.dataset.symbol || '';
+        const ok = await dievonFxAsk(wrap.dataset.name + ' already has a price set. Replace it with '
+                         + sym + amounts.list + (amounts.sale ? ' / ' + sym + amounts.sale : '') + '?');
+        if (!ok) { return false; }
+    }
+
+    listEl.value = amounts.list;
+    // Only clear the sale box when this product is not on sale at home. Blanking
+    // it otherwise would drop an international discount the admin had entered.
+    if (amounts.sale !== null) { saleEl.value = amounts.sale; }
+    else if (!opts.keepSale)   { saleEl.value = ''; }
+
+    [listEl, saleEl].forEach(el => {
+        el.classList.add('pf-fx-filled');
+        setTimeout(() => el.classList.remove('pf-fx-filled'), 1200);
+    });
+    return true;
+}
+
+async function dievonConvertAll() {
+    const wraps = Array.from(document.querySelectorAll('.pf-country[data-rate]:not([data-rate=""])'));
+    if (!wraps.length) { return; }
+
+    const price = parseFloat(document.querySelector('input[name="price"]')?.value) || 0;
+    if (price <= 0) {
+        alert('Enter the Selling Price in rupees first — that is what gets converted.');
+        return;
+    }
+
+    // One question for the whole set rather than one per country: being asked
+    // the same thing four times is how people start clicking OK without reading.
+    const busy = wraps.filter(w =>
+        w.querySelector('.pf-cp-list').value.trim() !== '' || w.querySelector('.pf-cp-sale').value.trim() !== '');
+
+    let force = false;
+    if (busy.length) {
+        const one = busy.length === 1;
+        force = await dievonFxAsk(
+              (one ? busy[0].dataset.name + ' already has a price set.'
+                   : busy.length + ' countries already have prices set (' + busy.map(w => w.dataset.name).join(', ') + ').')
+            + ' Replace ' + (one ? 'it' : 'them') + ' with converted amounts?'
+            + ' Cancel to fill only the empty ones.');
+    }
+
+    for (const w of wraps) {
+        const isBusy = busy.indexOf(w) !== -1;
+        if (isBusy && !force) { continue; }
+        await dievonConvertCountry(w.dataset.cc, { force: true, quiet: true });
+    }
+}
+
 
 // Drag-and-drop highlight
 const box = document.getElementById('uploadBox');
@@ -3576,7 +3797,7 @@ function addVariant(productId) {
         const row = document.createElement('div');
         row.className = 'variant-row';
         row.id = 'vrow-' + id;
-        row.style.cssText = 'display:flex; align-items:center; gap:12px; padding:12px 16px; background:var(--bg-main); border-radius:var(--radius-sm); margin-bottom:10px; border:1px solid var(--border-light);';
+        row.style.cssText = 'display:flex; align-items:center; gap:12px; padding:12px 16px; background:var(--bg-main); margin-bottom:10px; border:1px solid var(--border-light);';
         // The price box stays EMPTY when no override was typed, matching how the
         // server-rendered rows above decide: a filled box would claim this size
         // has its own price when it is simply inheriting the product's.
@@ -4135,9 +4356,9 @@ function adoptProductImages(colorId, btn) {
                 wrap.id = 'cimg-' + item.id;
                 wrap.style.cssText = 'position:relative; width:64px; height:64px;';
                 wrap.innerHTML =
-                    '<img src="<?= SITE_URL ?>/uploads/products/' + item.image + '" style="width:100%; height:100%; object-fit:cover; border-radius:8px; cursor:pointer; border:2px solid transparent;"' +
+                    '<img src="<?= SITE_URL ?>/uploads/products/' + item.image + '" style="width:100%; height:100%; object-fit:cover; cursor:pointer; border:2px solid transparent;"' +
                     ' title="Click to set as thumbnail" onclick="setColorThumbnail(' + colorId + ', \'' + item.image + '\')">' +
-                    '<button type="button" onclick="deleteColorImage(' + item.id + ', ' + colorId + ')" style="position:absolute; top:-6px; right:-6px; width:18px; height:18px; border-radius:50%; background:#c0392b; color:#fff; border:none; font-size:10px; cursor:pointer; line-height:1;">×</button>';
+                    '<button type="button" onclick="deleteColorImage(' + item.id + ', ' + colorId + ')" style="position:absolute; top:-6px; right:-6px; width:18px; height:18px; background:#c0392b; color:#fff; border:none; font-size:10px; cursor:pointer; line-height:1;">×</button>';
                 gallery.appendChild(wrap);
             });
 
@@ -4204,8 +4425,8 @@ async function uploadColorGallery(colorId, input) {
                 wrap.id = 'cimg-' + item.id;
                 wrap.style.cssText = 'position:relative; width:64px; height:64px;';
                 wrap.innerHTML = `
-                    <img src="<?= SITE_URL ?>/uploads/products/${escHtml(item.image)}" style="width:100%; height:100%; object-fit:cover; border-radius:8px; cursor:pointer; border:2px solid transparent;" title="Click to set as thumbnail" onclick="setColorThumbnail(${colorId}, '${escHtml(item.image)}')">
-                    <button type="button" onclick="deleteColorImage(${item.id}, ${colorId})" style="position:absolute; top:-6px; right:-6px; width:18px; height:18px; border-radius:50%; background:#c0392b; color:#fff; border:none; font-size:10px; cursor:pointer; line-height:1;">×</button>`;
+                    <img src="<?= SITE_URL ?>/uploads/products/${escHtml(item.image)}" style="width:100%; height:100%; object-fit:cover; cursor:pointer; border:2px solid transparent;" title="Click to set as thumbnail" onclick="setColorThumbnail(${colorId}, '${escHtml(item.image)}')">
+                    <button type="button" onclick="deleteColorImage(${item.id}, ${colorId})" style="position:absolute; top:-6px; right:-6px; width:18px; height:18px; background:#c0392b; color:#fff; border:none; font-size:10px; cursor:pointer; line-height:1;">×</button>`;
                 gallery.appendChild(wrap);
             });
             input.value = '';

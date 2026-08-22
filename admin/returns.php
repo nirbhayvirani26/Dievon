@@ -306,7 +306,7 @@ try {
     </div>
 <?php endif; ?>
 
-<div class="card" style="background: var(--bg-surface); padding: 25px; border-radius: 6px; border: 1px solid var(--border-light);">
+<div class="card" style="background: var(--bg-surface); padding: 25px; border: 1px solid var(--border-light);">
     <?php if (empty($returns)): ?>
         <p style="color: var(--text-muted);">No customer RMA return requests submitted yet.</p>
     <?php else: ?>
@@ -402,7 +402,7 @@ try {
                                 <?php endif; ?>
                             </td>
                             <td style="padding: 12px 10px;">
-                                <span style="font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 3px; background: #fff8e1; color: #b7791f;">
+                                <span style="font-size: 11px; font-weight: 700; padding: 4px 8px; background: #fff8e1; color: #b7791f;">
                                     <?= htmlspecialchars($r['status']) ?>
                                 </span>
                             </td>

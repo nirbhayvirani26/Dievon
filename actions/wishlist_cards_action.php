@@ -26,19 +26,15 @@
 // ============================================================
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/../includes/product_card_data.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
 /* Ids come from the shopper's own localStorage, so they are untrusted input
-   like anything else: cast to int, drop the rest, and cap the count. The cap
-   is not about the honest shopper — it stops a crafted request asking the
-   server to render thousands of cards in one go. */
-$raw = (string)($_GET['ids'] ?? '');
-$ids = array_values(array_unique(array_filter(
-    array_map('intval', explode(',', $raw)),
-    static fn(int $id): bool => $id > 0
-)));
-$ids = array_slice($ids, 0, 200);
+   like anything else. Sanitising and capping them is the same job on every
+   endpoint that takes a list of product ids, so it lives in
+   includes/product_card_data.php with the rest of the card's data side. */
+$ids = dievonCardIdsFromRequest((string)($_GET['ids'] ?? ''));
 
 if (!$ids) {
     echo json_encode(['success' => true, 'html' => '', 'alive' => [], 'unavailable' => []]);
@@ -46,82 +42,37 @@ if (!$ids) {
 }
 
 try {
-    $ph = implode(',', array_fill(0, count($ids), '?'));
+    /* Two different questions, and this endpoint answers both.
+       ────────────────────────────────────────────────────────────────────────
+       "Does it still exist" decides what stays in the wishlist: a piece that is
+       merely not sold in the shopper's country, or that the owner has hidden,
+       must NOT be forgotten — only a deleted one should be. "Can it be rendered"
+       decides what appears in the grid, and that one does require availability.
 
-    /* Which of these still EXIST, ignoring country and availability.
-       ────────────────────────────────────────────────────────────────────
-       Kept separate from the render list on purpose, preserving the rule the
-       page already had: a piece that is merely not sold in the shopper's
-       country must NOT be forgotten from their wishlist, while one whose
-       product has been deleted should be. Existence and availability are
-       different questions and only the first justifies dropping something
-       the shopper chose to save. */
-    $aliveSt = $pdo->prepare(
-        "SELECT id, name, available FROM products WHERE COALESCE(is_deleted,0) = 0 AND id IN ($ph)"
-    );
-    $aliveSt->execute($ids);
-    $aliveRows = $aliveSt->fetchAll(PDO::FETCH_ASSOC);
-    $alive = array_map(static fn(array $r): int => (int)$r['id'], $aliveRows);
+       Keeping them apart is why a hidden piece stays saved, and why the
+       unavailable names come back: without them the shopper would see a badge
+       saying three and a grid showing two, with nothing accounting for the
+       difference. A count that does not add up reads as a bug; a name reads as
+       an explanation.
 
-    /* Saved, still exists, but the shop is not currently selling it.
-       ────────────────────────────────────────────────────────────────────
-       These are returned BY NAME rather than as a number. The piece stays in
-       the wishlist — the owner has only hidden it, not deleted it — so
-       without this the shopper would see a badge saying three and a grid
-       showing two, with nothing on the page accounting for the difference.
-       A count that does not add up reads as a bug; a name reads as an
-       explanation. */
-    $unavailable = [];
-    foreach ($aliveRows as $r) {
-        if ((int)$r['available'] !== 1) { $unavailable[] = (string)$r['name']; }
-    }
+       Both queries, the column list and the hover/price priming are shared with
+       every other id-list caller — see includes/product_card_data.php. This file
+       used to carry its own copy of all of it. */
+    $aliveInfo = dievonCardAliveIds($pdo, $ids);
+    $rows      = dievonCardRows($pdo, $ids);
 
-    /* Only the columns the card and its helpers actually read — never
-       SELECT *. The stock columns are here because productSellableStock()
-       needs them to decide the sold-out state; they are used to compute a
-       yes/no and never reach the markup. */
-    $st = $pdo->prepare(
-        "SELECT id, name, seo_url, category, price, mrp_price, image, image_alt, emoji,
-                badge, video_url, available, track_stock,
-                total_stock, damage_stock, sold_offline, sold_online
-           FROM products
-          WHERE available = 1 AND COALESCE(is_deleted,0) = 0 AND id IN ($ph)"
-    );
-    $st->execute($ids);
-    $rows = $st->fetchAll(PDO::FETCH_ASSOC);
-
-    // Saved order is the shopper's order — keep the sequence they chose
-    // rather than whatever the database hands back.
-    $byId = [];
-    foreach ($rows as $r) { $byId[(int)$r['id']] = $r; }
-    $ordered = [];
-    foreach ($ids as $id) { if (isset($byId[$id])) { $ordered[] = $byId[$id]; } }
-
-    // One pair of queries for the hover photographs, not a pair per card.
-    productHoverImagePrime($ordered, $pdo);
-    productPriceRangePrime($ordered, $pdo);
-
-    /* Rendered through the shared partial. $card is the variable it reads,
-       and $GLOBALS['pdo'] is how it reaches the database for the sold-out
-       check — both matching how pages/shop.php includes it. */
-    $GLOBALS['pdo'] = $pdo;
-    ob_start();
-    foreach ($ordered as $row) {
-        $card = $row;
-        // The heart on a wishlist card removes the piece; Compare is a
-        // browsing tool and has no place on a list already chosen.
-        $cardCompare   = false;
-        $cardQuickView = true;
-        $cardExtraClass = 'product-card-wishlist';
-        include __DIR__ . '/../includes/product_card.php';
-    }
-    $html = ob_get_clean();
+    /* The heart on a wishlist card removes the piece; Compare is a browsing
+       tool and has no place on a list already chosen. */
+    $html = dievonRenderCards($pdo, $rows, [
+        'compare'    => false,
+        'extraClass' => 'product-card-wishlist',
+    ]);
 
     echo json_encode([
         'success'     => true,
         'html'        => $html,
-        'alive'       => $alive,
-        'unavailable' => $unavailable,
+        'alive'       => $aliveInfo['ids'],
+        'unavailable' => $aliveInfo['unavailable'],
     ]);
 } catch (PDOException $e) {
     echo json_encode(['success' => false, 'message' => 'Could not load your wishlist.']);

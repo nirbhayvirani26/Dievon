@@ -304,7 +304,7 @@ require_once __DIR__ . '/../includes/header.php';
                     <?php if (empty($orders)): ?>
                         <p class="acc-note">No recent orders placed.</p>
                     <?php else: ?>
-                        <div style="padding: 18px; background: var(--bg-surface-soft); border: 1px solid var(--border-light); border-radius: 6px; font-size: 13px;">
+                        <div style="padding: 18px; background: var(--bg-surface-soft); border: 1px solid var(--border-light); font-size: 13px;">
                             <strong>Latest Order Code:</strong> <span style="color: var(--color-primary); font-weight: 700;"><?= htmlspecialchars((string)($orders[0]['order_code'] ?? '')) ?></span><br>
                             <strong>Date:</strong> <?= date('M d, Y', strtotime($orders[0]['created_at'])) ?> | <strong>Total:</strong> <?= orderCurrencySymbol($orders[0]) . number_format($orders[0]['total_price'], 2) ?><br>
                             <strong>Status:</strong> <span style="font-weight: 700; color: #2e7d32;"><?= htmlspecialchars((string)($orders[0]['status'] ?? '')) ?></span>
@@ -365,7 +365,7 @@ require_once __DIR__ . '/../includes/header.php';
                                 $ordGroup = orderStatusGroup((string)($o['status'] ?? ''));
                                 [$ordBadgeBg, $ordBadgeFg] = orderStatusBadgeColours((string)($o['status'] ?? ''));
                             ?>
-                            <div class="acc-order-card" data-order-group="<?= htmlspecialchars($ordGroup) ?>" style="border: 1px solid var(--border-strong); border-radius: 6px; padding: 20px; background: var(--bg-surface);">
+                            <div class="acc-order-card" data-order-group="<?= htmlspecialchars($ordGroup) ?>" style="border: 1px solid var(--border-strong); padding: 20px; background: var(--bg-surface);">
                                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-light); padding-bottom: 12px; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
                                     <div>
                                         <strong style="font-size: 15px; color: var(--color-primary);"><?= htmlspecialchars((string)($o['order_code'] ?? '')) ?></strong>
@@ -376,7 +376,7 @@ require_once __DIR__ . '/../includes/header.php';
                                                  and "Refunded" both announced themselves in the colour that
                                                  means "all good" — telling the customer the opposite of what
                                                  happened. Colour now follows the status. */ ?>
-                                        <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 4px 12px; border-radius: 4px; background: <?= $ordBadgeBg ?>; color: <?= $ordBadgeFg ?>;">
+                                        <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 4px 12px; background: <?= $ordBadgeBg ?>; color: <?= $ordBadgeFg ?>;">
                                             <?= htmlspecialchars((string)($o['status'] ?? '')) ?>
                                         </span>
                                         <span style="font-size: 15px; font-weight: 700; display: block; margin-top: 4px; color: var(--text-primary);"><?= $ordSym . number_format($o['total_price'], 2) ?></span>
@@ -386,7 +386,7 @@ require_once __DIR__ . '/../includes/header.php';
                                 <!-- Line Items List -->
                                 <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px;">
                                     <?php foreach ($orderItems as $it): ?>
-                                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px; background: var(--bg-surface-soft); padding: 10px 14px; border-radius: 4px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px; background: var(--bg-surface-soft); padding: 10px 14px;">
                                         <div>
                                             <strong><?= htmlspecialchars((string)($it['name'] ?? '')) ?></strong>
                                             <?php if (!empty($it['color_name']) || !empty($it['variant_name'])): ?>
@@ -571,10 +571,10 @@ require_once __DIR__ . '/../includes/header.php';
                             <h3 class="acc-card-title">Active Return Requests</h3>
                             <div class="acc-stack">
                                 <?php foreach ($returns as $r): ?>
-                                <div style="border: 1px solid var(--border-light); padding: 15px; border-radius: 6px; background: var(--bg-surface-soft); font-size: 13px;">
+                                <div style="border: 1px solid var(--border-light); padding: 15px; background: var(--bg-surface-soft); font-size: 13px;">
                                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
                                         <strong>RMA Code: <?= htmlspecialchars((string)($r['return_code'] ?? '')) ?></strong> (Order: <?= htmlspecialchars((string)($r['order_code'] ?? '')) ?>)
-                                        <span style="font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 4px 10px; border-radius: 4px; background: #fff8e1; color: #b7791f;">
+                                        <span style="font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 4px 10px; background: #fff8e1; color: #b7791f;">
                                             <?= htmlspecialchars((string)($r['status'] ?? '')) ?>
                                         </span>
                                     </div>
@@ -728,13 +728,13 @@ require_once __DIR__ . '/../includes/header.php';
                     <h2 class="acc-tab-title">Refund Status &amp; Credit Information</h2>
                     <p class="acc-intro">Track full and partial refund processing details for returned orders.</p>
                     <?php if (empty($refundedOrders)): ?>
-                    <div style="background: var(--bg-surface-soft); border: 1px solid var(--border-light); padding: 20px; border-radius: 6px; font-size: 13px;">
+                    <div style="background: var(--bg-surface-soft); border: 1px solid var(--border-light); padding: 20px; font-size: 13px;">
                         <p style="margin: 0 0 10px; color: var(--text-muted);">No active refund transactions pending. Approved refunds deposit directly to your original payment card within 3–5 business days.</p>
                     </div>
                     <?php else: ?>
                     <div class="acc-stack">
                         <?php foreach ($refundedOrders as $ro): $rSym = orderCurrencySymbol($ro); ?>
-                        <div style="border: 1px solid var(--border-light); padding: 16px; border-radius: 6px; background: var(--bg-surface-soft); font-size: 13px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                        <div style="border: 1px solid var(--border-light); padding: 16px; background: var(--bg-surface-soft); font-size: 13px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                             <div>
                                 <strong>Order <?= htmlspecialchars($ro['order_code']) ?></strong>
                                 <span style="display: block; font-size: 11px; color: var(--text-muted); margin-top: 2px;">Refunded on <?= date('d M Y', strtotime($ro['created_at'])) ?></span>
@@ -958,7 +958,7 @@ require_once __DIR__ . '/../includes/header.php';
     border: 1px solid var(--border-light);
     padding: 20px;
     text-align: center;
-    border-radius: 6px;
+
 }
 
 /* Data & Privacy tab. showAccountTab() sets style.display directly when a tab
@@ -978,7 +978,7 @@ require_once __DIR__ . '/../includes/header.php';
     border: 1px solid var(--border-light);
     background: var(--bg-surface-soft);
     padding: 20px;
-    border-radius: 6px;
+
 }
 .acc-privacy-card-danger { border-color: var(--color-danger); }
 .acc-privacy-title {
@@ -1033,66 +1033,97 @@ function showAccountTab(tabId, el) {
     if (tabId === 'wishlist') renderAccountWishlist();
 }
 
-function renderAccountWishlist() {
+/* ── The wishlist tab ────────────────────────────────────────────────────────
+   The same cards as /wishlist, from the same endpoint, because this used to be
+   a hand-written copy and it had drifted exactly the way copies do. It was
+   missing the sale percentage, the Sold Out state, "Not Available Here",
+   country pricing, the compare toggle, Quick View, the hover photograph, the
+   bag note and the Details link — everything the real card had gained since it
+   was written. It was also built from inline styles rather than the card's
+   stylesheet, so it could not follow the card's redesign at all.
+
+   Its links were the pre-clean-URL form, /product.php?id=N and /shop.php. Those
+   still resolve — index.php strips a trailing ".php" before looking the page up,
+   and product.php then 301s to the canonical address — so this was a redirect on
+   every click rather than a broken link. The shared card builds its href with
+   productUrl() and lands on the canonical URL first time. */
+let accWishlistBusy = false;
+
+async function renderAccountWishlist() {
     const container = document.getElementById('accWishlistContainer');
-    if (!container) return;
+    if (!container) { return; }
 
-    const wishlistIds = typeof getWishlist === 'function' ? getWishlist() : [];
-    const items = accountProducts.filter(p => wishlistIds.indexOf(p.id.toString()) > -1);
+    const ids = (typeof getWishlist === 'function' ? getWishlist() : []).filter(Boolean);
 
-    if (items.length === 0) {
+    if (!ids.length) {
         container.innerHTML = `
-            <div style="text-align: center; padding: 40px 0; color: var(--text-secondary);">
-                <div style="font-size: 36px; margin-bottom: 10px;">🖤</div>
-                <p style="text-transform: uppercase; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; margin-bottom: 15px;">Your wishlist is currently empty</p>
-                <a href="<?= SITE_URL ?>/shop.php" class="btn-luxury" style="font-size: 11px; padding: 8px 20px;">Explore Collections</a>
-            </div>
-        `;
+            <div class="acc-wishlist-empty">
+                <p class="acc-wishlist-empty-text">Your wishlist is currently empty</p>
+                <a href="<?= SITE_URL ?>/shop" class="btn-luxury">Explore Collections</a>
+            </div>`;
         return;
     }
 
-    let html = '<div class="acc-wishlist-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px;">';
-    items.forEach(p => {
-        const imgSrc = p.image ? `${window.SITE_URL}/uploads/products/${p.image}` : '';
-        const imgHtml = imgSrc 
-            ? `<img src="${escHtml(imgSrc)}" alt="${escHtml(p.name)}" style="width: 100%; height: 180px; object-fit: cover; border-radius: 4px;">`
-            : `<div style="width: 100%; height: 180px; background: var(--bg-surface-soft); display: flex; align-items: center; justify-content: center; font-size: 40px; border-radius: 4px;">${escHtml(p.emoji)}</div>`;
+    /* Un-hearting several pieces quickly must not let a slower earlier response
+       overwrite a newer one — the same guard /wishlist uses. */
+    if (accWishlistBusy) { return; }
+    accWishlistBusy = true;
 
-        html += `
-            <div class="acc-wishlist-card" style="border: 1px solid var(--border-light); padding: 14px; border-radius: 4px; background: var(--bg-surface); display: flex; flex-direction: column; position: relative;">
-                <button onclick="removeAccountWishlist(${p.id})" style="position: absolute; top: 10px; right: 10px; background: transparent; border: none; font-size: 16px; color: var(--color-danger); cursor: pointer;" aria-label="Remove">
-                    <i class="fa-solid fa-heart"></i>
-                </button>
-                <a href="<?= SITE_URL ?>/product.php?id=${p.id}" style="display: block; margin-bottom: 10px;">
-                    ${imgHtml}
-                </a>
-                <span style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted);">${escHtml(p.category)}</span>
-                <strong style="font-size: 13px; margin: 4px 0; font-family: var(--font-heading); color: var(--text-primary); min-height: 36px; line-height: 1.3;">${escHtml(p.name)}</strong>
-                <?php /* "From" when the sizes are priced differently — the same word,
-                         on the same rule, that the card on /wishlist uses. Without it a
-                         product spanning ₹1,500-₹2,400 reads as a flat ₹1,500 here. */ ?>
-                <div style="font-size: 12px; font-weight: 700; color: var(--color-secondary); margin-bottom: 12px;">${p.price_varies ? 'From ' : ''}${typeof formatPriceJS === 'function' ? formatPriceJS(p.price) : '<?= currencySymbol() ?>' + p.price}</div>
-                
-                <div style="display: flex; flex-direction: column; gap: 6px; margin-top: auto;">
-                    <?php // select_size=1 dropped — nothing has ever read it. ?>
-                    <a href="<?= SITE_URL ?>/product.php?id=${p.id}" class="btn-luxury" style="width: 100%; padding: 8px; font-size: 10px; justify-content: center; text-transform: uppercase;">
-                        <i class="fa-solid fa-bag-shopping"></i> Add to Bag
-                    </a>
-                    <button onclick="removeAccountWishlist(${p.id})" class="btn-luxury-outline" style="width: 100%; padding: 6px; font-size: 10px; justify-content: center; text-transform: uppercase; color: var(--color-danger); border-color: var(--color-danger);">
-                        Remove
-                    </button>
-                </div>
-            </div>
-        `;
-    });
-    html += '</div>';
-    container.innerHTML = html;
+    try {
+        const url = `${window.SITE_URL}/actions/wishlist_cards_action.php?ids=`
+                  + encodeURIComponent(ids.join(','));
+        const data = await (await fetch(url)).json();
+        if (!data || !data.success) { throw new Error('load failed'); }
+
+        /* Forget ids whose product no longer exists. `alive` answers "does this
+           still exist", not "is it sold where you are": a piece unavailable in
+           the shopper's country is still theirs and stays saved. */
+        const alive = new Set((data.alive || []).map(String));
+        const kept  = ids.filter(id => alive.has(String(id)));
+        if (kept.length !== ids.length) {
+            localStorage.setItem('dievon_wishlist', JSON.stringify(kept));
+            if (typeof updateWishlistBadge === 'function') { updateWishlistBadge(); }
+        }
+
+        const html = (data.html || '').trim();
+        if (!html) {
+            container.innerHTML = `
+                <div class="acc-wishlist-empty">
+                    <p class="acc-wishlist-empty-text">Your wishlist is currently empty</p>
+                    <a href="<?= SITE_URL ?>/shop" class="btn-luxury">Explore Collections</a>
+                </div>`;
+            return;
+        }
+
+        container.innerHTML = '<div class="products-grid acc-wishlist-grid">' + html + '</div>';
+
+        /* Cards built after the page loaded miss three things the static grids
+           get for free: the filled hearts, the entrance animation's observer,
+           and the "in your bag" note, which is read from a cart fetched before
+           these existed. */
+        if (typeof syncWishlistHearts === 'function') { syncWishlistHearts(); }
+        if (typeof dievonObserveReveal === 'function') {
+            container.querySelectorAll('.reveal-on-scroll').forEach(c => dievonObserveReveal(c));
+        }
+        if (typeof syncBagNotes === 'function') { syncBagNotes(); }
+    } catch (e) {
+        container.innerHTML = '<p class="acc-note">Could not load your wishlist just now. Please refresh.</p>';
+    } finally {
+        accWishlistBusy = false;
+    }
 }
 
-function removeAccountWishlist(pid) {
-    if (typeof toggleWishlist === 'function') toggleWishlist(pid.toString());
-    renderAccountWishlist();
-}
+/* The card's heart toggles rather than removes, so un-hearting a piece here has
+   to take its card off the list too. handleWishlistClick() announces every
+   change; the debounce is so un-hearting three pieces quickly redraws once.
+   Same wiring as /wishlist — the bespoke removeAccountWishlist() this replaces
+   existed only because the old hand-written tile drew its own Remove button. */
+let accWishlistRedraw;
+document.addEventListener('dievon:wishlist-changed', () => {
+    if (!document.getElementById('accWishlistContainer')) { return; }
+    clearTimeout(accWishlistRedraw);
+    accWishlistRedraw = setTimeout(renderAccountWishlist, 350);
+});
 
 document.addEventListener('DOMContentLoaded', () => {
     if (window.location.hash) {

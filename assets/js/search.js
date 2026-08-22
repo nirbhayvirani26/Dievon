@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         const imgHtml = imgSrc ? `<img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(product.name)}">` : `<div style="width:80px; height:100px; background:#f3f4f6; display:flex; align-items:center; justify-content:center;">${product.emoji || '✨'}</div>`;
                         
                         html += `
-                            <a href="${window.SITE_URL}/product.php?id=${product.id}" class="search-product-card">
+                            <a href="${product.product_url || (window.SITE_URL + '/product.php?id=' + product.id)}" class="search-product-card">
                                 ${imgHtml}
                                 <div class="search-product-details">
                                     <div class="search-product-title">${escapeHtml(product.name)}</div>

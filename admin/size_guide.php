@@ -168,7 +168,7 @@ require_once 'includes/header.php';
           // harmless, and keeping them is the safe default. ?>
     <?php if ($orphanChartCount > 0): ?>
     <div style="margin-bottom:20px; padding:12px 16px; background:var(--bg-surface-soft); border:1px solid var(--border-light);
-                border-left:3px solid var(--color-secondary); border-radius:8px; font-size:13px; line-height:1.6; color:var(--text-secondary);">
+                border-left:3px solid var(--color-secondary); font-size:13px; line-height:1.6; color:var(--text-secondary);">
         <i class="fa-solid fa-box-archive" style="color:var(--color-secondary);"></i>
         <?= $orphanChartCount ?> size chart<?= $orphanChartCount === 1 ? '' : 's' ?>
         belong<?= $orphanChartCount === 1 ? 's' : '' ?> to a product you no longer sell. Nothing is broken and no shopper can see
@@ -177,7 +177,7 @@ require_once 'includes/header.php';
     <?php endif; ?>
 
     <!-- Scope selector -->
-    <div style="display:flex; gap:16px; flex-wrap:wrap; margin-bottom:24px; padding:18px; background:var(--bg-main); border-radius:var(--radius-md); border:1px solid var(--border-light);">
+    <div style="display:flex; gap:16px; flex-wrap:wrap; margin-bottom:24px; padding:18px; background:var(--bg-main); border:1px solid var(--border-light);">
         <div style="flex:1; min-width:220px;">
             <label class="form-label">Category Default</label>
             <select class="form-control" onchange="if(this.value) window.location='size_guide.php?category_id='+encodeURIComponent(this.value); ">
@@ -382,7 +382,7 @@ require_once 'includes/header.php';
             <p style="font-size:11px; color:var(--text-muted); margin-bottom:8px;">
                 <i class="fa-solid fa-arrows-up-down"></i> Drag each orange line onto the matching body part in your photo (drag its middle tag up/down, drag its end dots to resize width). Drag the two green dots to mark where the garment length starts and ends.
             </p>
-            <div id="sgPreviewStage" style="position:relative; display:inline-block; width:260px; border:1px solid var(--border-light); border-radius:6px; overflow:hidden; background:#f2f2f2; user-select:none;">
+            <div id="sgPreviewStage" style="position:relative; display:inline-block; width:260px; border:1px solid var(--border-light); overflow:hidden; background:#f2f2f2; user-select:none;">
                 <img id="sgPreviewImg" src="<?= $sgHasImage ? SITE_URL . '/uploads/products/' . htmlspecialchars($chart['illustration_image']) : '' ?>" style="display:block; width:100%; height:auto;">
 
                 <?php foreach (['shoulder' => 'Shoulder', 'bust' => 'Bust', 'waist' => 'Waist', 'hips' => 'Hips'] as $field => $labelText): ?>
@@ -404,10 +404,10 @@ require_once 'includes/header.php';
 
         <style>
             .sg-pos-hline { position:absolute; left:50%; transform:translateX(-50%); height:0; border-top:2px dashed #ff5722; display:flex; align-items:center; justify-content:center; z-index:2; }
-            .sg-pos-drag-area { background:#ff5722; color:#fff; font-size:9px; font-weight:700; letter-spacing:0.04em; text-transform:uppercase; padding:2px 7px; border-radius:3px; cursor:ns-resize; transform:translateY(-50%); white-space:nowrap; }
-            .sg-pos-handle-left, .sg-pos-handle-right { position:absolute; top:-5px; width:10px; height:10px; border-radius:50%; background:#fff; border:2px solid #ff5722; cursor:ew-resize; }
+            .sg-pos-drag-area { background:#ff5722; color:#fff; font-size:9px; font-weight:700; letter-spacing:0.04em; text-transform:uppercase; padding:2px 7px; cursor:ns-resize; transform:translateY(-50%); white-space:nowrap; }
+            .sg-pos-handle-left, .sg-pos-handle-right { position:absolute; top:-5px; width:10px; height:10px; background:#fff; border:2px solid #ff5722; cursor:ew-resize; }
             .sg-pos-handle-left { left:-5px; } .sg-pos-handle-right { right:-5px; }
-            .sg-pos-vhandle { position:absolute; left:6%; width:13px; height:13px; border-radius:50%; background:#fff; border:2px solid #22c55e; cursor:ns-resize; transform:translate(-50%,-50%); z-index:3; }
+            .sg-pos-vhandle { position:absolute; left:6%; width:13px; height:13px; background:#fff; border:2px solid #22c55e; cursor:ns-resize; transform:translate(-50%,-50%); z-index:3; }
             #sgLengthLine { position:absolute; left:6%; width:0; border-left:2px dashed #22c55e; z-index:1; }
         </style>
 

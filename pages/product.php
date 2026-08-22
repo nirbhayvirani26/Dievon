@@ -2123,15 +2123,6 @@ function closeFadeModal(id) {
     setTimeout(() => { el.style.display = 'none'; }, 300);
 }
 
-function openSimilarProductsModal() {
-    const el = document.getElementById('similarProductsModal');
-    if (el) el.style.display = 'flex';
-}
-function closeSimilarProductsModal() {
-    const el = document.getElementById('similarProductsModal');
-    if (el) el.style.display = 'none';
-}
-
 function navProductLightbox(dir, e) {
     if (e) e.stopPropagation();
     if (!galleryImagesList.length) return;
@@ -3550,139 +3541,100 @@ document.addEventListener('keydown', e => {
         localStorage.setItem('dievon_recently_viewed', JSON.stringify(viewed));
     }
 
+    /* Recently viewed, rendered by the server through the shared card partial.
+       ────────────────────────────────────────────────────────────────────────
+       This used to build its own card in JavaScript from the snapshot saved in
+       localStorage. That copy had drifted from includes/product_card.php: no
+       hover photograph, no bag note, and — the one that matters — no sold-out
+       state, so a piece that had gone out of stock still appeared here fully
+       buyable while the same piece on the shop grid beside it was greyed out.
+       It could not have shown otherwise: the snapshot holds a name, a price and
+       an image, and availability is not in it.
+
+       Asking the server for the cards fixes that by removing the copy rather
+       than by patching it. Three further things fall out of the change:
+
+         * The prune no longer needs the catalogue. It used to embed the id of
+           EVERY live product in the page — the whole table, on every product
+           view, to decide whether four saved entries still existed. The
+           endpoint answers for the four.
+
+         * The saved price is no longer displayed, so the country filter that
+           used to hide entries saved elsewhere is gone with it. Those entries
+           were being dropped to avoid showing an Indian figure under a dollar
+           sign; the server prices every card for the country being browsed now,
+           so they can simply be shown.
+
+         * Sold out, discount badges, hover images, WebP and the bag note arrive
+           for free, because they are the card's, not this function's. */
     function loadRecentlyViewed() {
         let viewed = [];
         try {
             viewed = JSON.parse(localStorage.getItem('dievon_recently_viewed')) || [];
         } catch (e) {}
-        
-        // Exclude current product from display
-        viewed = viewed.filter(p => p.id !== <?= $productId ?>);
 
-        /* Only entries saved for the country being browsed right now.
-           These cards are built here in the browser from a snapshot taken on an
-           earlier visit, so they cannot know today's country pricing — and
-           localStorage survives a country switch. Without this filter, prices
-           captured in one country were redisplayed under another country's
-           currency symbol. Entries saved before this change carry no country at
-           all and are dropped for the same reason: an unlabelled price cannot be
-           shown honestly. The section empties once, then refills as pages are
-           viewed. */
-        const dvRvCountry = <?= json_encode(strtoupper((string)$dvCountryCode)) ?>;
-        viewed = viewed.filter(p => (p.country || '') === dvRvCountry);
-
-        <?php
-        /* Drop anything whose product no longer exists.
-           ────────────────────────────────────────────────────────────────────
-           These cards are drawn from a snapshot in the visitor's browser, and
-           that snapshot outlives the product. Delete something from the
-           catalogue and it kept rendering here — full card, price, Wishlist and
-           Quick View — linking to a page that 404s. The same defect the wishlist
-           badge had; this is the second store holding product ids and it needed
-           the same treatment.
-
-           Ids only, and only products that still exist — availability and
-           country are handled separately above. */
-        $rvLiveIds = [];
-        try {
-            $rvLiveIds = array_map('intval', $pdo->query(
-                "SELECT id FROM products WHERE COALESCE(is_deleted,0) = 0"
-            )->fetchAll(PDO::FETCH_COLUMN));
-        } catch (PDOException $e) {}
-        ?>
-        const dvRvLiveIds = new Set(<?= json_encode($rvLiveIds) ?>.map(String));
-        const dvRvBefore  = viewed.length;
-        viewed = viewed.filter(p => dvRvLiveIds.has(String(p.id)));
-        // Write the pruned list back so a deleted product is forgotten for good,
-        // rather than being filtered out again on every page view.
-        if (viewed.length !== dvRvBefore) {
-            try {
-                const keep = JSON.parse(localStorage.getItem('dievon_recently_viewed') || '[]')
-                    .filter(p => dvRvLiveIds.has(String(p.id)));
-                localStorage.setItem('dievon_recently_viewed', JSON.stringify(keep));
-            } catch (e) {}
-        }
+        // The piece being looked at is not "recently viewed" from this page.
+        const ids = viewed
+            .map(p => parseInt(p && p.id, 10))
+            .filter(id => id > 0 && id !== <?= (int)$productId ?>);
 
         const container = document.getElementById('recentlyViewedContainer');
-        const empty = document.getElementById('recentlyViewedEmpty');
-        
-        if (viewed.length === 0) {
-            empty.style.display = 'block';
+        const empty     = document.getElementById('recentlyViewedEmpty');
+        if (!container) { return; }
+
+        if (!ids.length) {
+            if (empty) { empty.style.display = 'block'; }
             return;
         }
 
-        // formatPriceJS comes from the header; this only runs if that failed to load.
-        const formatPriceFallback = v => '\u20B9' + parseFloat(v || 0).toFixed(2);
+        fetch(`${window.SITE_URL || ''}/actions/product_cards_action.php?ids=${ids.join(',')}`)
+            .then(res => res.json())
+            .then(data => {
+                if (!data || !data.success) { return; }
 
-        viewed.forEach(p => {
-            const siteUrl = window.SITE_URL || '';
-            // Mirrors productUrl()/slugify() in config/config.php. Linking straight
-            // to the canonical /product/<slug>-<id> avoids the 301 hop that
-            // /product?id=<id> takes on every single click.
-            const slug = String(p.name || '').toLowerCase()
-                .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'product';
-            const url = `${siteUrl}/product/${slug}-${p.id}`;
-            // Mirrors includes/product_card.php. This grid used to render a stub —
-            // image, category, name, price — with no badge, no wishlist button, no
-            // Compare, no Quick View and no Details button, sitting directly under
-            // "Suggested Pieces", which uses the real card. Two cards side by side,
-            // one of them missing half its controls.
-            //
-            // Entries saved before this change do not carry mrp_price, badge or the
-            // WebP path, so each of those degrades rather than breaking.
-            const money = v => (typeof formatPriceJS === 'function' ? formatPriceJS(v) : formatPriceFallback(v));
+                /* Forget a product that no longer exists — but only that.
+                   `alive` answers "does this still exist", ignoring
+                   availability, which is the distinction this prune has always
+                   made: a piece the owner has merely hidden must not be wiped
+                   from the visitor's history, or it would never come back when
+                   the piece returns. */
+                try {
+                    /* Only judge the ids that were actually asked about.
+                       `alive` answers for the ids in the request, and the
+                       request deliberately leaves out the product being viewed
+                       — so filtering the whole stored list against it deleted
+                       the current piece from the visitor's history on every
+                       single page view. Measured: browse four products, and the
+                       list held one. */
+                    const asked = new Set(ids);
+                    const alive = new Set((data.alive || []).map(Number));
+                    const kept  = viewed.filter(p => {
+                        const id = parseInt(p && p.id, 10);
+                        return !asked.has(id) || alive.has(id);
+                    });
+                    if (kept.length !== viewed.length) {
+                        localStorage.setItem('dievon_recently_viewed', JSON.stringify(kept));
+                    }
+                } catch (e) {}
 
-            const mrp = parseFloat(p.mrp_price || 0);
-            const price = parseFloat(p.price || 0);
-            const hasDiscount = mrp > price && price > 0;
-            const pct = hasDiscount ? Math.round(((mrp - price) / mrp) * 100) : 0;
+                const html = (data.html || '').trim();
+                if (!html) {
+                    if (empty) { empty.style.display = 'block'; }
+                    return;
+                }
+                if (empty) { empty.style.display = 'none'; }
+                container.insertAdjacentHTML('beforeend', html);
 
-            const badgeHtml = hasDiscount
-                ? `<span class="badge-luxury badge-sale">${pct}% OFF</span>`
-                : (p.badge ? `<span class="badge-luxury">${escHtml(p.badge)}</span>` : '');
-
-            const alt = escHtml(p.image_alt || p.name);
-            const imgHtml = p.image
-                ? `<picture>${p.image_webp ? `<source srcset="${escHtml(p.image_webp)}" type="image/webp">` : ''}` +
-                  `<img src="${siteUrl}/uploads/products/${escHtml(p.image)}" alt="${alt}" loading="lazy" decoding="async" class="card-img"></picture>`
-                : `<div class="card-img-fallback">${escHtml(p.emoji || '👗')}</div>`;
-
-            const html = `
-                <article class="product-card reveal-on-scroll">
-                    ${badgeHtml}
-                    <button class="product-card-wishlist-btn"
-                            onclick="event.preventDefault(); handleWishlistClick(${parseInt(p.id, 10)}, this)"
-                            aria-label="Add to Wishlist">
-                        <i class="fa-regular fa-heart"></i>
-                    </button>
-                    <div class="card-img-container">
-                        <a href="${url}" class="card-img-link">${imgHtml}</a>
-                        <label class="compare-toggle" title="Compare (up to 3)" onclick="event.stopPropagation()">
-                            <input type="checkbox" class="compare-check" value="${parseInt(p.id, 10)}"
-                                   data-name="${escHtml(p.name)}" onchange="toggleCompare(this)">
-                            <span>Compare</span>
-                        </label>
-                        <button onclick="event.preventDefault(); openQuickView(${parseInt(p.id, 10)})" class="quick-view-btn">Quick View</button>
-                    </div>
-                    <div class="product-card-details">
-                        <span class="product-card-category">${escHtml(p.category)}</span>
-                        <h3 class="product-card-title">
-                            <a href="${url}">${escHtml(p.name)}</a>
-                        </h3>
-                        <div class="product-card-price">
-                            ${hasDiscount ? `<span class="price-mrp-strike">${money(mrp)}</span>` : ''}
-                            ${money(price)}
-                        </div>
-                        <a href="${url}" class="btn-luxury product-card-cta">Details</a>
-                    </div>
-                </article>
-            `;
-            container.insertAdjacentHTML('beforeend', html);
-        });
-
-        if (typeof dievonObserveReveal === 'function') {
-            container.querySelectorAll('.reveal-on-scroll').forEach(el => dievonObserveReveal(el));
-        }
+                // Same scroll-entrance the static grids use, and the same bag
+                // note fill the shop does after Load More — these cards were
+                // built after the cart was read, so without it "2 in your bag"
+                // would be missing from them alone.
+                if (typeof dievonObserveReveal === 'function') {
+                    container.querySelectorAll('.reveal-on-scroll').forEach(el => dievonObserveReveal(el));
+                }
+                if (typeof syncBagNotes === 'function') { syncBagNotes(); }
+            })
+            .catch(() => { /* the strip simply stays empty */ });
     }
 
     // ── Dievon Size Guide Modal ────────────────────────────────────
@@ -4083,44 +4035,6 @@ document.addEventListener('keydown', e => {
         </div>
     </div>
 </div>
-
-<!-- ══ Similar Products Modal (mobile quick-view) ════════════════ -->
-<?php if (!empty($related)): ?>
-<div id="similarProductsModal" class="product-modal-overlay" onclick="if (event.target === this) closeSimilarProductsModal()">
-    <div class="product-modal-card similar-products-modal-card">
-        <div class="product-modal-card-header">
-            <h3>Similar Pieces</h3>
-            <button onclick="closeSimilarProductsModal()" class="product-modal-close-btn">&times;</button>
-        </div>
-        <div class="product-modal-card-body">
-            <div class="similar-products-grid">
-                <?php foreach ($related as $p):
-                    $simImg = !empty($p['image']) ? SITE_URL . '/uploads/products/' . htmlspecialchars($p['image']) : '';
-                    $simWebp = !empty($p['image']) ? webpUrlIfExists('products', $p['image']) : '';
-                ?>
-                <a href="<?= productUrl($p['id'], $p['name'], $p['seo_url'] ?? null) ?>" class="similar-product-card">
-                    <div class="similar-product-img-wrap">
-                        <picture>
-                            <?php if ($simWebp): ?><source srcset="<?= htmlspecialchars($simWebp) ?>" type="image/webp"><?php endif; ?>
-                            <img src="<?= $simImg ?>" alt="<?= htmlspecialchars($p['name']) ?>" loading="lazy">
-                        </picture>
-                    </div>
-                    <span class="similar-product-name"><?= htmlspecialchars($p['name']) ?></span>
-                    <?php /* Resolved, like every other card on the site. This strip is a
-                             simpler renderer than includes/product_card.php and was still
-                             printing products.price flat, so a piece whose sizes are priced
-                             individually was advertised here at a figure nobody could pay. */
-                          $simRange = function_exists('productPriceRange')
-                              ? productPriceRange($p)
-                              : ['min' => (float)$p['price'], 'varies' => false]; ?>
-                    <span class="similar-product-price"><?php if ($simRange['varies']): ?><span class="price-from-label">From</span> <?php endif; ?><?= formatPrice($simRange['min'] > 0 ? $simRange['min'] : (float)$p['price']) ?></span>
-                </a>
-                <?php endforeach; ?>
-            </div>
-        </div>
-    </div>
-</div>
-<?php endif; ?>
 
 <script>
 function submitProductEnquiry(e) {

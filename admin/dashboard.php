@@ -156,8 +156,8 @@ require_once 'includes/header.php';
                         <tr style="border-bottom:1px solid var(--border-light);">
                             <td style="padding:9px 0;">
                                 <div style="font-weight:600;"><?= htmlspecialchars($cat) ?></div>
-                                <div style="height:4px; background:rgba(var(--color-primary-rgb),0.15); border-radius:2px; margin-top:4px; width:100%;">
-                                    <div style="height:4px; background:var(--color-primary); border-radius:2px; width:<?= $pct ?>%;"></div>
+                                <div style="height:4px; background:rgba(var(--color-primary-rgb),0.15); margin-top:4px; width:100%;">
+                                    <div style="height:4px; background:var(--color-primary); width:<?= $pct ?>%;"></div>
                                 </div>
                             </td>
                             <td style="padding:9px 0; text-align:right; font-weight:700; color:var(--color-primary);"><?= currencySymbol() ?><?= number_format($cdata['revenue'], 2) ?></td>
@@ -211,19 +211,19 @@ require_once 'includes/header.php';
 
             <!-- Summary chips -->
             <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:20px;">
-                <div style="background:var(--bg-main); border:1px solid var(--border-light); border-radius:8px; padding:14px 16px;">
+                <div style="background:var(--bg-main); border:1px solid var(--border-light); padding:14px 16px;">
                     <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-muted); font-weight:700;">COD Orders</div>
                     <div style="font-size:24px; font-weight:800; color:var(--color-primary); margin-top:4px;"><?= (int)$codTotals['orders'] ?></div>
                 </div>
-                <div style="background:var(--bg-main); border:1px solid var(--border-light); border-radius:8px; padding:14px 16px;">
+                <div style="background:var(--bg-main); border:1px solid var(--border-light); padding:14px 16px;">
                     <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-muted); font-weight:700;">COD Order Value</div>
                     <div style="font-size:24px; font-weight:800; color:var(--color-primary); margin-top:4px;"><?= currencySymbol() ?><?= number_format((float)$codTotals['order_value'], 2) ?></div>
                 </div>
-                <div style="background:var(--bg-main); border:1px solid var(--border-light); border-radius:8px; padding:14px 16px;">
+                <div style="background:var(--bg-main); border:1px solid var(--border-light); padding:14px 16px;">
                     <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-muted); font-weight:700;">Handling Fees Collected</div>
                     <div style="font-size:24px; font-weight:800; color:#f59e0b; margin-top:4px;"><?= currencySymbol() ?><?= number_format((float)$codTotals['fees'], 2) ?></div>
                 </div>
-                <div style="background:var(--bg-main); border:1px solid var(--border-light); border-radius:8px; padding:14px 16px;">
+                <div style="background:var(--bg-main); border:1px solid var(--border-light); padding:14px 16px;">
                     <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-muted); font-weight:700;">Awaiting Courier Remittance</div>
                     <div style="font-size:24px; font-weight:800; color:#ef4444; margin-top:4px;"><?= currencySymbol() ?><?= number_format((float)$codTotals['pending_value'], 2) ?></div>
                 </div>

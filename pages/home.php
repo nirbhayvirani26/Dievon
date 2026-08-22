@@ -183,16 +183,22 @@ try {
 $bestSellers = [];
 $trending    = [];
 try {
-    $bestSellers = $pdo->query("SELECT * FROM products WHERE available = 1{$homeLiveSql} AND badge = 'Best Seller'{$homeGenderSql} ORDER BY id ASC LIMIT 4")->fetchAll();
-    $trending    = $pdo->query("SELECT * FROM products WHERE available = 1{$homeLiveSql} AND badge = 'Hot'{$homeGenderSql} ORDER BY id ASC LIMIT 4")->fetchAll();
+    /* Twelve, not four. These two lists are a slider now rather than a fixed
+       four-up grid — four is what is ON SCREEN at desktop, and a slider whose
+       total equals its window has nothing to slide and two arrows that are both
+       dead on arrival. The mockup's own counter reads 01-04 / 12. The section
+       still renders correctly at any count from one upward: the arrows, the
+       counter and the progress bar all read the real total. */
+    $bestSellers = $pdo->query("SELECT * FROM products WHERE available = 1{$homeLiveSql} AND badge = 'Best Seller'{$homeGenderSql} ORDER BY id ASC LIMIT 12")->fetchAll();
+    $trending    = $pdo->query("SELECT * FROM products WHERE available = 1{$homeLiveSql} AND badge = 'Hot'{$homeGenderSql} ORDER BY id ASC LIMIT 12")->fetchAll();
 } catch (PDOException $e) {}
 
 /* Claim the deliberate picks in page order, then top each section up from what
    is left — newest for arrivals, dearest for best sellers, keenest for trending,
    which is the ordering each section had before. Nothing is drawn twice. */
 $newArrivals = $homeClaim($newArrivals, 8);
-$bestSellers = $homeClaim($bestSellers, 4);
-$trending    = $homeClaim($trending,    4);
+$bestSellers = $homeClaim($bestSellers, 12);
+$trending    = $homeClaim($trending,    12);
 
 $byNewest = $homePool;                                          // already id DESC
 $byDearest = $homePool;
@@ -201,8 +207,8 @@ $byKeenest = $homePool;
 usort($byKeenest, fn($a, $b) => (float)($a['price'] ?? 0) <=> (float)($b['price'] ?? 0));
 
 $newArrivals = array_merge($newArrivals, $homeClaim($byNewest,  8 - count($newArrivals)));
-$bestSellers = array_merge($bestSellers, $homeClaim($byDearest, 4 - count($bestSellers)));
-$trending    = array_merge($trending,    $homeClaim($byKeenest, 4 - count($trending)));
+$bestSellers = array_merge($bestSellers, $homeClaim($byDearest, 12 - count($bestSellers)));
+$trending    = array_merge($trending,    $homeClaim($byKeenest, 12 - count($trending)));
 
 // Fetch dynamic hero slider banners
 $heroBanners = [];
@@ -300,21 +306,39 @@ $heroSlideCount = !empty($heroBanners)
                 // Lazy loading is for images DOWN the page. Nothing in the hero is
                 // below the fold — it is the first thing on screen.
                 //
-                // z-index 0 sits under .slide-overlay (1) and .slide-content (2), so
-                // the tint and the text still layer exactly as before.
+                // z-index 0 sits under .slide-panel (2) and .slide-content, so
+                // the scrim and the text still layer exactly as before.
                 ?>
                 <div class="slide slide-<?= ($idx % 3) + 1 ?> slide-has-img">
-                    <picture>
-                        <?php if ($imgWebp): ?><source srcset="<?= htmlspecialchars(cacheBustedUploadUrl($imgWebp)) ?>" type="image/webp"><?php endif; ?>
-                        <img src="<?= htmlspecialchars(cacheBustedUploadUrl($imgUrl)) ?>"
-                             alt="<?= htmlspecialchars($banner['title'] ?? 'Dievon collection') ?>"
-                             class="slide-img"
-                             <?= $idx === 0 ? 'fetchpriority="high" decoding="async"' : 'decoding="async"' ?>
-                             loading="eager">
-                    </picture>
-                    <div class="slide-overlay"></div>
+                    <?php /* The words lie ON the photograph, in its own negative space.
+                             ────────────────────────────────────────────────────────
+                             This was briefly a split — an ivory panel beside the
+                             picture — because legibility here is measurable rather
+                             than a matter of taste: of the two banners live on the
+                             shop today, the text zone of one averages luminance 78
+                             and the other 196, so no single ink colour reads on both.
+                             A panel made legibility independent of the upload.
+
+                             The overlay is what was asked for, and it is the better
+                             of the two when the scrim is dark rather than light. A
+                             light wash only lifts dark type off a banner that is
+                             already darker than the ink; a dark wash carries white
+                             type over anything, however bright the upload. That is
+                             the same bet dievon.com makes, and .slide-panel now uses
+                             live's own gradient stops — see style.css. */ ?>
+                    <div class="slide-media">
+                        <picture>
+                            <?php if ($imgWebp): ?><source srcset="<?= htmlspecialchars(cacheBustedUploadUrl($imgWebp)) ?>" type="image/webp"><?php endif; ?>
+                            <img src="<?= htmlspecialchars(cacheBustedUploadUrl($imgUrl)) ?>"
+                                 alt="<?= htmlspecialchars($banner['title'] ?? 'Dievon collection') ?>"
+                                 class="slide-img"
+                                 <?= $idx === 0 ? 'fetchpriority="high" decoding="async"' : 'decoding="async"' ?>
+                                 loading="eager">
+                        </picture>
+                    </div>
+                    <div class="slide-panel">
                     <div class="slide-content">
-                        <span class="slide-eyebrow">Edition <?= $idx + 1 ?></span>
+                        <span class="slide-eyebrow">New Season</span>
                         <?php
                         // One H1 per page, on the first slide only. This loop used to
                         // print <h1> for every banner, so a shop with three banners
@@ -346,7 +370,17 @@ $heroSlideCount = !empty($heroBanners)
                             $bannerLink = SITE_URL . '/' . ltrim($bannerLink, '/');
                         }
                         ?>
-                        <a href="<?= htmlspecialchars($bannerLink) ?>" class="btn-luxury btn-hero-explore">Explore Collection</a>
+                        <?php /* Two ways in, as the brief asks. The primary keeps the
+                                 address the owner typed into the banner in admin; the
+                                 secondary is always the full shop, so a visitor who does
+                                 not want that particular edition still has somewhere to
+                                 go. Neither is new behaviour for the admin — the link
+                                 field means exactly what it meant before. */ ?>
+                        <div class="slide-actions">
+                            <a href="<?= htmlspecialchars($bannerLink) ?>" class="btn-hero-primary">Shop Now</a>
+                            <a href="<?= SITE_URL ?>/shop" class="btn-hero-ghost">Explore Collection</a>
+                        </div>
+                    </div>
                     </div>
                 </div>
             <?php endforeach; ?>
@@ -358,58 +392,104 @@ $heroSlideCount = !empty($heroBanners)
                      what the page is about, on the menswear address. One honest slide
                      naming the section beats three advertising the wrong half of the
                      shop, and it disappears the moment a men's banner is uploaded. */ ?>
-            <div class="slide slide-1" style="background-image: url('<?= lookbookUrl(2) ?>') !important; background-size: cover !important; background-position: center !important;">
-                <div class="slide-overlay"></div>
+            <div class="slide slide-1">
+                <div class="slide-media" style="background-image: url('<?= lookbookUrl(2) ?>');"></div>
+                <div class="slide-panel">
                 <div class="slide-content">
-                    <span class="slide-eyebrow">Menswear</span>
+                    <span class="slide-eyebrow">New Season</span>
                     <h1>Dievon Men</h1>
                     <p>Shirts, trousers and tailoring, cut clean and made to be worn often.</p>
-                    <a href="<?= SITE_URL ?>/shop" class="btn-luxury btn-hero-explore">Explore Menswear</a>
+                    <div class="slide-actions">
+                        <a href="<?= SITE_URL ?>/shop" class="btn-hero-primary">Shop Now</a>
+                        <a href="<?= SITE_URL ?>/shop" class="btn-hero-ghost">Explore Collection</a>
+                    </div>
+                </div>
                 </div>
             </div>
         <?php else: ?>
             <!-- Default Curated Slides -->
+            <?php /* The brief's own copy, on the slide that carries the page's h1.
+                     This only renders when the shop has no banners of its own — on a
+                     stocked shop the admin slides above replace it entirely — so it is
+                     the empty state, not the usual one. Worth knowing that "Timeless
+                     Elegance" is a weaker h1 for search than the line it replaces
+                     ("Luxury Indian Womenswear — Hand-Finished Fashion"); it is the
+                     copy that was asked for, and it is only ever seen by a shop with
+                     nothing uploaded. */ ?>
             <div class="slide slide-1">
-                <div class="slide-overlay"></div>
+                <div class="slide-media"></div>
+                <div class="slide-panel">
                 <div class="slide-content">
-                    <span class="slide-eyebrow">Volume I</span>
-                    <h1>Luxury Indian Womenswear — Hand-Finished Fashion</h1>
-                    <p>Fluid silhouettes draped in pure heavy mulberry silk. Designed for grace in motion.</p>
-                    <a href="<?= htmlspecialchars(categoryUrlByName($pdo, 'Kurtis')) ?>" class="btn-luxury btn-hero-explore">Explore Edition</a>
+                    <span class="slide-eyebrow">New Season</span>
+                    <h1>Timeless Elegance</h1>
+                    <p>Graceful silhouettes. Exquisite details. Crafted for every moment.</p>
+                    <div class="slide-actions">
+                        <a href="<?= SITE_URL ?>/shop" class="btn-hero-primary">Shop Now</a>
+                        <a href="<?= htmlspecialchars(categoryUrlByName($pdo, 'Kurtis')) ?>" class="btn-hero-ghost">Explore Collection</a>
+                    </div>
+                </div>
                 </div>
             </div>
             <div class="slide slide-2">
-                <div class="slide-overlay"></div>
+                <div class="slide-media"></div>
+                <div class="slide-panel">
                 <div class="slide-content">
-                    <span class="slide-eyebrow">Volume II</span>
+                    <span class="slide-eyebrow">New Season</span>
                     <h2>3-Piece Suits</h2>
                     <p>Elegant tailored brocades and soft raw silks. Perfect for premium celebrations.</p>
-                    <a href="<?= htmlspecialchars(categoryUrlByName($pdo, '3 Piece Suits')) ?>" class="btn-luxury btn-hero-explore">View Collection</a>
+                    <div class="slide-actions">
+                        <a href="<?= SITE_URL ?>/shop" class="btn-hero-primary">Shop Now</a>
+                        <a href="<?= htmlspecialchars(categoryUrlByName($pdo, '3 Piece Suits')) ?>" class="btn-hero-ghost">Explore Collection</a>
+                    </div>
+                </div>
                 </div>
             </div>
             <div class="slide slide-3">
-                <div class="slide-overlay"></div>
+                <div class="slide-media"></div>
+                <div class="slide-panel">
                 <div class="slide-content">
-                    <span class="slide-eyebrow">Volume III</span>
+                    <span class="slide-eyebrow">New Season</span>
                     <h2>Coord Sets</h2>
                     <p>Luxurious satin wide-legs and tailored organic linens. Designed for refined modern loungewear.</p>
-                    <a href="<?= htmlspecialchars(categoryUrlByName($pdo, 'Coord Sets')) ?>" class="btn-luxury btn-hero-explore">Discover Sets</a>
+                    <div class="slide-actions">
+                        <a href="<?= SITE_URL ?>/shop" class="btn-hero-primary">Shop Now</a>
+                        <a href="<?= htmlspecialchars(categoryUrlByName($pdo, 'Coord Sets')) ?>" class="btn-hero-ghost">Explore Collection</a>
+                    </div>
+                </div>
                 </div>
             </div>
         <?php endif; ?>
     </div>
     
-    <?php // Controls only exist when there is somewhere to go. A single slide
-          // needs no arrows and no dots — and zero slides needs neither markup
-          // nor a row of dots floating over an empty band. ?>
-    <?php if ($heroSlideCount > 1): ?>
-    <button onclick="prevSlide()" class="hero-arrow hero-arrow-left" aria-label="Previous slide"><i class="fa-solid fa-chevron-left"></i></button>
-    <button onclick="nextSlide()" class="hero-arrow hero-arrow-right" aria-label="Next slide"><i class="fa-solid fa-chevron-right"></i></button>
+    <?php /* Controls only exist when there is somewhere to go. A single slide
+             needs none, and zero slides needs neither markup nor a control
+             floating over an empty band.
 
-    <div class="hero-dots-container">
-        <?php for ($i = 0; $i < $heroSlideCount; $i++): ?>
-            <span class="slide-dot <?= $i === 0 ? 'active' : '' ?>" onclick="goToSlide(<?= $i ?>)"></span>
-        <?php endfor; ?>
+             The shared rail pager — see .dv-pager in style.css — so the hero is
+             navigated the same way as Collections, New Arrivals, Trending and
+             Shop by Occasion. It replaces two separate controls this band used
+             to carry: a pair of arrows pinned left and right over the
+             photograph, which were deleted outright below 480px, and a centred
+             row of dots.
+
+             --onmedia because the placement rule cannot be the same here. Every
+             other rail puts the pill in normal flow underneath; the hero is a
+             full-bleed photograph with the next section hard against it, so
+             underneath means on top of Collections. It sits over the image
+             instead, in the same bottom-right corner, with a shadow to hold its
+             edge against whatever banner is uploaded. */ ?>
+    <?php if ($heroSlideCount > 1): ?>
+    <div class="dv-pager dv-pager--onmedia" data-pager-mode="count" data-pager="hero">
+      <div class="dv-pager-pill">
+        <button type="button" class="dv-pager-btn" data-pager-step="-1" aria-label="Previous slide">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 5 8 12l7 7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <span class="dv-pager-count" data-pager-count aria-hidden="true">1&#8202;/&#8202;<?= (int)$heroSlideCount ?></span>
+        <button type="button" class="dv-pager-btn" data-pager-step="1" aria-label="Next slide">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 5 7 7-7 7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+      <span class="dv-sr-only" role="status" aria-live="polite" aria-atomic="true" data-pager-status></span>
     </div>
     <?php endif; ?>
 </section>
@@ -421,8 +501,7 @@ $heroSlideCount = !empty($heroBanners)
             <span class="editorial-label">Curated Ensembles</span>
             <h2 class="section-title">Dievon Collections</h2>
         </div>
-        <div class="home-categories-grid">
-            <?php
+        <?php
             // Fetch ONLY main parent categories for the collections section
             $stmtCat = $pdo->query("SELECT * FROM categories WHERE parent_id = 0 OR parent_id IS NULL ORDER BY sort_order ASC");
             $allCategories = $stmtCat->fetchAll(PDO::FETCH_ASSOC);
@@ -446,20 +525,39 @@ $heroSlideCount = !empty($heroBanners)
                 return true;
             }));
 
-            /* One row, and a way to the rest.
+            /* Six tiles, and a button for the rest.
                ────────────────────────────────────────────────────────────────
-               The grid is five across, so showing every collection makes the
-               section as tall as the catalogue is wide — six collections became
-               two rows where the second held one tile and a gap. Capping at the
-               row length keeps this section a fixed height whatever the shop
-               grows to, and the button below carries anyone who wants more.
+               Six is the mosaic — one large tile, three beside it, two beneath.
+               It was briefly uncapped, continuing into aligned rows of three,
+               and that works, but it makes the section as tall as the catalogue
+               is wide: twelve collections turned this into four rows and pushed
+               everything below it off the first two screens.
 
-               Counted BEFORE the slice: the button has to know how many were
-               held back, and asking after the cut would always say none. */
+               So the composition IS the limit. Six fill it exactly, and a
+               seventh collection is reached through the button underneath
+               rather than by making the section taller.
+
+               Counted BEFORE the slice, because the button has to say how many
+               there are in total; asking after the cut would always say six. */
             $catTotalCount = count($allCategories);
-            $allCategories = array_slice($allCategories, 0, 5);
+            $allCategories = array_slice($allCategories, 0, 6);
+            $catShownCount = count($allCategories);
 
-            foreach($allCategories as $cat):
+?>
+        <?php /* data-count is what makes this work with the two collections the
+                 shop has today as well as the six the design was drawn for.
+                 A mosaic is an arrangement of a KNOWN number of tiles; hand it
+                 two and the reference layout leaves a tall feature beside one
+                 small tile and two thirds of the row empty. The CSS keyed to
+                 this attribute picks a composition that is whole at every count
+                 from one upward — see assets/css/style.css.
+
+                 The list has to be built BEFORE this div, not inside it: the
+                 attribute is written as the tag is emitted, so a count taken
+                 from a variable the loop below fills is a count of nothing. */ ?>
+        <div class="home-categories-grid" data-count="<?= (int)$catShownCount ?>">
+            <?php
+            foreach($allCategories as $catIndex => $cat):
                 // The collection's OWN image first, then a product photo, then the
                 // placeholder.
                 //
@@ -501,8 +599,21 @@ $heroSlideCount = !empty($heroBanners)
                     }
                 }
             ?>
-            <a href="<?= htmlspecialchars(categoryUrlByName($pdo, $cat['name'])) ?>" class="category-card zoom-box">
-                <img class="zoom-img" src="<?= $catImgSrc ?>" alt="<?= htmlspecialchars($cat['name']) ?>" loading="lazy">
+            <?php /* The first collection takes the large tile. It is first because
+                     sort_order says so — the same order the header menu and the
+                     footer use — so the shop decides what leads here by ordering
+                     collections in admin, not by anything written in this file.
+
+                     width/height are the intrinsic ratio, not a size: the tile
+                     controls the box and object-fit crops into it. They are here
+                     so the browser reserves the space before the photograph
+                     arrives, which is what stops the section jumping as the lazy
+                     images land. */ ?>
+            <a href="<?= htmlspecialchars(categoryUrlByName($pdo, $cat['name'])) ?>"
+               class="category-card zoom-box<?= $catIndex === 0 ? ' is-feature' : '' ?>">
+                <img class="zoom-img" src="<?= $catImgSrc ?>"
+                     alt="<?= htmlspecialchars($cat['name']) ?> collection"
+                     width="800" height="1000" loading="lazy" decoding="async">
                 <div class="category-card-overlay">
                     <div>
                         <h3><?= htmlspecialchars($cat['name']) ?></h3>
@@ -517,16 +628,28 @@ $heroSlideCount = !empty($heroBanners)
                  "View All" under a row that already shows everything promises
                  more than the shop has, which is the same fault as a Read more
                  that reveals nothing. */ ?>
-        <?php /* Arrows for the collections rail. The scrollbar is hidden, so on a
-                 trackpad or a narrow desktop window there was no way to move it at
-                 all — a rail you can only reach by touch is a rail half your
-                 visitors cannot use. Hidden above 768px, where all five sit in one
-                 row and there is nothing to scroll to. */ ?>
-        <div class="cat-rail-nav">
-            <button type="button" class="cat-rail-arrow" aria-label="Previous collections"
-                    onclick="scrollCatRail(-1)"><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></button>
-            <button type="button" class="cat-rail-arrow" aria-label="Next collections"
-                    onclick="scrollCatRail(1)"><i class="fa-solid fa-chevron-right" aria-hidden="true"></i></button>
+        <?php /* Navigation for the collections rail. Below 768px this is a rail
+                 with its scrollbar hidden, so without a control it is reachable
+                 by touch and by nothing else — no trackpad, no keyboard, no
+                 narrow desktop window. Above 768px the same element is a mosaic
+                 grid that shows everything, and the engine retires the control
+                 because the rail measures as unable to move. Measured, not
+                 counted: six collections at 42% each may fit inside a wide
+                 phone, and a control that does nothing is the same fault as a
+                 Read more that reveals nothing. */ ?>
+        <?php /* The shared rail pager — see .dv-pager in style.css. No counter:
+                 this rail slides, it does not page through sets, and a page
+                 number under a row of collections reframes browsing as a chore. */ ?>
+        <div class="dv-pager" data-pager="cat" hidden>
+          <div class="dv-pager-pill">
+            <button type="button" class="dv-pager-btn" data-pager-step="-1" aria-label="Previous collections">
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 5 8 12l7 7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <button type="button" class="dv-pager-btn" data-pager-step="1" aria-label="Next collections">
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 5 7 7-7 7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
+          <span class="dv-sr-only" role="status" aria-live="polite" aria-atomic="true" data-pager-status></span>
         </div>
 
         <?php if ($catTotalCount > count($allCategories)): ?>
@@ -544,78 +667,355 @@ $heroSlideCount = !empty($heroBanners)
          section's own vertical space used to print whatever happened — so a shop
          with no products served a tall empty band titled "New Arrivals", which is
          the same mistake Shop by Occasion below already had fixed. */ ?>
-<?php if (!empty($newArrivals)): ?>
-<section class="new-arrivals-section section-space">
-    <div class="container">
-        <div class="home-section-header reveal-on-scroll">
-            <div>
-                <span class="editorial-label">Latest Creations</span>
-                <h2 class="section-title">New Arrivals</h2>
-            </div>
-            <div class="home-section-header-btns">
-                <button onclick="scrollCarousel(-1)" class="btn-carousel-arrow" aria-label="Previous"><i class="fa-solid fa-chevron-left"></i></button>
-                <button onclick="scrollCarousel(1)" class="btn-carousel-arrow" aria-label="Next"><i class="fa-solid fa-chevron-right"></i></button>
-            </div>
-        </div>
+<?php /* The hover images and price ranges for EVERY grid on this page, primed in
+         one pair of queries rather than a pair per tile — see
+         productHoverImage(). Hoisted above the New Arrivals guard: it used to
+         sit inside that section, so a shop with no new arrivals skipped the
+         priming and Best Sellers below fell back to a query per card. */
+      productHoverImagePrime($homeGrids = array_merge($newArrivals ?? [], $bestSellers ?? [], $trending ?? []));
+      productPriceRangePrime($homeGrids); ?>
 
-        <div id="newArrivalsCarousel" class="new-arrivals-carousel hide-scrollbar js-owl-rail">
-            <?php // Shared partial — see includes/product_card.php. Each of these grids
-                  // carried its own copy of the card markup, so none served the WebP image,
-                  // offered Compare, or used the product's own alt text. ?>
-            <?php /* One pair of queries for every card on the page, rather than a
-                     pair per tile — see productHoverImage(). */
-                  productHoverImagePrime($homeGrids = array_merge($newArrivals ?? [], $bestSellers ?? [], $trending ?? []));
-                  productPriceRangePrime($homeGrids); ?>
-            <?php foreach ($newArrivals as $p): ?>
-                <?php $card = $p; $cardExtraClass = 'product-card-carousel'; $cardFallbackBadge = 'New'; $cardCompare = false; include __DIR__ . '/../includes/product_card.php'; ?>
-            <?php endforeach; ?>
+<?php if (!empty($newArrivals)): ?>
+<?php
+/* ── New Arrivals: an editorial gallery, not a rail ──────────────────────────
+   Four garments side by side, the first shown large and the other three as
+   narrow panels. Hovering or focusing a panel expands it and collapses the one
+   that was open. The expanding itself is flex-basis and a transition — no
+   library, nothing to initialise, and it survives a script that fails to load.
+
+   Four ACROSS, because that is the composition: a fifth panel would make every
+   narrow one 12% of the screen, which is a stripe rather than a garment. More
+   than four arrivals are not dropped, they are paged — the desktop shows one
+   set of four at a time and the arrows top right swap in the next set. Twelve
+   is the ceiling; past that this stops being an editorial opener and starts
+   being the shop page, which already exists.
+
+   On a phone none of that applies. There is no hover to expand with and no
+   room for four across, so the same panels become one full-bleed swipe rail
+   holding every arrival — see the touch block in style.css. That is why the
+   off-page panels are marked with a class rather than the hidden attribute:
+   .na-off is only honoured above 1024px, so the rail keeps all of them. */
+$naItems    = array_slice($newArrivals, 0, 12);
+$naPerPage  = 4;
+$naPages    = (int)ceil(count($naItems) / $naPerPage);
+/* data-count sizes the panels for the set actually on screen, so it is the
+   size of the FIRST page, not the total. With JavaScript off that is the only
+   page there is, and the four still add to exactly 100%. */
+$naFirstPageCount = min(count($naItems), $naPerPage);
+?>
+<section class="new-arrivals-section section-space">
+    <?php /* The heading is the same .section-title-wrapper every other section
+             on this page uses, inside .container, above the photographs. It was
+             laid over them at first, in the top left of the open panel. Two
+             things were wrong with that. It read as part of the picture rather
+             than as the page's own voice, and it needed a wash under it to stay
+             legible — white type over garment photography shot on pale studio
+             walls measured 2.17:1. Off the picture, the type is burgundy on the
+             page ground, the wash is gone, and the open panel is no longer
+             dimmed in the corner to rescue two words. */ ?>
+    <div class="container">
+        <div class="section-title-wrapper reveal-on-scroll">
+            <span class="editorial-label">Latest Creations</span>
+            <h2 class="section-title">New Arrivals</h2>
         </div>
     </div>
+
+    <?php /* The gallery itself stays outside .container — it runs edge to edge,
+             and .container is max-width 1440 centred.
+
+             The arrows are a sibling of the gallery rather than a child, held
+             beside it by .na-stage. That is not tidiness: .na-gallery:hover
+             collapses the open panel, and an arrow inside the gallery would
+             fire that rule while being the thing hovered — so no panel would be
+             expanded and the row would come up a third short. Outside the
+             gallery, hovering an arrow is not hovering the gallery. */ ?>
+    <div class="na-stage">
+
+    <div class="na-gallery" data-count="<?= $naFirstPageCount ?>" data-na-pages="<?= $naPages ?>" data-na-per-page="<?= $naPerPage ?>">
+
+        <?php foreach ($naItems as $naIndex => $naProduct):
+            /* One panel per page is the open one, so it is the first of each set
+               of four, not only the very first product. */
+            $naOnFirstPage = $naIndex < $naPerPage;
+            $naClasses = 'na-panel'
+                . ($naIndex % $naPerPage === 0 ? ' is-default' : '')
+                . ($naOnFirstPage ? '' : ' na-off');
+            /* Stamped on the card by the partial's $cardDataAttrs, because the
+               paging script reads it to decide which set a panel belongs to. */
+            $cardDataAttrs = ' data-na-page="' . intdiv($naIndex, $naPerPage) . '"';
+        ?>
+        <?php
+        /* The shared product card in its 'home' variant — the same component the
+           photo fan and the shop grid use. It was bespoke markup here, which
+           meant the price rules, the badge rule and the sold-out state existed
+           twice on one page; now the panel is the card and this section supplies
+           only the shell: how wide a panel is, when it expands, and where the
+           caption sits.
+
+           The panel IS the card rather than a wrapper around it. The paging
+           script keys on .na-panel and the CSS sizes it, and adding a div
+           between them would have meant every one of those selectors growing a
+           level for no gain. */
+        $card           = $naProduct;
+        $cardVariant    = 'home';
+        $cardExtraClass = $naClasses;
+        $cardEager      = ($naIndex === 0);
+        include __DIR__ . '/../includes/product_card.php';
+        ?>
+        <?php endforeach; ?>
+    </div><!-- /.na-gallery -->
+
+        <?php if ($naPages > 1): ?>
+        <?php /* Rendered hidden and revealed by the script below. With no
+                 JavaScript the arrows would be two buttons that do nothing, so
+                 they must not appear until the thing that makes them work has
+                 run.
+
+                 Below the photographs, not on them. Inside the gallery the only
+                 free corner is the top right, and these are portrait
+                 photographs — the pill landed squarely on the model's face, and
+                 would on any garment shot the same way. Bottom right inside is
+                 worse still: that is where the caption of whichever panel is
+                 open appears. */ ?>
+        <?php /* The shared rail pager — see .dv-pager in style.css. Same markup,
+                 same classes and same behaviour as the one under Collections,
+                 Trending and Shop by Occasion; only the labels and the mode
+                 differ. This section pages in sets of four, so it opts into the
+                 counter. */ ?>
+        <div class="dv-pager" data-pager-mode="count" data-pager="na" hidden>
+          <div class="dv-pager-pill">
+            <button type="button" class="dv-pager-btn" data-pager-step="-1" aria-label="Previous new arrivals">
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 5 8 12l7 7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <?php /* aria-hidden on the visible digits and a separate sr-only status
+                     region below: the visible text is repainted on resize too, and a
+                     live region that fires on every resize tick machine-guns a screen
+                     reader. Only a button press writes the announcement. */ ?>
+            <span class="dv-pager-count" data-pager-count aria-hidden="true">1&#8202;/&#8202;<?= $naPages ?></span>
+            <button type="button" class="dv-pager-btn" data-pager-step="1" aria-label="Next new arrivals">
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 5 7 7-7 7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
+          <span class="dv-sr-only" role="status" aria-live="polite" aria-atomic="true" data-pager-status></span>
+        </div>
+        <?php endif; ?>
+    </div><!-- /.na-stage -->
 </section>
+
+<?php if ($naPages > 1): ?>
+<script>
+/* New Arrivals paging. The gallery itself is CSS; this only decides which four
+   panels are in the flow, and it is additive — with the script absent the first
+   four are already the only ones rendered visible and the arrows never appear.
+
+   --na-rest is the number of NARROW panels on the page being shown, one less
+   than that page's count, and --na-open is how wide the open one is. A final
+   page of two would otherwise size its one narrow panel at a sixth of the row,
+   and a final page of one would sit at half width with the rest of the gallery
+   bare. Both go on the gallery, not the panels, so the inline values beat the
+   [data-count] rules by being on the element those panels inherit from. */
+(function () {
+    var stage = document.querySelector('.na-stage');
+    if (!stage) { return; }
+    var gallery = stage.querySelector('.na-gallery');
+    if (!gallery) { return; }
+
+    var panels  = Array.prototype.slice.call(gallery.querySelectorAll('.na-panel'));
+    var pages   = parseInt(gallery.getAttribute('data-na-pages'), 10) || 1;
+    var current = 0;
+
+    function show(next) {
+        /* Wrap rather than disable. Two arrows that grey out at the ends need a
+           disabled style, a disabled cursor and an explanation; wrapping needs
+           none of them and cannot strand anyone on a dead control. */
+        current = ((next % pages) + pages) % pages;
+
+        var live = 0;
+        panels.forEach(function (panel) {
+            var on = parseInt(panel.getAttribute('data-na-page'), 10) === current;
+            panel.classList.toggle('na-off', !on);
+            if (on) { live++; }
+        });
+
+        /* A page of one has nothing to sit beside, so it takes the whole width.
+           Any other page is CLEARED rather than set back to 50%: above 1600px
+           the stylesheet pins the open panel to 800px to hold the slot's shape,
+           and an inline 50% would out-rank that and put the crop back. */
+        if (live === 1) { gallery.style.setProperty('--na-open', '100%'); }
+        else            { gallery.style.removeProperty('--na-open'); }
+        gallery.style.setProperty('--na-rest', String(Math.max(1, live - 1)));
+    }
+
+    /* Registered for the shared pager rather than wired here — see the engine at
+       the foot of this file. The section keeps the part that is genuinely its
+       own (which four panels are in the flow) and hands over the part that is
+       the same everywhere (a prev button, a next button and a counter).
+
+       pages() is a function, not the number: below 1025px this gallery is a
+       swipe rail with every panel in the flow at once, and the engine hides a
+       pager whose rail reports one page. */
+    /* matchMedia rather than a width read, so this agrees with the stylesheet's
+       own breakpoint instead of racing it. Above it the gallery pages in sets of
+       four; below it the same markup is a swipe rail, and the pager scrolls it —
+       which is the point of the exercise. The rail used to have no control at
+       all down here, leaving swipe as the only way through, and swipe is
+       invisible, unreachable by keyboard and impossible on a switch. */
+    function railMode() { return !window.matchMedia('(min-width: 1025px)').matches; }
+
+    window.dvRailDrivers = window.dvRailDrivers || {};
+    window.dvRailDrivers.na = {
+        label: 'New Arrivals',
+        rail:  gallery,
+        pages: function () { return railMode() ? window.dvRail.pages(gallery) : pages; },
+        page:  function () { return railMode() ? window.dvRail.page(gallery)  : current; },
+        go:    function (delta) {
+            if (railMode()) { window.dvRail.go(gallery, delta); } else { show(current + delta); }
+        },
+        onMove: function (cb) { gallery.addEventListener('scroll', cb, { passive: true }); }
+    };
+})();
+</script>
+<?php endif; ?>
 
 <?php endif; ?>
 
 <!-- ==================== 4. TRENDING / BEST SELLERS ==================== -->
 <?php
-/* Two tabs are only worth having when both of them lead somewhere. With one list
-   empty the pair became a button that opened a blank grid, so the toggle is
-   replaced by a plain heading naming whichever half has stock — and when neither
-   has any, the section does not appear. */
-$homeHasBoth = !empty($bestSellers) && !empty($trending);
+/* ── The photo fan ───────────────────────────────────────────────────────────
+   Four garments laid out like physical prints dropped on a table: alternating
+   rotations, overlapping slightly, straightening and lifting under the pointer.
+   A fifth is half in frame to say the strip continues.
+
+   Built on the shared product card, not on a copy of it. Every tile here is
+   includes/product_card.php with one extra class — so the badge, the sale
+   percentage, the sold-out state, country pricing, the "From" spread, the
+   wishlist button and the product link are all the same code that draws the
+   shop grid, and none of them can drift. Only the arrangement is new, and that
+   is entirely CSS.
+
+   No carousel library. Owl drives the hero and Shop by Occasion, but it wraps
+   every item and clips the stage — a card that rotates, lifts 14px and scales
+   to 1.03 would be cut off at the moment it is being looked at. This is a flex
+   track moved by transform, which is about sixty lines and cannot clip.
+
+   Two tabs are only worth having when both lead somewhere. With one list empty
+   the pair became a button that opened a blank grid, so the toggle collapses to
+   a plain heading naming whichever half has stock — and when neither has any,
+   the section does not appear. */
+$pfPanels = [];
+if (!empty($bestSellers)) {
+    $pfPanels['best']  = ['label' => 'Best Sellers', 'items' => $bestSellers, 'badge' => 'Best Seller'];
+}
+if (!empty($trending)) {
+    $pfPanels['trend'] = ['label' => 'Trending Now', 'items' => $trending,    'badge' => 'Hot'];
+}
+$pfHasBoth = count($pfPanels) > 1;
 ?>
-<?php if (!empty($bestSellers) || !empty($trending)): ?>
-<section class="trending-section section-space">
+<?php if ($pfPanels): ?>
+<section class="trending-section section-space photo-fan-section">
     <div class="container">
-        <div class="tab-toggle-container">
-            <?php if ($homeHasBoth): ?>
-            <div class="tab-toggle-wrapper">
-                <button id="btnTabBest" onclick="toggleTabs('best')" class="btn-luxury">Best Sellers</button>
-                <button id="btnTabTrend" onclick="toggleTabs('trend')" class="btn-luxury-outline">Trending Now</button>
+
+        <div class="pf-head">
+            <?php if ($pfHasBoth): ?>
+            <?php /* Real tabs, so a screen reader announces "tab 1 of 2, selected"
+                     rather than two unrelated buttons. Arrow keys move between
+                     them; only the selected tab is in the tab order, which is the
+                     expected pattern for a tablist. */ ?>
+            <div class="pf-tabs" role="tablist" aria-label="Product collections">
+                <?php $pfFirst = true; foreach ($pfPanels as $pfKey => $pfPanel): ?>
+                <button type="button" role="tab"
+                        id="pfTab-<?= $pfKey ?>"
+                        class="pf-tab<?= $pfFirst ? ' is-active' : '' ?>"
+                        aria-selected="<?= $pfFirst ? 'true' : 'false' ?>"
+                        aria-controls="pfPanel-<?= $pfKey ?>"
+                        tabindex="<?= $pfFirst ? '0' : '-1' ?>"><?= htmlspecialchars($pfPanel['label']) ?></button>
+                <?php $pfFirst = false; endforeach; ?>
             </div>
             <?php else: ?>
-            <h2 class="section-title"><?= !empty($bestSellers) ? 'Best Sellers' : 'Trending Now' ?></h2>
+            <h2 class="section-title pf-single-title"><?= htmlspecialchars(reset($pfPanels)['label']) ?></h2>
             <?php endif; ?>
+
+            <?php /* One link per panel, swapped with the tab, because "View all"
+                     has to mean the tab you are looking at. ?badges= is the shop's
+                     own filter — the same one the shop page's badge facet writes —
+                     rather than a route invented for this section. */ ?>
+            <?php $pfFirst = true; foreach ($pfPanels as $pfKey => $pfPanel): ?>
+            <a class="pf-viewall" data-pf-viewall="<?= $pfKey ?>"
+               href="<?= SITE_URL ?>/shop?badges=<?= urlencode($pfPanel['badge']) ?>"
+               <?= $pfFirst ? '' : 'hidden' ?>>View All</a>
+            <?php $pfFirst = false; endforeach; ?>
         </div>
 
-        <div id="gridBestSellers" class="home-best-sellers-grid<?= empty($bestSellers) ? ' is-hidden' : '' ?>">
-            <?php // Shared partial — see includes/product_card.php. Each of these grids
-                  // carried its own copy of the card markup, so none served the WebP image,
-                  // offered Compare, or used the product's own alt text. ?>
-            <?php foreach ($bestSellers as $p): ?>
-                <?php $card = $p; $cardCompare = false; include __DIR__ . '/../includes/product_card.php'; ?>
-            <?php endforeach; ?>
-        </div>
+        <?php $pfFirst = true; foreach ($pfPanels as $pfKey => $pfPanel): ?>
+        <div class="pf-panel<?= $pfFirst ? ' is-active' : '' ?>"
+             id="pfPanel-<?= $pfKey ?>"
+             data-pf-panel="<?= $pfKey ?>"
+             <?php /* Named for the pager's screen-reader announcement, which reads
+                      "Best Sellers, page 2 of 3" rather than a bare "2 / 3" — and
+                      re-reads correctly after a tab switch because the name comes
+                      from the panel, not from the pager. */ ?>
+             data-pf-label="<?= htmlspecialchars($pfPanel['label'] ?? ucfirst((string)$pfKey)) ?>"
+             <?= $pfHasBoth ? 'role="tabpanel" aria-labelledby="pfTab-' . $pfKey . '"' : '' ?>
+             <?= $pfFirst ? '' : 'hidden' ?>>
 
-        <?php /* Hidden only when Best Sellers is the one being shown. If that list is
-                 empty this grid is what the section is FOR, so it opens visible. */ ?>
-        <div id="gridTrending" class="home-best-sellers-grid<?= !empty($bestSellers) ? ' is-hidden' : '' ?>">
-            <?php // Shared partial — see includes/product_card.php. Each of these grids
-                  // carried its own copy of the card markup, so none served the WebP image,
-                  // offered Compare, or used the product's own alt text. ?>
-            <?php foreach ($trending as $p): ?>
-                <?php $card = $p; $cardCompare = false; include __DIR__ . '/../includes/product_card.php'; ?>
-            <?php endforeach; ?>
+            <?php /* The viewport clips horizontally. Its vertical padding is not
+                     decoration: a card that lifts 14px and scales 1.03 grows past
+                     its own box, and overflow:hidden would shave the top off the
+                     one being hovered. */ ?>
+            <div class="pf-viewport" tabindex="-1">
+                <ul class="pf-track" data-pf-track>
+                    <?php foreach ($pfPanel['items'] as $pfIndex => $pfProduct): ?>
+                    <?php /* --pf-i drives the stacking order below: a fan of
+                             prints falls with the LEFT one on top, so an earlier
+                             print has to out-rank a later one. Source order gives
+                             the opposite. */ ?>
+                    <li class="pf-item" data-pf-index="<?= $pfIndex ?>" style="--pf-i: <?= $pfIndex ?>">
+                        <?php
+                        /* The shared product card in its 'home' variant — see
+                           includes/product_card.php. One component, two designs:
+                           the badge, the sale percentage, sold out, "not sold in
+                           your country", country pricing, the "From" spread, the
+                           wishlist heart, the compare toggle and the "in your bag"
+                           note are all the same code that draws the shop grid, so
+                           a price or a state can never disagree between the two.
+
+                           This section supplies only the shell: what a print looks
+                           like, how far it is rotated, and when the caption
+                           appears. All of that is CSS on .pf-card. */
+                        $card           = $pfProduct;
+                        $cardVariant    = 'home';
+                        $cardExtraClass = 'pf-card';
+                        // Quick View stays on: it is what the hover reveals here.
+                        include __DIR__ . '/../includes/product_card.php';
+                        ?>
+                    </li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
+
+            <?php /* The shared rail pager — see .dv-pager in style.css. It replaces
+                     three separate controls this section used to carry: a pair of
+                     48px circles hung outside the viewport into the page gutter
+                     (and deleted below 767px, leaving the strip swipe-only), a
+                     range counter, and a progress bar. The counter and the bar
+                     said the same thing two pixels apart; the pill says it once,
+                     in the same place and the same words as the other three
+                     rails. Products page in fours, so this one takes the counter. */ ?>
+            <div class="dv-pager" data-pager-mode="count" data-pager="pf-<?= htmlspecialchars($pfKey) ?>" hidden>
+              <div class="dv-pager-pill">
+                <button type="button" class="dv-pager-btn" data-pager-step="-1" aria-label="Previous products">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 5 8 12l7 7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <span class="dv-pager-count" data-pager-count aria-hidden="true"></span>
+                <button type="button" class="dv-pager-btn" data-pager-step="1" aria-label="More products">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 5 7 7-7 7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+              </div>
+              <span class="dv-sr-only" role="status" aria-live="polite" aria-atomic="true" data-pager-status></span>
+            </div>
         </div>
+        <?php $pfFirst = false; endforeach; ?>
+
     </div>
 </section>
 <?php endif; ?>
@@ -822,6 +1222,91 @@ if ($occasions) {
                 </a>
             <?php endforeach; ?>
     </div>
+
+    <?php /* The shared rail pager — see .dv-pager in style.css. This strip shipped
+             with no control at all and a comment explaining that the clipped tile
+             at the right edge was affordance enough. It is not: a clipped tile is
+             an invitation to drag, and drag is the one gesture a keyboard, a
+             trackpad without horizontal scroll, or a switch cannot perform.
+
+             It is also the section that dictated where the shared pager lives.
+             Owl clips its stage at this element's box and ignores stagePadding
+             under autoWidth, so nothing can hang outside the strip's edges the
+             way Trending's arrows used to, and nothing can sit inside without
+             scrolling away with the tiles. Under it, in normal flow, is the only
+             placement that works here — so it is the placement everywhere.
+
+             No counter: the strip slides, it does not page through sets, and a
+             page number under a curated row of occasions reframes browsing as a
+             chore. */ ?>
+    <div class="container">
+        <div class="dv-pager" data-pager="occ" hidden>
+          <div class="dv-pager-pill">
+            <button type="button" class="dv-pager-btn" data-pager-step="-1" aria-label="Previous occasions">
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 5 8 12l7 7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <button type="button" class="dv-pager-btn" data-pager-step="1" aria-label="Next occasions">
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 5 7 7-7 7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
+          <span class="dv-sr-only" role="status" aria-live="polite" aria-atomic="true" data-pager-status></span>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        var rail = document.querySelector('.occasion-slider');
+        if (!rail) { return; }
+
+        /* Owl or not, without knowing which at registration time.
+           ─────────────────────────────────────────────────────────────────
+           This file's scripts run before includes/footer.php initialises the
+           rail, so the instance does not exist yet — and may never, if jQuery
+           or Owl fails to load. Every method therefore asks at call time and
+           falls back to driving the element as a plain overflow rail, which is
+           exactly what it is until Owl takes it over. */
+        function owl() {
+            if (!window.jQuery) { return null; }
+            var inst = window.jQuery(rail).data('owl.carousel');
+            return (inst && typeof inst.maximum === 'function') ? inst : null;
+        }
+
+        window.dvRailDrivers = window.dvRailDrivers || {};
+        window.dvRailDrivers.occ = {
+            label: 'Shop by Occasion',
+            rail:  rail,
+            pages: function () {
+                var o = owl();
+                /* maximum() is the last index Owl will scroll to, so it is 0
+                   exactly when everything already fits — which is the same
+                   "can this move" test the other rails make with scrollWidth,
+                   and the reason a short list of occasions gets no control. */
+                return o ? Math.max(1, o.maximum() + 1) : window.dvRail.pages(rail);
+            },
+            page: function () {
+                var o = owl();
+                return o ? Math.max(0, Math.min(o.maximum(), o.current())) : window.dvRail.page(rail);
+            },
+            go: function (delta) {
+                var o = owl();
+                if (!o) { window.dvRail.go(rail, delta); return; }
+                var total = o.maximum() + 1;
+                var next  = ((o.current() + delta) % total + total) % total;
+                window.jQuery(rail).trigger('to.owl.carousel', [next, 300]);
+            },
+            onMove: function (cb) {
+                /* Owl announces every settle, including the ones a drag causes,
+                   so the counter cannot go stale. Bound late for the same reason
+                   the instance is looked up late. */
+                window.addEventListener('load', function () {
+                    if (window.jQuery) { window.jQuery(rail).on('translated.owl.carousel initialized.owl.carousel', cb); }
+                    else { rail.addEventListener('scroll', cb, { passive: true }); }
+                    cb();
+                });
+            }
+        };
+    })();
+    </script>
 </section>
 <?php endif; ?>
 
@@ -1049,49 +1534,22 @@ $occIsMen = function_exists('currentShopGender') && currentShopGender() === 'men
             <h2 class="section-title">Latest Chronicles</h2>
         </div>
         <div class="home-blog-grid">
+            <?php /* Shared partial — see includes/blog_card.php. The rail and the
+                     /blog listing had drifted into two components with the same
+                     name and two sets of CSS; this is the one card. h3 because
+                     these sit under this section's own h2, and a trimmed excerpt
+                     because the rail is three across rather than a full-width
+                     list. */ ?>
             <?php foreach ($latestPosts as $post): ?>
                 <?php
-                    $postUrl = SITE_URL . '/blog-single?id=' . (int)$post['id'];
-
-                    // Same resolution order as pages/blog.php: the post's own
-                    // picture when the file is really there, the shared lookbook
-                    // otherwise — never a src that 404s.
-                    $postImg  = trim((string)($post['image'] ?? ''));
-                    // lookbook_* filenames belong to uploads/gallery/ (the Lookbook
-                    // admin screen writes there); never resolve them against the
-                    // products folder where stale duplicates could shadow the
-                    // updated photograph.
-                    // One resolver, shared with /blog, the article page and the admin
-                    // list. Lookbook filenames are deliberately not honoured — blog and
-                    // lookbook are separate now. See blogImageUrl().
-                    $imgUrl = blogImageUrl($postImg);
-                    $webpUrl  = preg_replace('/\.[^.]+$/', '.webp', $imgUrl);
-                    $webpFile = str_replace(SITE_URL . '/', __DIR__ . '/../', $webpUrl);
-                    $webpUrl  = cacheBustedUploadUrl($webpUrl);
-                    $imgUrl   = cacheBustedUploadUrl($imgUrl);
-
-                    $postDate = !empty($post['published_date'])
-                        ? date('F j', strtotime($post['published_date']))
-                        : '';
+                $blogPost           = $post;
+                $blogCardTitleTag   = 'h3';
+                $blogCardExcerpt    = 120;
+                $blogCardCta        = 'Read Journal';
+                $blogCardDateFormat = 'F j';
+                $blogCardReveal     = false;   // the rail has no scroll-entrance today
+                include __DIR__ . '/../includes/blog_card.php';
                 ?>
-                <article class="blog-card">
-                    <div class="blog-card-media">
-                        <a href="<?= $postUrl ?>">
-                            <picture>
-                                <?php if (webpSourceIsFresh($imgUrl, $webpFile)): ?><source srcset="<?= htmlspecialchars($webpUrl) ?>" type="image/webp"><?php endif; ?>
-                                <img src="<?= htmlspecialchars($imgUrl) ?>" alt="<?= htmlspecialchars($post['title']) ?>" class="blog-card-img" loading="lazy" decoding="async">
-                            </picture>
-                        </a>
-                    </div>
-                    <div class="blog-card-content">
-                        <span class="blog-card-tag">
-                            <?= htmlspecialchars($post['category'] ?: 'Journal') ?><?= $postDate !== '' ? ' &bull; ' . htmlspecialchars($postDate) : '' ?>
-                        </span>
-                        <h3 class="blog-card-title"><a href="<?= $postUrl ?>"><?= htmlspecialchars($post['title']) ?></a></h3>
-                        <p class="blog-card-text"><?= htmlspecialchars(trimToLength((string)$post['excerpt'], 120)) ?></p>
-                        <a href="<?= $postUrl ?>" class="blog-card-link">Read Journal <i class="fa-solid fa-arrow-right-long"></i></a>
-                    </div>
-                </article>
             <?php endforeach; ?>
         </div>
     </div>
@@ -1194,20 +1652,15 @@ $occIsMen = function_exists('currentShopGender') && currentShopGender() === 'men
            the hero until JS ran, and permanently if the library failed. */
         $hero.addClass('owl-carousel');
 
-        var $dots = jQuery('.slide-dot');
-
-        function markActive(idx) {
+        function markActive() {
             // The existing CSS animates .slide.is-active .slide-content children.
             // Owl clones slides for looping, so mark by index within the ORIGINAL
             // items — .owl-item.active carries the currently shown one.
             jQuery('#heroSlider .slide').removeClass('is-active');
             jQuery('#heroSlider .owl-item.active .slide').addClass('is-active');
-
-            $dots.each(function (i) {
-                var on = (i === idx);
-                jQuery(this).toggleClass('active', on)
-                            .css('background', on ? 'white' : 'transparent');
-            });
+            // The dot row this also kept in step is gone; the shared pager's
+            // counter says which slide is showing, and it repaints itself from
+            // Owl's own translated event.
         }
 
         // Same reason as the rails in includes/footer.php: a slide is a link
@@ -1221,7 +1674,10 @@ $occIsMen = function_exists('currentShopGender') && currentShopGender() === 'men
             loop: jQuery('#heroSlider .slide').length > 1,
             nav: false,               // the site draws its own arrows
             dots: false,              // and its own dots
-            autoplay: true,
+            /* Off outright for anyone who has asked the operating system for
+               less movement — a band that changes itself every 5.5 seconds is
+               the motion, not the transition into it. */
+            autoplay: !window.matchMedia('(prefers-reduced-motion: reduce)').matches,
             autoplayTimeout: 5500,
             autoplayHoverPause: true,
             smartSpeed: 800,          // matches the old 0.8s transition
@@ -1282,20 +1738,69 @@ $occIsMen = function_exists('currentShopGender') && currentShopGender() === 'men
         $hero.on('initialized.owl.carousel refreshed.owl.carousel', demoteClonedHeadings);
         demoteClonedHeadings();   // initialized has usually already fired by here
 
-        markActive(0);
-        $hero.on('changed.owl.carousel', function (e) {
-            // Normalise to an index within the real items, not the clones.
-            var count = e.item.count, idx = e.item.index - (e.relatedTarget.clones().length / 2);
-            idx = ((idx % count) + count) % count;
-            // Wait a tick so .owl-item.active reflects the new position.
-            setTimeout(function () { markActive(idx); }, 0);
+        markActive();
+        $hero.on('changed.owl.carousel', function () {
+            // Wait a tick so .owl-item.active reflects the new position. The
+            // clone-index arithmetic that used to live here fed the dot row;
+            // markActive() now reads .owl-item.active directly, and the pager's
+            // own driver does the same normalisation for the counter.
+            setTimeout(markActive, 0);
         });
 
-        /* The three controls in the markup call these by name, so they keep
-           working untouched — the buttons and dots did not change. */
-        window.nextSlide = function () { $hero.trigger('next.owl.carousel'); };
-        window.prevSlide = function () { $hero.trigger('prev.owl.carousel'); };
-        window.goToSlide = function (i) { $hero.trigger('to.owl.carousel', [i, 800]); };
+        /* Registered for the shared pager, like every other rail on this page.
+           The band keeps what is genuinely its own — Owl, the loop, the
+           autoplay, marking the active slide — and hands over the part that is
+           the same everywhere.
+
+           current() is read from Owl rather than remembered, so a drag and a
+           button press cannot drift apart. relative() maps Owl's cloned-slide
+           index back to the real one; without it a looping carousel reports
+           "4 / 3". */
+        function heroCount() { return $hero.find('.owl-item').not('.cloned').length || 1; }
+        function heroIndex() {
+            var owl = $hero.data('owl.carousel');
+            if (!owl) { return 0; }
+            var i = owl.relative(owl.current());
+            return Math.max(0, Math.min(heroCount() - 1, i));
+        }
+
+        /* Once the shopper steers, the band stops steering itself. Owl's
+           autoplayHoverPause is mouse-only, so a keyboard or touch user had no
+           way to stop a slide changing under them mid-read; taking the wheel is
+           the clearest signal that they want it still. */
+        var heroAuto = true;
+        function heroStopAuto() {
+            if (!heroAuto) { return; }
+            heroAuto = false;
+            $hero.trigger('stop.owl.autoplay');
+        }
+
+        window.dvRailDrivers = window.dvRailDrivers || {};
+        window.dvRailDrivers.hero = {
+            /* What a screen reader says. "Hero" is our word for this band, not a
+               shopper's — they see featured pieces. */
+            label: 'Featured',
+            rail:  $hero[0],
+            pages: heroCount,
+            page:  heroIndex,
+            go: function (delta) {
+                heroStopAuto();
+                $hero.trigger(delta < 0 ? 'prev.owl.carousel' : 'next.owl.carousel');
+            },
+            /* Owl announces every settle, autoplay's included, so the counter
+               follows the band whether the shopper moved it or the timer did. */
+            onMove: function (cb) { $hero.on('translated.owl.carousel', cb); }
+        };
+
+        /* A drag is steering too. */
+        $hero.on('drag.owl.carousel', heroStopAuto);
+
+        /* Kept: nothing in this file calls them any more, but they were the
+           documented way to drive the hero from the console and from any
+           banner CTA a future template might add. */
+        window.nextSlide = function () { heroStopAuto(); $hero.trigger('next.owl.carousel'); };
+        window.prevSlide = function () { heroStopAuto(); $hero.trigger('prev.owl.carousel'); };
+        window.goToSlide = function (i) { heroStopAuto(); $hero.trigger('to.owl.carousel', [i, 800]); };
     });
 
     // The Atelier Film lightbox handlers were removed with the section they
@@ -1331,87 +1836,254 @@ $occIsMen = function_exists('currentShopGender') && currentShopGender() === 'men
         return false;
     }
 
-    // ── New Arrivals Carousel Arrow Scroll ──────────────────
-    /* Sits beside scrollCarousel, in the same scope, because that one is reached
-       from an inline onclick and therefore demonstrably global here. An earlier
-       attempt placed this inside a wrapper and the arrows threw
-       "scrollCatRail is not defined" on every press — a dead control that looked
-       live. One tile per press, gap included, so a press lands a whole tile at
-       the edge rather than half of one. */
-    /* Hide the rail arrows when the rail cannot move.
-       ────────────────────────────────────────────────────────────────────
-       Two collections at 42% each fit inside the viewport, so there is
-       nothing to scroll to — and a pair of arrows that do nothing is the
-       same fault as a Read more that reveals nothing: a control offering a
-       result it cannot produce.
-
-       Measured, not counted. Whether a rail scrolls depends on tile width,
-       gap and viewport together, so scrollWidth against clientWidth is the
-       only honest test; counting tiles would be right at one width and
-       wrong at the next. Re-run on resize for the same reason. */
-    function syncCatRailArrows() {
-        const rail = document.querySelector(".home-categories-grid");
-        const nav  = document.querySelector(".cat-rail-nav");
-        if (!rail || !nav) { return; }
-        const scrolls = rail.scrollWidth > rail.clientWidth + 2;
-        nav.hidden = !scrolls;
-    }
-    window.addEventListener("load", syncCatRailArrows);
-    window.addEventListener("resize", syncCatRailArrows);
-    document.addEventListener("DOMContentLoaded", syncCatRailArrows);
-
-    function scrollCatRail(dir) {
+    /* ── Collections rail ───────────────────────────────────────────────────
+       A driver for the shared pager, nothing more. This used to be a pair of
+       globals reached from inline onclick attributes — which is why they could
+       not be wrapped in a scope, and why an earlier attempt to tidy them threw
+       "scrollCatRail is not defined" on every press. The buttons are wired by
+       the engine now, so the scope problem is gone with them. */
+    (function () {
         const rail = document.querySelector(".home-categories-grid");
         if (!rail) { return; }
-        const tile = rail.querySelector(".category-card");
-        const gap  = parseFloat(getComputedStyle(rail).columnGap) || 12;
-        const step = tile ? tile.getBoundingClientRect().width + gap : 200;
-        rail.scrollBy({ left: dir * step, behavior: "smooth" });
-    }
+        window.dvRailDrivers = window.dvRailDrivers || {};
+        window.dvRailDrivers.cat = {
+            label: "Dievon Collections",
+            rail:  rail,
+            /* Above 768 this element is a mosaic GRID, not a rail — scrollWidth
+               equals clientWidth, dvRail reports one page, and the engine
+               retires the control. That is the same measured test this section
+               already used, kept: whether a rail scrolls depends on tile width,
+               gap and viewport together, so counting tiles would be a guess. */
+            pages: function () { return window.dvRail.pages(rail); },
+            page:  function () { return window.dvRail.page(rail); },
+            go:    function (delta) { window.dvRail.go(rail, delta); },
+            onMove: function (cb) { rail.addEventListener("scroll", cb, { passive: true }); }
+        };
+    })();
 
-    function scrollCarousel(dir) {
-        const carousel = document.getElementById('newArrivalsCarousel');
-        if (!carousel) return;
-        // Measure the real card pitch (card width + gap) instead of hardcoding it — the
-        // hardcoded 310 no longer matched the CSS after the gap changed to 24px, so every
-        // arrow click drifted ~6px out of alignment.
-        /* Owl drives the rail now — see the shared initialiser in
-           includes/footer.php. owlRailStep() returns false if Owl is not
-           running (library blocked, JS error), and the original scroll-snap
-           behaviour below still works in that case, so an arrow click is never
-           a dead click. */
-        if (typeof owlRailStep === 'function' && owlRailStep(carousel, dir)) { return; }
+    /* scrollCarousel() drove the New Arrivals rail's arrows. That section is an
+       editorial gallery now — four panels side by side, expanded on hover, with
+       nothing to scroll — so the arrows and this function went with it. */
 
-        const card = carousel.querySelector('.product-card-carousel');
-        const gap = parseFloat(getComputedStyle(carousel).columnGap) || 0;
-        const scrollAmount = card ? card.getBoundingClientRect().width + gap : 304;
-        carousel.scrollBy({ left: dir * scrollAmount, behavior: 'smooth' });
-    }
+    /* ── Best Sellers / Trending Now: the photo fan ───────────────────────
+       A slider in about a hundred lines, because the thing being slid cannot go
+       in a carousel library: Owl wraps each item and clips its stage, and these
+       cards rotate, lift 14px and scale to 1.03 — they would be cut off at the
+       exact moment they are being looked at.
 
-    // ── Tabbed Collections ───────────────────────────────────
-    function toggleTabs(tab) {
-        const gridBest  = document.getElementById('gridBestSellers');
-        const gridTrend = document.getElementById('gridTrending');
-        const btnBest   = document.getElementById('btnTabBest');
-        const btnTrend  = document.getElementById('btnTabTrend');
-        const showBest  = (tab === 'best');
+       Nothing here measures in CSS units. The step between cards is read off the
+       rendered DOM (the gap between two items' offsetLeft), so the four
+       breakpoints in style.css are the only place the visible count is written
+       down, and changing one of them needs no matching change here.
 
-        // Was setting btnX.style.border = 'none' here. Both button classes carry a
-        // 1.5px border, so that inline rule stripped 6px off the pair — on a phone the
-        // labels were wrapping to two lines until the first click gave them those 6px
-        // back, which is why the buttons "fixed themselves" after one tap. Toggling
-        // classes only keeps the box identical before and after.
-        gridBest.classList.toggle('is-hidden', !showBest);
-        gridTrend.classList.toggle('is-hidden', showBest);
+       Never autoplays. There is no timer in this file. */
+    (function () {
+        var section = document.querySelector('.photo-fan-section');
+        if (!section) { return; }
 
-        btnBest.classList.toggle('btn-luxury', showBest);
-        btnBest.classList.toggle('btn-luxury-outline', !showBest);
-        btnTrend.classList.toggle('btn-luxury', !showBest);
-        btnTrend.classList.toggle('btn-luxury-outline', showBest);
+        var panels = Array.prototype.slice.call(section.querySelectorAll('[data-pf-panel]'));
+        var tabs   = Array.prototype.slice.call(section.querySelectorAll('.pf-tab'));
+        var sliders = [];
 
-        btnBest.setAttribute('aria-pressed', showBest ? 'true' : 'false');
-        btnTrend.setAttribute('aria-pressed', showBest ? 'false' : 'true');
-    }
+        function makeSlider(panel) {
+            var track   = panel.querySelector('[data-pf-track]');
+            var items   = Array.prototype.slice.call(panel.querySelectorAll('.pf-item'));
+            var view    = panel.querySelector('.pf-viewport');
+            if (!track || !items.length) { return null; }
+
+            var index = 0, step = 0, visible = 1, maxIndex = 0;
+
+            function measure() {
+                /* Straight off the layout. With one item there is no gap to read,
+                   so fall back to the item's own width. */
+                step = items.length > 1
+                    ? (items[1].offsetLeft - items[0].offsetLeft)
+                    : items[0].offsetWidth;
+                if (step < 1) { step = 1; }
+                visible  = Math.max(1, Math.floor(view.clientWidth / step));
+                maxIndex = Math.max(0, items.length - visible);
+                if (index > maxIndex) { index = maxIndex; }
+            }
+
+            function paint(animate) {
+                track.style.transform = 'translate3d(' + (-index * step) + 'px, 0, 0)';
+
+                /* A card scrolled out of frame must not be reachable by Tab —
+                   otherwise the focus ring walks off the side of the screen and
+                   the page appears to jump for no reason. inert takes the whole
+                   subtree out of the tab order and the accessibility tree at
+                   once. If focus is already inside one, move it out first, or the
+                   browser is left with focus on an inert node. */
+                for (var i = 0; i < items.length; i++) {
+                    var off = (i < index || i > index + visible - 1);
+                    if (off && items[i].contains(document.activeElement)) {
+                        /* The viewport carries tabindex="-1" for exactly this.
+                           Focus used to be thrown to the next arrow, which no
+                           longer lives inside the panel. */
+                        view.focus();
+                    }
+                    if (off) { items[i].setAttribute('inert', ''); }
+                    else     { items[i].removeAttribute('inert'); }
+                }
+                if (!animate) { void track.offsetWidth; }
+            }
+
+            function go(to) {
+                index = Math.max(0, Math.min(maxIndex, to));
+                paint(true);
+            }
+
+            /* Left and right arrows move the strip while the focus is anywhere
+               inside this panel. Only those two keys are taken; everything else,
+               Tab included, behaves normally. */
+            panel.addEventListener('keydown', function (e) {
+                if (e.key === 'ArrowLeft')  { e.preventDefault(); go(index - 1); }
+                if (e.key === 'ArrowRight') { e.preventDefault(); go(index + 1); }
+            });
+
+            /* Drag and swipe. Pointer events cover mouse, trackpad and finger in
+               one path. The 8px threshold is what separates a drag from a click:
+               below it the card link fires as normal, above it the click is
+               swallowed so a shopper who flicks the strip does not land on a
+               product page they never chose. */
+            var down = false, moved = false, startX = 0, startIdx = 0, dx = 0;
+            var THRESHOLD = 8;
+
+            /* Firefox ignores -webkit-user-drag, so the attribute says it too.
+               Without this the first pointermove starts a native drag and the
+               browser cancels the pointer, killing the swipe. */
+            panel.querySelectorAll('.pf-card a, .pf-card img').forEach(function (el) {
+                el.setAttribute('draggable', 'false');
+            });
+            view.addEventListener('dragstart', function (e) { e.preventDefault(); });
+
+            view.addEventListener('pointerdown', function (e) {
+                if (e.button !== undefined && e.button !== 0) { return; }
+                down = true; moved = false; startX = e.clientX; startIdx = index; dx = 0;
+            });
+            view.addEventListener('pointermove', function (e) {
+                if (!down) { return; }
+                dx = e.clientX - startX;
+                if (!moved && Math.abs(dx) > THRESHOLD) {
+                    moved = true;
+                    track.classList.add('is-dragging');
+                    if (view.setPointerCapture) { try { view.setPointerCapture(e.pointerId); } catch (err) {} }
+                }
+                if (moved) {
+                    track.style.transform = 'translate3d(' + (-startIdx * step + dx) + 'px, 0, 0)';
+                }
+            });
+            function release() {
+                if (!down) { return; }
+                down = false;
+                if (!moved) { return; }
+                track.classList.remove('is-dragging');
+                go(Math.round(startIdx - dx / step));
+            }
+            view.addEventListener('pointerup', release);
+            view.addEventListener('pointercancel', release);
+            view.addEventListener('click', function (e) {
+                if (moved) { e.preventDefault(); e.stopPropagation(); moved = false; }
+            }, true);
+
+            /* Paged for the shared pager rather than stepped one card at a time.
+               The strip still DRAGS by the card — the pointer handler above
+               rounds to whichever card it lands nearest — but a press moves a
+               full screenful, which is what the other three rails do and what
+               the counter has to mean for "2 / 3" to be true. */
+            function pages()    { return Math.max(1, Math.ceil(items.length / visible)); }
+            function pageIndex(){ return Math.min(pages() - 1, Math.round(index / visible)); }
+
+            var api = {
+                panel: panel,
+                reset: function () { index = 0; measure(); paint(false); },
+                refresh: function () { measure(); paint(false); },
+                driver: {
+                    label: panel.getAttribute('data-pf-label') || 'Products',
+                    rail:  view,
+                    pages: pages,
+                    page:  pageIndex,
+                    go: function (delta) {
+                        var total = pages();
+                        /* Wrap, like every other rail here. */
+                        var next  = ((pageIndex() + delta) % total + total) % total;
+                        go(next * visible);
+                    },
+                    onMove: function (cb) { api.onPaint = cb; }
+                }
+            };
+            api.onPaint = null;
+            /* A drag moves the strip without going through the pager, so the
+               counter is repainted from paint() rather than only from a press. */
+            var basePaint = paint;
+            paint = function (animate) { basePaint(animate); if (api.onPaint) { api.onPaint(); } };
+            return api;
+        }
+
+        window.dvRailDrivers = window.dvRailDrivers || {};
+        panels.forEach(function (panel) {
+            var s = makeSlider(panel);
+            if (!s) { return; }
+            sliders.push(s);
+            /* One pager per tab panel, keyed the same way the panel is. */
+            window.dvRailDrivers['pf-' + panel.getAttribute('data-pf-panel')] = s.driver;
+        });
+
+        /* Measure once the photographs have settled. The cards are 3:4 by CSS so
+           nothing moves as they arrive, but a late web font can still change the
+           caption's height, and the step is read from the layout. */
+        function refreshAll() { sliders.forEach(function (s) { s.refresh(); }); }
+        refreshAll();
+        window.addEventListener('load', refreshAll);
+        var rt;
+        window.addEventListener('resize', function () {
+            clearTimeout(rt);
+            rt = setTimeout(refreshAll, 120);
+        });
+
+        /* ── Tabs ──────────────────────────────────────────────────────────
+           The inactive panel is hidden outright rather than moved off screen, so
+           it costs no layout, cannot be tabbed into and is invisible to a screen
+           reader. It also cannot be measured while hidden — offsetLeft is 0 for
+           everything — so the incoming panel is measured AFTER it is shown, and
+           its slider is reset to the first product as the brief asks. */
+        function selectTab(key) {
+            tabs.forEach(function (t) {
+                var on = t.getAttribute('aria-controls') === 'pfPanel-' + key;
+                t.classList.toggle('is-active', on);
+                t.setAttribute('aria-selected', on ? 'true' : 'false');
+                t.tabIndex = on ? 0 : -1;
+            });
+            panels.forEach(function (p) {
+                var on = p.getAttribute('data-pf-panel') === key;
+                p.hidden = !on;
+                p.classList.toggle('is-active', on);
+            });
+            section.querySelectorAll('[data-pf-viewall]').forEach(function (a) {
+                a.hidden = a.getAttribute('data-pf-viewall') !== key;
+            });
+            sliders.forEach(function (s) {
+                if (s.panel.getAttribute('data-pf-panel') === key) { s.reset(); }
+            });
+        }
+
+        tabs.forEach(function (tab, i) {
+            tab.addEventListener('click', function () {
+                selectTab(tab.getAttribute('aria-controls').replace('pfPanel-', ''));
+            });
+            /* Roving tabindex: one stop for the whole tablist, arrows to move
+               within it. Anything else and a keyboard shopper tabs through every
+               tab before reaching the products. */
+            tab.addEventListener('keydown', function (e) {
+                var d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+                if (!d) { return; }
+                e.preventDefault();
+                var nextTab = tabs[(i + d + tabs.length) % tabs.length];
+                nextTab.focus();
+                nextTab.click();
+            });
+        });
+    })();
 
     // ── Reviews Testimonials Carousel Slider ───────────────
     let reviewIndex = 0;
@@ -1442,6 +2114,183 @@ $occIsMen = function_exists('currentShopGender') && currentShopGender() === 'men
         reviewIndex = (reviewIndex + 1) % 3;
         updateReviewPosition();
     }, 6000);
+</script>
+
+<?php /* ══ The shared rail pager engine ═══════════════════════════════════════
+         One prev button, one next button and one counter, driving four rails
+         that move in four completely different ways: New Arrivals swaps which
+         panels are in the flow, Collections scrolls a native overflow rail,
+         Trending translates a flex track, and Shop by Occasion asks Owl.
+
+         The sections do not share any of that. What they share is the control,
+         so each one registers a tiny driver — pages(), page(), go(delta) — and
+         this engine owns everything else: painting the counter, announcing the
+         move, and retiring a pager whose rail has nowhere to go.
+
+         Placed last on purpose. Sections assign into window.dvRailDrivers as
+         plain data, so no section has to care whether the engine has loaded
+         yet, and the engine runs once when every section has had its say. */ ?>
+<script>
+(function () {
+    /* Native-scroll helpers, published before the drivers are read.
+       ─────────────────────────────────────────────────────────────────────
+       Three of the four rails are, at some breakpoint, an ordinary
+       overflow-x element — Collections on a phone, New Arrivals below 1025,
+       and the Occasion strip if Owl never initialises. Paging one is the same
+       eight lines every time, so they live here once and the drivers borrow
+       them. Drivers reference window.dvRail lazily, from inside their own
+       methods, which the engine only ever calls after this assignment. */
+    window.dvRail = {
+        /* Laid out in ITEMS, not in pixels, because these rails carry
+           scroll-snap-align on their cards. Scrolling to a raw multiple of
+           clientWidth lands between two snap points and the browser drags the
+           rail back to the nearest card — measured on the New Arrivals rail at
+           390px: a press meant for 780 settled at 442, and the counter then
+           disagreed with the rail for the rest of the session. Snapping to the
+           first card of the page is a position the browser already agrees with,
+           so the two never argue. */
+        items: function (el) {
+            return Array.prototype.filter.call(el.children, function (c) {
+                return c.offsetWidth > 0 && getComputedStyle(c).position !== 'absolute';
+            });
+        },
+        /* How many cards are on screen at once. The +(step - firstWidth) term is
+           the gap: without it a rail showing 2.0 cards reports 1. */
+        perPage: function (el) {
+            var it = this.items(el);
+            if (it.length < 2) { return 1; }
+            var step = it[1].offsetLeft - it[0].offsetLeft;
+            if (step < 1) { return 1; }
+            return Math.max(1, Math.floor((el.clientWidth + (step - it[0].offsetWidth)) / step));
+        },
+        pages: function (el) {
+            if (!el || el.clientWidth < 1) { return 1; }
+            /* Whether the thing can move at all is a separate question from how
+               many items it holds, and it has to be asked first. Above 768px the
+               collections element is a mosaic GRID: six tiles that wrap into
+               rows and do not scroll, but whose first two still sit side by side,
+               so an item-and-step count cheerfully reported three pages and put
+               a live control under a grid that cannot move. scrollWidth against
+               clientWidth is the only honest test — the same one this section
+               used before it moved to the shared pager. */
+            if (el.scrollWidth <= el.clientWidth + 2) { return 1; }
+            var it = this.items(el);
+            if (!it.length) { return 1; }
+            return Math.max(1, Math.ceil(it.length / this.perPage(el)));
+        },
+        page: function (el) {
+            if (!el || el.clientWidth < 1) { return 0; }
+            var it = this.items(el), per = this.perPage(el);
+            if (!it.length) { return 0; }
+            /* Read from the rail's real position rather than a remembered index,
+               so a finger swipe and a button press cannot drift apart. */
+            var left = el.scrollLeft;
+            var best = 0, bestD = Infinity;
+            for (var i = 0; i < it.length; i += per) {
+                var d = Math.abs(this.offsetOf(el, it[i]) - left);
+                if (d < bestD) { bestD = d; best = i / per; }
+            }
+            return Math.round(best);
+        },
+        /* Relative to the scroller, whatever the offsetParent happens to be. */
+        offsetOf: function (el, item) {
+            return el.scrollLeft
+                 + (item.getBoundingClientRect().left - el.getBoundingClientRect().left);
+        },
+        go: function (el, delta) {
+            if (!el) { return; }
+            /* Wrap, like every other rail here. A shopper at the end who presses
+               next and gets nothing has been handed a dead control; the pages
+               that disable instead need a disabled style and an explanation. */
+            var it = this.items(el), per = this.perPage(el), total = this.pages(el);
+            if (!it.length) { return; }
+            var next = ((this.page(el) + delta) % total + total) % total;
+            var item = it[Math.min(it.length - 1, next * per)];
+            var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            el.scrollTo({ left: this.offsetOf(el, item), behavior: reduce ? 'auto' : 'smooth' });
+        }
+    };
+
+    var drivers = window.dvRailDrivers || {};
+
+    function wire(pager) {
+        var driver = drivers[pager.getAttribute('data-pager')];
+        /* A driver can register LATE. Most sections register inline, before this
+           runs, but the hero's lives inside jQuery(document).ready() because it
+           needs Owl — so on the first pass it is not there yet. Hide the control
+           for now and say we could not wire it; the retry on load picks it up.
+           Bailing permanently here is what left the hero with no navigation at
+           all the first time this was built. */
+        if (!driver) { pager.hidden = true; return false; }
+
+        var count  = pager.querySelector('[data-pager-count]');
+        var status = pager.querySelector('[data-pager-status]');
+
+        /* paint() is safe to call as often as you like — it is wired to resize.
+           announce() is NOT: it writes a live region, so it is called only from
+           a real button press. A status region fed by a resize listener fires on
+           every address-bar collapse on a phone. */
+        function paint() {
+            var total = driver.pages();
+            /* Measured, not guessed from viewport width. This is what replaces
+               the four unrelated display:none rules that used to strand a rail
+               with no control at all on a phone: the pager goes away only when
+               the rail genuinely cannot move. */
+            pager.hidden = !(total > 1);
+            if (!(total > 1) || !count) { return; }
+            count.textContent = (driver.page() + 1) + '\u200a/\u200a' + total;
+        }
+
+        function announce() {
+            if (!status) { return; }
+            status.textContent = driver.label + ', page ' + (driver.page() + 1)
+                               + ' of ' + driver.pages();
+        }
+
+        pager.addEventListener('click', function (event) {
+            var button = event.target.closest('[data-pager-step]');
+            if (!button) { return; }
+            driver.go(parseInt(button.getAttribute('data-pager-step'), 10) || 1);
+            paint();
+            announce();
+        });
+
+        /* A rail that moves by itself — a swipe, an Owl drag — tells the engine
+           so the counter does not go stale. Still never announces: the shopper
+           who swiped already knows the rail moved. */
+        if (typeof driver.onMove === 'function') { driver.onMove(paint); }
+
+        var resizeTimer;
+        window.addEventListener('resize', function () {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(paint, 150);
+        });
+
+        /* Again after load, because two things settle late: Owl initialises the
+           Occasion strip from includes/footer.php, which runs after this, and a
+           web font arriving can change a card's width and so the page count.
+           Both would otherwise leave a control showing for a rail that cannot
+           move, or hidden for one that can. */
+        window.addEventListener('load', function () { setTimeout(paint, 60); });
+
+        paint();
+        return true;
+    }
+
+    var pagers  = Array.prototype.slice.call(document.querySelectorAll('.dv-pager[data-pager]'));
+    var pending = pagers.filter(function (pager) { return !wire(pager); });
+
+    /* One retry, once everything has had a chance to register. Owl is the only
+       thing that needs it today, and it is always up by load. */
+    if (pending.length) {
+        window.addEventListener('load', function () {
+            setTimeout(function () {
+                drivers = window.dvRailDrivers || drivers;
+                pending.forEach(wire);
+            }, 80);
+        });
+    }
+})();
 </script>
 
 <?php

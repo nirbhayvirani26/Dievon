@@ -53,7 +53,7 @@ if (!empty($_SESSION['sr_flash'])):
             <?php else: ?>
 
             <!-- Customer Name Filter -->
-            <div style="display:flex; align-items:center; gap:10px; margin-bottom:18px; background:rgba(255,255,255,0.05); padding:12px 16px; border-radius:var(--radius-sm); border:1px solid var(--border-light);">
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:18px; background:rgba(255,255,255,0.05); padding:12px 16px; border:1px solid var(--border-light);">
                 <i class="fa-solid fa-magnifying-glass" style="color:var(--text-muted); font-size:14px;"></i>
                 <input type="text" id="orderNameFilter"
                        placeholder="Filter by customer name…"
@@ -119,7 +119,7 @@ if (!empty($_SESSION['sr_flash'])):
                             <td style="font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
                                 <?= htmlspecialchars($order['customer_name']) ?>
                                 <?php if (isset($repeatPhoneSet[$order['phone']])): ?>
-                                <span style="display:inline-flex; align-items:center; gap:3px; font-size:10px; font-weight:700; padding:2px 6px; border-radius:20px; background:rgba(139,92,246,0.15); color:#8b5cf6; margin-left:4px;">🔁</span>
+                                <span style="display:inline-flex; align-items:center; gap:3px; font-size:10px; font-weight:700; padding:2px 6px; background:rgba(139,92,246,0.15); color:#8b5cf6; margin-left:4px;">🔁</span>
                                 <?php endif; ?>
                             </td>
                             <td style="overflow:hidden;">
@@ -193,7 +193,7 @@ if (!empty($_SESSION['sr_flash'])):
                                     $pmLabel = ['online' => 'Online', 'cod' => 'COD', 'later' => 'Pay later'][$pm]
                                              ?? ucfirst($pm);
                                 ?>
-                                <span id="pay-badge-<?= $order['id'] ?>" style="display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:700; padding:3px 8px; border-radius:20px; background:<?= $payBg ?>; color:<?= $payColor ?>; white-space:nowrap;">
+                                <span id="pay-badge-<?= $order['id'] ?>" style="display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:700; padding:3px 8px; background:<?= $payBg ?>; color:<?= $payColor ?>; white-space:nowrap;">
                                     <?= $payIcon ?> <?= $payLabel ?>
                                 </span>
                                 <?php /* Deliberately OUTSIDE the badge span. admin.js rewrites that
@@ -225,7 +225,7 @@ if (!empty($_SESSION['sr_flash'])):
                             <td colspan="9">
                                 <div class="order-detail-inner">
                                     <!-- Customer Info Strip -->
-                                    <div style="display:flex; flex-wrap:wrap; gap:20px; margin-bottom:16px; padding:12px 14px; background:var(--bg-main); border-radius:var(--radius-sm); border:1px solid var(--border-light); font-size:13px;">
+                                    <div style="display:flex; flex-wrap:wrap; gap:20px; margin-bottom:16px; padding:12px 14px; background:var(--bg-main); border:1px solid var(--border-light); font-size:13px;">
                                         <div style="display:flex; align-items:center; gap:7px;">
                                             <i class="fa-solid fa-user" style="color:var(--color-primary); width:14px;"></i>
                                             <strong><?= htmlspecialchars($order['customer_name']) ?></strong>
@@ -430,7 +430,7 @@ if (!empty($_SESSION['sr_flash'])):
                                                    + (float)($order['cod_fee'] ?? 0), 2);
                                     $recTotal = round((float)$order['total_price'], 2);
                                     if (abs($recParts - $recTotal) > 0.01 && !empty($order['razorpay_payment_id'])): ?>
-                                    <div style="padding:10px 14px; background:#fffbeb; border:1px solid #fde68a; border-radius:6px; font-size:12px; color:#92400e; margin-bottom:14px;">
+                                    <div style="padding:10px 14px; background:#fffbeb; border:1px solid #fde68a; font-size:12px; color:#92400e; margin-bottom:14px;">
                                         <i class="fa-solid fa-triangle-exclamation"></i>
                                         <strong>Recorded at the charged amount.</strong> The items below sum to
                                         <?= $ordSym . number_format($recParts, 2) ?>, but the total is
@@ -443,7 +443,7 @@ if (!empty($_SESSION['sr_flash'])):
                                     </div>
                                     <?php endif; ?>
                                     <!-- Status + Payment + Invoice Print row -->
-                                     <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap; padding:14px; background:var(--bg-main); border-radius:var(--radius-sm); border:1px solid var(--border-light);">
+                                     <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap; padding:14px; background:var(--bg-main); border:1px solid var(--border-light);">
 
                                          <?php /* Saving a status emails the customer. EmailService only suppresses a
                                                   REPEAT of the same status (sendOrderStatusEmail():702), so stepping an
@@ -458,7 +458,7 @@ if (!empty($_SESSION['sr_flash'])):
                                                   Not a title="" tooltip either. The first version was, and the person it
                                                   was written for could not find it — which is the whole failure of a
                                                   tooltip: only someone who already suspects it is there will read it. */ ?>
-                                         <div style="flex:1 0 100%; font-size:11px; color:#8a5a00; background:#fff4e5; border:1px solid #fde68a; border-radius:4px; padding:6px 10px;">
+                                         <div style="flex:1 0 100%; font-size:11px; color:#8a5a00; background:#fff4e5; border:1px solid #fde68a; padding:6px 10px;">
                                              <i class="fa-solid fa-envelope"></i>
                                              Saving emails the customer &middot; <strong>Confirmed &rarr; Shipped &rarr; Delivered</strong> is usually enough
                                          </div>
@@ -527,7 +527,7 @@ if (!empty($_SESSION['sr_flash'])):
                                                           reference rather than as a control — a disabled dropdown still reads
                                                           as "something you could change", and this is not one.
                                                           update_order.php refuses the change anyway; this saves the click. */ ?>
-                                                 <span style="display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:700; padding:6px 12px; border-radius:4px; background:#e6f7ec; color:#2e7d32;"
+                                                 <span style="display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:700; padding:6px 12px; background:#e6f7ec; color:#2e7d32;"
                                                        title="Confirmed by Razorpay. Use the Refund panel to return money to the customer.">
                                                      <i class="fa-solid fa-lock"></i> Paid online
                                                  </span>
@@ -559,7 +559,7 @@ if (!empty($_SESSION['sr_flash'])):
                                                           represented by the two options above, and quietly showing "Not Paid"
                                                           would be a lie about money. Flag it instead of hiding it. */ ?>
                                                  <?php if (($order['payment_status'] ?? '') === 'Paid'): ?>
-                                                     <span style="font-size:11px; font-weight:700; padding:4px 10px; border-radius:4px; background:#fff4e5; color:#8a5a00;"
+                                                     <span style="font-size:11px; font-weight:700; padding:4px 10px; background:#fff4e5; color:#8a5a00;"
                                                            title="Marked Paid by hand — no Razorpay payment is attached to this order. If the money did arrive, set it to Payment Received.">
                                                          ⚠ Paid, no gateway record
                                                      </span>
@@ -718,7 +718,7 @@ if (!empty($_SESSION['sr_flash'])):
             <?php endif; ?>
 
             <!-- Summary Counter Bar at Bottom of Table -->
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding: 14px 18px; background: var(--bg-main); border-radius: var(--radius-sm); border: 1px solid var(--border-light); font-size: 13px; color: var(--text-secondary);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding: 14px 18px; background: var(--bg-main); border: 1px solid var(--border-light); font-size: 13px; color: var(--text-secondary);">
                 <div>
                     <i class="fa-solid fa-list-check" style="color: var(--color-primary); margin-right: 6px;"></i>
                     <strong>Total Orders Displayed:</strong> <span id="ordersTotalDisplayCount"><?= count($orders) ?></span> of <?= count($orders) ?> Orders

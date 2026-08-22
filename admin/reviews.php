@@ -78,7 +78,7 @@ try {
 require_once __DIR__ . '/includes/header.php';
 ?>
 
-<div style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
+<div style="background: white; border: 1px solid #e5e7eb; overflow: hidden;">
     <div class="table-wrapper">
     <table style="width: 100%; border-collapse: collapse; font-size: 14px; text-align: left; min-width: 900px;">
         <thead style="background: #f9fafb; border-bottom: 1px solid #e5e7eb;">
@@ -110,7 +110,7 @@ require_once __DIR__ . '/includes/header.php';
                             <strong style="display:block; color:#111827;"><?= htmlspecialchars($r['title'] ?? '') ?></strong>
                             <?= htmlspecialchars($r['review_text']) ?>
                         </td>
-                        <td style="padding: 14px 16px;"><span style="background: <?= $badgeBg ?>; color: <?= $badgeColor ?>; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 700;"><?= htmlspecialchars($status) ?></span></td>
+                        <td style="padding: 14px 16px;"><span style="background: <?= $badgeBg ?>; color: <?= $badgeColor ?>; padding: 4px 8px; font-size: 11px; font-weight: 700;"><?= htmlspecialchars($status) ?></span></td>
                         <td style="padding: 14px 16px;">
                             <div style="display: flex; gap: 10px;">
                                 <?php if ($status !== 'Approved'): ?>

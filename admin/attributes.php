@@ -137,7 +137,7 @@ require_once __DIR__ . '/../config/config.php';
             </div>
             <?php if ($type === 'colors'): ?>
                 <div class="form-group" style="margin:0;">
-                    <input type="color" name="code" value="#991b1b" style="width: 50px; height: 42px; padding: 2px; border: 1px solid var(--border-strong); border-radius: 6px; cursor: pointer;">
+                    <input type="color" name="code" value="#991b1b" style="width: 50px; height: 42px; padding: 2px; border: 1px solid var(--border-strong); cursor: pointer;">
                 </div>
             <?php endif; ?>
             <button type="submit" name="add_attr" class="btn-primary" style="padding: 10px 20px; font-size: 14px;">
@@ -172,7 +172,7 @@ require_once __DIR__ . '/../config/config.php';
                             <?php if ($type === 'colors'): ?>
                                 <td>
                                     <div style="display: flex; align-items: center; gap: 8px;">
-                                        <span style="display: inline-block; width: 22px; height: 22px; border-radius: 4px; background: <?= htmlspecialchars($a['code'] ?? '#991b1b') ?>; border: 1px solid var(--border-light);"></span>
+                                        <span style="display: inline-block; width: 22px; height: 22px; background: <?= htmlspecialchars($a['code'] ?? '#991b1b') ?>; border: 1px solid var(--border-light);"></span>
                                         <code style="font-size: 12px; color: var(--text-muted);"><?= htmlspecialchars($a['code'] ?? '#991b1b') ?></code>
                                     </div>
                                 </td>

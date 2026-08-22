@@ -173,7 +173,7 @@ require_once __DIR__ . '/../includes/header.php';
             <?php endif; ?>
 
             <?php if ($showSent && $success === ''): ?>
-                <div style="padding: 16px; background: #e6faf7; color: #2e7d32; border: 1px solid #c3e6cb; border-radius: 6px; font-size: 13px; margin-bottom: 25px; line-height: 1.6;">
+                <div style="padding: 16px; background: #e6faf7; color: #2e7d32; border: 1px solid #c3e6cb; font-size: 13px; margin-bottom: 25px; line-height: 1.6;">
                     <i class="fa-solid fa-envelope"></i> If an account exists for that address, a verification link has been sent. Check your inbox (and spam folder).
                 </div>
             <?php endif; ?>

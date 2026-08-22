@@ -327,7 +327,7 @@ class EmailService {
         :root { color-scheme: light; supported-color-schemes: light; }
         body { margin: 0; padding: 0; background-color: #FAF8F5; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #2B2627; -webkit-font-smoothing: antialiased; }
         .wrapper { width: 100%; table-layout: fixed; background-color: #FAF8F5; padding: 36px 0; }
-        .main-card { max-width: 600px; margin: 0 auto; background: #FFFFFF; border-radius: 12px; overflow: hidden; border: 1px solid #EAE4DC; box-shadow: 0 8px 30px rgba(81,17,38,0.06); }
+        .main-card { max-width: 600px; margin: 0 auto; background: #FFFFFF; overflow: hidden; border: 1px solid #EAE4DC; box-shadow: 0 8px 30px rgba(81,17,38,0.06); }
         /* A LIGHT header, not the burgundy band this used to be.
            The uploaded logo is dark burgundy artwork — the same #511126 the band
            was filled with — so the mark was burgundy on burgundy and effectively
@@ -341,7 +341,7 @@ class EmailService {
         .brand-logo-img { display: inline-block; max-width: 170px; height: auto; border: 0; }
         .brand-subtitle { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: #8C8285; margin-top: 8px; }
         .content-area { padding: 32px; font-size: 14px; line-height: 1.7; color: #3A3537; }
-        .btn-luxury { display: inline-block; background: #511126; color: #FFFFFF !important; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; padding: 14px 28px; border-radius: 4px; text-decoration: none; margin: 18px 0; }
+        .btn-luxury { display: inline-block; background: #511126; color: #FFFFFF !important; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; padding: 14px 28px; text-decoration: none; margin: 18px 0; }
         .footer { background: #FAF8F5; padding: 24px 32px; border-top: 1px solid #EAE4DC; text-align: center; font-size: 11px; color: #8C8285; line-height: 1.6; }
         .footer a { color: #511126; text-decoration: none; font-weight: 600; }
         table.item-table { width: 100%; border-collapse: collapse; margin: 18px 0; }
@@ -451,7 +451,7 @@ class EmailService {
             </div>
             <p style='font-size: 12px; color: #7A7275;'>If the button above does not work, copy and paste the following link into your browser:<br>
             <a href='{$safeUrl}' style='color: #511126; word-break: break-all;'>{$safeUrl}</a></p>
-            <div style='background: #FFF8EE; border: 1px solid #F5E5D0; padding: 12px 16px; border-radius: 6px; font-size: 12px; color: #8A6D3B; margin-top: 20px;'>
+            <div style='background: #FFF8EE; border: 1px solid #F5E5D0; padding: 12px 16px; font-size: 12px; color: #8A6D3B; margin-top: 20px;'>
                 🔒 <strong>Security Note:</strong> If you did not create this account, please ignore this email. Your address cannot be linked to any orders unless you click this link.
             </div>
         ";
@@ -477,7 +477,7 @@ class EmailService {
             </div>
             <p style='font-size: 12px; color: #7A7275;'>If the button above does not work, copy and paste the following link into your browser:<br>
             <a href='{$safeUrl}' style='color: #511126; word-break: break-all;'>{$safeUrl}</a></p>
-            <div style='background: #FFF8EE; border: 1px solid #F5E5D0; padding: 12px 16px; border-radius: 6px; font-size: 12px; color: #8A6D3B; margin-top: 20px;'>
+            <div style='background: #FFF8EE; border: 1px solid #F5E5D0; padding: 12px 16px; font-size: 12px; color: #8A6D3B; margin-top: 20px;'>
                 🔒 <strong>Security Note:</strong> If you did not request a password reset, please ignore this email. Your current password remains completely safe and unchanged.
             </div>
         ";
@@ -505,10 +505,10 @@ class EmailService {
             <div style='text-align: center; margin: 26px 0;'>
                 <div style='display:inline-block; font-family: Menlo, Consolas, monospace; font-size: 34px; font-weight: 700;
                             letter-spacing: 10px; color: #511126; background: #FAF8F5; border: 1px solid #EAE4DC;
-                            border-radius: 8px; padding: 16px 26px 16px 36px;'>{$safeCode}</div>
+                             padding: 16px 26px 16px 36px;'>{$safeCode}</div>
             </div>
             <p style='font-size: 13px; color: #7A7275;'>It expires in <strong>{$minutes} minutes</strong> and can be used once.</p>
-            <div style='background: #FFF8EE; border: 1px solid #F5E5D0; padding: 12px 16px; border-radius: 6px; font-size: 12px; color: #8A6D3B; margin-top: 20px;'>
+            <div style='background: #FFF8EE; border: 1px solid #F5E5D0; padding: 12px 16px; font-size: 12px; color: #8A6D3B; margin-top: 20px;'>
                 🔒 <strong>Did not try to sign in?</strong> Someone may know this account's password.
                 Ignore this email — the code alone is useless without it — then change that password as soon as you can.
             </div>
@@ -532,10 +532,10 @@ class EmailService {
             <div style='text-align: center; margin: 26px 0;'>
                 <div style='display:inline-block; font-family: Menlo, Consolas, monospace; font-size: 34px; font-weight: 700;
                             letter-spacing: 10px; color: #511126; background: #FAF8F5; border: 1px solid #EAE4DC;
-                            border-radius: 8px; padding: 16px 26px 16px 36px;'>{$safeCode}</div>
+                             padding: 16px 26px 16px 36px;'>{$safeCode}</div>
             </div>
             <p style='font-size: 13px; color: #7A7275;'>It expires in <strong>{$minutes} minutes</strong> and can be used once.</p>
-            <div style='background: #FFF8EE; border: 1px solid #F5E5D0; padding: 12px 16px; border-radius: 6px; font-size: 12px; color: #8A6D3B; margin-top: 20px;'>
+            <div style='background: #FFF8EE; border: 1px solid #F5E5D0; padding: 12px 16px; font-size: 12px; color: #8A6D3B; margin-top: 20px;'>
                 🔒 <strong>Did not ask to reset your password?</strong> Someone may be trying to get into your account.
                 Ignore this email — the code alone is not enough — and sign in to change your password if you can.
             </div>
@@ -555,7 +555,7 @@ class EmailService {
             <h2 style='font-family: Georgia, serif; font-size: 20px; font-weight: 400; color: #511126; margin-top: 0;'>Password Updated</h2>
             <p>Dear <strong>{$safeName}</strong>,</p>
             <p>This is a security confirmation to let you know that your password for your Dievon account has been successfully updated.</p>
-            <div style='background: #F4FAF6; border: 1px solid #D1EAD8; padding: 14px 18px; border-radius: 6px; font-size: 13px; color: #1E6B37; margin: 18px 0;'>
+            <div style='background: #F4FAF6; border: 1px solid #D1EAD8; padding: 14px 18px; font-size: 13px; color: #1E6B37; margin: 18px 0;'>
                 ✅ <strong>Security Alert:</strong> Your new password is now active.
             </div>
             <p>If you made this change, no further action is needed.</p>
@@ -586,7 +586,7 @@ class EmailService {
             <h2 style='font-family: Georgia, serif; font-size: 20px; font-weight: 400; color: #511126; margin-top: 0;'>We could not reach you earlier</h2>
             <p>Hello,</p>
             <p>We tried to send you a message and it did not arrive. It was about:</p>
-            <div style='background: #FAF7F2; border: 1px solid #E8DCC8; padding: 14px 18px; border-radius: 6px; font-size: 14px; color: #511126; margin: 18px 0;'>
+            <div style='background: #FAF7F2; border: 1px solid #E8DCC8; padding: 14px 18px; font-size: 14px; color: #511126; margin: 18px 0;'>
                 <strong>{$safeSubject}</strong>
             </div>
             <p>If this concerned an order, simply reply to this email and we will help you straight away.</p>
@@ -638,7 +638,7 @@ class EmailService {
             <p>Dear <strong>{$safeName}</strong>,</p>
             <p>Thank you for your order with Dievon. We have received your purchase and our atelier team is currently preparing your order with care.</p>
 
-            <div style='background: #FAF8F5; border: 1px solid #EAE4DC; padding: 16px; border-radius: 8px; margin: 18px 0;'>
+            <div style='background: #FAF8F5; border: 1px solid #EAE4DC; padding: 16px; margin: 18px 0;'>
                 <table width='100%' cellpadding='0' cellspacing='0'>
                     <tr>
                         <td><strong>Order Reference:</strong> <span style='color:#511126; font-weight:700;'>{$code}</span></td>
@@ -758,7 +758,7 @@ class EmailService {
             <h2 style='font-family: Georgia, serif; font-size: 20px; font-weight: 400; color: #511126; margin-top: 0;'>New Order Received!</h2>
             <p>A new order has been placed on Dievon.</p>
 
-            <div style='background: #FAF8F5; border: 1px solid #EAE4DC; padding: 16px; border-radius: 8px; margin: 18px 0;'>
+            <div style='background: #FAF8F5; border: 1px solid #EAE4DC; padding: 16px; margin: 18px 0;'>
                 <table width='100%' cellpadding='0' cellspacing='0'>
                     <tr>
                         <td><strong>Order Ref:</strong> <span style='color:#511126; font-weight:700;'>{$code}</span></td>
@@ -902,7 +902,7 @@ class EmailService {
             $safeTracking = htmlspecialchars($trackingNum);
             $safeCarrier = htmlspecialchars($carrier ?: 'Standard Courier');
             $trackingHtml = "
-            <div style='background: #FFF9F0; border: 1px dashed #D4AF37; padding: 14px 18px; border-radius: 6px; margin: 18px 0;'>
+            <div style='background: #FFF9F0; border: 1px dashed #D4AF37; padding: 14px 18px; margin: 18px 0;'>
                 <strong>🚚 Tracking Information:</strong><br>
                 Carrier: <strong>{$safeCarrier}</strong><br>
                 Tracking Code: <strong style='color:#511126;'>{$safeTracking}</strong>
@@ -1355,7 +1355,7 @@ class EmailService {
                 <tr><td style='font-weight:700;'>Phone:</td><td>{$safePhone}</td></tr>
                 <tr><td style='font-weight:700;'>Subject:</td><td>{$safeSubj}</td></tr>
             </table>
-            <div style='background: #FAF8F5; border: 1px solid #EAE4DC; padding: 16px; border-radius: 6px;'>
+            <div style='background: #FAF8F5; border: 1px solid #EAE4DC; padding: 16px;'>
                 <strong>Message:</strong><br>
                 {$safeMsg}
             </div>
@@ -1399,7 +1399,7 @@ class EmailService {
                 <tr><td style='font-weight:700;'>Email:</td><td><a href='mailto:{$safeEmail}' style='color:#511126;'>{$safeEmail}</a></td></tr>
                 <tr><td style='font-weight:700;'>Phone:</td><td>{$safePhone}</td></tr>
             </table>
-            <div style='background: #FAF8F5; border: 1px solid #EAE4DC; padding: 16px; border-radius: 6px;'>
+            <div style='background: #FAF8F5; border: 1px solid #EAE4DC; padding: 16px;'>
                 <strong>Enquiry / Fitting Request:</strong><br>
                 {$safeMsg}
             </div>
@@ -1456,7 +1456,7 @@ class EmailService {
                 <tr><td style='font-weight:700;'>Subject:</td><td>{$subject}</td></tr>
                 <tr><td style='font-weight:700;'>Photo:</td><td>" . ($hasPhoto ? 'Yes — attached in admin panel' : 'None') . "</td></tr>
             </table>
-            <div style='background: #FAF8F5; border: 1px solid #EAE4DC; padding: 16px; border-radius: 6px;'>
+            <div style='background: #FAF8F5; border: 1px solid #EAE4DC; padding: 16px;'>
                 <strong>Message:</strong><br>{$message}
             </div>";
         $this->sendMail(

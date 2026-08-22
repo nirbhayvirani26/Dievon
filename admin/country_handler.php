@@ -77,15 +77,65 @@ try {
         $fee  = max(0, (float)($r['shipping_fee'] ?? 0));
         $free = max(0, (float)($r['free_shipping_min'] ?? 0));
 
-        $pdo->prepare(
-            "UPDATE store_countries
-                SET currency_code = :cur, currency_symbol = :sym, is_enabled = :en,
-                    cod_allowed = :cod, shipping_fee = :fee, free_shipping_min = :free
-              WHERE country_code = :code"
-        )->execute([
+        /* The exchange rate is optional and hand-editable.
+           ────────────────────────────────────────────────────────────────────
+           It only decides what the product form SUGGESTS, so a wrong one costs
+           a re-type rather than a mispriced sale — but it is still worth
+           refusing nonsense.
+
+           Blank clears the stored rate, which in practice means "fetch a fresh
+           one": fxRatesForCountries() treats a missing rate as due and refetches
+           on the next page load. So this is the way to throw away a hand-typed
+           rate and go back to the live figure, not a way to switch conversion
+           off for a country.
+
+           Home is forced to 1: it converts to itself, and a home rate of
+           anything else would make its own suggestions wrong.
+
+           Written only when the column exists, so this handler keeps working on
+           an install where update_new_database.php has not been run yet. */
+        $fxSet   = null;
+        $fxDirty = array_key_exists('fx_rate', $r);
+        if ($fxDirty) {
+            $raw = trim((string)$r['fx_rate']);
+            if ($isHome) {
+                $fxSet = 1.0;
+            } elseif ($raw === '') {
+                $fxSet = null;
+            } elseif (!is_numeric($raw) || (float)$raw <= 0) {
+                $pdo->rollBack();
+                cnFail("“{$code}” needs a positive exchange rate, or leave it blank — “"
+                     . htmlspecialchars($raw) . "” is not a number.");
+            } else {
+                $fxSet = (float)$raw;
+            }
+        }
+
+        static $hasFxColumn = null;
+        if ($hasFxColumn === null) {
+            try {
+                $hasFxColumn = (bool)$pdo->query("SHOW COLUMNS FROM store_countries LIKE 'fx_rate'")->fetchColumn();
+            } catch (PDOException $e) { $hasFxColumn = false; }
+        }
+
+        $sql = "UPDATE store_countries
+                   SET currency_code = :cur, currency_symbol = :sym, is_enabled = :en,
+                       cod_allowed = :cod, shipping_fee = :fee, free_shipping_min = :free";
+        $args = [
             ':cur' => $currency, ':sym' => $symbol, ':en' => $enabled,
             ':cod' => $cod, ':fee' => $fee, ':free' => $free, ':code' => $code,
-        ]);
+        ];
+        if ($hasFxColumn && $fxDirty) {
+            // Only stamp the time when a rate is actually present, so "never
+            // fetched" stays distinguishable from "cleared just now".
+            $sql .= $fxSet === null
+                  ? ", fx_rate = NULL, fx_rate_updated_at = NULL"
+                  : ", fx_rate = :fx, fx_rate_updated_at = NOW()";
+            if ($fxSet !== null) { $args[':fx'] = $fxSet; }
+        }
+        $sql .= " WHERE country_code = :code";
+
+        $pdo->prepare($sql)->execute($args);
         $saved++;
     }
 

@@ -331,7 +331,7 @@ require_once __DIR__ . '/includes/header.php';
     <?php else: ?>
     <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:16px;">
         <?php foreach ($mediaFiles as $m): ?>
-        <div style="border:1px solid var(--border-light); border-radius:8px; overflow:hidden; background:var(--bg-main);">
+        <div style="border:1px solid var(--border-light); overflow:hidden; background:var(--bg-main);">
             <?php
             /* Draw the thumbnail from the WebP twin when there is one.
                ────────────────────────────────────────────────────────────────
@@ -394,7 +394,7 @@ require_once __DIR__ . '/includes/header.php';
                         </span>
                     <?php endif; ?>
                 </div>
-                <span style="display:inline-block; font-size:10px; font-weight:700; padding:2px 8px; border-radius:20px; margin-bottom:8px; <?= $m['inUse'] ? 'background:rgba(16,185,129,0.12); color:#10b981;' : 'background:rgba(245,158,11,0.12); color:#f59e0b;' ?>">
+                <span style="display:inline-block; font-size:10px; font-weight:700; padding:2px 8px; margin-bottom:8px; <?= $m['inUse'] ? 'background:rgba(16,185,129,0.12); color:#10b981;' : 'background:rgba(245,158,11,0.12); color:#f59e0b;' ?>">
                     <?= $m['inUse'] ? 'In use' : 'Unused' ?>
                 </span>
                 <form method="POST" style="margin:0;" onsubmit="return dvConfirmForm(this,'<?= $m['inUse'] ? 'This file is still in use somewhere on the site. Deleting it will break that image. Delete anyway?' : 'Delete this file?' ?>');">

@@ -579,7 +579,7 @@ require_once __DIR__ . '/includes/header.php';
                     $pSubs  = $subGrouped[$pId] ?? [];
                     $pMeta  = $genderMeta[$gKey];
                 ?>
-                    <div style="margin-bottom: 24px; border: 1px solid var(--border-light); border-radius: 8px; overflow: hidden; background: #ffffff;">
+                    <div style="margin-bottom: 24px; border: 1px solid var(--border-light); overflow: hidden; background: #ffffff;">
                         <div style="background: var(--bg-surface-soft); padding: 12px 18px; border-bottom: 1px solid var(--border-light); font-weight: 700; font-size: 13px; text-transform: uppercase; color: var(--color-accent); display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
                             <span style="display:inline-flex; align-items:center; gap:9px;">
                                 📁 <?= htmlspecialchars($parent['name']) ?>

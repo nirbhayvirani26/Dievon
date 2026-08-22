@@ -115,7 +115,7 @@ require_once __DIR__ . '/../includes/header.php';
                     <div class="order-conf-item-left">
                         <?php if (!empty($item['image'])): ?>
                         <img src="<?= SITE_URL ?>/uploads/products/<?= htmlspecialchars($item['image']) ?>" alt="<?= htmlspecialchars($item['name']) ?>"
-                             style="width:44px; height:54px; object-fit:cover; border-radius:4px; flex-shrink:0;"
+                             style="width:44px; height:54px; object-fit:cover; flex-shrink:0;"
                              onerror="this.outerHTML='<span class=&quot;order-conf-item-emoji&quot;><?= htmlspecialchars($item['emoji'] ?? '👗') ?></span>';">
                         <?php else: ?>
                         <span class="order-conf-item-emoji"><?= htmlspecialchars($item['emoji'] ?? '👗') ?></span>

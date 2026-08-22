@@ -529,6 +529,53 @@ $searchHint = $searchHintNames
 
 <!-- ══ Luxury Multi-Tier Header with Mega Menu ════════════════════════════ -->
 <header class="navbar-luxury">
+    <?php
+    // ── Women / Men switch ──────────────────────────────────────────────────
+    // Rendered only when BOTH sides genuinely have stock. A Men tab that leads
+    // to an empty grid is worse than no tab, so an un-launched menswear range
+    // simply does not appear — the same rule the country selector follows.
+    //
+    // Real <a href> links to real addresses, not a JavaScript toggle: /men has
+    // to work for a crawler carrying no cookie, for a shared link and for
+    // middle-click. The cookie only remembers the choice while browsing.
+    $dvShopGender = function_exists('currentShopGender') ? currentShopGender() : 'women';
+
+    /* The strip carries the audience switch and nothing else, so it renders with
+       it. The country picker briefly lived here too, which is why this once read
+       "either" — with the picker back in the icon row a shop that sells to two
+       countries but has not launched menswear draws no strip at all, rather than
+       a full-bleed band holding one two-letter control. */
+    $dvShowAudience = function_exists('shopGenderSelectorEnabled') && shopGenderSelectorEnabled();
+    if ($dvShowAudience): ?>
+    <?php /* No .hide-mobile: this bar shows at every screen size. It is the only
+             control that changes what the whole rest of the site means, so it
+             belongs where it can be seen rather than behind the hamburger.
+
+             .header-top-bar puts it in its own strip ABOVE the wordmark rather
+             than in a tier between the wordmark and the collections. Choosing a
+             side is the first decision a shopper makes and it governs every link
+             below it, so it reads better as the thing that comes before the shop
+             than as a band wedged into the middle of it — and the logo row and
+             the collections row become adjacent, which is what makes the header
+             read as one object instead of three stacked bands. */ ?>
+    <div class="audience-switch-bar header-top-bar">
+        <div class="container">
+            <?php if ($dvShowAudience): ?>
+            <nav class="audience-switch" aria-label="Shop for">
+                <?php /* ?for=women is load-bearing, not decoration. Plain "/" leaves the
+                         dievon_shop_for cookie saying men, so currentShopGender() keeps
+                         answering men and the Women tab does nothing at all — the switch
+                         becomes one-way once a visitor has chosen Men. */ ?>
+                <a href="<?= SITE_URL ?>/?for=women" class="audience-switch-link <?= $dvShopGender === 'women' ? 'is-active' : '' ?>"
+                   <?= $dvShopGender === 'women' ? 'aria-current="page"' : '' ?>>Women</a>
+                <a href="<?= SITE_URL ?>/men" class="audience-switch-link <?= $dvShopGender === 'men' ? 'is-active' : '' ?>"
+                   <?= $dvShopGender === 'men' ? 'aria-current="page"' : '' ?>>Men</a>
+            </nav>
+            <?php endif; ?>
+
+        </div>
+    </div>
+    <?php endif; ?>
     <!-- Main Header Bar -->
     <div class="main-header-bar">
         <div class="container main-header-container">
@@ -542,30 +589,37 @@ $searchHint = $searchHintNames
                 </a>
             </div>
 
-            <!-- Center Search Bar (Desktop) -->
-            <div class="header-search-wrap" onclick="openSearchOverlay()">
-                <i class="fa-solid fa-magnifying-glass search-icon"></i>
-                <?php // Names real categories only. The old text offered "dupattas and
-                      // dresses", neither of which the catalogue has ever stocked, and its
-                      // mobile twin below listed different clothes again — the same search
-                      // box disagreeing with itself about what the shop sells. ?>
-                <?php // This box never takes typing: it is a doorway that opens the real
-                      // search overlay, which is why it is readonly. Two consequences had
-                      // been missed. It carried no name, so it was announced as an unnamed
-                      // text field whose placeholder rotates with the hint. And the opener
-                      // lived on the wrapping div's onclick, so a mouse worked and a
-                      // keyboard did not — tab to it, press Enter, nothing happened. ?>
-                <input type="text" id="inlineSearchInput" aria-label="Search products" readonly
-                       placeholder="<?= htmlspecialchars($searchHint) ?>"
-                       onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openSearchOverlay(); }">
-                <button class="header-image-search-btn" type="button">
-                    <i class="fa-solid fa-camera"></i> <span class="hide-mobile">Image Search</span>
-                </button>
-            </div>
+            <?php /* The centre search pill became an icon in the right-hand cluster.
+                     ────────────────────────────────────────────────────────────────
+                     It was a readonly text box that took no typing — a doorway that
+                     opened the real overlay below — dressed as a marketplace search
+                     bar, and it sat in the middle of the row where the brand wants
+                     air. The icon opens exactly the same overlay, and the rotating
+                     category hint it used to show as a placeholder is now the
+                     button's title, so nothing it told a shopper is lost.
+
+                     The "Image Search" button that lived inside it was never wired
+                     to anything: it had no onclick of its own and simply inherited
+                     the wrapper's openSearchOverlay(). It is gone with the pill. */ ?>
 
             <!-- Right Action Icons -->
             <div class="nav-actions">
-                <!-- Country Picker -->
+                <?php /* The country / currency picker, first in the row.
+                         ──────────────────────────────────────────────────────
+                         It spent a release in the utility strip at the top,
+                         because as a filled, bordered pill it was the only solid
+                         shape among five 1.4px stroke icons and pulled the eye
+                         straight to the least important control there.
+
+                         The pill was the problem, not the position. Drawn the way
+                         the icons are drawn — bare type at their optical weight,
+                         the navigation's own chevron, no border and no fill — it
+                         sits in the row as one of them. That also frees the top
+                         strip to disappear on a shop that has not launched
+                         menswear, instead of existing to hold one control.
+
+                         Two letters and a chevron is about 34px, so the row still
+                         fits a 360px phone with the wordmark beside it. */ ?>
                 <?php if (countrySelectorEnabled()): ?>
                 <?php // Real per-country selling (Countries We Sell To): the option list is
                       // exactly the countries enabled there, each priced separately. Picking
@@ -573,10 +627,42 @@ $searchHint = $searchHintNames
                       // charges what was actually typed in for that country. Shown only once
                       // a second country is enabled — one country is no choice to make. ?>
                 <div class="currency-selector-wrapper">
+                    <?php /* The <select> is still the control — it is laid over this
+                             glyph at full size and zero opacity, which is the standard
+                             way to keep a native picker's keyboard handling, its
+                             screen-reader semantics and its mobile wheel while drawing
+                             something else on top. Nothing about the element changes:
+                             same id, same options, same onchange, same aria-label. */ ?>
                     <?php
                     $curCountryCode = currentCountryCode();
 
-                    /* Country CODE only, at every screen size: IN, UK, US.
+                    /* GB is the ISO code and what the database stores; shoppers say UK.
+                       Declared here rather than beside the <option> loop because the
+                       glyph's label and the option labels have to agree — written twice,
+                       the row could read UK while the open list read GB. */
+                    $shortLabel = static function (string $code): string {
+                        return ['GB' => 'UK'][$code] ?? $code;
+                    };
+                    ?>
+                    <span class="dv-country-glyph" aria-hidden="true">
+                        <svg class="dv-icon" viewBox="0 0 24 24" focusable="false"><circle cx="12" cy="12" r="8.6"/><ellipse cx="12" cy="12" rx="3.9" ry="8.6"/><path d="M3.5 12h17"/></svg>
+                        <?php /* The code beside the glyph, so the row says WHICH country
+                                 without opening anything. aria-hidden with the glyph: the
+                                 <select> over it already announces the country and its
+                                 currency through its own label, and a screen reader
+                                 reading "IN" twice is worse than not reading it here. */ ?>
+                        <span class="dv-country-code"><?= htmlspecialchars($shortLabel($curCountryCode)) ?></span>
+                    </span>
+                    <?php
+
+                    /* The option LABELS are still the country codes — IN, UK, US.
+                       ────────────────────────────────────────────────────────
+                       The closed control shows a globe now, so this text is only
+                       ever seen in the open list, where two letters beside a full
+                       title is the right amount. Kept short for the reason below,
+                       which still holds if the glyph is ever swapped back out.
+
+                       Country CODE only, at every screen size: IN, UK, US.
                        ────────────────────────────────────────────────────────
                        This briefly rendered two controls — a long label for desktop
                        and a short one for phones — because a <select> renders one
@@ -590,13 +676,10 @@ $searchHint = $searchHintNames
                        neighbours — at 192px the icon row was pushed left until the
                        search box was drawn straight over the top of it.
 
-                       GB is the ISO code and what the database stores. The option
-                       VALUE stays GB, so nothing downstream changes — only the label
-                       reads UK, because that is what shoppers say. The full country
-                       name and currency stay on the title for anyone hovering. */
-                    $shortLabel = static function (string $code): string {
-                        return ['GB' => 'UK'][$code] ?? $code;
-                    };
+                       The option VALUE stays GB, so nothing downstream changes — only
+                       the label reads UK. The full country name and currency stay on
+                       the title for anyone hovering. $shortLabel is declared above, with
+                       the glyph that uses the same mapping. */
                     $cc = enabledCountries()[$curCountryCode] ?? null;
                     $ctrlTitle = $cc ? $cc['country_name'] . ' — prices in ' . $cc['currency_code'] : '';
                     ?>
@@ -613,20 +696,37 @@ $searchHint = $searchHintNames
                     </select>
                 </div>
                 <?php endif; ?>
-
                 <!-- Multi-Language Translator Widget Slot -->
                 <div class="nav-action-item hide-mobile" id="google_translate_element" style="padding:0;"></div>
 
-                <a href="<?= SITE_URL ?>/contact" class="nav-action-item" title="Contact Us" aria-label="Contact Us">
-                    <i class="fa-solid fa-location-dot"></i>
+                <?php /* One drawn set, one weight.
+                         ────────────────────────────────────────────────────────────
+                         These five were Font Awesome, and Font Awesome Free ships
+                         only Solid and a partial Regular: the heart and the logged-out
+                         user had outline cuts, the bag, the pin, the magnifier and the
+                         logged-in user did not. So the row mixed filled and outlined
+                         glyphs at different optical weights, and it CHANGED as a
+                         shopper logged in — the user icon alone went from outline to
+                         solid. No arrangement of Free classes fixes that.
+
+                         Inline strokes instead: one 22px box, one 1.4 stroke, one
+                         round join, all inheriting currentColor. Consistent by
+                         construction, and they no longer wait on the icon font to
+                         load. Every href, id, aria-label and handler is unchanged. */ ?>
+                <button type="button" class="nav-action-item" onclick="openSearchOverlay()"
+                        aria-label="Search" title="<?= htmlspecialchars($searchHint) ?>">
+                    <svg class="dv-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7.25"/><path d="M16.5 16.5 21 21"/></svg>
+                </button>
+                <a href="<?= SITE_URL ?>/contact" class="nav-action-item hide-mobile" title="Contact Us" aria-label="Contact Us">
+                    <svg class="dv-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 10.4c0 5.6-8 12.1-8 12.1s-8-6.5-8-12.1a8 8 0 0 1 16 0z"/><circle cx="12" cy="10.2" r="2.7"/></svg>
                 </a>
                 <?php if (isset($_SESSION['customer_id'])): ?>
                     <a href="<?= SITE_URL ?>/account" class="nav-action-item" title="My Account" aria-label="My Account">
-                        <i class="fa-solid fa-user"></i>
+                        <svg class="dv-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="7.8" r="3.9"/><path d="M4.6 20.6a7.4 7.4 0 0 1 14.8 0"/></svg>
                     </a>
                 <?php else: ?>
                     <a href="<?= SITE_URL ?>/login" class="nav-action-item" title="Login / Register" aria-label="Login / Register">
-                        <i class="fa-regular fa-user"></i>
+                        <svg class="dv-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="7.8" r="3.9"/><path d="M4.6 20.6a7.4 7.4 0 0 1 14.8 0"/></svg>
                     </a>
                 <?php endif; ?>
                 <?php // Both badges start HIDDEN and are shown by JS only when the
@@ -635,12 +735,12 @@ $searchHint = $searchHintNames
                       // script runs, it would flash even for a shopper who does have
                       // items. The wishlist badge always had this rule in JS; the
                       // cart one did not, which is why the two looked different. ?>
-                <a href="<?= SITE_URL ?>/wishlist" class="nav-action-item" aria-label="Wishlist">
-                    <i class="fa-regular fa-heart"></i>
+                <a href="<?= SITE_URL ?>/wishlist" class="nav-action-item" title="Wishlist" aria-label="Wishlist">
+                    <svg class="dv-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 20.6 4.7 13.3a4.6 4.6 0 0 1 6.5-6.5l.8.8.8-.8a4.6 4.6 0 0 1 6.5 6.5z"/></svg>
                     <span class="action-badge" id="wishlistBadge" style="display:none;">0</span>
                 </a>
-                <button class="nav-action-item btn-cart-trigger" id="cartToggle" onclick="openCart()" aria-label="View cart">
-                    <i class="fa-solid fa-bag-shopping"></i>
+                <button class="nav-action-item btn-cart-trigger" id="cartToggle" onclick="openCart()" title="Shopping Bag" aria-label="View cart">
+                    <svg class="dv-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5.6 7.6h12.8l1 13.1H4.6z"/><path d="M9 9.4V6.9a3 3 0 0 1 6 0v2.5"/></svg>
                     <span class="action-badge" id="cartBadge"<?= $cartCount > 0 ? '' : ' style="display:none;"' ?>><?php echo $cartCount; ?></span>
                 </button>
             </div>
@@ -719,44 +819,23 @@ $searchHint = $searchHintNames
      * ever hidden — the mobile menu below still lists every one, and the
      * collections grid on the homepage is unaffected.
      *
-     * 7 is what fits alongside NEW / JOURNAL / OUR STORY / SALE at the narrowest
-     * desktop width the layout supports, with the longest current collection
-     * name. The CSS also gained flex-wrap as a last-resort net, so an
-     * exceptionally long name drops to a second line rather than off the page.
+     * This cap is now the NO-JAVASCRIPT floor rather than the whole answer. The
+     * bar runs edge to edge instead of inside a 1440px container, and the
+     * measuring script at the foot of this file moves whatever genuinely does
+     * not fit into the same More menu at the width it stops fitting — which a
+     * fixed number cannot do, because it cannot know the viewport, the font or
+     * how long these particular collection names are.
+     *
+     * So the number only has to be a sane starting point: 10 fits a full-width
+     * bar at 1440px with the current names, and anything past that is measured
+     * away on the client. With scripting off the old behaviour is intact — the
+     * first ten stay on the bar, the rest are already in More, and nothing is
+     * unreachable either way.
      */
-    const HEADER_NAV_MAX = 7;
+    const HEADER_NAV_MAX = 10;
     $headerNavParents  = array_slice($headerParents, 0, HEADER_NAV_MAX);
     $headerMoreParents = array_slice($headerParents, HEADER_NAV_MAX);
     ?>
-    <?php
-    // ── Women / Men switch ──────────────────────────────────────────────────
-    // Rendered only when BOTH sides genuinely have stock. A Men tab that leads
-    // to an empty grid is worse than no tab, so an un-launched menswear range
-    // simply does not appear — the same rule the country selector follows.
-    //
-    // Real <a href> links to real addresses, not a JavaScript toggle: /men has
-    // to work for a crawler carrying no cookie, for a shared link and for
-    // middle-click. The cookie only remembers the choice while browsing.
-    $dvShopGender = function_exists('currentShopGender') ? currentShopGender() : 'women';
-    if (function_exists('shopGenderSelectorEnabled') && shopGenderSelectorEnabled()): ?>
-    <?php /* No .hide-mobile: this bar now shows on every screen size. It is the
-             only control that changes what the whole rest of the site means, so
-             it belongs where it can be seen rather than behind the hamburger. */ ?>
-    <div class="audience-switch-bar">
-        <div class="container">
-            <nav class="audience-switch" aria-label="Shop for">
-                <?php /* ?for=women is load-bearing, not decoration. Plain "/" leaves the
-                         dievon_shop_for cookie saying men, so currentShopGender() keeps
-                         answering men and the Women tab does nothing at all — the switch
-                         becomes one-way once a visitor has chosen Men. */ ?>
-                <a href="<?= SITE_URL ?>/?for=women" class="audience-switch-link <?= $dvShopGender === 'women' ? 'is-active' : '' ?>"
-                   <?= $dvShopGender === 'women' ? 'aria-current="page"' : '' ?>>Women</a>
-                <a href="<?= SITE_URL ?>/men" class="audience-switch-link <?= $dvShopGender === 'men' ? 'is-active' : '' ?>"
-                   <?= $dvShopGender === 'men' ? 'aria-current="page"' : '' ?>>Men</a>
-            </nav>
-        </div>
-    </div>
-    <?php endif; ?>
     <div class="bottom-header-bar hide-mobile">
         <div class="container bottom-header-container">
             <ul class="nav-links">
@@ -771,9 +850,18 @@ $searchHint = $searchHintNames
                     $pActive = ($curCat === $pCat['name'] || strpos($curUri, 'category=' . urlencode($pCat['name'])) !== false);
                     ?>
                     <!-- Dynamic Mega Menu for <?= $pName ?> -->
-                    <li class="has-mega-menu">
+                    <?php /* data-nav-collapsible marks this row as one the measuring
+                             script may fold into More when the bar runs out of width.
+                             NEW, JOURNAL, OUR STORY and SALE deliberately carry no such
+                             attribute: they are short, they are not collections, and
+                             SALE in particular must never be the item that disappears.
+                             The name and href are carried here so the script can build
+                             the More entry without reaching into the mega menu. */ ?>
+                    <li class="has-mega-menu" data-nav-collapsible
+                        data-nav-name="<?= $pName ?>"
+                        data-nav-href="<?= htmlspecialchars(categoryUrlByName($pdo, $pCat['name'])) ?>">
                         <a href="<?= htmlspecialchars(categoryUrlByName($pdo, $pCat['name'])) ?>" class="nav-link-item <?= $pActive ? 'active' : '' ?>">
-                            <?= strtoupper($pName) ?> <i class="fa-solid fa-angle-down nav-arrow"></i>
+                            <?= strtoupper($pName) ?><svg class="nav-arrow" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 9.5 6 6 6-6"/></svg>
                         </a>
                         <div class="mega-dropdown">
                             <div class="container mega-dropdown-container">
@@ -807,6 +895,16 @@ $searchHint = $searchHintNames
                                 </div>
                                 <?php endif; ?>
 
+                                <?php /* Three cards, restored on request.
+                                         ────────────────────────────────────────────────
+                                         A pass over this menu cut the row to a single
+                                         photograph, on the reading that one image is
+                                         calmer. It is not what the shop wants here: three
+                                         cards are the layout this menu was designed around
+                                         and what carries the width beside the link columns.
+                                         Back to the original two photographs and the
+                                         counting tile, with the reasoning below intact.
+                                         Do not reduce it again without asking. */ ?>
                                 <?php
                                 /* Two photographs and a third tile that is not a photograph.
                                    ────────────────────────────────────────────────────────
@@ -890,26 +988,37 @@ $searchHint = $searchHintNames
                 <?php // Collections that did not fit on the bar. Same dropdown
                       // styling as a collection's own menu, so it does not read
                       // as a different kind of control. ?>
-                <?php if (!empty($headerMoreParents)): ?>
-                <li class="has-mega-menu">
-                    <a href="<?= SITE_URL ?>/shop" class="nav-link-item">
-                        MORE <i class="fa-solid fa-angle-down nav-arrow"></i>
+                <?php /* Always in the DOM, hidden until it holds something.
+                         ────────────────────────────────────────────────────────────
+                         It used to render only when PHP's fixed cap had spilled some
+                         collections into it. The measuring script needs somewhere to
+                         put what does not fit at the CURRENT width, though, and it
+                         cannot create a menu that was never printed — so the element
+                         is always here and .nav-more-empty hides it while it is
+                         empty. With scripting off and nothing spilled it stays hidden
+                         exactly as before.
+
+                         A narrow panel rather than a full-bleed mega menu: it holds a
+                         single column of names, and a band across the whole page for
+                         four links looks like a mistake. */ ?>
+                <li class="has-mega-menu nav-more<?= empty($headerMoreParents) ? ' nav-more-empty' : '' ?>" id="navMoreItem">
+                    <a href="<?= SITE_URL ?>/shop" class="nav-link-item" aria-haspopup="true">
+                        MORE<svg class="nav-arrow" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 9.5 6 6 6-6"/></svg>
                     </a>
-                    <div class="mega-dropdown">
-                        <div class="container mega-dropdown-container">
+                    <div class="mega-dropdown mega-dropdown-compact">
+                        <div class="mega-dropdown-container">
                             <div class="mega-column">
                                 <div class="mega-heading">More Collections</div>
-                                <ul>
+                                <ul id="navMoreList">
                                     <?php foreach ($headerMoreParents as $mCat): ?>
                                     <li><a href="<?= htmlspecialchars(categoryUrlByName($pdo, $mCat['name'])) ?>"><?= htmlspecialchars($mCat['name']) ?></a></li>
                                     <?php endforeach; ?>
-                                    <li><a href="<?= SITE_URL ?>/shop"><strong>Shop All</strong></a></li>
                                 </ul>
+                                <a class="mega-shop-all" href="<?= SITE_URL ?>/shop">Shop All</a>
                             </div>
                         </div>
                     </div>
                 </li>
-                <?php endif; ?>
 
                 <li><a href="<?= SITE_URL ?>/blog" class="nav-link-item <?= $isJournalAct ? 'active' : '' ?>">JOURNAL</a></li>
                 <li><a href="<?= SITE_URL ?>/about" class="nav-link-item <?= $isStoryAct ? 'active' : '' ?>">OUR STORY</a></li>
@@ -1036,7 +1145,13 @@ $searchHint = $searchHintNames
             <?php endif; ?>
             
             <button class="btn-mobile-action-secondary" onclick="closeMobileMenu(); openCart();">
-                <i class="fa-solid fa-bag-shopping"></i> Shopping Bag (<span id="mobileCartCount"><?php echo $cartCount; ?></span>)
+                <?php /* The brackets belong to the count, not to the sentence.
+                         Written as "Shopping Bag (<span>0</span>)" they were literal
+                         text, so when the script hid the span at zero — correct for
+                         the round badge it shares its update with — the button read
+                         "Shopping Bag ()". They are on the span via CSS now, so they
+                         appear and disappear with the number it holds. */ ?>
+                <i class="fa-solid fa-bag-shopping"></i> Shopping Bag <span class="drawer-bag-count" id="mobileCartCount"<?= $cartCount > 0 ? '' : ' hidden' ?>><?php echo $cartCount; ?></span>
             </button>
         </div>
 
@@ -1112,6 +1227,107 @@ function toggleMobileCategoryMenu(el) {
         });
     }
 }
+
+/* Fold whatever does not fit into More — measured, not guessed.
+ * ─────────────────────────────────────────────────────────────────────────────
+ * The PHP above keeps the first HEADER_NAV_MAX collections on the bar and puts
+ * the rest in More. That is a fixed number, and the thing it is trying to
+ * predict is not fixed: how many fit depends on the viewport, on how long these
+ * particular collection names are, and on whether Marcellus has finished
+ * loading — a serif at the same size is wider than the fallback, so the row
+ * grows after the font arrives.
+ *
+ * Guessing low wastes a full-width bar. Guessing high overflows it. So this
+ * measures instead: hide the last collection, re-measure, repeat, until the row
+ * fits. Each one hidden gains a plain text entry in the More panel, so nothing
+ * becomes unreachable — and the mobile drawer lists every category regardless.
+ *
+ * Only rows carrying data-nav-collapsible are eligible. NEW, JOURNAL, OUR STORY
+ * and SALE are not: they are short, and SALE disappearing into a submenu is the
+ * one thing this must never do.
+ *
+ * The row is left wrapping until this script takes over. That is deliberate —
+ * with scripting off, a long name still drops to a second line rather than off
+ * the side of the page, which is what the CSS net was there for.
+ */
+(function () {
+    var list     = document.querySelector('.bottom-header-bar .nav-links');
+    var moreItem = document.getElementById('navMoreItem');
+    var moreList = document.getElementById('navMoreList');
+    if (!list || !moreItem || !moreList) { return; }
+
+    var items = Array.prototype.slice.call(list.querySelectorAll('li[data-nav-collapsible]'));
+    if (!items.length) { return; }
+
+    // Whether More was empty as PHP printed it. Restoring has to return it to
+    // that state, not to "visible", or it would stay on the bar as an empty menu
+    // after a window is widened again.
+    var startedEmpty = moreItem.classList.contains('nav-more-empty');
+
+    // Switches the row from wrapping to a single line. Only from here on, so the
+    // no-JavaScript net above stays intact.
+    list.classList.add('nav-links-managed');
+
+    function overflows() {
+        return (list.scrollWidth - list.clientWidth) > 1;
+    }
+
+    function layout() {
+        // Always start from the full row: what fits at 1200px is not what fits at
+        // 1600px, and collapsing further from an already-collapsed state can only
+        // ever remove more.
+        for (var i = 0; i < items.length; i++) { items[i].hidden = false; }
+        var clones = moreList.querySelectorAll('li[data-nav-clone]');
+        for (var c = 0; c < clones.length; c++) { clones[c].parentNode.removeChild(clones[c]); }
+        moreItem.classList.toggle('nav-more-empty', startedEmpty);
+
+        // Below 992px the bar is replaced by the drawer, which lists everything.
+        if (!window.matchMedia('(min-width: 992px)').matches) { return; }
+
+        var folded = [];
+        var n = items.length - 1;
+        while (n >= 0 && overflows()) {
+            // More costs width of its own, so it has to be on the bar before the
+            // next measurement or the last item folded would be one too few.
+            moreItem.classList.remove('nav-more-empty');
+            items[n].hidden = true;
+            folded.push(items[n]);
+            n--;
+        }
+        if (!folded.length) { return; }
+
+        folded.reverse();
+        var frag = document.createDocumentFragment();
+        for (var f = 0; f < folded.length; f++) {
+            var li = document.createElement('li');
+            li.setAttribute('data-nav-clone', '');
+            var a = document.createElement('a');
+            a.href = folded[f].getAttribute('data-nav-href') || '#';
+            // The raw name, not the bar's uppercase label: inside the panel these
+            // sit alongside whatever PHP already spilled there, and those are
+            // printed as stored. Two cases in one short list reads as a fault.
+            a.textContent = folded[f].getAttribute('data-nav-name') || '';
+            li.appendChild(a);
+            frag.appendChild(li);
+        }
+        // Ahead of anything PHP already spilled, so the panel reads in the same
+        // order as the bar it came off.
+        moreList.insertBefore(frag, moreList.firstChild);
+    }
+
+    var pending = false;
+    function schedule() {
+        if (pending) { return; }
+        pending = true;
+        window.requestAnimationFrame(function () { pending = false; layout(); });
+    }
+
+    layout();
+    window.addEventListener('resize', schedule, { passive: true });
+    // Marcellus lands after first paint and widens every label on the bar, so the
+    // measurement taken before it arrives is of the fallback face, not this one.
+    if (document.fonts && document.fonts.ready) { document.fonts.ready.then(schedule).catch(function () {}); }
+})();
 </script>
 
 

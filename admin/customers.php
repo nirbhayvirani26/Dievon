@@ -336,7 +336,7 @@ require_once __DIR__ . '/../config/config.php';
                      data-name="<?= htmlspecialchars(mb_strtolower($inq['name'] ?? '')) ?>"
                      data-when="<?= $inqWhen ?>"
                      data-haystack="<?= htmlspecialchars($inqHay) ?>"
-                     style="background:var(--bg-surface-soft); border-radius:8px; padding:18px 20px; border:1px solid var(--border-light); position:relative;">
+                     style="background:var(--bg-surface-soft); padding:18px 20px; border:1px solid var(--border-light); position:relative;">
                     <form method="POST" action="customers.php" style="position:absolute; top:16px; right:16px;" onsubmit="return dvConfirmForm(this,'Delete this inquiry?');">
                         <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
                         <input type="hidden" name="delete_inquiry" value="<?= $inq['id'] ?>">
@@ -345,7 +345,7 @@ require_once __DIR__ . '/../config/config.php';
                         </button>
                     </form>
                     <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
-                        <div style="width:36px; height:36px; border-radius:50%; background:#2b080f; color:#ffffff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px;">
+                        <div style="width:36px; height:36px; background:#2b080f; color:#ffffff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px;">
                             <?= strtoupper(mb_substr($inq['name'], 0, 1)) ?>
                         </div>
                         <div>
@@ -359,7 +359,7 @@ require_once __DIR__ . '/../config/config.php';
                             <span>📞 <?= htmlspecialchars($inq['phone']) ?></span>
                         <?php endif; ?>
                     </div>
-                    <div style="background:#ffffff; border-radius:6px; padding:12px 14px; font-size:13px; color:#334155; border-left:3px solid #2b080f;">
+                    <div style="background:#ffffff; padding:12px 14px; font-size:13px; color:#334155; border-left:3px solid #2b080f;">
                         <?= nl2br(htmlspecialchars($inq['message'])) ?>
                     </div>
                 </div>
