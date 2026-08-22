@@ -2284,107 +2284,83 @@ html {
     }
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   HOMEPAGE HERO on small screens — stacked, not cropped
-   ───────────────────────────────────────────────────────────────────────────
-   Squeezing the desktop split onto a phone would give a ~180px-wide photograph
-   beside a ~180px column of type: the garment unreadable and the headline
-   breaking every second word. The brief asked for the mobile banner to be
-   adjusted rather than badly cropped, and this is what that means — the two
-   halves become two rows.
+/* ═════════════════════════════════════════════════════════════════════════
+   HOMEPAGE HERO on small screens — the words stay ON the banner
+   ─────────────────────────────────────────────────────────────────────────
+   This was two rows for a while: the photograph, then the copy on an ivory
+   panel below it. That was the safe answer while the scrim was light, because
+   a light wash cannot rescue dark type over a bright portrait crop.
 
-   The picture takes a 4:5 portrait, which is the shape fashion photography is
-   actually composed in, so a landscape 1600x900 upload is cropped to its centre
-   rather than letterboxed. object-position keeps the top of the frame for the
-   same reason it does on desktop: on a tall crop it is the hem that should go,
-   not the face.
+   With the scrim dark the reason is gone. White type over black reads on any
+   upload, at any crop, so the phone can do what the desktop does and what the
+   live site has always done — the copy sits inside the banner.
 
-   Height is auto below the picture. A fixed vh on a phone is how text ends up
-   clipped when a headline wraps to three lines or the browser chrome moves.
-   ═══════════════════════════════════════════════════════════════════════════ */
+   Live puts it at bottom-left, 5% in, and that is right for a portrait frame:
+   the model occupies the middle of the crop and the quiet ground is underneath.
+   So the panel keeps its full-bleed box and pushes its contents to the bottom,
+   and the gradient turns through 90 degrees — bottom-up here, left-to-right on
+   desktop — because that is where the words moved to.
+   ═════════════════════════════════════════════════════════════════════════ */
 @media (max-width: 991px) {
-    .hero-slider-section { height: auto !important; }
+    /* 65vh is live's own hero height on a phone. The floor is for a short
+       landscape viewport, where 65vh is not enough to hold the type and the
+       buttons. */
+    .hero-slider-section {
+        height: 65vh !important;
+        min-height: 460px;
+    }
     .slider-container,
     .slider-container.owl-loaded .owl-item,
-    .slider-container.owl-loaded .slide { height: auto !important; }
+    .slider-container.owl-loaded .slide { height: 100% !important; }
 
-    /* Desktop overlays the type on the photograph. A phone cannot: the copy
-       space a 1600x900 banner carries on its left is gone the moment the frame
-       is cropped to portrait, and laying six lines of type over a model at
-       390px is unreadable however it is tinted. So the two go back to being two
-       rows here — the picture, then the words on ivory.
+    .slide { position: relative; height: 100% !important; }
 
-       .slide-panel is absolutely positioned for the overlay, so it has to be
-       returned to the flow explicitly; the same for .slide-media. */
-    .slide {
-        display: grid !important;
-        grid-template-columns: 1fr !important;
-        grid-template-rows: auto auto;
-        height: auto !important;
-        position: relative;
-    }
-    .slide-media {
-        position: relative !important;
-        inset: auto !important;
-        grid-column: 1 !important;
-        grid-row: 1 !important;
-        aspect-ratio: 4 / 5;
-        max-height: 62vh;
-        width: 100%;
-    }
+    /* object-position keeps the top of the frame: on a tall crop of a landscape
+       upload it is the hem that should go, not the face. */
+    .slide-media { position: absolute; inset: 0; }
+    .slide-img { object-position: center 18%; }
+
+    /* Bottom-up, mirroring live's overlay — but held near full strength further
+       up the frame than live holds it.
+       ───────────────────────────────────────────────────────────────────────
+       Live only has to cover one line and one button at bottom:18%. This hero
+       stacks an eyebrow, a headline, two lines of subtext and two buttons, and
+       on a 390px screen that column is about 45% of the frame. So the scrim has
+       to stay heavy to roughly 55% and only then fall away.
+
+       The numbers are set for the worst ground there is, not for the banners
+       uploaded today: a pure white studio shot. White type needs the ground at
+       or below about 118 to clear 4.5:1, and 0.60 alpha over #fff gives 102.
+       Every stop up to 55% is at or above that, so no upload can break it —
+       which is the whole reason the scrim went dark in the first place. Above
+       78% it is almost gone, so the model's face keeps its own light. */
     .slide-panel {
-        position: relative !important;
-        inset: auto !important;
-        background: var(--bg-hero) !important;   /* no wash needed off the photo */
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: flex-end;
+        background: linear-gradient(
+            to top,
+            rgba(0, 0, 0, 0.85) 0%,
+            rgba(0, 0, 0, 0.76) 30%,
+            rgba(0, 0, 0, 0.60) 55%,
+            rgba(0, 0, 0, 0.22) 78%,
+            rgba(0, 0, 0, 0.04) 100%
+        );
+        padding: 0 var(--dv-gutter) clamp(54px, 13vw, 76px);
+        pointer-events: none;
+    }
+    .slide-content {
+        max-width: 100%;
+        margin-left: 0;
         pointer-events: auto;
     }
-    .slide-panel {
-        grid-column: 1 !important;
-        grid-row: 2 !important;
-        display: flex;
-        align-items: center;
-        /* --dv-gutter, not a hardcoded 16px: the panel is full bleed, so without
-           it the hero headline sat 16px from the edge while the section headings
-           below stepped 32 / 24 / 16 / 12 with the ladder. Measured before the
-           fix: 16px against 32px at 900, and 16 against 12 at 360 — adrift in
-           both directions. */
-        padding: clamp(26px, 7vw, 40px) var(--dv-gutter) clamp(32px, 8vw, 46px);
-    }
-    .slide-content { max-width: 100%; margin-left: 0; }
-
-    /* Desktop's type is white with a shadow because it lies on a black scrim
-       over the photograph. Here the panel is ivory and the picture is above it,
-       so all of that has to come back off — white on cream is nothing, and a
-       drop shadow on a flat panel is the kind of ornament this build removed
-       everywhere else. Ink, no shadow, same hierarchy. */
-    .slide-content { color: var(--text-primary); }
-    .slide-eyebrow {
-        color: var(--color-accent-ink);
-        text-shadow: none;
-    }
     .hero-slider-section .slide-content h1,
-    .hero-slider-section .slide-content h2 {
-        color: var(--text-primary) !important;
-        text-shadow: none !important;
-    }
+    .hero-slider-section .slide-content h2 { font-size: clamp(30px, 8.5vw, 44px) !important; }
     .hero-slider-section .slide-content p {
-        color: var(--text-primary);
-        text-shadow: none;
-    }
-    .hero-slider-section .slide-content h1,
-    .hero-slider-section .slide-content h2 { font-size: clamp(30px, 9vw, 44px) !important; }
-    .hero-slider-section .slide-content p { font-size: 13.5px; max-width: 34rem; }
-
-    /* Same reason: filled dark, outlined ink — the desktop pair is inverted for
-       the scrim and both would disappear against cream. */
-    .hero-slider-section .btn-hero-primary {
-        background: var(--text-primary);
-        border-color: var(--text-primary);
-        color: #ffffff !important;
-    }
-    .hero-slider-section .btn-hero-ghost {
-        border-color: rgba(58, 12, 27, 0.4);
-        color: var(--text-primary) !important;
+        font-size: 13.5px;
+        max-width: 30rem;
+        margin-bottom: clamp(20px, 4vw, 28px);
     }
 
     /* Tablet has the width for two buttons side by side. A phone does not:
@@ -2399,39 +2375,39 @@ html {
        photograph is clutter on a screen this size. The dots stay. */
     .hero-slider-section .hero-arrow { display: none; }
 
-    /* The dots sit on the seam between the picture and the panel.
-       min() rather than a vh guess: the pane's height is aspect-ratio 4/5 of the
-       viewport width UNTIL that exceeds the 62vh cap, and min() is exactly that
-       rule, so the dots track the real edge at every size instead of at the one
-       width the guess was written for. */
+    /* Back inside the frame, below the buttons — the seam they used to sit on
+       does not exist any more. */
     .hero-slider-section .hero-dots-container {
-        bottom: auto;
-        top: calc(min(100vw * 1.25, 62vh) - 5px);
+        top: auto;
+        bottom: 20px;
         left: 50%;
         transform: translateX(-50%);
     }
-    /* On the seam the dots sit half on the photograph and half on the ivory.
-       Desktop's white-on-scrim dots vanish into the cream half, so they go back
-       to ink — and the ring is dropped, because against cream it draws a halo
-       rather than separating anything. */
-    .hero-slider-section .slide-dot {
-        border-color: rgba(58, 12, 27, 0.45);
-        box-shadow: none;
-    }
-    .hero-slider-section .slide-dot.active {
-        background: var(--text-primary);
-        border-color: var(--text-primary);
-    }
 }
 
+/* Stacked, but not edge to edge: two full-bleed buttons over a photograph read
+   as a bar stuck to the bottom of it. Capped, they stay a left-aligned pair. */
 @media (max-width: 640px) {
-    .hero-slider-section .slide-actions { flex-direction: column; align-items: stretch; }
+    .hero-slider-section .slide-actions {
+        flex-direction: column;
+        align-items: stretch;
+        max-width: 260px;
+    }
     .hero-slider-section .btn-hero-primary,
     .hero-slider-section .btn-hero-ghost { flex: 0 0 auto; width: 100%; font-size: 10.5px; }
 }
 
-/* Very narrow: a taller crop, so the seam the dots sit on moves with it. */
+/* Very narrow: the same column of type over a shorter frame, so it occupies a
+   larger share of it and the scrim has to hold higher still. */
 @media (max-width: 380px) {
-    .slide-media { aspect-ratio: 3 / 4; }
-    .hero-slider-section .hero-dots-container { top: calc(min(100vw * 1.3333, 62vh) - 5px); }
+    .slide-panel {
+        background: linear-gradient(
+            to top,
+            rgba(0, 0, 0, 0.87) 0%,
+            rgba(0, 0, 0, 0.80) 34%,
+            rgba(0, 0, 0, 0.64) 62%,
+            rgba(0, 0, 0, 0.24) 82%,
+            rgba(0, 0, 0, 0.04) 100%
+        );
+    }
 }

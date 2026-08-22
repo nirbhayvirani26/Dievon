@@ -10053,7 +10053,10 @@ input.chk-input-error:focus {
     font-weight: 600;
     letter-spacing: 0.28em;
     text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.82);
+    /* 0.88, not 0.82: at 10px this is small text, so it needs 4.5:1, and the
+       thinnest part of the mobile scrim over a white studio banner leaves it
+       about 4.7:1 at 0.82 — passing, but with nothing to spare. */
+    color: rgba(255, 255, 255, 0.88);
     margin-bottom: clamp(14px, 1.6vw, 22px);
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
 }
