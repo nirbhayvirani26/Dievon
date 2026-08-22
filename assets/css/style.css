@@ -9568,10 +9568,14 @@ input.chk-input-error:focus {
     transform: translateY(10px);
     transition: opacity 0.26s var(--dv-ease), visibility 0.26s var(--dv-ease), transform 0.26s var(--dv-ease) !important;
 }
-.navbar-luxury .mega-dropdown-container {
-    grid-template-columns: minmax(190px, 230px) minmax(190px, 230px) minmax(0, 1fr);
-    gap: clamp(40px, 5vw, 96px);
-}
+/* The container's own geometry is left alone.
+   ─────────────────────────────────────────────────────────────────────────────
+   This block briefly set grid-template-columns and a fluid gap here. Both were
+   wrong: .mega-dropdown-container is display:flex further up this file — a
+   deliberate change, because with fixed grid tracks a collection that has no
+   fabrics dropped its photographs into the middle 220px track and left the
+   third empty. So the tracks were inert, and the fluid gap only stretched a row
+   already tuned to 48px. Spacing, type and colour below; layout stays as it is. */
 .navbar-luxury .mega-column .mega-heading {
     font-family: var(--font-body), sans-serif;
     font-size: 9.5px;
@@ -9611,35 +9615,23 @@ input.chk-input-error:focus {
 }
 .navbar-luxury .mega-shop-all:hover { color: var(--dv-nav-hover); }
 
-/* The single photograph. Portrait, because that is the shape the product
-   photography actually is. */
-.navbar-luxury .mega-promo-column {
-    width: 100%;
-    max-width: 320px;
-    justify-self: end;
-}
-.navbar-luxury .mega-promo-card {
-    display: block;
-    height: auto;
-    aspect-ratio: 4 / 5;
-    border-radius: 0;
-    overflow: hidden;
-    background: var(--bg-surface-soft);
-}
-.navbar-luxury .mega-promo-card img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 0.9s var(--dv-ease);
-}
-.navbar-luxury .mega-promo-card:hover img { transform: scale(1.03); }
-.navbar-luxury .mega-promo-caption {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 16px;
-    margin-top: 14px;
-}
+/* The three-card row, kept.
+   ─────────────────────────────────────────────────────────────────────────────
+   This block briefly capped the promo column at 320px and gave the card a 4:5
+   box, which reduced the row to one photograph. That is not what the shop
+   wants: three cards are what this menu is built around and what carries the
+   width beside the link columns. The sizing rules that do that work — the flex
+   column, the 247px auto-columns, the 3:4 cards, the burgundy counting tile,
+   and the responsive drops to two cards under 1180px — are all further up this
+   file and are left untouched.
+
+   What stays here is finish only: square corners in place of the radius token,
+   and a slower, shallower hover so three moving images do not fight each
+   other. */
+.navbar-luxury .mega-promo-card { border-radius: 0; }
+.navbar-luxury .mega-promo-card img { transition: transform 0.9s var(--dv-ease); }
+.navbar-luxury .mega-promo-card:hover img,
+.navbar-luxury .mega-promo-card:focus-visible img { transform: scale(1.03); }
 .navbar-luxury .mega-promo-caption .mega-promo-title {
     font-family: var(--font-heading);
     font-size: 15px;
@@ -9648,12 +9640,6 @@ input.chk-input-error:focus {
     color: var(--dv-nav-ink);
     margin: 0;
 }
-.navbar-luxury .mega-promo-meta {
-    font-size: 11px;
-    color: var(--dv-nav-ink-soft);
-    letter-spacing: 0.04em;
-    white-space: nowrap;
-}
 .navbar-luxury .btn-mega-shop {
     font-size: 10px;
     font-weight: 600;
@@ -9661,7 +9647,10 @@ input.chk-input-error:focus {
     color: var(--dv-nav-ink);
     border-bottom: 1px solid var(--dv-nav-ink);
     padding-bottom: 2px;
-    gap: 0;
+    /* 0 here closed the gap onto the arrow that follows the words in the
+       markup, so it read as "SHOP NOW→". The tracking already pushes the last
+       letter right; the arrow needs its own space on top of that. */
+    gap: 8px;
 }
 .navbar-luxury .btn-mega-shop:hover {
     color: var(--dv-nav-hover);

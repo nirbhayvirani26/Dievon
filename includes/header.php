@@ -842,27 +842,53 @@ $searchHint = $searchHintNames
                                 </div>
                                 <?php endif; ?>
 
+                                <?php /* Three cards, restored on request.
+                                         ────────────────────────────────────────────────
+                                         A pass over this menu cut the row to a single
+                                         photograph, on the reading that one image is
+                                         calmer. It is not what the shop wants here: three
+                                         cards are the layout this menu was designed around
+                                         and what carries the width beside the link columns.
+                                         Back to the original two photographs and the
+                                         counting tile, with the reasoning below intact.
+                                         Do not reduce it again without asking. */ ?>
                                 <?php
-                                /* One photograph, not three.
+                                /* Two photographs and a third tile that is not a photograph.
                                    ────────────────────────────────────────────────────────
-                                   This was a row of three cards: two product shots and a
-                                   third tile carrying a piece count, built that way so the
-                                   row would reach across the menu without any card having
-                                   to stretch. Filling width was the whole reason for it.
+                                   A single card 802 x 210 was a 3.8:1 letterbox holding
+                                   portrait photography, so object-fit: cover kept a strip of
+                                   background and threw the model away. Upright cards match
+                                   the shape the pictures actually are.
 
-                                   The menu is not trying to fill that width any more. Its
-                                   job is a calm column of links with one picture beside
-                                   them, so the second shot and the counting tile were
-                                   solving a problem the layout no longer has — and three
-                                   competing images next to a list of names is the busiest
-                                   thing a luxury menu can do.
+                                   Three of them is what makes the row reach across the menu
+                                   without any card having to grow — but a third PHOTOGRAPH
+                                   cannot be relied on. Most collections here have exactly two
+                                   distinct product images, and galleries are empty, so the
+                                   third slot would vanish on nearly every menu and the empty
+                                   band would come straight back.
 
-                                   The count was the one piece of information the tile
-                                   carried that the photographs could not, so it moves into
-                                   the caption as a line of text and nothing is lost. */
-                                $pAllImgs   = $categoryPromos[$pId] ?? [];
-                                $pHeroImg   = !empty($pAllImgs[0])
-                                    ? SITE_URL . '/uploads/products/' . rawurlencode($pAllImgs[0])
+                                   So the third slot is a designed tile instead: the piece
+                                   count and a way in. It is always available, it never
+                                   duplicates a photograph, and it tells the shopper something
+                                   the pictures cannot. */
+                                $pAllImgs = $categoryPromos[$pId] ?? [];
+                                $pPromoImgs = [];
+                                foreach (array_slice($pAllImgs, 0, 2) as $pImg) {
+                                    $pPromoImgs[] = SITE_URL . '/uploads/products/' . rawurlencode($pImg);
+                                }
+                                /* The third slot always carries a photograph.
+                                   ────────────────────────────────────────────────────────
+                                   A flat panel beside two photographs reads as an image that
+                                   failed to load. A third distinct photo is used whenever the
+                                   collection has one — but most hold only two, so rather than
+                                   fall back to a blank block it reuses the first under a heavy
+                                   burgundy wash. At that strength the picture is texture, not
+                                   a recognisable repeat, and the tile still reads as its own
+                                   panel. The moment a third product is listed the wash lifts
+                                   and it becomes a real third photograph on its own. */
+                                $pTileSrc = $pAllImgs[2] ?? ($pAllImgs[0] ?? '');
+                                $pTileImg = $pTileSrc !== ''
+                                    ? SITE_URL . '/uploads/products/' . rawurlencode($pTileSrc)
                                     : '';
                                 $pShopUrl   = categoryUrlByName($pdo, $pCat['name']);
                                 $pLiveCount = (int)($subtreeCounts[$pId] ?? 0);
@@ -872,18 +898,32 @@ $searchHint = $searchHintNames
                                           that has nothing in it, and the same stand-in appeared under
                                           several menus at once. With no products to show, the menu
                                           simply shows its links — which is the honest answer. */ ?>
-                                <?php if ($pHeroImg): ?>
+                                <?php if ($pPromoImgs): ?>
                                 <div class="mega-promo-column">
-                                    <a href="<?= htmlspecialchars($pShopUrl) ?>" class="mega-promo-card"
-                                       aria-label="Shop <?= htmlspecialchars($pName) ?>">
-                                        <img src="<?= htmlspecialchars($pHeroImg) ?>" alt="<?= htmlspecialchars($pName) ?>" loading="lazy">
-                                    </a>
+                                    <div class="mega-promo-grid">
+                                        <?php foreach ($pPromoImgs as $pIdx => $pSrc): ?>
+                                        <a href="<?= htmlspecialchars($pShopUrl) ?>" class="mega-promo-card"
+                                           aria-label="Shop <?= htmlspecialchars($pName) ?>"<?= $pIdx ? ' tabindex="-1" aria-hidden="true"' : '' ?>>
+                                            <img src="<?= htmlspecialchars($pSrc) ?>" alt="<?= htmlspecialchars($pName) ?>" loading="lazy">
+                                        </a>
+                                        <?php endforeach; ?>
+
+                                        <a href="<?= htmlspecialchars($pShopUrl) ?>"
+                                           class="mega-promo-card mega-promo-tile<?= $pTileImg ? ' mega-promo-tile--photo' : '' ?>"
+                                           aria-label="View all <?= htmlspecialchars($pName) ?>">
+                                            <?php if ($pTileImg): ?>
+                                            <img src="<?= htmlspecialchars($pTileImg) ?>" alt="" loading="lazy">
+                                            <?php endif; ?>
+                                            <span class="mega-promo-tile-body">
+                                                <span class="mega-promo-tile-count"><?= $pLiveCount ?></span>
+                                                <span class="mega-promo-tile-label"><?= $pLiveCount === 1 ? 'piece' : 'pieces' ?></span>
+                                                <span class="mega-promo-tile-cta">View all <i class="fa-solid fa-arrow-right"></i></span>
+                                            </span>
+                                        </a>
+                                    </div>
                                     <div class="mega-promo-caption">
                                         <div class="mega-promo-title"><?= htmlspecialchars($pName) ?> Collection</div>
-                                        <?php if ($pLiveCount > 0): ?>
-                                        <div class="mega-promo-meta"><?= $pLiveCount ?> <?= $pLiveCount === 1 ? 'piece' : 'pieces' ?></div>
-                                        <?php endif; ?>
-                                        <a href="<?= htmlspecialchars($pShopUrl) ?>" class="btn-mega-shop">Shop Now</a>
+                                        <a href="<?= htmlspecialchars($pShopUrl) ?>" class="btn-mega-shop">Shop Now <i class="fa-solid fa-arrow-right"></i></a>
                                     </div>
                                 </div>
                                 <?php endif; ?>
