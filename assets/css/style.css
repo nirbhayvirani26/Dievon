@@ -9977,82 +9977,72 @@ input.chk-input-error:focus {
 
 /* 100vh was too tall to be elegant — on a laptop the banner WAS the page and
    nothing below it was ever suggested. A clamp keeps it generous without
-   swallowing the fold, and 88vh caps it on a short window. */
+   swallowing the fold. */
 .hero-slider-section {
     height: clamp(520px, 78vh, 760px) !important;
     background: var(--bg-hero);
 }
 
+/* The words sit ON the photograph, in its own negative space.
+   ─────────────────────────────────────────────────────────────────────────────
+   This was briefly a split — an ivory panel beside the picture — because the two
+   banners on the shop today measure luminance 78 and 196 in the zone the text
+   falls in, so no single ink colour reads on both. A panel made legibility
+   independent of the upload.
+
+   The design asked for is the overlay, and it is the better-looking of the two
+   when the photograph is shot for it: nothing between the reader and the image.
+   The cost is that it moves a requirement from the code to the camera — a hero
+   image now has to carry light, quiet copy space on its left third, the way the
+   reference shot does. One of the two live banners does; the other does not, and
+   dark type on it will not read.
+
+   The wash below is the compromise, not a decoration: flat ivory at low opacity
+   over the left of the frame, fading out well before the model. On a banner shot
+   with a pale wall it is imperceptible — that ground is already this colour. On
+   a dark one it lifts the type enough to be read. It is the only gradient in the
+   header or the hero and it exists to buy that tolerance back. */
 .slide {
-    display: grid;
-    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
-    background-image: none;   /* the media pane carries it now */
+    position: relative;
+    display: block;
+    background-image: none;
 }
-/* The three default slides carried their picture as a background on .slide
-   itself. The picture lives in its own pane now, so the rules move with it —
-   otherwise the fallback banners render as an empty cream rectangle, which is
-   exactly what happened the first time this was wired up. */
+.slide-media { position: absolute; inset: 0; overflow: hidden; background: var(--bg-surface-soft); background-size: cover; background-position: center; }
 .slide-1 .slide-media { background-image: url('../../uploads/products/georgette_kurti_1784414698877.jpg'); }
 .slide-2 .slide-media { background-image: url('../../uploads/products/silk_3_piece_1784414705496.jpg'); }
 .slide-3 .slide-media { background-image: url('../../uploads/products/linen_coord_1784414712638.jpg'); }
-/* The panel first in the source, the picture second — but drawn the other way
-   round, because the eye should meet the garment and the words together and a
-   right-hand image is the convention this catalogue's photography is shot for
-   (the model sits right of centre in both live banners). */
+
+.slide-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 22%; z-index: 0; }
+
 .slide-panel {
-    grid-column: 1;
-    grid-row: 1;
+    position: absolute;
+    inset: 0;
+    z-index: 2;
     display: flex;
     align-items: center;
-    background: var(--bg-hero);
-    /* The left padding is the container's own gutter, so the headline starts on
-       the same pixel as "Dievon Collections" and every section heading below it.
-       The hero is not inside .container — it is full bleed — so the value is
-       restated rather than inherited; 4.5rem is the same number, and the same
-       clamp shape the container ladder steps through. */
-    /* The left padding tracks where .container's content edge actually falls,
-       not just the gutter value. Below 1440 the container is full width and its
-       edge IS the gutter, so max() picks that. Above 1440 the container stops
-       growing and centres, so its content edge moves inward by half the
-       overflow — at 1920 that is 240px + the gutter = 312px, while a plain
-       gutter would leave the hero headline 240px to the left of every heading
-       under it. max() of the two is the container's edge at every width. */
+    background: linear-gradient(
+        to right,
+        rgba(250, 246, 240, 0.90) 0%,
+        rgba(250, 246, 240, 0.82) 24%,
+        rgba(250, 246, 240, 0.48) 44%,
+        rgba(250, 246, 240, 0.12) 58%,
+        rgba(250, 246, 240, 0) 70%
+    );
+    /* Left padding tracks the container's real content edge — see --dv-gutter.
+       Below 1440 that is the gutter; above it the container centres, so the edge
+       moves inward by half the overflow and the headline follows it. */
     padding-block: clamp(32px, 5vw, 80px);
     padding-right: clamp(24px, 4vw, 64px);
     padding-left: max(var(--dv-gutter), calc((100vw - 1440px) / 2 + var(--dv-gutter)));
-    z-index: 2;
+    pointer-events: none;   /* the slide stays draggable; the links opt back in */
 }
-.slide-media {
-    grid-column: 2;
-    grid-row: 1;
-    position: relative;
-    overflow: hidden;
-    background: var(--bg-surface-soft);
-    background-size: cover;
-    background-position: center;
-}
+.slide-content { pointer-events: auto; }
 
-/* The image fills its own pane rather than the whole slide. object-position
-   keeps the top of the frame — where the face is in portrait fashion
-   photography — so a tall pane crops the hem, not the model. */
-.slide-img {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    object-position: center 18%;
-    z-index: 0;
-}
-
-/* Text sits in the flow of the panel now, not absolutely against the slide. */
 .slide-content {
     position: static;
     left: auto;
     bottom: auto;
     max-width: 30rem;
-    /* Flush left, not pushed to the panel's inner edge: the headline lines up
-       with the page's gutter and with every heading down the homepage. */
     margin-left: 0;
     color: var(--text-primary);
     text-align: left;
@@ -10081,7 +10071,11 @@ input.chk-input-error:focus {
     line-height: 1.02 !important;
     letter-spacing: -0.005em !important;
     text-transform: none !important;
-    color: var(--color-primary) !important;
+    /* Near-black, as the reference has it, rather than the brand burgundy: over
+       a photograph the burgundy reads as a colour choice competing with the
+       garment, where ink reads as type. --text-primary is #3a0c1b, which is a
+       very dark burgundy — on brand, but it behaves like black at this size. */
+    color: var(--text-primary) !important;
     margin: 0 0 clamp(16px, 1.8vw, 26px) !important;
     text-shadow: none !important;
 }
@@ -10091,7 +10085,13 @@ input.chk-input-error:focus {
     font-weight: 400;
     line-height: 1.75;
     letter-spacing: 0.01em;
-    color: var(--text-muted);
+    /* Not --text-muted. That token is a warm grey tuned for body copy on a flat
+       cream page, and over a photograph it measured 1.94:1 against a 4.5:1
+       requirement — the line was legible in the reference only because that
+       shot's backdrop is a plain wall. This is the same ink as the headline at a
+       lower weight, so it still reads as secondary without depending on the
+       picture behind it. */
+    color: var(--text-primary);
     max-width: 27rem;
     margin: 0 0 clamp(26px, 2.6vw, 38px);
     text-shadow: none;
@@ -10119,25 +10119,27 @@ input.chk-input-error:focus {
     transform: none;
 }
 .hero-slider-section .btn-hero-primary {
-    background: var(--color-primary);
-    border: 1px solid var(--color-primary);
+    background: var(--text-primary);
+    border: 1px solid var(--text-primary);
     color: #ffffff !important;
 }
 .hero-slider-section .btn-hero-primary:hover {
-    background: var(--color-primary-dark);
-    border-color: var(--color-primary-dark);
+    background: var(--color-primary);
+    border-color: var(--color-primary);
     box-shadow: none;
     transform: none;
 }
+/* Outlined, on the photograph. The border is the ink at 40% rather than a grey,
+   so it stays related to the type beside it instead of reading as a stray rule. */
 .hero-slider-section .btn-hero-ghost {
     background: transparent;
-    border: 1px solid rgba(81, 17, 38, 0.35);
-    color: var(--color-primary) !important;
+    border: 1px solid rgba(58, 12, 27, 0.4);
+    color: var(--text-primary) !important;
 }
 .hero-slider-section .btn-hero-ghost:hover {
-    background: transparent;
-    border-color: var(--color-primary);
-    color: var(--color-primary-dark) !important;
+    background: rgba(255, 255, 255, 0.35);
+    border-color: var(--text-primary);
+    color: var(--text-primary) !important;
     transform: none;
 }
 
@@ -10148,10 +10150,14 @@ input.chk-input-error:focus {
    Left/right against the section edges put the previous arrow in the middle of
    the ivory panel — a white disc on cream, sitting across the subtext. Pairing
    them keeps them on the one surface they read against and off the type. */
+/* Centred on each edge, as the reference has them. They were paired in the
+   bottom corner while the layout was a split, because the left one would
+   otherwise have sat in the middle of the ivory panel across the subtext. With
+   the photograph running full width there is no panel to land on. */
 .hero-slider-section .hero-arrow {
-    top: auto;
-    bottom: 22px;
-    transform: none;
+    top: 50%;
+    bottom: auto;
+    transform: translateY(-50%);
     background: rgba(255, 255, 255, 0.86);
     border: 0;
     color: var(--color-primary);
@@ -10160,8 +10166,8 @@ input.chk-input-error:focus {
     border-radius: 50%;
     transition: background-color 0.2s ease;
 }
-.hero-slider-section .hero-arrow-left  { left: auto; right: 78px; }
-.hero-slider-section .hero-arrow-right { right: 22px; }
+.hero-slider-section .hero-arrow-left  { left: 22px; right: auto; }
+.hero-slider-section .hero-arrow-right { right: 22px; left: auto; }
 .hero-slider-section .hero-arrow:hover { background: #ffffff; }
 .hero-slider-section .hero-dots-container {
     background: none;
@@ -10169,18 +10175,24 @@ input.chk-input-error:focus {
     backdrop-filter: none;
     padding: 0;
     border-radius: 0;
-    bottom: 34px;
-    /* Over the picture, clear of the arrow pair in the corner. 45% is where the
-       media pane starts — the grid is 0.9fr / 1.1fr. */
-    left: calc(45% + 28px);
-    transform: none;
+    bottom: 26px;
+    left: 50%;
+    transform: translateX(-50%);
 }
+/* Bottom centre now falls on the photograph, which may be pale there — the
+   reference's paving is nearly white. A white dot would vanish, so these are ink
+   at low opacity with a white ring to hold them off a dark frame too. */
 .hero-slider-section .slide-dot {
-    width: 6px; height: 6px;
+    width: 7px; height: 7px;
     border: 0;
-    background: rgba(255, 255, 255, 0.55);
+    background: rgba(58, 12, 27, 0.35);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.55);
 }
-.hero-slider-section .slide-dot.active { background: #ffffff; width: 18px; border-radius: 3px; }
+.hero-slider-section .slide-dot.active {
+    background: var(--text-primary);
+    width: 20px;
+    border-radius: 4px;
+}
 
 @media (prefers-reduced-motion: reduce) {
     .hero-slider-section .btn-hero-primary,

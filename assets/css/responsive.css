@@ -2308,13 +2308,24 @@ html {
     .slider-container.owl-loaded .owl-item,
     .slider-container.owl-loaded .slide { height: auto !important; }
 
+    /* Desktop overlays the type on the photograph. A phone cannot: the copy
+       space a 1600x900 banner carries on its left is gone the moment the frame
+       is cropped to portrait, and laying six lines of type over a model at
+       390px is unreadable however it is tinted. So the two go back to being two
+       rows here — the picture, then the words on ivory.
+
+       .slide-panel is absolutely positioned for the overlay, so it has to be
+       returned to the flow explicitly; the same for .slide-media. */
     .slide {
         display: grid !important;
         grid-template-columns: 1fr !important;
         grid-template-rows: auto auto;
         height: auto !important;
+        position: relative;
     }
     .slide-media {
+        position: relative !important;
+        inset: auto !important;
         grid-column: 1 !important;
         grid-row: 1 !important;
         aspect-ratio: 4 / 5;
@@ -2322,8 +2333,16 @@ html {
         width: 100%;
     }
     .slide-panel {
+        position: relative !important;
+        inset: auto !important;
+        background: var(--bg-hero) !important;   /* no wash needed off the photo */
+        pointer-events: auto;
+    }
+    .slide-panel {
         grid-column: 1 !important;
         grid-row: 2 !important;
+        display: flex;
+        align-items: center;
         /* --dv-gutter, not a hardcoded 16px: the panel is full bleed, so without
            it the hero headline sat 16px from the edge while the section headings
            below stepped 32 / 24 / 16 / 12 with the ladder. Measured before the
@@ -2359,6 +2378,10 @@ html {
         left: 50%;
         transform: translateX(-50%);
     }
+    /* On the seam the dots sit half on the photograph and half on the ivory, so
+       the white ring the desktop ones carry is dropped — against cream it draws
+       a halo rather than separating anything. */
+    .hero-slider-section .slide-dot { box-shadow: none; }
 }
 
 @media (max-width: 640px) {
