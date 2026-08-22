@@ -827,9 +827,12 @@ $naFirstPageCount = min(count($naItems), $naPerPage);
             if (on) { live++; }
         });
 
-        /* A page of one has nothing to sit beside, so it takes the whole
-           width; every other page keeps the half-and-the-rest composition. */
-        gallery.style.setProperty('--na-open', live === 1 ? '100%' : '50%');
+        /* A page of one has nothing to sit beside, so it takes the whole width.
+           Any other page is CLEARED rather than set back to 50%: above 1600px
+           the stylesheet pins the open panel to 800px to hold the slot's shape,
+           and an inline 50% would out-rank that and put the crop back. */
+        if (live === 1) { gallery.style.setProperty('--na-open', '100%'); }
+        else            { gallery.style.removeProperty('--na-open'); }
         gallery.style.setProperty('--na-rest', String(Math.max(1, live - 1)));
         if (counter) { counter.textContent = (current + 1) + '\u200a/\u200a' + pages; }
     }

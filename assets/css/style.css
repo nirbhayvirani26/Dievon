@@ -10722,9 +10722,21 @@ input.chk-input-error:focus {
     /* No gutters between panels: the reference is one continuous image, and a
        gap would cut it into four cards, which is the thing being replaced. */
     gap: 0;
-    /* Tall enough that a portrait garment shown whole in the open panel is not
-       swimming in empty space either side — see the object-fit note below. */
-    height: clamp(520px, 54vw, 820px);
+    /* Not a taste number. The open panel is half the gallery's width, so making
+       the gallery 0.625 of that width makes the open SLOT 0.5/0.625 = 0.80 wide
+       to tall — which is the shape the product photography is actually shot in
+       (1122x1402 and 1086x1448 both land on 0.78-0.80). A slot the same shape as
+       the picture is a slot the picture fills exactly: no burgundy either side,
+       and nothing cropped to achieve it.
+
+       It was 54vw, which made the slot 0.93 — wider than any of the photographs
+       — so every one of them sat in the middle with 41 to 72px of ground showing
+       down both edges.
+
+       The 1000px ceiling stops the band growing without limit on a wide monitor.
+       Past 1600px it is the width that has to give instead — see the media query
+       below, which holds the open panel at 800px so the slot keeps its shape. */
+    height: clamp(520px, 62.5vw, 1000px);
     overflow: hidden;
     background: var(--color-primary-dark);
 
@@ -10742,6 +10754,20 @@ input.chk-input-error:focus {
 .na-gallery[data-count="1"] { --na-open: 100%; --na-rest: 1; }
 .na-gallery[data-count="2"] { --na-rest: 1; }
 .na-gallery[data-count="3"] { --na-rest: 2; }
+
+/* Past 1600px the height has hit its 1000px ceiling, so half the width is no
+   longer 0.80 of it — at 1920 the slot reopens to 0.96 and cover starts taking
+   a fifth of the garment off the bottom, which is the whole failure this was
+   built to avoid. 1920x1080 is the commonest desktop there is, so it is not an
+   edge case.
+
+   A length rather than a percentage fixes it: 800px is exactly 0.80 of the
+   1000px the gallery has settled at, so the slot keeps its shape however wide
+   the screen gets, and the extra width goes to the narrow panels instead. The
+   open one is still 2.1x the width of a narrow one at 1920. */
+@media (min-width: 1601px) {
+    .na-gallery { --na-open: 800px; }
+}
 
 .na-panel {
     position: relative;
@@ -10768,15 +10794,22 @@ input.chk-input-error:focus {
 .na-panel:focus-within { flex-basis: var(--na-open); }
 
 /* ── The photograph ────────────────────────────────────────────────────────
-   Two fits, deliberately. A narrow panel is a 200px-wide slot and cover is the
-   only thing that fills it without distorting the garment. The open panel is
-   the one being LOOKED at, so it uses contain and shows the whole outfit — a
-   700px-wide slot cropping a portrait photograph cuts the hem and usually the
-   head, which defeats the point of expanding it.
+   One fit, everywhere: cover. It is the only one that cannot letterbox, so the
+   gallery reads as four photographs meeting edge to edge rather than four
+   pictures mounted on burgundy.
 
-   contain letterboxes, so the gallery's ground shows either side. That ground
-   is the brand's deep burgundy rather than a grey, which is why it reads as a
-   mount around the photograph instead of as a gap. */
+   The open panel used to be contain, to show the whole outfit rather than crop
+   it. That was the right instinct and the wrong lever — contain leaves a bar
+   wherever the slot and the picture disagree, and they always disagreed. The
+   slot is now shaped like the photographs instead (see the gallery height), so
+   cover has almost nothing left to cut: nothing at all for a 0.80 photograph,
+   and under 9% for the narrowest one in the catalogue.
+
+   What little it does cut comes off the bottom, because the crop sits at 30%
+   rather than centred. The models stand with their feet at the very bottom of
+   frame, so a centred crop takes the shoes AND the top of the head; biased
+   upward it keeps the face, the neckline and the embroidery, which is what the
+   panel is being looked at for. */
 .na-media {
     position: absolute;
     inset: 0;
@@ -10789,24 +10822,15 @@ input.chk-input-error:focus {
     height: 100%;
     object-fit: cover;
     object-position: center 18%;
-    transition: transform 550ms cubic-bezier(0.22, 0.61, 0.36, 1),
-                object-fit 0ms;
+    transition: transform 550ms cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 .na-panel:hover .na-img,
 .na-panel:focus-visible .na-img,
 .na-panel:focus-within .na-img,
 .na-panel.is-default .na-img {
-    object-fit: contain;
-    object-position: center;
+    object-position: center 30%;
 }
-/* The default panel gives the contain back the moment anything else opens. */
-.na-gallery:hover        .na-panel.is-default:not(:hover) .na-img,
-.na-gallery:focus-within .na-panel.is-default:not(:focus-within) .na-img {
-    object-fit: cover;
-    object-position: center 18%;
-}
-/* 1.03, the ceiling the brief sets. Any more and a contained image grows past
-   its own frame and the crop it was avoiding comes back. */
+/* 1.03, the ceiling the brief sets. */
 .na-panel:hover .na-img,
 .na-panel:focus-visible .na-img,
 .na-panel:focus-within .na-img { transform: scale(1.03); }
