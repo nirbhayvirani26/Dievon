@@ -257,9 +257,10 @@ $cardUrl = productUrl($cardProduct['id'], $cardProduct['name'], $cardProduct['se
                 <?php endif; ?>
             <?php endif; ?>
         </div>
-<?php /* "View Product" on the home page, "Details" everywhere else. Sold Out
-         still wins over both — it is a state, not a label. */
-      $cardCtaWord = $cardIsHome ? 'View Product' : 'Details'; ?>
+<?php /* One word, everywhere. It used to read "View Product" on the home page
+         and "Details" on the shop, which is two names for the same click.
+         Sold Out still wins over it — that is a state, not a label. */
+      $cardCtaWord = 'Details'; ?>
         <?php if ($cardNotSoldHere): ?>
         <a href="<?= $cardUrl ?>" class="btn-luxury product-card-cta"><?= $cardCtaWord ?></a>
         <?php elseif ($cardSoldOut): ?>

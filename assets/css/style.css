@@ -11946,11 +11946,13 @@ input.chk-input-error:focus {
     font-weight: var(--font-heading-weight);
     font-size: clamp(16px, 1.25vw, 20px);
     line-height: 1.25;
-    /* Two lines of room, reserved, so a row of cards lines its prices up whether
-       the names run to one line or two. Expressed in ems rather than the 48px
-       the old rule used: 48 was two lines of an 18px face and became a stray gap
-       the moment the size changed, which is exactly what it had become. */
-    min-height: 2.5em;
+    /* No reserved height. Two lines were held open so a row of cards would line
+       its prices up, and the cost was a visible hole under every one-line name —
+       the commonest case. Alignment is bought at the bottom instead: the details
+       column grows and the Details link is pushed down by margin-top: auto, so
+       the links line up across a row however long the names are, and nothing is
+       padded out in the middle to achieve it. */
+    min-height: 0;
     /* Ranged left, and never hyphenated mid-word — a garment name broken across
        lines is unreadable at a glance. */
     overflow-wrap: break-word;
@@ -12001,11 +12003,38 @@ input.chk-input-error:focus {
     text-transform: uppercase;
     color: var(--color-accent-ink);
 }
+/* A link, not a slab. A filled full-width button at the foot of every tile is
+   the heaviest thing on a page of twenty-four of them, and it competes with the
+   photograph it is selling. This is the same gold underlined treatment the home
+   page already uses, so the two are now one standard rather than two. */
 .product-card .product-card-cta {
-    width: 100%;
-    margin-top: 4px;
-    justify-content: center;
+    width: auto;
+    /* auto, so the link is pushed to the bottom of the details column and every
+       card in a row lines its link up regardless of how long the name ran. */
+    margin: auto 0 0;
+    padding: 0 0 3px;
+    background: none !important;
+    border: 0;
+    border-bottom: 1px solid var(--color-accent-ink);
+    border-radius: 0;
+    /* !important to beat .btn-luxury's own `color: #ffffff !important`. */
+    color: var(--color-accent-ink) !important;
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    justify-content: flex-start;
+    align-self: flex-start;
+    transition: color 200ms ease, border-color 200ms ease;
 }
+.product-card .product-card-cta:hover {
+    color: var(--color-primary) !important;
+    border-bottom-color: var(--color-primary);
+}
+.product-card .product-card-cta:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; }
+/* Breathing room above the link, since it no longer has a button's own padding
+   holding it away from the price. */
+.product-card .product-card-details { padding-bottom: 20px; }
 
 /* ── Sold out ──────────────────────────────────────────────────────────── */
 /* Badge and a greyed photograph carry it; the price stays, because a shopper
@@ -12024,8 +12053,11 @@ input.chk-input-error:focus {
    to come down instead; 0.090 puts it at 6.0:1. Muted enough to read as
    unavailable, dark enough to actually read. */
 .product-card .product-card-cta.sold-out-cta {
-    color: #5f5346 !important;
-    border-color: rgba(81, 17, 38, 0.12);
+    /* No ground to sit on any more, so the old white-on-grey problem cannot
+       recur — but the colour still has to earn its 4.5:1 on white, and
+       --text-muted does at 5.41:1. */
+    color: var(--text-muted) !important;
+    border-bottom-color: var(--text-muted);
 }
 
 /* ── Narrow screens ────────────────────────────────────────────────────── */
