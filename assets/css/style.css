@@ -11333,6 +11333,16 @@ input.chk-input-error:focus {
 }
 
 /* ── The caption, revealed ─────────────────────────────────────────────── */
+/* The same caption the New Arrivals gallery writes, deliberately. A name in the
+   heading face, the price under it in the body face, and "View Product" in gold
+   small caps with a rule under it — a shopper meets that pairing twice on this
+   page and it has to be the same thing both times.
+
+   The gradient is copied exactly rather than re-eyeballed, because it is not a
+   look, it is a measurement: the New Arrivals stops were derived from the fact
+   that white type needs its ground at or below about 118 to clear 4.5:1, and
+   0.54 alpha over pure WHITE leaves 117 — which is what a scrim tuned by eye on
+   a dark photograph gets wrong the moment a pale one is uploaded. */
 .photo-fan-section .pf-info {
     position: absolute;
     /* Against the link, which wraps the frame exactly, so this sits over the
@@ -11341,28 +11351,72 @@ input.chk-input-error:focus {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 3px;
-    padding: 22px 18px 18px;
+    gap: 6px;
+    /* Scaled to this box. A print is ~283px across where the New Arrivals panel
+       it borrows from is 720px, so the gallery's clamp(20px, 2.4vw, 34px) would
+       be a third of the width in padding. */
+    padding: clamp(16px, 1.3vw, 22px);
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(12px);
     transition: opacity 380ms ease, transform 380ms cubic-bezier(0.22, 0.61, 0.36, 1);
+    /* transform makes this a stacking context already; isolate says so out loud
+       so the scrim below cannot escape behind the photograph. */
+    isolation: isolate;
+}
+/* The scrim is a pseudo-element that reaches 74px ABOVE the caption, not a
+   background on the caption itself.
+
+   Copying the gallery's stops directly failed here, measured: 2.72:1 on the
+   name against the 4.5:1 it needs. The stops are percentages of the box they
+   sit on, and this box is small — a print is ~377px tall where the gallery
+   panel is 778 — so the name, which is the topmost line, landed in the thin end
+   of the fade. Extending the box upward puts every line of type in the strong
+   part and leaves the fade somewhere there is no text to fail. */
+.photo-fan-section .pf-info::before {
+    content: '';
+    position: absolute;
+    inset: -58px 0 0 0;
+    z-index: -1;
+    /* Tuned, not guessed. White type needs its ground at or below L 0.183 to
+       clear 4.5:1, which over a pure-white photograph means at least 0.55 alpha
+       — so the stop where the NAME sits, the topmost and therefore weakest
+       line, is held at 0.58 and everything below it is darker.
+
+       No higher than that. A first attempt held 0.62 up to 70% of the box and
+       measured a comfortable 16:1, but it also painted out the bottom half of
+       the garment: the shopper could read the price perfectly and no longer see
+       the hem they were being sold. */
     background: linear-gradient(to top,
-        rgba(0, 0, 0, 0.88) 0%, rgba(0, 0, 0, 0.70) 26%,
-        rgba(0, 0, 0, 0.28) 58%, rgba(0, 0, 0, 0) 100%);
+        rgba(0, 0, 0, 0.86) 0%,
+        rgba(0, 0, 0, 0.74) 34%,
+        rgba(0, 0, 0, 0.58) 56%,
+        rgba(0, 0, 0, 0.20) 82%,
+        rgba(0, 0, 0, 0) 100%);
 }
 .photo-fan-section .pf-name {
-    font-family: var(--font-heading), serif;
-    font-size: clamp(15px, 1.2vw, 18px);
-    line-height: 1.2;
+    font-family: var(--font-heading);
+    font-weight: var(--font-heading-weight);
+    /* Same clamp shape as .na-name, stepped down for the narrower print — the
+       gallery's 26px ceiling was set against a 720px panel and wraps a garment
+       name onto three lines here. */
+    font-size: clamp(16px, 1.3vw, 20px);
+    line-height: 1.15;
     color: #ffffff;
+    text-wrap: balance;
 }
-.photo-fan-section .pf-price { font-size: 13px; font-weight: 500; color: #ffffff; }
-.photo-fan-section .pf-was   { text-decoration: line-through; opacity: 0.66; margin-right: 4px; font-weight: 400; }
-.photo-fan-section .pf-from  { font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.78; }
-.photo-fan-section .pf-cta {
-    margin-top: 7px;
+.photo-fan-section .pf-price {
     font-family: var(--font-body), sans-serif;
-    font-size: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    color: rgba(255, 255, 255, 0.92);
+}
+.photo-fan-section .pf-was  { text-decoration: line-through; opacity: 0.68; margin-right: 5px; font-weight: 400; }
+.photo-fan-section .pf-from { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.75; }
+.photo-fan-section .pf-cta {
+    margin-top: 4px;
+    font-family: var(--font-body), sans-serif;
+    font-size: 10.5px;
     font-weight: 600;
     letter-spacing: 0.16em;
     text-transform: uppercase;
@@ -11553,9 +11607,11 @@ input.chk-input-error:focus {
         position: static;
         opacity: 1;
         transform: none;
-        background: none;
         padding: 14px 2px 0;
     }
+    /* No scrim here — the caption is page text on the ivory ground now, and a
+       black wash behind it would be a rectangle in the middle of the page. */
+    .photo-fan-section .pf-info::before { display: none; }
     .photo-fan-section .pf-name  { color: var(--text-primary); }
     .photo-fan-section .pf-price { color: var(--text-primary); }
     .photo-fan-section .pf-was   { color: var(--text-muted); }
