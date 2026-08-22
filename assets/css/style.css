@@ -9362,8 +9362,9 @@ input.chk-input-error:focus {
 
    The four things the brief ruled out, and where each is enforced:
      · no gradients      — flat --dv-header-bg throughout
-     · no heavy shadows  — one hairline divider; the mega menu's is a 20px
-                           spread at 12% and nothing else casts at all
+     · no heavy shadows  — the header carries one hairline divider and casts
+                           nothing; the mega menu is not touched by this block
+                           at all and keeps the shadow it has on live
      · no rounded shell  — no radius on any header container
      · no wrapped nav    — the row is one line, and overflow goes to More
    ═══════════════════════════════════════════════════════════════════════════ */
@@ -9555,52 +9556,19 @@ input.chk-input-error:focus {
 }
 .navbar-luxury .has-mega-menu:hover .nav-arrow { opacity: 1; }
 
-/* ── The mega menu ──────────────────────────────────────────────────────────
-   Whitespace, small headings, plain links, one photograph. */
-.navbar-luxury .mega-dropdown {
-    background: var(--dv-header-bg) !important;
-    border-top: 1px solid var(--dv-header-line-lo) !important;
-    border-bottom: 1px solid var(--dv-header-line) !important;
-    /* A 45px spread at 12% under a full-bleed panel is a grey wash across the
-       page. This one only has to separate the panel from what is behind it. */
-    box-shadow: 0 20px 30px -24px rgba(58, 12, 27, 0.25) !important;
-    padding: 44px 0 48px !important;
-    transform: translateY(10px);
-    transition: opacity 0.26s var(--dv-ease), visibility 0.26s var(--dv-ease), transform 0.26s var(--dv-ease) !important;
-}
-/* The container's own geometry is left alone.
-   ─────────────────────────────────────────────────────────────────────────────
-   This block briefly set grid-template-columns and a fluid gap here. Both were
-   wrong: .mega-dropdown-container is display:flex further up this file — a
-   deliberate change, because with fixed grid tracks a collection that has no
-   fabrics dropped its photographs into the middle 220px track and left the
-   third empty. So the tracks were inert, and the fluid gap only stretched a row
-   already tuned to 48px. Spacing, type and colour below; layout stays as it is. */
-.navbar-luxury .mega-column .mega-heading {
-    font-family: var(--font-body), sans-serif;
-    font-size: 9.5px;
-    font-weight: 600;
-    letter-spacing: 0.22em;
-    color: var(--dv-nav-ink-soft);
-    border-bottom: 0;
-    padding-bottom: 0;
-    margin-bottom: 20px;
-}
-.navbar-luxury .mega-column ul li { margin-bottom: 13px; }
-.navbar-luxury .mega-column ul li a {
-    font-size: 13.5px;
-    font-weight: 400;
-    color: var(--dv-nav-ink);
-    letter-spacing: 0.01em;
-    transition: color 0.2s ease;
-}
-/* padding-left on hover shifted every link 4px sideways and the column jittered
-   under the cursor. Colour only, same as the bar above. */
-.navbar-luxury .mega-column ul li a:hover {
-    color: var(--dv-nav-hover);
-    font-weight: 400;
-    padding-left: 0;
-}
+/* ── The mega menu ────────────────────────────────────────────────────────
+   Left exactly as it is on dievon.com.
+
+   This branch had restyled it — panel background and shadow, heading type,
+   link size and colour, square card corners, a slower hover, and an underlined
+   Shop Now. All of that is reverted. The markup was already identical to live
+   (compared element by element and class by class against the page dievon.com
+   serves), and the appearance now is too, so the menu renders from the rules
+   that were already in this file and nothing about it changes.
+
+   The one addition below is .mega-shop-all, which does not appear in a category
+   mega menu at all — it belongs to the More panel introduced by this branch,
+   and there is nothing on live for it to differ from. */
 .navbar-luxury .mega-shop-all {
     display: inline-block;
     margin-top: 18px;
@@ -9614,48 +9582,6 @@ input.chk-input-error:focus {
     text-decoration: none;
 }
 .navbar-luxury .mega-shop-all:hover { color: var(--dv-nav-hover); }
-
-/* The three-card row, kept.
-   ─────────────────────────────────────────────────────────────────────────────
-   This block briefly capped the promo column at 320px and gave the card a 4:5
-   box, which reduced the row to one photograph. That is not what the shop
-   wants: three cards are what this menu is built around and what carries the
-   width beside the link columns. The sizing rules that do that work — the flex
-   column, the 247px auto-columns, the 3:4 cards, the burgundy counting tile,
-   and the responsive drops to two cards under 1180px — are all further up this
-   file and are left untouched.
-
-   What stays here is finish only: square corners in place of the radius token,
-   and a slower, shallower hover so three moving images do not fight each
-   other. */
-.navbar-luxury .mega-promo-card { border-radius: 0; }
-.navbar-luxury .mega-promo-card img { transition: transform 0.9s var(--dv-ease); }
-.navbar-luxury .mega-promo-card:hover img,
-.navbar-luxury .mega-promo-card:focus-visible img { transform: scale(1.03); }
-.navbar-luxury .mega-promo-caption .mega-promo-title {
-    font-family: var(--font-heading);
-    font-size: 15px;
-    font-weight: var(--font-heading-weight);
-    letter-spacing: 0.02em;
-    color: var(--dv-nav-ink);
-    margin: 0;
-}
-.navbar-luxury .btn-mega-shop {
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.18em;
-    color: var(--dv-nav-ink);
-    border-bottom: 1px solid var(--dv-nav-ink);
-    padding-bottom: 2px;
-    /* 0 here closed the gap onto the arrow that follows the words in the
-       markup, so it read as "SHOP NOW→". The tracking already pushes the last
-       letter right; the arrow needs its own space on top of that. */
-    gap: 8px;
-}
-.navbar-luxury .btn-mega-shop:hover {
-    color: var(--dv-nav-hover);
-    border-bottom-color: var(--dv-nav-hover);
-}
 
 /* ── More ───────────────────────────────────────────────────────────────────
    A narrow panel under the word, not a band across the page: it holds one
@@ -9694,7 +9620,6 @@ input.chk-input-error:focus {
 /* Focus has to stay visible on a header this quiet. */
 .navbar-luxury .nav-link-item:focus-visible,
 .navbar-luxury .nav-action-item:focus-visible,
-.navbar-luxury .mega-column ul li a:focus-visible,
 .navbar-luxury .mega-shop-all:focus-visible {
     outline: 2px solid var(--color-secondary);
     outline-offset: 3px;
@@ -9705,12 +9630,9 @@ input.chk-input-error:focus {
     .navbar-luxury,
     .navbar-luxury .main-header-bar,
     .navbar-luxury .logo img,
-    .navbar-luxury .mega-dropdown,
-    .navbar-luxury .mega-promo-card img,
     .navbar-luxury .nav-arrow {
         transition: none !important;
     }
-    .navbar-luxury .mega-dropdown { transform: none !important; }
     .navbar-luxury .mega-dropdown-compact { transform: translateX(-50%) !important; }
 }
 
