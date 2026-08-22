@@ -10700,12 +10700,13 @@ input.chk-input-error:focus {
    specific of the two and wins over the panel's own hover, so the first panel
    could never be re-opened once the pointer had entered the gallery.
    ══════════════════════════════════════════════════════════════════════════ */
-/* The heading and the arrows sit in here beside the gallery rather than inside
-   it. .na-gallery:hover is what collapses the open panel, so a control INSIDE
-   the gallery would trigger that rule while being the thing under the pointer —
+/* The arrows sit in here beside the gallery rather than inside it.
+   .na-gallery:hover is what collapses the open panel, so a control INSIDE the
+   gallery would trigger that rule while being the thing under the pointer —
    nothing would be expanded and the row would come up a third short. Out here,
-   hovering an arrow is not hovering the gallery. */
-.na-stage { position: relative; }
+   hovering an arrow is not hovering the gallery. No positioning: the arrows are
+   in the flow under the gallery, and nothing is laid over the photographs any
+   more. */
 
 /* Arrivals beyond the four on screen. Only honoured on the desktop composition:
    below 1024px the same panels become one swipe rail and it keeps all of them,
@@ -10898,77 +10899,17 @@ input.chk-input-error:focus {
     padding-bottom: 3px;
 }
 
-/* ── The heading, riding on the photographs ────────────────────────────────
-   Absolute, so it stays in the upper left whatever the panels are doing
-   underneath. It cannot live inside the first panel: that panel collapses to
-   200px and the heading would collapse with it.
+/* The heading is not in here. It is the ordinary .section-title-wrapper above
+   the gallery, inside .container, like every other section on the page.
 
-   The scrim is not decoration. The heading is white over whichever garment
-   happens to be behind it, and that changes as the panels move — a pale
-   photograph sliding under white type is exactly the failure the hero banner
-   went through earlier. A small top-left wash makes it independent of the
-   picture. */
-.na-heading {
-    position: absolute;
-    top: clamp(24px, 3vw, 48px);
-    left: 0;
-    z-index: 3;
-    padding-inline: var(--dv-gutter);
-    pointer-events: none;
-}
-/* The wash that makes the heading readable, carried by the heading itself
-   rather than by the gallery.
+   What used to be here: the heading absolutely positioned in the open panel's
+   top left, a radial wash under it, and a gradient down the gallery's left
+   third to keep white type off the photograph. All three are gone with it. The
+   wash was never decoration — white "NEW ARRIVALS" measured 2.17:1 over garment
+   photography shot on pale studio walls — and the gallery gradient existed only
+   to serve it, at the cost of dimming the corner of the one garment the section
+   exists to show. */
 
-   The gallery-wide gradient below is mood, and it is not enough: measured off
-   rendered pixels, white "NEW ARRIVALS" came out at 2.17:1 over these
-   photographs, against the 3.0:1 large text needs. It read as fine only while
-   the seeded products were flat colour blocks — real garment photography is
-   shot on pale studio walls, which is the same white-on-white failure the hero
-   banner went through earlier.
-
-   Local, not a stronger wash over the whole left half: that half is the open
-   panel, and darkening it to 0.6 to rescue two words would dull the one garment
-   the composition exists to show. The ellipse bleeds far past the type on every
-   side so its edge is never a visible box, and it is held flat across the
-   middle rather than falling off from the centre — a centre-peaked gradient is
-   at its weakest exactly where the ends of a long heading sit. */
-.na-heading::before {
-    content: '';
-    position: absolute;
-    inset: -120px -190px;
-    z-index: -1;
-    /* closest-side, not the default farthest-corner. With farthest-corner the
-       ellipse only reaches its last stop at the CORNERS, so alpha was still
-       0.30 at the middle of each edge and the wash rendered as a hard-edged
-       rectangle over the photograph. closest-side puts the 100% stop on all
-       four edge midpoints, so it fades to nothing exactly at the boundary.
-
-       46% is where the far corner of the type falls, measured: the heading box
-       is 413x68 at desktop and the bleed above makes the normalised radius at
-       the end of "ARRIVALS" 0.41. Holding full strength to 46% keeps every
-       letter on the plateau instead of on the falloff, which is where a
-       centre-peaked wash is weakest and the longest word reaches. */
-    background: radial-gradient(closest-side ellipse at center,
-        rgba(0, 0, 0, 0.68) 0%,
-        rgba(0, 0, 0, 0.66) 46%,
-        rgba(0, 0, 0, 0.34) 72%,
-        rgba(0, 0, 0, 0) 100%);
-}
-.na-gallery::before {
-    content: '';
-    position: absolute;
-    inset: 0 auto 0 0;
-    width: min(56%, 720px);
-    z-index: 2;
-    pointer-events: none;
-    background: linear-gradient(to bottom right, rgba(0,0,0,0.52) 0%, rgba(0,0,0,0.22) 34%, rgba(0,0,0,0) 62%);
-}
-.na-heading .editorial-label { color: var(--color-accent); }
-.na-heading .section-title {
-    color: #ffffff;
-    margin: 0;
-}
-.na-heading .section-title::after { background: var(--color-accent); }
 
 /* ── Paging the sets of four ───────────────────────────────────────────────
    Under the photographs, right aligned to the page gutter. Not on them: every
@@ -11062,8 +11003,6 @@ input.chk-input-error:focus {
    stylus or a hybrid laptop can produce :hover on a touch layout, and a panel
    that expanded to 50% of the rail would shove its neighbours off screen. */
 @media (max-width: 1024px) {
-    .na-stage { position: static; }
-
     /* No arrows on touch — the rail is swiped. They are also the only thing in
        here that needs the gallery's dark ground behind it, which is gone. */
     .na-pager { display: none; }
@@ -11096,23 +11035,6 @@ input.chk-input-error:focus {
         -ms-overflow-style: none;
     }
     .na-gallery::-webkit-scrollbar { display: none; }
-    .na-gallery::before { display: none; }
-
-    .na-heading {
-        position: static;
-        padding-inline: var(--dv-gutter);
-        margin-bottom: 14px;
-        pointer-events: auto;
-    }
-    /* The wash exists to lift white type off a photograph. Here the heading is
-       burgundy on the page's own pale ground, so the wash has nothing to do —
-       and being absolute against a static parent it would escape to the section
-       and paint a dark ellipse across it. */
-    .na-heading::before { display: none; }
-    /* Back to page text on the page's own ground, so the white the overlay
-       needed would be invisible. */
-    .na-heading .section-title { color: var(--text-primary); }
-    .na-heading .editorial-label { color: var(--color-accent-ink); }
 
     /* One tile and a third of the next: t + gap + t/3 = the visible width, so
        t = (C - gap) / 1.35. Solved rather than guessed at, because a flat

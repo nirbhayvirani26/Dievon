@@ -672,23 +672,32 @@ $naPages    = (int)ceil(count($naItems) / $naPerPage);
 $naFirstPageCount = min(count($naItems), $naPerPage);
 ?>
 <section class="new-arrivals-section section-space">
-    <?php /* Outside .container by design — the gallery runs edge to edge, and
-             .container is max-width 1440 centred. The heading rides on top of
-             the photographs instead of sitting above them, as the reference has
-             it, and drops back above them on a phone.
-
-             The heading and the arrows are siblings of the gallery rather than
-             children of it, held together by .na-stage. That is not tidiness:
-             .na-gallery:hover collapses the open panel, and an arrow inside the
-             gallery would fire that rule while being the thing hovered — so no
-             panel would be expanded and the row would come up a third short.
-             Outside the gallery, hovering an arrow is not hovering the gallery. */ ?>
-    <div class="na-stage">
-
-        <div class="na-heading">
+    <?php /* The heading is the same .section-title-wrapper every other section
+             on this page uses, inside .container, above the photographs. It was
+             laid over them at first, in the top left of the open panel. Two
+             things were wrong with that. It read as part of the picture rather
+             than as the page's own voice, and it needed a wash under it to stay
+             legible — white type over garment photography shot on pale studio
+             walls measured 2.17:1. Off the picture, the type is burgundy on the
+             page ground, the wash is gone, and the open panel is no longer
+             dimmed in the corner to rescue two words. */ ?>
+    <div class="container">
+        <div class="section-title-wrapper reveal-on-scroll">
             <span class="editorial-label">Latest Creations</span>
             <h2 class="section-title">New Arrivals</h2>
         </div>
+    </div>
+
+    <?php /* The gallery itself stays outside .container — it runs edge to edge,
+             and .container is max-width 1440 centred.
+
+             The arrows are a sibling of the gallery rather than a child, held
+             beside it by .na-stage. That is not tidiness: .na-gallery:hover
+             collapses the open panel, and an arrow inside the gallery would
+             fire that rule while being the thing hovered — so no panel would be
+             expanded and the row would come up a third short. Outside the
+             gallery, hovering an arrow is not hovering the gallery. */ ?>
+    <div class="na-stage">
 
     <div class="na-gallery" data-count="<?= $naFirstPageCount ?>" data-na-pages="<?= $naPages ?>" data-na-per-page="<?= $naPerPage ?>">
 
