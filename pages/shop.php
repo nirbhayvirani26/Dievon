@@ -551,140 +551,37 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
         // productHoverImage(). Without this each card below would prime itself.
         productHoverImagePrime($products);
         productPriceRangePrime($products);
+        /* One card per product, and nothing else.
+           ────────────────────────────────────────────────────────────────────
+           This loop used to compute the whole card by hand — country override,
+           price range, "From" prefix, discount percentage, formatted MRP, WebP
+           path, alt text, sold-out — and ship the result as fields for
+           createProductCard() to assemble in the browser. Every one of those
+           lines was a second implementation of something includes/product_card.php
+           already does, kept in step by hand; the file's own comments recorded
+           each occasion one of them had fallen out of step.
+
+           With the card rendered here, all of it is the partial's work. What
+           remains is the id, so the grid can key what it has loaded, and the
+           markup.
+
+           $card is set from the row exactly as it comes out of the query,
+           before anything touches it — the same pristine row the static grid
+           three hundred lines below hands the partial. The earlier version of
+           this change rendered AFTER the country override had already rewritten
+           $p['price'], which the partial reads directly; it happened to come out
+           right, but only because productCountryPricing() re-derives the figure
+           from the product id. Rendering from the untouched row means the two
+           grids cannot disagree whatever the country settings are, rather than
+           agreeing by luck. */
         foreach ($products as $p) {
-            $p['variants'] = isset($variantsByProduct[$p['id']]) ? $variantsByProduct[$p['id']] : [];
-            // Same country override as includes/product_card.php: a shopper abroad
-            // sees the flat product_country_prices figure, or nothing to buy at all
-            // when the product has no row for their country yet. Without this, the
-            // AJAX "Load More" / sort / filter grid disagreed with the first page
-            // of server-rendered cards the moment a second country was enabled.
-            $pNotSoldHere = false;
-            if (function_exists('countrySelectorEnabled') && countrySelectorEnabled()) {
-                $pCountryPricing = productCountryPricing($p);
-                if ($pCountryPricing === null) {
-                    $pNotSoldHere = true;
-                } else {
-                    $p['price']     = $pCountryPricing['price'];
-                    $p['mrp_price'] = $pCountryPricing['mrp'];
-                }
-            }
-            $p['not_sold_here'] = $pNotSoldHere;
-            // Never left empty: the card partial falls back to a raw,
-            // un-converted p.price when formatted_price is falsy, which would
-            // print the INR figure with no symbol fix — the exact bug this whole
-            // change exists to remove.
-            /* The buyable figure, matching the server-rendered card.
-               includes/product_card.php was fixed to show the lowest price a
-               shopper can actually pay; this JSON feeds the Load More cards,
-               and still sent products.price — so the first page of a grid read
-               "From ₹10" and everything after it read "₹10" for the same
-               product. One grid, two prices. */
-            $pRange = function_exists('productPriceRange')
-                ? productPriceRange($p)
-                : ['min' => (float)$p['price'], 'varies' => false];
-            $pShown = $pRange['min'] > 0 ? $pRange['min'] : (float)$p['price'];
-            $p['price_varies']    = $pRange['varies'] ? 1 : 0;
-            $p['formatted_price'] = $pNotSoldHere ? 'Not available in your country' : formatPrice($pShown);
-            $pMrp = (float)($p['mrp_price'] ?? 0);
-            /* The saving is measured against the price actually shown, and is
-               withdrawn entirely once that price is a "From".
-               ────────────────────────────────────────────────────────────────
-               These three lines read products.price while formatted_price above
-               already carried the buyable figure, so a Load More card claimed
-               "22% OFF" over "₹1,600 ₹1,100" — a genuine 31% — and a card whose
-               price had become a floor still showed a strikethrough MRP that
-               only holds for one size. includes/product_card.php settles it the
-               same way; the two renderers of this grid have to agree. */
-            $pVaries      = (bool)$pRange['varies'];
-            $pHasDiscount = !$pNotSoldHere && !$pVaries && $pMrp > $pShown && $pShown > 0;
-            $p['has_discount'] = $pHasDiscount;
-            $p['discount_percent'] = $pHasDiscount ? (int)round((($pMrp - $pShown) / $pMrp) * 100) : 0;
-            $p['formatted_mrp'] = $pHasDiscount ? formatPrice($pMrp) : '';
-            // Same two things the server-rendered card uses (includes/product_card.php):
-            // the WebP copy, and real alt text. Without them the cards appended by
-            // "load more" served the full-size original and described it only by name.
-            $p['image_webp'] = !empty($p['image']) ? webpUrlIfExists('products', $p['image']) : null;
-            $p['image_alt']  = productImageAlt($p);
-            // Sold-out state, worked out the same way includes/product_card.php
-            // does it. Without this the JSON carried no notion of stock at all,
-            // so a card appended by Load More — or the whole grid after a sort or
-            // a filter, which re-renders through this path — lost its "Sold Out"
-            // badge and offered a normal Add to Bag on something unbuyable.
-            $p['is_sold_out'] = ((int)($p['available'] ?? 1) === 1 && !empty($p['track_stock']))
-                ? (productSellableStock($pdo, $p) <= 0)
-                : false;
-
-            /* The card itself, rendered here by the one partial.
-               ────────────────────────────────────────────────────────────────
-               createProductCard() in the script below used to build this markup
-               a second time in JavaScript, and the file said so: "Mirrors
-               includes/product_card.php — keep the two in step, or a product
-               looks like a different component depending on whether it arrived
-               with the page or with Load More." That is a contract enforced by a
-               comment, and the recently-viewed copy had already lost the bet.
-
-               Rendered through the same include the static grid three hundred
-               lines below uses, with $card set the same way, so a card that
-               arrives from a filter, a sort or Load More is byte-for-byte the
-               card that would have arrived with the page.
-
-               Note this runs BEFORE the projection below, which reuses $card as
-               its own name for the JSON payload. */
             $card = $p;
             ob_start();
             include __DIR__ . '/../includes/product_card.php';
-            $cardHtml = ob_get_clean();
-
-            // Only what the card actually draws leaves the server.
-            //
-            // The whole products row went out as JSON to any visitor — 63 fields,
-            // including cost_price, total_stock, damage_stock, sold_offline,
-            // sold_online, stock_qty, hsn_code, gst_rate, atelier_code and
-            // sourcing. Anyone could read the shop's margins, its true inventory
-            // position and its suppliers by opening /shop?ajax=1, and this path
-            // serves the whole grid after every sort, filter and Load More.
-            //
-            // The stock columns are still needed ABOVE, because productSellableStock()
-            // and the sold-out flag are computed server-side — so the projection
-            // happens here, at the encode boundary, rather than by narrowing the
-            // SELECT. The field list is what the JSON payload carries, nothing more —
-            // the card itself is rendered above and travels as 'html'.
-            $cardFields = [
-                'id', 'name', 'seo_url', 'category', 'price', 'image', 'image_webp', 'image_alt',
-                'emoji', 'badge', 'video_url', 'available', 'is_deleted',
-                'formatted_price', 'formatted_mrp', 'has_discount', 'discount_percent', 'price_varies',
-                'is_sold_out', 'not_sold_here',
+            $formattedProducts[] = [
+                'id'   => (int)$p['id'],
+                'html' => ob_get_clean(),
             ];
-            $card = array_intersect_key($p, array_flip($cardFields));
-
-            // "New" expires — see productBadge() in config/config.php. Applied
-            // here, at the encode boundary, so the cards that arrive from Load
-            // More and from every filter say exactly what the server-rendered
-            // ones say. It stays in the payload; the card reads it from the row.
-            $card['badge'] = productBadge($p);
-
-            // The finished card. Everything else in this payload is data the
-            // grid no longer renders from; this is what it draws.
-            $card['html'] = $cardHtml;
-
-            // The hover photograph, so a Load More card behaves like one that
-            // arrived with the page. Only the filename leaves the server, the
-            // same as 'image' above — nothing about stock or cost is added here.
-            $hoverImg = productHoverImage($p);
-            if ($hoverImg !== null) {
-                $card['image_hover']      = $hoverImg;
-                $card['image_hover_webp'] = webpUrlIfExists('products', $hoverImg) ?: null;
-            }
-
-            // Variants likewise: the card prints size names and nothing else, but
-            // these rows were emitted by SELECT *, carrying per-size stock_qty and
-            // cost figures with them.
-            $card['variants'] = array_map(
-                static fn(array $v): array => ['name' => $v['name'] ?? ''],
-                $p['variants'] ?? []
-            );
-
-            $formattedProducts[] = $card;
         }
 
         @ob_clean();
