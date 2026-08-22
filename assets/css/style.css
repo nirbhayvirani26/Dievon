@@ -2411,18 +2411,176 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 
    The count and the gap are the only things a breakpoint changes now; the
    formula stays put and cannot drift out of step with them. */
+/* ══════════════════════════════════════════════════════════════════════════
+   DIEVON COLLECTIONS — an editorial mosaic that is whole at any count
+   ──────────────────────────────────────────────────────────────────────────
+   This was five equal tiles across, capped at five, becoming a swipeable rail
+   on a phone. It is now a mosaic: one large tile leading, the rest arranged
+   around it, nothing scrolling in any direction at any width.
+
+   THE PROBLEM WORTH KNOWING ABOUT. A mosaic is a composition of a KNOWN number
+   of tiles. The reference design has six. Give the same rules two — which is
+   what this shop has today — and you get a tall feature beside one small tile
+   with two thirds of the row empty: not a sparse layout, a broken one.
+
+   So the arrangement is chosen from the count, which the markup writes onto the
+   grid as data-count. Every count from one upward has a composition that fills
+   its rows completely, and past six the extra collections continue in aligned
+   rows of three. The shop can add its third, fourth and fifth collection
+   without anyone touching this file.
+
+   Eighteen columns because that is the smallest number that divides cleanly
+   into the reference: the feature takes 6, the three tiles beside it take 4
+   each, and the two beneath take 6 each. Twelve cannot do thirds and halves of
+   the same remainder; eighteen can.
+   ══════════════════════════════════════════════════════════════════════════ */
 .home-categories-grid {
-    --cat-cols: 5;
     --cat-gap: 24px;
     display: grid;
+    grid-template-columns: repeat(18, minmax(0, 1fr));
+    /* An explicit row height, so the feature spanning two rows is exactly two
+       rows plus the gap between them and its lower edge lines up with the tile
+       beside it. Rows sized by content could not guarantee that. */
+    grid-auto-rows: clamp(200px, 24vw, 340px);
     gap: var(--cat-gap);
-    grid-template-columns: repeat(auto-fit, minmax(0,
-        calc((100% - (var(--cat-cols) - 1) * var(--cat-gap)) / var(--cat-cols))));
-    justify-content: center;
 }
-@media (max-width: 1280px) { .home-categories-grid { --cat-cols: 4; } }
-@media (max-width: 1100px) { .home-categories-grid { --cat-cols: 3; --cat-gap: 22px; } }
-@media (max-width: 820px)  { .home-categories-grid { --cat-cols: 2; --cat-gap: 18px; } }
+
+/* The tile. aspect-ratio is cleared because the grid row decides the height
+   here; .category-card keeps its 3/4 everywhere else it is used. */
+.home-categories-grid > .category-card {
+    aspect-ratio: auto;
+    height: 100%;
+    min-width: 0;
+    border-radius: 2px;
+    box-shadow: 0 1px 2px rgba(58, 12, 27, 0.04);
+    transition: box-shadow 0.45s ease, transform 0.45s ease;
+}
+
+/* ── The default arrangement: six or more ──────────────────────────────────
+   Feature 6 wide and 2 tall; three tiles of 4 beside it; two of 6 beneath.
+   A seventh collection cannot fit either row, so it starts a third — and at
+   6 columns each, rows of three from there on. */
+.home-categories-grid > .category-card                 { grid-column: span 4; }
+.home-categories-grid > .category-card:nth-child(1)    { grid-column: span 6; grid-row: span 2; }
+.home-categories-grid > .category-card:nth-child(5),
+.home-categories-grid > .category-card:nth-child(6),
+.home-categories-grid > .category-card:nth-child(n+7)  { grid-column: span 6; }
+
+/* ── One collection ── A single tile is a banner, not a mosaic. */
+.home-categories-grid[data-count="1"] { grid-auto-rows: auto; }
+.home-categories-grid[data-count="1"] > .category-card:nth-child(1) {
+    grid-column: span 18;
+    grid-row: auto;
+    aspect-ratio: 21 / 9;
+    height: auto;
+}
+
+/* ── Two ── The shop's position today. Two equal portrait tiles read as a
+   deliberate pair; a feature-plus-one reads as a layout missing four tiles. */
+.home-categories-grid[data-count="2"] { grid-auto-rows: auto; }
+.home-categories-grid[data-count="2"] > .category-card,
+.home-categories-grid[data-count="2"] > .category-card:nth-child(1) {
+    grid-column: span 9;
+    grid-row: auto;
+    aspect-ratio: 4 / 5;
+    height: auto;
+}
+
+/* ── Three ── Feature leading, two full-width tiles stacked beside it. */
+.home-categories-grid[data-count="3"] > .category-card              { grid-column: span 12; }
+.home-categories-grid[data-count="3"] > .category-card:nth-child(1) { grid-column: span 6; grid-row: span 2; }
+
+/* ── Four ── Two beside the feature, one spanning the width under them. */
+.home-categories-grid[data-count="4"] > .category-card:nth-child(1) { grid-column: span 6; grid-row: span 2; }
+.home-categories-grid[data-count="4"] > .category-card:nth-child(2),
+.home-categories-grid[data-count="4"] > .category-card:nth-child(3) { grid-column: span 6; }
+.home-categories-grid[data-count="4"] > .category-card:nth-child(4) { grid-column: span 12; }
+
+/* ── Five ── Two and two beside the feature; both rows exactly full. */
+.home-categories-grid[data-count="5"] > .category-card              { grid-column: span 6; }
+.home-categories-grid[data-count="5"] > .category-card:nth-child(1) { grid-column: span 6; grid-row: span 2; }
+
+/* ── The last row, when the count does not divide by three ────────────────
+   Seven collections put the seventh alone in a row at a third of the width.
+   data-tail carries the remainder from the markup, and the stragglers widen to
+   finish their row: one fills it, two halve it. Written as nth-last-child so it
+   is the LAST tiles that grow, whichever they are.
+
+   :nth-child(n+7) on both, so this can never reach the first six — a shop with
+   exactly two collections has data-tail="0" anyway, but a rule that depends on
+   one attribute to stay out of another's way is a rule waiting to misfire. */
+.home-categories-grid[data-tail="1"] > .category-card:nth-child(n+7):nth-last-child(1) {
+    grid-column: span 18;
+}
+.home-categories-grid[data-tail="2"] > .category-card:nth-child(n+7):nth-last-child(-n+2) {
+    grid-column: span 9;
+}
+
+/* ── Hover, on the tile rather than on the photograph ──────────────────────
+   All four effects hang off .category-card:hover, so they fire wherever the
+   cursor is on the tile. Hooking the zoom to the image and the underline to the
+   link meant the underline only moved if you happened to be over those two
+   words. Slow on purpose: 0.9s on the image, which at 1.06 scale is a drift
+   rather than a jump. */
+.home-categories-grid > .category-card .zoom-img,
+.home-categories-grid > .category-card img {
+    transition: transform 0.9s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+.home-categories-grid > .category-card:hover .zoom-img,
+.home-categories-grid > .category-card:focus-visible .zoom-img {
+    transform: scale(1.06);
+}
+.home-categories-grid > .category-card:hover,
+.home-categories-grid > .category-card:focus-visible {
+    box-shadow: 0 18px 40px -18px rgba(58, 12, 27, 0.34);
+}
+/* The scrim deepens rather than appears, and it reaches higher up the frame so
+   the name stays readable as the picture brightens under the zoom. */
+.home-categories-grid > .category-card .category-card-overlay {
+    background: linear-gradient(to top, rgba(0,0,0,0.62) 0%, rgba(0,0,0,0.12) 42%, rgba(0,0,0,0) 68%);
+    transition: background 0.55s ease;
+}
+.home-categories-grid > .category-card:hover .category-card-overlay,
+.home-categories-grid > .category-card:focus-visible .category-card-overlay {
+    background: linear-gradient(to top, rgba(0,0,0,0.76) 0%, rgba(0,0,0,0.30) 48%, rgba(0,0,0,0.06) 78%);
+}
+
+/* The gold rule under the link. The site's shared underline already animates
+   from scaleX(0) on the link's own hover; here it rests at a short stub — the
+   gold line the reference shows sitting under every collection name — and
+   draws out to full width when the TILE is hovered. Same component, same
+   easing, one behaviour added rather than a second underline invented.
+
+   --color-accent, not --color-accent-ink: this sits on a darkened photograph,
+   and style.css:~120 records that the ink token is the one for gold on pale
+   grounds while --color-accent is the one for gold on dark. */
+.home-categories-grid > .category-card .category-card-link { color: var(--color-accent); }
+.home-categories-grid > .category-card .category-card-link::after {
+    transform: scaleX(0.4);
+    transition: transform 0.55s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+.home-categories-grid > .category-card:hover .category-card-link::after,
+.home-categories-grid > .category-card:focus-visible .category-card-link::after {
+    transform: scaleX(1);
+}
+
+/* Keyboard focus has to be visible on a tile whose whole surface is the link. */
+.home-categories-grid > .category-card:focus-visible {
+    outline: 2px solid var(--color-secondary);
+    outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .home-categories-grid > .category-card,
+    .home-categories-grid > .category-card .zoom-img,
+    .home-categories-grid > .category-card img,
+    .home-categories-grid > .category-card .category-card-overlay,
+    .home-categories-grid > .category-card .category-card-link::after {
+        transition: none;
+    }
+    .home-categories-grid > .category-card:hover .zoom-img,
+    .home-categories-grid > .category-card:focus-visible .zoom-img { transform: none; }
+}
 
 /* View All — only rendered when collections were actually held back, so the
    button never appears promising more than the row already shows. */
@@ -8821,48 +8979,67 @@ main#mainContent:focus { outline: none; }
    The percentages mirror .occasion-slider, which already does this further down
    the same page — so the two rails behave identically rather than each being
    tuned by hand to a different feel. */
-@media (max-width: 768px) {
+/* ── The mosaic on smaller screens ─────────────────────────────────────────
+   This was a swipeable rail below 768px, with roughly two and a half tiles in
+   view and the rest off-screen. It is a mosaic at every width now: two columns
+   on a tablet or a phone, one below 380px, and every collection on screen with
+   nothing to scroll sideways.
+
+   The eighteen-column arrangement cannot survive the narrowing — a four-column
+   tile is 60px at phone width — so the composition is replaced rather than
+   squeezed.
+
+   ABOUT THE SELECTORS. Every span above is set by either :nth-child() or a
+   [data-count] rule, which are specificity (0,2,1) and (0,3,0). A plain
+   `.home-categories-grid > .category-card` reset is (0,2,0) and loses to both:
+   written that way, tiles five onward kept span 6 here and the browser invented
+   implicit columns to hold them, collapsing the feature to 18px wide. Matching
+   [data-count] AND :nth-child(n) puts this at (0,3,1), above everything it has
+   to undo, without reaching for !important. data-count is always written, so
+   the attribute is always there to match. */
+@media (max-width: 1024px) {
     .home-categories-grid {
-        display: flex !important;
-        grid-template-columns: none !important;
-        /* Both of these undo the desktop grid above. A scroll container that
-           centres its content puts the first tile out of reach behind the left
-           edge, and wrapping would stack the rail into rows instead of letting
-           it scroll. */
-        justify-content: flex-start;
-        flex-wrap: nowrap;
-        gap: 12px;
-        overflow-x: auto;
-        /* Load-bearing. The spec says that when one axis is auto and the other is
-           visible, the visible one computes to auto as well — so overflow-x alone
-           quietly made this a VERTICAL scroll container with nothing to scroll.
-           It then swallowed every up/down swipe that began on a tile and the page
-           stopped moving: the finger was panning a box with zero spare height.
-           Saying hidden explicitly keeps the vertical gesture with the document. */
-        overflow-y: hidden;
-        scroll-snap-type: x proximity;
-        scroll-padding-left: 2px;
-        padding-bottom: 8px;
-        -webkit-overflow-scrolling: touch;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-auto-rows: auto;
+        gap: 18px;
     }
-    .home-categories-grid::-webkit-scrollbar { display: none; }
-    .home-categories-grid > .category-card {
-        flex: 0 0 42%;              /* ~2.4 tiles in view — the peek */
-        scroll-snap-align: start;
+    .home-categories-grid[data-count] > .category-card:nth-child(n) {
+        grid-column: span 1;
+        grid-row: auto;
+        aspect-ratio: 3 / 4;
+        height: auto;
     }
-}
-@media (max-width: 420px) {
-    .home-categories-grid > .category-card { flex: 0 0 56%; }   /* ~1.8 in view */
+    /* The feature keeps its prominence by taking the full width in a landscape
+       crop, which is the shape a wide short tile wants. */
+    .home-categories-grid[data-count] > .category-card.is-feature:nth-child(n) {
+        grid-column: span 2;
+        aspect-ratio: 16 / 10;
+    }
+    /* Two collections are a pair, so neither leads — a full-width tile above a
+       half-width one would read as one collection mattering twice as much. */
+    .home-categories-grid[data-count="2"] > .category-card.is-feature:nth-child(n) {
+        grid-column: span 1;
+        aspect-ratio: 3 / 4;
+    }
 }
 
-/* Arrows for the collections rail, and the vertical-scroll fix.
-   ──────────────────────────────────────────────────────────────────────────
-   touch-action: pan-x pan-y is the important line. A horizontal scroll
-   container can swallow a vertical drag that begins on it, so a thumb landing
-   on a tile could not scroll the PAGE — it just wobbled the rail sideways.
-   Naming both axes hands the vertical gesture back to the document while the
-   horizontal one still moves the rail. */
-.home-categories-grid { touch-action: pan-x pan-y; overscroll-behavior-x: contain; }
+/* Below this a two-column tile is about 150px wide and the collection name
+   starts wrapping over the model. One column, in a landscape crop so nine
+   collections do not make the section a mile long. */
+@media (max-width: 380px) {
+    .home-categories-grid { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+    .home-categories-grid[data-count] > .category-card:nth-child(n),
+    .home-categories-grid[data-count] > .category-card.is-feature:nth-child(n) {
+        grid-column: span 1;
+        aspect-ratio: 4 / 3;
+    }
+}
+
+/* The touch-action and overscroll-behavior-x guards were here. They existed
+   because the collections were a horizontal scroll container that could swallow
+   a vertical drag beginning on a tile — a thumb on a tile wobbled the rail
+   instead of scrolling the page. The mosaic scrolls in neither direction, so
+   there is no gesture to hand back. */
 
 /* The Owl rails: the page owns up-and-down, the rail owns side-to-side.
    ────────────────────────────────────────────────────────────────────────────
@@ -8919,37 +9096,8 @@ main#mainContent:focus { outline: none; }
    .owl-drag so it only appears on rails Owl has actually made draggable — never
    on a strip that cannot move. */
 
-.cat-rail-nav { display: none; }
-@media (max-width: 768px) {
-    .cat-rail-nav {
-        display: flex;
-        justify-content: flex-end;
-        gap: 10px;
-        margin-top: 16px;
-    }
-    /* Shaped from .hero-arrow, the arrows already on this page, so the two sets
-       read as one control rather than two designs: 50x50 and a chevron, not a
-       44px box with a long arrow. The colours differ because the hero pair sits
-       over a photograph and needs a dark scrim to stay legible, while these sit
-       on the page ground where that scrim would be a black box on cream. */
-    .cat-rail-arrow {
-        /* 44, not the hero pair's 50. On a phone those render 40x40 — below the
-           44px minimum a finger needs — so matching them exactly would copy a
-           flaw. 44 is the closest size to the hero that is still tappable, and
-           the difference is four pixels on controls that never appear together. */
-        width: 44px;
-        height: 44px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: transparent;
-        border: 1px solid var(--border-strong);
-        color: var(--text-primary);
-        cursor: pointer;
-        transition: 0.3s;
-    }
-    .cat-rail-arrow:hover { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
-}
+/* The collections rail arrows were styled here, shaped from .hero-arrow so the
+   two sets on this page read as one control. The rail is gone and so are they. */
 
 /* ── One arrow, everywhere ─────────────────────────────────────────────────
    These six controls all do the same job — move a rail, close an overlay — and
@@ -8976,8 +9124,7 @@ main#mainContent:focus { outline: none; }
    breaking placement for; those two keep their own shape. */
 .btn-close-cart,
 .hero-arrow,
-.btn-carousel-arrow,
-.cat-rail-arrow {
+.btn-carousel-arrow {
     border-radius: 2px;
     min-width: 44px;
     min-height: 44px;
@@ -9156,11 +9303,9 @@ main#mainContent:focus { outline: none; }
     .product-description-text.is-clamped { margin-bottom: 4px; }
 }
 
-/* [hidden] needs saying explicitly: the media query below sets display:flex on
-   .cat-rail-nav, and any author display beats the browser's [hidden] rule — the
-   same trap that kept the description Read more visible after the JS had
-   correctly hidden it. */
-.cat-rail-nav[hidden] { display: none !important; }
+/* The [hidden] guard for .cat-rail-nav was here: a media query set display:flex
+   on it, and an author display beats the browser's [hidden] rule. Both the rail
+   and its arrows are gone, so there is nothing left to guard. */
 
 /* ══ Colour swatch — sold out ═══════════════════════════════════════════════
    A colour whose every size is gone looked identical to one in stock, so the

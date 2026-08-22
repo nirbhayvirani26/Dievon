@@ -477,8 +477,7 @@ $heroSlideCount = !empty($heroBanners)
             <span class="editorial-label">Curated Ensembles</span>
             <h2 class="section-title">Dievon Collections</h2>
         </div>
-        <div class="home-categories-grid">
-            <?php
+        <?php
             // Fetch ONLY main parent categories for the collections section
             $stmtCat = $pdo->query("SELECT * FROM categories WHERE parent_id = 0 OR parent_id IS NULL ORDER BY sort_order ASC");
             $allCategories = $stmtCat->fetchAll(PDO::FETCH_ASSOC);
@@ -502,20 +501,49 @@ $heroSlideCount = !empty($heroBanners)
                 return true;
             }));
 
-            /* One row, and a way to the rest.
+            /* Every collection is drawn.
                ────────────────────────────────────────────────────────────────
-               The grid is five across, so showing every collection makes the
-               section as tall as the catalogue is wide — six collections became
-               two rows where the second held one tile and a gap. Capping at the
-               row length keeps this section a fixed height whatever the shop
-               grows to, and the button below carries anyone who wants more.
+               This was capped at five, because the old layout was a fixed
+               five-across row and a sixth collection left a row holding one
+               tile and a gap. The mosaic does not have that problem: it lays
+               out from a count, so six fill the reference arrangement exactly
+               and a seventh continues in an aligned row of three beneath.
 
-               Counted BEFORE the slice: the button has to know how many were
-               held back, and asking after the cut would always say none. */
+               $catTotalCount is kept — the "View All" button below reads it,
+               and with nothing now held back its own condition is false, so it
+               simply stops rendering rather than promising more than is shown. */
             $catTotalCount = count($allCategories);
-            $allCategories = array_slice($allCategories, 0, 5);
+            $catShownCount = $catTotalCount;
 
-            foreach($allCategories as $cat):
+?>
+        <?php /* data-count is what makes this work with the two collections the
+                 shop has today as well as the six the design was drawn for.
+                 A mosaic is an arrangement of a KNOWN number of tiles; hand it
+                 two and the reference layout leaves a tall feature beside one
+                 small tile and two thirds of the row empty. The CSS keyed to
+                 this attribute picks a composition that is whole at every count
+                 from one upward — see assets/css/style.css.
+
+                 The list has to be built BEFORE this div, not inside it: the
+                 attribute is written as the tag is emitted, so a count taken
+                 from a variable the loop below fills is a count of nothing. */ ?>
+        <?php
+        /* The last row, when the count does not divide.
+           ────────────────────────────────────────────────────────────────────
+           Past the first six the extras run three to a row. Seven collections
+           therefore leave the seventh alone in a row at a third of the width —
+           exactly the "one tile and a gap" the old five-tile cap existed to
+           avoid, just moved further down the page.
+
+           So the remainder is worked out here and the CSS widens the stragglers
+           to fill their row: one leftover spans the full width, two split it in
+           half, three need nothing. Any number of collections now ends on a
+           complete row. */
+        $catTail = $catShownCount > 6 ? (($catShownCount - 6) % 3) : 0;
+        ?>
+        <div class="home-categories-grid" data-count="<?= (int)$catShownCount ?>" data-tail="<?= (int)$catTail ?>">
+            <?php
+            foreach($allCategories as $catIndex => $cat):
                 // The collection's OWN image first, then a product photo, then the
                 // placeholder.
                 //
@@ -557,8 +585,21 @@ $heroSlideCount = !empty($heroBanners)
                     }
                 }
             ?>
-            <a href="<?= htmlspecialchars(categoryUrlByName($pdo, $cat['name'])) ?>" class="category-card zoom-box">
-                <img class="zoom-img" src="<?= $catImgSrc ?>" alt="<?= htmlspecialchars($cat['name']) ?>" loading="lazy">
+            <?php /* The first collection takes the large tile. It is first because
+                     sort_order says so — the same order the header menu and the
+                     footer use — so the shop decides what leads here by ordering
+                     collections in admin, not by anything written in this file.
+
+                     width/height are the intrinsic ratio, not a size: the tile
+                     controls the box and object-fit crops into it. They are here
+                     so the browser reserves the space before the photograph
+                     arrives, which is what stops the section jumping as the lazy
+                     images land. */ ?>
+            <a href="<?= htmlspecialchars(categoryUrlByName($pdo, $cat['name'])) ?>"
+               class="category-card zoom-box<?= $catIndex === 0 ? ' is-feature' : '' ?>">
+                <img class="zoom-img" src="<?= $catImgSrc ?>"
+                     alt="<?= htmlspecialchars($cat['name']) ?> collection"
+                     width="800" height="1000" loading="lazy" decoding="async">
                 <div class="category-card-overlay">
                     <div>
                         <h3><?= htmlspecialchars($cat['name']) ?></h3>
@@ -573,17 +614,11 @@ $heroSlideCount = !empty($heroBanners)
                  "View All" under a row that already shows everything promises
                  more than the shop has, which is the same fault as a Read more
                  that reveals nothing. */ ?>
-        <?php /* Arrows for the collections rail. The scrollbar is hidden, so on a
-                 trackpad or a narrow desktop window there was no way to move it at
-                 all — a rail you can only reach by touch is a rail half your
-                 visitors cannot use. Hidden above 768px, where all five sit in one
-                 row and there is nothing to scroll to. */ ?>
-        <div class="cat-rail-nav">
-            <button type="button" class="cat-rail-arrow" aria-label="Previous collections"
-                    onclick="scrollCatRail(-1)"><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></button>
-            <button type="button" class="cat-rail-arrow" aria-label="Next collections"
-                    onclick="scrollCatRail(1)"><i class="fa-solid fa-chevron-right" aria-hidden="true"></i></button>
-        </div>
+        <?php /* The rail arrows were here. This section scrolled sideways on a
+                 phone and needed them; the mosaic does not scroll in any
+                 direction, so every collection is on screen and there is nothing
+                 left for an arrow to move. scrollCatRail() and its resize
+                 listener are removed further down this file with them. */ ?>
 
         <?php if ($catTotalCount > count($allCategories)): ?>
         <div class="home-categories-more">
@@ -1365,43 +1400,11 @@ $occIsMen = function_exists('currentShopGender') && currentShopGender() === 'men
         return false;
     }
 
-    // ── New Arrivals Carousel Arrow Scroll ──────────────────
-    /* Sits beside scrollCarousel, in the same scope, because that one is reached
-       from an inline onclick and therefore demonstrably global here. An earlier
-       attempt placed this inside a wrapper and the arrows threw
-       "scrollCatRail is not defined" on every press — a dead control that looked
-       live. One tile per press, gap included, so a press lands a whole tile at
-       the edge rather than half of one. */
-    /* Hide the rail arrows when the rail cannot move.
-       ────────────────────────────────────────────────────────────────────
-       Two collections at 42% each fit inside the viewport, so there is
-       nothing to scroll to — and a pair of arrows that do nothing is the
-       same fault as a Read more that reveals nothing: a control offering a
-       result it cannot produce.
-
-       Measured, not counted. Whether a rail scrolls depends on tile width,
-       gap and viewport together, so scrollWidth against clientWidth is the
-       only honest test; counting tiles would be right at one width and
-       wrong at the next. Re-run on resize for the same reason. */
-    function syncCatRailArrows() {
-        const rail = document.querySelector(".home-categories-grid");
-        const nav  = document.querySelector(".cat-rail-nav");
-        if (!rail || !nav) { return; }
-        const scrolls = rail.scrollWidth > rail.clientWidth + 2;
-        nav.hidden = !scrolls;
-    }
-    window.addEventListener("load", syncCatRailArrows);
-    window.addEventListener("resize", syncCatRailArrows);
-    document.addEventListener("DOMContentLoaded", syncCatRailArrows);
-
-    function scrollCatRail(dir) {
-        const rail = document.querySelector(".home-categories-grid");
-        if (!rail) { return; }
-        const tile = rail.querySelector(".category-card");
-        const gap  = parseFloat(getComputedStyle(rail).columnGap) || 12;
-        const step = tile ? tile.getBoundingClientRect().width + gap : 200;
-        rail.scrollBy({ left: dir * step, behavior: "smooth" });
-    }
+    /* syncCatRailArrows() and scrollCatRail() were here, driving the arrows on
+       the collections rail, and the note above them explained why they had to
+       live in this scope. The rail is gone — the collections are a mosaic that
+       does not scroll — so both functions had nothing left to move, and the
+       load and resize listeners they registered went with them. */
 
     function scrollCarousel(dir) {
         const carousel = document.getElementById('newArrivalsCarousel');
