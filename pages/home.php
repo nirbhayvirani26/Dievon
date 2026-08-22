@@ -604,11 +604,21 @@ $heroSlideCount = !empty($heroBanners)
                  "View All" under a row that already shows everything promises
                  more than the shop has, which is the same fault as a Read more
                  that reveals nothing. */ ?>
-        <?php /* The rail arrows were here. This section scrolled sideways on a
-                 phone and needed them; the mosaic does not scroll in any
-                 direction, so every collection is on screen and there is nothing
-                 left for an arrow to move. scrollCatRail() and its resize
-                 listener are removed further down this file with them. */ ?>
+        <?php /* Arrows for the collections rail. The rail is back below 768px, and
+                 with it these: the scrollbar is hidden, so without them the rail
+                 is reachable by touch and by nothing else — no trackpad, no
+                 keyboard, no narrow desktop window. Hidden above 768px, where the
+                 mosaic shows everything and there is nothing to scroll to.
+
+                 syncCatRailArrows() hides them when the rail cannot actually
+                 move, so six collections that happen to fit do not get a pair of
+                 controls that do nothing. */ ?>
+        <div class="cat-rail-nav">
+            <button type="button" class="cat-rail-arrow" aria-label="Previous collections"
+                    onclick="scrollCatRail(-1)"><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></button>
+            <button type="button" class="cat-rail-arrow" aria-label="Next collections"
+                    onclick="scrollCatRail(1)"><i class="fa-solid fa-chevron-right" aria-hidden="true"></i></button>
+        </div>
 
         <?php if ($catTotalCount > count($allCategories)): ?>
         <div class="home-categories-more">
@@ -1390,11 +1400,37 @@ $occIsMen = function_exists('currentShopGender') && currentShopGender() === 'men
         return false;
     }
 
-    /* syncCatRailArrows() and scrollCatRail() were here, driving the arrows on
-       the collections rail, and the note above them explained why they had to
-       live in this scope. The rail is gone — the collections are a mosaic that
-       does not scroll — so both functions had nothing left to move, and the
-       load and resize listeners they registered went with them. */
+    /* ── Collections rail arrows ────────────────────────────────────────────
+       These sit here, beside scrollCarousel, because that one is reached from an
+       inline onclick and is therefore demonstrably global in this scope. An
+       earlier attempt put them inside a wrapper and every press threw
+       "scrollCatRail is not defined" — a dead control that looked live.
+
+       Hidden when the rail cannot move. Six collections at 42% each may fit
+       inside a wide phone, and a pair of arrows that do nothing is the same
+       fault as a Read more that reveals nothing. Measured, not counted: whether
+       a rail scrolls depends on tile width, gap and viewport together, so
+       scrollWidth against clientWidth is the only honest test. Re-run on resize
+       for the same reason. */
+    function syncCatRailArrows() {
+        const rail = document.querySelector(".home-categories-grid");
+        const nav  = document.querySelector(".cat-rail-nav");
+        if (!rail || !nav) { return; }
+        const scrolls = rail.scrollWidth > rail.clientWidth + 2;
+        nav.hidden = !scrolls;
+    }
+    window.addEventListener("load", syncCatRailArrows);
+    window.addEventListener("resize", syncCatRailArrows);
+    document.addEventListener("DOMContentLoaded", syncCatRailArrows);
+
+    function scrollCatRail(dir) {
+        const rail = document.querySelector(".home-categories-grid");
+        if (!rail) { return; }
+        const tile = rail.querySelector(".category-card");
+        const gap  = parseFloat(getComputedStyle(rail).columnGap) || 12;
+        const step = tile ? tile.getBoundingClientRect().width + gap : 200;
+        rail.scrollBy({ left: dir * step, behavior: "smooth" });
+    }
 
     function scrollCarousel(dir) {
         const carousel = document.getElementById('newArrivalsCarousel');

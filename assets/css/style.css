@@ -9009,15 +9009,65 @@ main#mainContent:focus { outline: none; }
     }
 }
 
-/* Below this a two-column tile is about 150px wide and the collection name
-   starts wrapping over the model. One column, in a landscape crop so nine
-   collections do not make the section a mile long. */
-@media (max-width: 380px) {
-    .home-categories-grid { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+/* ── The phone: a swipeable rail, as it was before the mosaic ──────────────
+   Restored on request. Below 768px the tiles stop being a grid and become a
+   horizontal rail with about two and a half in view, which is what this section
+   did until the mosaic replaced it.
+
+   Worth being honest about the trade: collections past the second sit
+   off-screen until someone swipes, and some people never do. The arrows below
+   exist because of that, and because the scrollbar is hidden — without them a
+   rail is reachable by touch and by nothing else.
+
+   Two lines here are load-bearing rather than cosmetic, both learned the hard
+   way and both kept exactly as they were:
+
+     overflow-y: hidden — the spec says that when one axis is auto and the other
+     is visible, the visible one computes to auto too. overflow-x alone quietly
+     made this a VERTICAL scroll container with nothing to scroll, and it then
+     swallowed every up-and-down swipe that began on a tile: the page stopped
+     moving because the finger was panning a box with no spare height.
+
+     touch-action: pan-x pan-y — a horizontal scroller can claim a vertical drag
+     that starts on it. Naming both axes hands the vertical gesture back to the
+     document while the horizontal one still moves the rail. */
+@media (max-width: 768px) {
+    .home-categories-grid {
+        display: flex;
+        grid-template-columns: none;
+        justify-content: flex-start;
+        flex-wrap: nowrap;
+        gap: 12px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scroll-snap-type: x proximity;
+        scroll-padding-left: 2px;
+        padding-bottom: 8px;
+        -webkit-overflow-scrolling: touch;
+        touch-action: pan-x pan-y;
+        overscroll-behavior-x: contain;
+    }
+    .home-categories-grid::-webkit-scrollbar { display: none; }
+
+    /* The mosaic's spans and its 16/10 feature are set at (0,3,1) and (0,4,1),
+       so a plain rule here loses to them. In a flex container grid-column is
+       inert, but aspect-ratio is not — left alone the first tile stayed a wide
+       landscape crop in a rail of portraits. Matched at the same specificity so
+       every tile in the rail is one shape, which is what it was before. */
     .home-categories-grid[data-count] > .category-card:nth-child(n),
     .home-categories-grid[data-count] > .category-card.is-feature:nth-child(n) {
-        grid-column: span 1;
-        aspect-ratio: 4 / 3;
+        flex: 0 0 42%;              /* ~2.4 tiles in view — the peek */
+        scroll-snap-align: start;
+        aspect-ratio: 3 / 4;
+        height: auto;
+    }
+}
+
+/* Fewer, larger tiles once the screen is narrow enough that 42% is a stamp. */
+@media (max-width: 420px) {
+    .home-categories-grid[data-count] > .category-card:nth-child(n),
+    .home-categories-grid[data-count] > .category-card.is-feature:nth-child(n) {
+        flex: 0 0 56%;              /* ~1.8 in view */
     }
 }
 
@@ -9082,8 +9132,52 @@ main#mainContent:focus { outline: none; }
    .owl-drag so it only appears on rails Owl has actually made draggable — never
    on a strip that cannot move. */
 
-/* The collections rail arrows were styled here, shaped from .hero-arrow so the
-   two sets on this page read as one control. The rail is gone and so are they. */
+/* ── The collections rail arrows ──────────────────────────────────────────
+   Hidden by default; the rail only exists below 768px, so above that these
+   would be two controls with nothing to move.
+
+   [hidden] needs saying explicitly. The attribute is only a default of
+   display:none and ANY author display rule beats it — the media query below is
+   exactly such a rule, so without this line syncCatRailArrows() could set
+   nav.hidden and the arrows would stay on screen anyway. This trap has been
+   sprung three times in this stylesheet; the rule is the fix each time. */
+.cat-rail-nav { display: none; }
+.cat-rail-nav[hidden] { display: none !important; }
+
+@media (max-width: 768px) {
+    .cat-rail-nav {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 16px;
+    }
+    /* Shaped from .hero-arrow, the arrows already on this page, so the two sets
+       read as one control rather than two designs: a 44px box and a chevron. */
+    .cat-rail-arrow {
+        /* 44, not the hero pair's 50. On a phone those render 40x40 — under the
+           44px minimum a finger needs — so matching them exactly would copy a
+           flaw. */
+        width: 44px;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+        border: 1px solid var(--border-strong);
+        color: var(--text-primary);
+        cursor: pointer;
+        transition: 0.3s;
+    }
+    .cat-rail-arrow:hover,
+    .cat-rail-arrow:focus-visible {
+        background: var(--color-primary);
+        border-color: var(--color-primary);
+        color: #fff;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .cat-rail-arrow { transition: none; }
+}
 
 /* ── One arrow, everywhere ─────────────────────────────────────────────────
    These six controls all do the same job — move a rail, close an overlay — and
@@ -9110,7 +9204,8 @@ main#mainContent:focus { outline: none; }
    breaking placement for; those two keep their own shape. */
 .btn-close-cart,
 .hero-arrow,
-.btn-carousel-arrow {
+.btn-carousel-arrow,
+.cat-rail-arrow {
     border-radius: 2px;
     min-width: 44px;
     min-height: 44px;
