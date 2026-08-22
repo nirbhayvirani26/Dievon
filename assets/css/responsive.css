@@ -1521,10 +1521,6 @@ html {
    Replaces five scattered rules across two files, four of which
    never applied because the base rule carried !important.
    ═══════════════════════════════════════════════════════════ */
-@media (max-width: 1200px) { .container { padding: 0 2rem; } }     /* 32px */
-@media (max-width: 900px)  { .container { padding: 0 1.5rem; } }   /* 24px */
-@media (max-width: 640px)  { .container { padding: 0 1rem; } }     /* 16px */
-@media (max-width: 380px)  { .container { padding: 0 0.75rem; } }  /* 12px */
 
 /* ═══════════════════════════════════════════════════════════
    LEGAL PANELS ON MOBILE
@@ -1825,31 +1821,7 @@ html {
 
    nth-of-type(odd/even) rather than :first/:last-of-type so a third panel
    would keep the rhythm instead of breaking it. */
-@media (min-width: 769px) {
-    .occasion-banners-section .occasion-banner .occasion-banner-content {
-        max-width: 1080px;
-    }
-    .occasion-banners-section .occasion-banner .occasion-banner-content h2,
-    .occasion-banners-section .occasion-banner .occasion-banner-content p {
-        max-width: 560px;
-    }
-    .occasion-banners-section .occasion-banner:nth-of-type(odd) .occasion-banner-content {
-        text-align: left;
-    }
-    .occasion-banners-section .occasion-banner:nth-of-type(odd) .occasion-banner-content h2,
-    .occasion-banners-section .occasion-banner:nth-of-type(odd) .occasion-banner-content p {
-        margin-left: 0;
-        margin-right: auto;
-    }
-    .occasion-banners-section .occasion-banner:nth-of-type(even) .occasion-banner-content {
-        text-align: right;
-    }
-    .occasion-banners-section .occasion-banner:nth-of-type(even) .occasion-banner-content h2,
-    .occasion-banners-section .occasion-banner:nth-of-type(even) .occasion-banner-content p {
-        margin-left: auto;
-        margin-right: 0;
-    }
-}
+
 
 /* On a phone there is no width to alternate into — right-aligned body copy on a
    375px screen just looks like a mistake — so the panels stay centred and a
@@ -1869,13 +1841,6 @@ html {
    showing at the right edge — that clipped sliver is the only thing telling the
    shopper the strip scrolls, since there are no arrows and no dots. A width that
    divides evenly into 100% would end the row flush and kill the affordance. */
-@media (max-width: 1199px) { .occasion-tile { flex-basis: 23%; } }  /* ~4.3 in view */
-@media (max-width: 991px)  { .occasion-tile { flex-basis: 30%; } }  /* ~3.3 in view */
-@media (max-width: 768px)  {
-    .occasion-slider { gap: 12px; padding: 0 14px 6px; scroll-padding-left: 14px; }
-    .occasion-tile   { flex-basis: 42%; }                            /* ~2.4 in view */
-}
-@media (max-width: 420px)  { .occasion-tile { flex-basis: 56%; } }  /* ~1.8 in view */
 
 /* ── Reduced motion ────────────────────────────────────────────────────────
    The mobile accordion animates height and an arrow rotation. Someone who has
@@ -2208,4 +2173,77 @@ html {
 }
 @media (max-width: 640px) {
     .navbar-luxury.header-compact .header-top-bar { padding: 6px 0 !important; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CLOSES @media (max-width: 991px), OPENED AT LINE 184
+   ───────────────────────────────────────────────────────────────────────────
+   That block was never closed, so every rule written after it — around 2000
+   lines, the rest of this file — was absorbed into it. Most of them are mobile
+   rules and belong there, which is why nothing looked obviously wrong and why it
+   survived this long.
+
+   The brace changes nothing by itself: a browser already closes an unterminated
+   block at end of file, so the nesting is identical either side of this line.
+   What it changes is that the file is valid, and anything appended below sits at
+   the top level where its author will expect it rather than being silently made
+   mobile-only.
+   ═══════════════════════════════════════════════════════════════════════════ */
+}
+
+/* ── Lifted back out of that block ──────────────────────────────────────────
+   Three things were written for ranges reaching above 991px, and the wrapper cut
+   each one off:
+
+     · the .container gutter never stepped down to 2rem between 992 and 1200, so
+       a small laptop kept the full 3.5rem desktop gutter;
+     · the occasion tile basis for <=1199px was shadowed by the <=991 step and
+       never applied at all;
+     · the occasion banner block, meant for every width from 769px up, ran only
+       to 991 — so DESKTOP banners fell back to a 600px centred column while the
+       tablet got the 1080px alternating layout they were designed for.
+       Backwards, and the most visible of the three.
+
+   Both ladders move WHOLE and in their original order. Moving only the top step
+   was tried first and was wrong: with equal specificity the later declaration
+   wins, so a <=1200px rule sitting after the <=900px one re-widened the gutter
+   at 800px. Measured, not reasoned about — 800px read 32px where the file says
+   24px. Order is the rule here, not range. */
+@media (max-width: 1200px) { .container { padding: 0 2rem; } }     /* 32px */
+@media (max-width: 900px)  { .container { padding: 0 1.5rem; } }   /* 24px */
+@media (max-width: 640px)  { .container { padding: 0 1rem; } }     /* 16px */
+@media (max-width: 380px)  { .container { padding: 0 0.75rem; } }  /* 12px */
+
+@media (max-width: 1199px) { .occasion-tile { flex-basis: 23%; } }  /* ~4.3 in view */
+@media (max-width: 991px)  { .occasion-tile { flex-basis: 30%; } }  /* ~3.3 in view */
+@media (max-width: 768px)  {
+    .occasion-slider { gap: 12px; padding: 0 14px 6px; scroll-padding-left: 14px; }
+    .occasion-tile   { flex-basis: 42%; }                            /* ~2.4 in view */
+}
+@media (max-width: 420px)  { .occasion-tile { flex-basis: 56%; } }  /* ~1.8 in view */
+
+@media (min-width: 769px) {
+    .occasion-banners-section .occasion-banner .occasion-banner-content {
+        max-width: 1080px;
+    }
+    .occasion-banners-section .occasion-banner .occasion-banner-content h2,
+    .occasion-banners-section .occasion-banner .occasion-banner-content p {
+        max-width: 560px;
+    }
+    .occasion-banners-section .occasion-banner:nth-of-type(odd) .occasion-banner-content {
+        text-align: left;
+    }
+    .occasion-banners-section .occasion-banner:nth-of-type(odd) .occasion-banner-content h2,
+    .occasion-banners-section .occasion-banner:nth-of-type(odd) .occasion-banner-content p {
+        margin-left: 0;
+        margin-right: auto;
+    }
+    .occasion-banners-section .occasion-banner:nth-of-type(even) .occasion-banner-content {
+        text-align: right;
+    }
+    .occasion-banners-section .occasion-banner:nth-of-type(even) .occasion-banner-content h2,
+    .occasion-banners-section .occasion-banner:nth-of-type(even) .occasion-banner-content p {
+        margin-left: auto;
+        margin-right: 0;
+    }
 }
