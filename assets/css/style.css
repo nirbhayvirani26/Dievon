@@ -9917,3 +9917,21 @@ input.chk-input-error:focus {
 /* The option list is drawn by the operating system and cannot take the strip's
    type, but it can at least not be white-on-white in a dark theme. */
 .navbar-luxury .header-top-bar #countrySelector option { color: #3a0c1b; background: #fff; }
+
+/* The drawer's Shopping Bag count.
+   ─────────────────────────────────────────────────────────────────────────────
+   The brackets are here rather than in the markup so they belong to the number.
+   Written into the sentence they were literal text, and hiding the span at zero
+   — which is right, the button should read "Shopping Bag" when it is empty —
+   left them behind as "Shopping Bag ()".
+
+   No display declaration here on purpose. The script used to set display:flex on
+   this span — right for the round badge on the bag icon, wrong for a number
+   inside a line of text — and that is fixed in footer.php. Restating "inline"
+   as a guard would be theatre: the button is a flex container, so this span is a
+   flex item and any inline value is blockified to block regardless. Checked
+   rather than assumed — computed display is block whatever is written here, and
+   the row lays out correctly because that is how flex items behave. */
+.drawer-bag-count::before { content: "("; }
+.drawer-bag-count::after  { content: ")"; }
+.drawer-bag-count[hidden] { display: none; }

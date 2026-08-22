@@ -759,20 +759,32 @@ ${window.dievonQtyStepper ? window.dievonQtyStepper(cartKey, item.quantity, { at
 // ── Badge helpers ────────────────────────────────────────────
 function updateBadge() {
     const count = (cartState && typeof cartState.cart_count !== 'undefined') ? parseInt(cartState.cart_count, 10) : 0;
-    const badges = document.querySelectorAll('#cartBadge, #mobileCartCount');
-    badges.forEach(b => {
-        if (b) {
-            b.textContent = count;
-            // Hidden at zero, exactly as updateWishlistBadge() already does.
-            //
-            // This forced display:flex unconditionally, so an empty bag wore a
-            // filled maroon "0" permanently. Beside a wishlist heart that
-            // correctly shows nothing at zero, it read as a bug rather than a
-            // count — a badge is a notification, and "you have zero things" is
-            // not something to notify anybody about.
-            b.style.display = count > 0 ? 'flex' : 'none';
-        }
-    });
+    /* Two counts, two different things — they used to share one loop.
+     * ─────────────────────────────────────────────────────────────────────
+     * #cartBadge is the round disc on the bag icon. Hidden at zero, exactly as
+     * updateWishlistBadge() already does: it forced display:flex
+     * unconditionally, so an empty bag wore a filled maroon "0" permanently.
+     * Beside a wishlist heart that correctly shows nothing at zero, that read
+     * as a bug rather than a count — a badge is a notification, and "you have
+     * zero things" is not something to notify anybody about.
+     *
+     * #mobileCartCount is a number inside a sentence, in the drawer's Shopping
+     * Bag button. Sharing the rule above gave it both of that rule's
+     * assumptions and neither of them holds: display:flex turned an inline
+     * count into a flex container in the middle of the button's text, and
+     * hiding it at zero left the brackets around it stranded — "Shopping Bag ()".
+     * It takes the hidden attribute instead, and the brackets are on the span
+     * in CSS so they go with it. */
+    const badge = document.getElementById('cartBadge');
+    if (badge) {
+        badge.textContent = count;
+        badge.style.display = count > 0 ? 'flex' : 'none';
+    }
+    const inlineCount = document.getElementById('mobileCartCount');
+    if (inlineCount) {
+        inlineCount.textContent = count;
+        inlineCount.hidden = count === 0;
+    }
 
     // Update sticky floating view cart bar
     const stickyBar = document.getElementById('stickyViewCartBar');
@@ -804,6 +816,9 @@ function bumpBadge() {
     document.querySelectorAll('#cartBadge, #mobileCartCount').forEach(badge => {
         if (!badge) return;
         badge.textContent = count;
+        // The drawer's inline count carries its own visibility; the bump must not
+        // reveal a zero that updateBadge() has just hidden.
+        if (badge.id === 'mobileCartCount') { badge.hidden = count === 0; }
         // Removing first and forcing a reflow lets the pop replay when items
         // are added one after another; re-adding a class the element already
         // carries does not restart a CSS animation on its own.

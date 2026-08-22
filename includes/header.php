@@ -1114,7 +1114,13 @@ $searchHint = $searchHintNames
             <?php endif; ?>
             
             <button class="btn-mobile-action-secondary" onclick="closeMobileMenu(); openCart();">
-                <i class="fa-solid fa-bag-shopping"></i> Shopping Bag (<span id="mobileCartCount"><?php echo $cartCount; ?></span>)
+                <?php /* The brackets belong to the count, not to the sentence.
+                         Written as "Shopping Bag (<span>0</span>)" they were literal
+                         text, so when the script hid the span at zero — correct for
+                         the round badge it shares its update with — the button read
+                         "Shopping Bag ()". They are on the span via CSS now, so they
+                         appear and disappear with the number it holds. */ ?>
+                <i class="fa-solid fa-bag-shopping"></i> Shopping Bag <span class="drawer-bag-count" id="mobileCartCount"<?= $cartCount > 0 ? '' : ' hidden' ?>><?php echo $cartCount; ?></span>
             </button>
         </div>
 
