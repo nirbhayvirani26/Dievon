@@ -1720,37 +1720,63 @@ require_once __DIR__ . '/includes/header.php';
                                 <?php endif; ?>
                             </div>
 
-                            <div class="form-row" style="grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));">
+                            <?php /* One row per country, two boxes side by side.
+                                     ───────────────────────────────────────────────────────
+                                     This was a stacked column per country: name, label, box,
+                                     label, box, button — six rows tall each. With one foreign
+                                     market that was merely roomy; with three it pushed the tax
+                                     settings most of a screen down the page, on a form that is
+                                     already long. Side by side it is two rows per country, and
+                                     they read as the pair they are. */ ?>
+                            <div class="pf-countries">
                                 <?php foreach ($sellableCountries as $ccode => $crow):
                                     $existingCp = $existingCountryPrices[$ccode] ?? null;
                                     $fxInfo     = $fxRates[strtoupper($ccode)] ?? null;
                                     $fxRate     = $fxInfo['rate'] ?? null;
                                 ?>
-                                <div class="form-group pf-country" data-cc="<?= htmlspecialchars($ccode) ?>"
+                                <div class="pf-country" data-cc="<?= htmlspecialchars($ccode) ?>"
                                      data-rate="<?= $fxRate !== null ? htmlspecialchars((string)$fxRate) : '' ?>"
                                      data-symbol="<?= htmlspecialchars($crow['currency_symbol']) ?>"
                                      data-name="<?= htmlspecialchars($crow['country_name']) ?>">
-                                    <label class="form-label"><?= htmlspecialchars($crow['country_name']) ?> (<?= htmlspecialchars($crow['currency_symbol']) ?> <?= htmlspecialchars($crow['currency_code']) ?>)</label>
+                                    <div class="pf-country-head">
+                                        <?php /* Some currencies have no symbol of their own and the
+                                                 field simply holds the code — AED and CHF are the
+                                                 usual ones. Printing both gave "AED AED". Show the
+                                                 symbol only when it is actually a different mark. */
+                                        $curSym  = trim((string)$crow['currency_symbol']);
+                                        $curCode = trim((string)$crow['currency_code']);
+                                        $curLabel = (strcasecmp($curSym, $curCode) === 0 || $curSym === '')
+                                                  ? $curCode
+                                                  : $curSym . ' ' . $curCode;
+                                        ?>
+                                        <span class="pf-country-name"><?= htmlspecialchars($crow['country_name']) ?>
+                                            <span class="pf-country-cur"><?= htmlspecialchars($curLabel) ?></span>
+                                        </span>
+                                        <?php if ($fxRate !== null): ?>
+                                        <button type="button" class="pf-fx-btn" onclick="dievonConvertCountry('<?= htmlspecialchars($ccode, ENT_QUOTES) ?>')">
+                                            <i class="fa-solid fa-arrow-right-arrow-left"></i> Convert from &#8377;
+                                        </button>
+                                        <?php endif; ?>
+                                    </div>
                                     <?php /* The captions are not decoration. These two boxes are
                                              list-then-sale, the opposite order to the rupee fields
-                                             above them (Selling Price, then MRP), and once both are
-                                             filled the placeholders that said so are gone. An admin
-                                             reading "56 / 44" with no labels has no way to tell
-                                             which one the customer pays. */ ?>
-                                    <label class="pf-cp-cap" for="cp_<?= htmlspecialchars($ccode) ?>">Full price <span>(struck through when on sale)</span></label>
-                                    <input type="number" id="cp_<?= htmlspecialchars($ccode) ?>" name="country_price[<?= htmlspecialchars($ccode) ?>]" class="form-control pf-cp-list"
-                                        step="0.01" min="0" placeholder="Not sold here"
-                                        value="<?= $existingCp ? htmlspecialchars($existingCp['price']) : '' ?>">
-                                    <label class="pf-cp-cap" for="cps_<?= htmlspecialchars($ccode) ?>">Sale price <span>(optional — what is charged)</span></label>
-                                    <input type="number" id="cps_<?= htmlspecialchars($ccode) ?>" name="country_sale_price[<?= htmlspecialchars($ccode) ?>]" class="form-control pf-cp-sale"
-                                        step="0.01" min="0" placeholder="Leave blank for no discount" style="margin-top:0;"
-                                        value="<?= ($existingCp && $existingCp['sale_price'] !== null) ? htmlspecialchars($existingCp['sale_price']) : '' ?>">
-                                    <?php if ($fxRate !== null): ?>
-                                    <button type="button" class="pf-fx-btn" onclick="dievonConvertCountry('<?= htmlspecialchars($ccode, ENT_QUOTES) ?>')">
-                                        <i class="fa-solid fa-arrow-right-arrow-left"></i>
-                                        Convert from &#8377;
-                                    </button>
-                                    <?php endif; ?>
+                                             above them (Selling Price, then MRP). An admin reading
+                                             "56 / 44" with no labels has no way to tell which one
+                                             the customer actually pays. */ ?>
+                                    <div class="pf-country-fields">
+                                        <div>
+                                            <label class="pf-cp-cap" for="cp_<?= htmlspecialchars($ccode) ?>">Full price</label>
+                                            <input type="number" id="cp_<?= htmlspecialchars($ccode) ?>" name="country_price[<?= htmlspecialchars($ccode) ?>]" class="form-control pf-cp-list"
+                                                step="0.01" min="0" placeholder="Not sold here"
+                                                value="<?= $existingCp ? htmlspecialchars($existingCp['price']) : '' ?>">
+                                        </div>
+                                        <div>
+                                            <label class="pf-cp-cap" for="cps_<?= htmlspecialchars($ccode) ?>">Sale price <span>&mdash; what is charged</span></label>
+                                            <input type="number" id="cps_<?= htmlspecialchars($ccode) ?>" name="country_sale_price[<?= htmlspecialchars($ccode) ?>]" class="form-control pf-cp-sale"
+                                                step="0.01" min="0" placeholder="Optional"
+                                                value="<?= ($existingCp && $existingCp['sale_price'] !== null) ? htmlspecialchars($existingCp['sale_price']) : '' ?>">
+                                        </div>
+                                    </div>
                                 </div>
                                 <?php endforeach; ?>
                             </div>
@@ -3597,10 +3623,12 @@ async function dievonConvertAll() {
 
     let force = false;
     if (busy.length) {
-        force = await dievonFxAsk(busy.length + ' countr'
-                      + (busy.length === 1 ? 'y already has a price' : 'ies already have prices')
-                      + ' set (' + busy.map(w => w.dataset.name).join(', ') + '). '
-                      + 'Replace them with converted amounts? Cancel to fill only the empty ones.');
+        const one = busy.length === 1;
+        force = await dievonFxAsk(
+              (one ? busy[0].dataset.name + ' already has a price set.'
+                   : busy.length + ' countries already have prices set (' + busy.map(w => w.dataset.name).join(', ') + ').')
+            + ' Replace ' + (one ? 'it' : 'them') + ' with converted amounts?'
+            + ' Cancel to fill only the empty ones.');
     }
 
     for (const w of wraps) {

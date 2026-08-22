@@ -3822,14 +3822,68 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
     .pf-fx-filled { animation: none; box-shadow: inset 0 0 0 2px rgba(138, 106, 18, 0.35); }
 }
 
+/* One country, two boxes, side by side.
+   ───────────────────────────────────────────────────────────────────────────
+   Each country was a stacked column six rows tall. With one foreign market
+   that was roomy; with three it pushed the tax settings most of a screen down
+   a form that is already long. Two rows now: a header carrying the country and
+   its Convert button, then the pair of prices.
+
+   The pair is list-then-sale, the reverse of the rupee fields above, so the
+   captions stay — side by side they matter more, not less. */
+.pf-countries {
+    display: grid;
+    gap: 14px;
+    /* Two countries per row once there is room for both without the number
+       boxes getting narrower than a price. */
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+}
+.pf-country {
+    border: 1px solid var(--border-color, #e3dcd2);
+    border-radius: 4px;
+    padding: 12px 14px 14px;
+}
+.pf-country-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 6px 12px;
+    margin-bottom: 10px;
+}
+.pf-country-name {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--color-primary);
+}
+.pf-country-cur {
+    margin-left: 6px;
+    font-weight: 400;
+    letter-spacing: 0.02em;
+    text-transform: none;
+    color: var(--text-muted);
+}
+.pf-country-fields {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: 1fr 1fr;
+}
+/* Below this the two boxes cannot both hold a price without truncating, so
+   they stack rather than shrink. */
+@media (max-width: 560px) {
+    .pf-country-fields { grid-template-columns: 1fr; }
+}
+
 /* Which box is which. The pair is list-then-sale, the reverse of the rupee
    fields above, and once both hold a number the placeholders are gone. */
 .pf-cp-cap {
     display: block;
-    margin: 8px 0 3px;
-    font-size: 10.5px;
+    margin: 0 0 4px;
+    font-size: 10px;
     font-weight: 600;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.05em;
     text-transform: uppercase;
     color: var(--text-muted);
 }
@@ -3838,4 +3892,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
     letter-spacing: 0;
     text-transform: none;
 }
-.pf-cp-cap:first-of-type { margin-top: 2px; }
+
+/* The button moved into the country's header, so it no longer needs a top
+   margin pushing it away from an input above it. */
+.pf-country-head .pf-fx-btn { margin-top: 0; }
