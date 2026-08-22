@@ -2123,15 +2123,6 @@ function closeFadeModal(id) {
     setTimeout(() => { el.style.display = 'none'; }, 300);
 }
 
-function openSimilarProductsModal() {
-    const el = document.getElementById('similarProductsModal');
-    if (el) el.style.display = 'flex';
-}
-function closeSimilarProductsModal() {
-    const el = document.getElementById('similarProductsModal');
-    if (el) el.style.display = 'none';
-}
-
 function navProductLightbox(dir, e) {
     if (e) e.stopPropagation();
     if (!galleryImagesList.length) return;
@@ -4044,44 +4035,6 @@ document.addEventListener('keydown', e => {
         </div>
     </div>
 </div>
-
-<!-- ══ Similar Products Modal (mobile quick-view) ════════════════ -->
-<?php if (!empty($related)): ?>
-<div id="similarProductsModal" class="product-modal-overlay" onclick="if (event.target === this) closeSimilarProductsModal()">
-    <div class="product-modal-card similar-products-modal-card">
-        <div class="product-modal-card-header">
-            <h3>Similar Pieces</h3>
-            <button onclick="closeSimilarProductsModal()" class="product-modal-close-btn">&times;</button>
-        </div>
-        <div class="product-modal-card-body">
-            <div class="similar-products-grid">
-                <?php foreach ($related as $p):
-                    $simImg = !empty($p['image']) ? SITE_URL . '/uploads/products/' . htmlspecialchars($p['image']) : '';
-                    $simWebp = !empty($p['image']) ? webpUrlIfExists('products', $p['image']) : '';
-                ?>
-                <a href="<?= productUrl($p['id'], $p['name'], $p['seo_url'] ?? null) ?>" class="similar-product-card">
-                    <div class="similar-product-img-wrap">
-                        <picture>
-                            <?php if ($simWebp): ?><source srcset="<?= htmlspecialchars($simWebp) ?>" type="image/webp"><?php endif; ?>
-                            <img src="<?= $simImg ?>" alt="<?= htmlspecialchars($p['name']) ?>" loading="lazy">
-                        </picture>
-                    </div>
-                    <span class="similar-product-name"><?= htmlspecialchars($p['name']) ?></span>
-                    <?php /* Resolved, like every other card on the site. This strip is a
-                             simpler renderer than includes/product_card.php and was still
-                             printing products.price flat, so a piece whose sizes are priced
-                             individually was advertised here at a figure nobody could pay. */
-                          $simRange = function_exists('productPriceRange')
-                              ? productPriceRange($p)
-                              : ['min' => (float)$p['price'], 'varies' => false]; ?>
-                    <span class="similar-product-price"><?php if ($simRange['varies']): ?><span class="price-from-label">From</span> <?php endif; ?><?= formatPrice($simRange['min'] > 0 ? $simRange['min'] : (float)$p['price']) ?></span>
-                </a>
-                <?php endforeach; ?>
-            </div>
-        </div>
-    </div>
-</div>
-<?php endif; ?>
 
 <script>
 function submitProductEnquiry(e) {
