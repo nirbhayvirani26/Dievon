@@ -9054,21 +9054,55 @@ main#mainContent:focus { outline: none; }
        inert, but aspect-ratio is not — left alone the first tile stayed a wide
        landscape crop in a rail of portraits. Matched at the same specificity so
        every tile in the rail is one shape, which is what it was before. */
+    /* Two whole tiles and a third of the next, at every phone width.
+       ──────────────────────────────────────────────────────────────────────
+       This was a flat 42%, dropping to 56% below 420px. A percentage cannot
+       hold a composition across widths: 42% of a 430px screen is 2.3 tiles in
+       view, and 56% of a 390px screen is 1.74 — so the rail showed two and a
+       peek on a large phone and less than two on a small one, which is the
+       arrangement changing under you as the screen shrinks.
+
+       Solved arithmetically instead. For two whole tiles, the two gaps between
+       and after them, and 0.3 of a third:
+
+           2t + 2g + 0.3t = C   →   t = (C - 2g) / 2.3
+
+       That is the calc below, so the peek is 30% of a tile whether the screen
+       is 320 or 430 and the layout never reorganises itself.
+
+       The gap has to be OURS for the arithmetic to hold. responsive.css sets
+       it three separate times across these widths — 20px, 12px and 10px — and
+       it loads after this file, so a formula assuming 12 would be wrong at two
+       of those. Declaring the variable and the gap together on [data-count]
+       puts both at (0,2,0), above responsive.css's (0,1,0), so the number in
+       the calc is the number on screen. */
+    .home-categories-grid[data-count] { --rail-gap: 12px; gap: var(--rail-gap); }
     .home-categories-grid[data-count] > .category-card:nth-child(n),
     .home-categories-grid[data-count] > .category-card.is-feature:nth-child(n) {
-        flex: 0 0 42%;              /* ~2.4 tiles in view — the peek */
+        flex: 0 0 calc((100% - 2 * var(--rail-gap)) / 2.3);
         scroll-snap-align: start;
         aspect-ratio: 3 / 4;
         height: auto;
     }
+
+    /* Fitting two whole tiles instead of one and three quarters made each tile
+       about 55px narrower, and "View Collection →" stopped fitting on one line
+       — it broke after "VIEW", leaving a two-line caption over the model. Less
+       tracking and a size down puts it back on one line inside the narrowest
+       tile this rail produces (120px at a 320px screen). nowrap so a longer
+       label in future fails visibly here rather than silently wrapping. */
+    .home-categories-grid > .category-card .category-card-link {
+        font-size: 8.5px;
+        letter-spacing: 0.06em;
+        white-space: nowrap;
+    }
 }
 
-/* Fewer, larger tiles once the screen is narrow enough that 42% is a stamp. */
-@media (max-width: 420px) {
-    .home-categories-grid[data-count] > .category-card:nth-child(n),
-    .home-categories-grid[data-count] > .category-card.is-feature:nth-child(n) {
-        flex: 0 0 56%;              /* ~1.8 in view */
-    }
+/* A tighter gap on the smallest screens, matching what responsive.css already
+   wanted there — set through the variable so the tile width follows it and the
+   peek stays exactly 30%. */
+@media (max-width: 380px) {
+    .home-categories-grid[data-count] { --rail-gap: 10px; }
 }
 
 /* The touch-action and overscroll-behavior-x guards were here. They existed
