@@ -11109,6 +11109,24 @@ input.chk-input-error:focus {
    exists to show. */
 
 
+/* ── The account page's wishlist tab ───────────────────────────────────────
+   The grid is .products-grid, the same one /shop and /wishlist use, because the
+   cards in it are the same shared card. Only the empty state is local. */
+.acc-wishlist-grid { margin-top: 4px; }
+.acc-wishlist-empty {
+    padding: 44px 0;
+    text-align: center;
+}
+.acc-wishlist-empty-text {
+    margin: 0 0 18px;
+    font-family: var(--font-body), sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
 /* ══════════════════════════════════════════════════════════════════════════
    ONE PAGER FOR EVERY RAIL  (.dv-pager)
    ──────────────────────────────────────────────────────────────────────────
