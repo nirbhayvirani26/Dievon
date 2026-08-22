@@ -278,6 +278,44 @@ $minimalFooter = !empty($minimalFooter);
             <div class="footer-bottom">
                 <p>&copy; <?= date('Y') ?> Dievon. ALL RIGHTS RESERVED.</p>
             </div>
+            <?php /* Where the country is actually READABLE.
+                     ──────────────────────────────────────────────────────────
+                     The header's picker is a globe, chosen because two letters
+                     among five drawn glyphs never sat right — but a globe cannot
+                     tell a shopper that they are seeing rupee prices. This can,
+                     in full, and the footer is where most shops keep the setting
+                     anyway.
+
+                     It writes the same cookie through the same changeCountry()
+                     the header calls, so there is one code path and the two
+                     controls cannot disagree. Its own id, because the header's
+                     is already on the page. Rendered only when a second country
+                     is enabled, matching the header exactly. */ ?>
+            <?php if (function_exists('countrySelectorEnabled') && countrySelectorEnabled()):
+                $fCode = currentCountryCode();
+                $fList = enabledCountries(); ?>
+            <div class="footer-country">
+                <label for="footerCountrySelector">Shipping to</label>
+                <?php /* The value is drawn as text with the <select> invisible over it,
+                         the same arrangement as the header's globe. A native select is
+                         as wide as its LONGEST option, so left to itself this one is
+                         sized for "United Kingdom — GBP" whichever country is chosen —
+                         which strands the chevron and runs the underline past the end
+                         of the words. A span is exactly as wide as what it says. */ ?>
+                <span class="footer-country-value" aria-hidden="true">
+                    <?= htmlspecialchars(($fList[$fCode]['country_name'] ?? $fCode) . ' — ' . ($fList[$fCode]['currency_code'] ?? '')) ?>
+                    <svg viewBox="0 0 24 24" focusable="false"><path d="m6 9.5 6 6 6-6"/></svg>
+                </span>
+                <select id="footerCountrySelector" onchange="changeCountry(this.value)"
+                        aria-label="Select country and currency">
+                    <?php foreach ($fList as $fc => $frow): ?>
+                    <option value="<?= htmlspecialchars($fc) ?>" <?= $fCode === $fc ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($frow['country_name'] . ' — ' . $frow['currency_code']) ?>
+                    </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <?php endif; ?>
             <!-- Secure Payments -->
             <div class="footer-secure-payments">
                 <div class="secure-payments-label"><i class="fa-solid fa-lock"></i> 100% Secure Payments</div>

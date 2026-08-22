@@ -1787,6 +1787,85 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 .footer-bottom-bar .footer-logo span { color: var(--color-primary-light); }
 .footer-copy-text { font-size: 12px; color: rgba(255,255,255,0.35); }
 
+/* Country and currency, in words, at the foot of the page.
+   ───────────────────────────────────────────────────────────────────────────
+   The header's picker is a globe with no label, so this is the only place the
+   active country is actually stated. Both controls call the same
+   changeCountry(), so they write one cookie and cannot disagree.
+
+   Styled as the footer's own type rather than as a form control: the native
+   chrome is stripped and the site's chevron put back, the same treatment the
+   header's picker had while it was text. The label is dimmer than the value,
+   so the country reads as the answer and "Shipping to" as the question. */
+.footer-country {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+}
+.footer-country label {
+    color: rgba(255, 255, 255, 0.35);
+    letter-spacing: 0.02em;
+    margin: 0;
+}
+/* What is actually seen: the country, the currency, and the site's chevron. */
+.footer-country-value {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding-bottom: 3px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+    color: rgba(255, 255, 255, 0.78);
+    transition: color 0.2s ease, border-color 0.2s ease;
+    white-space: nowrap;
+    pointer-events: none;   /* the select over it takes the click */
+}
+.footer-country-value svg {
+    width: 10px;
+    height: 10px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: 0.7;
+}
+.footer-country:hover .footer-country-value {
+    color: #ffffff;
+    border-bottom-color: rgba(255, 255, 255, 0.45);
+}
+/* The real control, invisible over the top: native keyboard handling, native
+   screen-reader semantics, native wheel on iOS. opacity, not display — a
+   hidden select cannot be focused. */
+.footer-country select {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+    font-size: 16px;   /* iOS zooms the page on a smaller focused control */
+}
+.footer-country:focus-within .footer-country-value {
+    color: #ffffff;
+    outline: 2px solid var(--color-secondary);
+    outline-offset: 3px;
+}
+.footer-country select:focus-visible { outline: none; }
+/* Drawn by the operating system, so it cannot take the footer's palette — it
+   can at least not be light-on-light. */
+.footer-country select option { color: #3a0c1b; background: #ffffff; }
+
 /* ── Cart item image ─────────────────────────────────────── */
 .cart-item-img {
     width: 50px; height: 50px; border-radius: var(--radius-sm);
@@ -2434,8 +2513,18 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 }
 
 /* ── Secure Payments Badge Row ──────────────────────────────── */
+/* The three children of .footer-bottom-bar opt out of the scroll reveal.
+   ───────────────────────────────────────────────────────────────────────────
+   The site-wide reveal script claims every direct child of a listed container,
+   .footer-bottom-bar among them. At the very foot of a long page the observer
+   is unreliable — a browser that restores a scroll position straight to the
+   bottom, or a short page where the bar never crosses the threshold, leaves
+   these at opacity 0 permanently. Two of the three were already exempted for
+   that reason; the country picker is the third and needs it most, since a
+   setting a shopper cannot see is worse than one that simply fades in late. */
 .footer-secure-payments.reveal-on-scroll { opacity: 1 !important; transform: none !important; }
 .footer-bottom.reveal-on-scroll { opacity: 1 !important; transform: none !important; }
+.footer-country.reveal-on-scroll { opacity: 1 !important; transform: none !important; }
 .product-secure-payments { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 18px; padding: 12px 14px; background: var(--bg-surface-soft); border-radius: 6px; border: 1px solid var(--border-light); }
 .secure-payments-label { font-size: 12px; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 6px; white-space: nowrap; }
 .secure-payments-label i { color: #10b981; }
@@ -9899,60 +9988,80 @@ input.chk-input-error:focus {
     .qty-btn, .cart-qty-btn { transition: none; }
 }
 
-/* The country / currency picker, in the icon row
+/* The country / currency picker, as a sixth glyph
    ───────────────────────────────────────────────────────────────────────────
-   It used to be first in this row and was moved out, because it was the only
-   filled, bordered shape among five 1.4px stroke icons — a <select> dressed as
-   a pill, sitting in a set of drawn glyphs. Two visual languages a few pixels
-   apart, with the heaviest weight given to the least important control.
+   Three shapes were tried in this row: a filled bordered pill, then the two
+   letter code with a chevron, then this. The pill was the only solid shape
+   among five 1.4px strokes. The code was better but still a WORD among five
+   drawn glyphs, and the chevron had to sit at the far edge of the control's
+   box, which left a hole between the letters and the arrow — 13px of padding
+   reading as a gap that belonged to nothing.
 
-   The pill was the problem, not the place. Stripped to bare type at the icons'
-   own ink and given the navigation's chevron at the navigation's stroke, it
-   reads as a sixth member of the set rather than a form control dropped into
-   it — and the utility strip above is then free to render only when there is
-   an audience switch to put in it, instead of existing to hold this.
+   A globe drawn at the same 1.4px stroke, in the same 40x40 box, has no type
+   to align and no chevron to place. There is nothing left to get wrong, and
+   the row is six of one thing instead of five of one and one of another.
 
-   40px tall to match the icon boxes, so the row has one baseline. */
+   The <select> is laid over the glyph at full size and zero opacity. That is
+   the standard pattern for restyling a native picker without replacing it: the
+   keyboard behaviour, the screen-reader semantics, the iOS wheel and the
+   onchange handler are all the browser's own. opacity, not visibility or
+   display — a hidden select is not focusable.
+
+   What the glyph cannot do is say which country is active. That is why the
+   full label went into the footer; see includes/footer.php. */
 .navbar-luxury .nav-actions .currency-selector-wrapper {
+    position: relative;
+    width: 40px;
     height: 40px;
     align-items: center;
-    /* A little air between the preference and the four actions, without a rule
-       or a separator doing it. */
-    margin-right: 2px;
+    justify-content: center;
+    flex: 0 0 auto;
+}
+.navbar-luxury .nav-actions .dv-country-glyph {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    color: var(--dv-nav-ink);
+    transition: color 0.2s ease;
+    pointer-events: none;   /* the select underneath takes the click */
+}
+.navbar-luxury .nav-actions .currency-selector-wrapper:hover .dv-country-glyph {
+    color: var(--dv-nav-hover);
 }
 
+/* Every one of these fights a rule from the days of the pill — the base block
+   near the top of this file still sets a background, a border, a radius, a
+   height, a max-width and a chevron background-image on #countrySelector. */
 .navbar-luxury .nav-actions #countrySelector {
-    -webkit-appearance: none;
-    appearance: none;
-    background-color: transparent !important;
+    position: absolute;
+    inset: 0;
+    width: 100% !important;
+    height: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
     border: 0 !important;
     border-radius: 0 !important;
     box-shadow: none !important;
-    height: auto !important;
-    padding: 0 13px 0 0 !important;
-    font-family: var(--font-body), sans-serif !important;
-    /* 11px against 22px glyphs. Type and an icon are never the same measurement;
-       what has to match is the weight they read at, and two letters of 600 at
-       this size carry about as much ink as one 1.4px stroke glyph. */
-    font-size: 11px !important;
-    font-weight: 600 !important;
-    letter-spacing: 0.14em !important;
-    line-height: 1 !important;
-    color: var(--dv-nav-ink) !important;
+    background: none !important;
+    background-image: none !important;
+    -webkit-appearance: none;
+    appearance: none;
+    opacity: 0;
     cursor: pointer;
-    transition: color 0.2s ease;
-    /* The navigation's chevron, same geometry and stroke, as a background so the
-       native select arrow can be removed without losing the affordance. */
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%233a0c1b' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9.5 6 6 6-6'/></svg>") !important;
-    background-repeat: no-repeat !important;
-    background-position: right 0 center !important;
-    background-size: 9px 9px !important;
+    font-size: 16px !important;   /* iOS zooms the page on a smaller focused control */
+    color: transparent !important;
 }
-.navbar-luxury .nav-actions #countrySelector:hover { color: var(--dv-nav-hover) !important; }
-.navbar-luxury .nav-actions #countrySelector:focus-visible {
+/* The select is invisible, so its focus ring would be too. */
+.navbar-luxury .nav-actions .currency-selector-wrapper:focus-within {
     outline: 2px solid var(--color-secondary);
-    outline-offset: 3px;
+    outline-offset: 2px;
+    border-radius: 2px;
 }
+.navbar-luxury .nav-actions #countrySelector:focus-visible { outline: none; }
 /* The option list is drawn by the operating system and cannot take the header's
    type, but it can at least not be white-on-white in a dark theme. */
 .navbar-luxury .nav-actions #countrySelector option { color: #3a0c1b; background: #fff; }

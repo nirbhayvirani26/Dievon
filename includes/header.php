@@ -627,10 +627,26 @@ $searchHint = $searchHintNames
                       // charges what was actually typed in for that country. Shown only once
                       // a second country is enabled — one country is no choice to make. ?>
                 <div class="currency-selector-wrapper">
+                    <?php /* The <select> is still the control — it is laid over this
+                             glyph at full size and zero opacity, which is the standard
+                             way to keep a native picker's keyboard handling, its
+                             screen-reader semantics and its mobile wheel while drawing
+                             something else on top. Nothing about the element changes:
+                             same id, same options, same onchange, same aria-label. */ ?>
+                    <span class="dv-country-glyph" aria-hidden="true">
+                        <svg class="dv-icon" viewBox="0 0 24 24" focusable="false"><circle cx="12" cy="12" r="8.6"/><ellipse cx="12" cy="12" rx="3.7" ry="8.6"/><path d="M3.7 9.1h16.6M3.7 14.9h16.6"/></svg>
+                    </span>
                     <?php
                     $curCountryCode = currentCountryCode();
 
-                    /* Country CODE only, at every screen size: IN, UK, US.
+                    /* The option LABELS are still the country codes — IN, UK, US.
+                       ────────────────────────────────────────────────────────
+                       The closed control shows a globe now, so this text is only
+                       ever seen in the open list, where two letters beside a full
+                       title is the right amount. Kept short for the reason below,
+                       which still holds if the glyph is ever swapped back out.
+
+                       Country CODE only, at every screen size: IN, UK, US.
                        ────────────────────────────────────────────────────────
                        This briefly rendered two controls — a long label for desktop
                        and a short one for phones — because a <select> renders one
