@@ -2171,6 +2171,17 @@ html {
 /* The top strip on a phone. Same left-aligned pair; the strip takes a little
    more height so the words stay a comfortable target without the links needing
    padding of their own, which would push the underline off the text. */
+/* Line the strip up with the row beneath it.
+   ─────────────────────────────────────────────────────────────────────────────
+   The strip's gutter comes from .navbar-luxury .container, which is a fluid
+   clamp(20px, 3.2vw, 60px) — but below 991px the header row underneath uses a
+   flat 16px instead. So the switch sat four to nine pixels inboard of the
+   hamburger directly below it: left-aligned, but visibly not aligned WITH
+   anything, which reads as a mistake rather than a margin. */
+@media (max-width: 991px) {
+    .navbar-luxury .header-top-bar > .container { padding-inline: 16px; }
+}
+
 @media (max-width: 640px) {
     .navbar-luxury .header-top-bar { padding: 10px 0 !important; }
     .navbar-luxury .header-top-bar .audience-switch { gap: 20px; }
