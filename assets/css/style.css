@@ -11375,14 +11375,22 @@ input.chk-input-error:focus {
         /* Scaled to this box: a print is ~283px across where the New Arrivals panel
            these values come from is 720. */
         padding: clamp(16px, 1.3vw, 22px);
+        /* Clear of the print lying over this one's left edge. The captions used
+           to be revealed one at a time on hover, where the hovered print is on
+           top and nothing covers it; now that they are all on at once, the
+           resting ones were being sliced — "IEW PRODUCT", "lid Co-Ords 2". Same
+           inset the badge and the compare toggle already use. */
+        padding-left: calc(var(--pf-overlap) + 14px);
         margin: 0;
         text-align: left;
-        opacity: 0;
-        transform: translateY(12px);
-        transition: opacity 380ms ease, transform 380ms cubic-bezier(0.22, 0.61, 0.36, 1);
-        pointer-events: none;
-        /* transform already makes this a stacking context; isolate says so out loud
-           so the scrim below cannot escape behind the photograph. */
+        /* Always on. The name and the price are what a shopper is scanning for,
+           and hiding them behind a hover means four photographs that say nothing
+           until you touch them. What the hover adds is Quick View, below. */
+        opacity: 1;
+        /* Not `none`: a transform is what makes this a stacking context, which is
+           what keeps the scrim behind the type. isolate says the same thing out
+           loud so removing the transform later cannot quietly break it. */
+        transform: translateY(0);
         isolation: isolate;
     }
     /* The scrim reaches 58px ABOVE the caption rather than being a background on it.
@@ -11478,11 +11486,38 @@ input.chk-input-error:focus {
     }
     .photo-fan-section .pf-item:hover .card-img-container,
     .photo-fan-section .pf-item:focus-within .card-img-container { box-shadow: 0 26px 56px rgba(58, 12, 27, 0.26); }
-    .photo-fan-section .pf-item:hover .product-card-details,
-    .photo-fan-section .pf-item:focus-within .product-card-details {
-        opacity: 1;
-        transform: translateY(0);
-        pointer-events: auto;
+    /* ── Quick View, the thing the hover is for ────────────────────────────
+       The base hides it with `display: none` and reveals it on
+       .card-img-container:hover. That is half the story here: the hover target
+       is the ITEM — the card inside it is scaled and rotated, and the pointer is
+       often over the lifted card rather than the container beneath — and a
+       keyboard shopper never fires :hover at all. Both are covered.
+
+       display, not opacity, deliberately. A button faded to nothing is still in
+       the tab order and still announced; display:none is not, so tabbing into a
+       print reveals Quick View and the next Tab reaches it, which is the order a
+       sighted mouse user gets too. */
+    .photo-fan-section .pf-item:hover .quick-view-btn,
+    .photo-fan-section .pf-item:focus-within .quick-view-btn { display: block !important; }
+    .photo-fan-section .pf-card .quick-view-btn {
+        /* Centred on the picture. The base pins it 15px off the bottom, which is
+           where the caption now lives permanently. */
+        top: 50%;
+        bottom: auto;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 5;
+        padding: 11px 22px;
+        border: 1px solid var(--color-accent);
+        background: rgba(255, 255, 255, 0.95);
+        color: var(--color-primary-dark);
+        font-size: 10.5px;
+        font-weight: 600;
+        letter-spacing: 0.16em;
+    }
+    .photo-fan-section .pf-card .quick-view-btn:focus-visible {
+        outline: 2px solid var(--color-accent);
+        outline-offset: 3px;
     }
     .photo-fan-section .pf-card .card-img-link:focus-visible,
     .photo-fan-section .pf-card .product-card-title a:focus-visible,

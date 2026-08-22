@@ -957,7 +957,7 @@ $pfHasBoth = count($pfPanels) > 1;
                         $card           = $pfProduct;
                         $cardVariant    = 'home';
                         $cardExtraClass = 'pf-card';
-                        $cardQuickView  = false;   // the caption already offers the product
+                        // Quick View stays on: it is what the hover reveals here.
                         include __DIR__ . '/../includes/product_card.php';
                         ?>
                     </li>
