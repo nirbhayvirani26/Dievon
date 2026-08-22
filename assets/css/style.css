@@ -11086,17 +11086,24 @@ input.chk-input-error:focus {
 
 /* Focus, and why it is spelled out rather than inherited.
    ──────────────────────────────────────────────────────────────────────────
- The site-wide ring at the top of this file sets `
-   every :focus-visible element. On a round control that squares the ring off:
-   measured on the old .na-arrow, tabbing to it turned a 50% disc into a 2px
-   square whose corners pushed outside the pill's 999px end and sat on the cream
-   page ground, where white-on-cream is about 1.05:1 — the indicator's outer
-   edge simply vanished at the corners.
+   The site-wide ring is burgundy with a white halo, which is right on the pale
+   pages and invisible here: a burgundy ring on a burgundy pill has nothing to
+   read against. So this control draws its own, and two things about it are
+   deliberate.
 
-   Three fixes, all needed. Restate the radius so the ring follows the disc.
-   Draw it INSIDE (negative offset) so it can never leave the burgundy. And
-   refuse the hover fill on focus: gold ground under a white ring is 2.10:1,
-   where an indicator needs 3:1 — on the burgundy it is 16.82:1. */
+   White, and INSET. The button fills its capsule edge to edge — 44px in a 44px
+   pill with no padding — so a ring drawn outside would spill past the pill onto
+   the page rather than reading as part of the control. A negative offset keeps
+   it on the burgundy, where white is 16.82:1.
+
+   And it refuses the hover fill. Sharing one declaration between :hover and
+   :focus-visible would put the white ring against the gold ground at 2.10:1,
+   under the 3:1 an indicator needs — so focus keeps the burgundy and only
+   hover goes gold.
+
+   (This block used to restate border-radius as well, because the site-wide
+   ring forced 2px onto every focused element and squared off what was then a
+   round button. Both the button and that declaration are square now.) */
 .dv-pager-btn:focus-visible {
     outline: 2px solid #ffffff;
     outline-offset: -4px;
