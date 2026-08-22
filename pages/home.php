@@ -300,27 +300,26 @@ $heroSlideCount = !empty($heroBanners)
                 // Lazy loading is for images DOWN the page. Nothing in the hero is
                 // below the fold — it is the first thing on screen.
                 //
-                // z-index 0 sits under .slide-overlay (1) and .slide-content (2), so
-                // the tint and the text still layer exactly as before.
+                // z-index 0 sits under .slide-panel (2) and .slide-content, so
+                // the scrim and the text still layer exactly as before.
                 ?>
                 <div class="slide slide-<?= ($idx % 3) + 1 ?> slide-has-img">
-                    <?php /* The photograph and the words no longer share a surface.
+                    <?php /* The words lie ON the photograph, in its own negative space.
                              ────────────────────────────────────────────────────────
-                             The text used to sit ON the banner, in white, over a dark
-                             gradient laid across the picture to keep it readable. That
-                             cannot be made to work here, and it is measurable rather
-                             than a matter of taste: of the two banners live on the shop
-                             today, the text zone of one averages luminance 78 and the
-                             other 196. White text disappears on the second, dark text
-                             on the first, and the gradient that rescues one dulls the
-                             garment on the other — which is the one thing a banner is
-                             for.
+                             This was briefly a split — an ivory panel beside the
+                             picture — because legibility here is measurable rather
+                             than a matter of taste: of the two banners live on the
+                             shop today, the text zone of one averages luminance 78
+                             and the other 196, so no single ink colour reads on both.
+                             A panel made legibility independent of the upload.
 
-                             A panel gives the words their own ground, so legibility
-                             stops depending on what the owner uploaded. It also lets
-                             the scrim go entirely, and with it the text shadows, which
-                             is what the brief asked for: no gradients, no heavy
-                             shadows, and real empty space for the type. */ ?>
+                             The overlay is what was asked for, and it is the better
+                             of the two when the scrim is dark rather than light. A
+                             light wash only lifts dark type off a banner that is
+                             already darker than the ink; a dark wash carries white
+                             type over anything, however bright the upload. That is
+                             the same bet dievon.com makes, and .slide-panel now uses
+                             live's own gradient stops — see style.css. */ ?>
                     <div class="slide-media">
                         <picture>
                             <?php if ($imgWebp): ?><source srcset="<?= htmlspecialchars(cacheBustedUploadUrl($imgWebp)) ?>" type="image/webp"><?php endif; ?>
