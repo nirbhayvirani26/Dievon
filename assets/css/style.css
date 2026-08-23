@@ -12594,7 +12594,7 @@ input.chk-input-error:focus {
        100% of an item whose width Owl is trying to MEASURE from this panel is
        circular, and both resolved to zero — the row rendered as an empty band
        with the pager still counting underneath it. */
-    .na-gallery.owl-loaded .na-panel { width: 67vw; }
+    .na-gallery.owl-loaded .na-panel { width: 67vw !important; }
 }
 
 /* ── New Arrivals: no hover behaviour below the breakpoint ────────────────────
@@ -12942,7 +12942,14 @@ input.chk-input-error:focus {
    and the desktop needed its own number. Two and a half across, which is the
    same reading the other rails give at this width. */
 @media (min-width: 768px) and (max-width: 1024px) {
-    .na-gallery.owl-loaded .na-panel { width: 38vw; }
+    /* !important to answer the !important on the phone rule above. Both are
+       (0,3,0), so with the flag on each it is source order that decides, and
+       this comes later — which is what confines 67vw to actual phones.
+
+       Without it the phone's width applied all the way to 1024 and the panel
+       came out 686 wide and 961 TALL on a 768px-high screen: one garment taller
+       than the whole viewport, in a section 1275px deep. */
+    .na-gallery.owl-loaded .na-panel { width: 38vw !important; }
 }
 
 /* The print fills its slide, so 22px means 22px.
