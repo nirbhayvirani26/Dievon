@@ -3688,6 +3688,53 @@ async function dievonConvertCountry(code, opts) {
     });
 })();
 
+/* Changing a country price that already has one asks first.
+   ────────────────────────────────────────────────────────────────────────────
+   This is the price a shopper abroad actually pays, and unlike the rupee price
+   it is easy to change without noticing: the boxes sit in a row, a stray digit
+   in the wrong one is invisible, and nothing downstream ever questions it.
+
+   On `change`, not on input — that fires once, when you leave the box, so it is
+   one question per edit rather than one per keystroke. Programmatic writes do
+   not fire it at all, so the Convert buttons are unaffected and keep their own
+   confirmation.
+
+   Only when the box ALREADY had a price. Filling an empty one is not a change,
+   it is pricing a product for the first time, and interrupting that would be
+   asking permission to do the thing you just sat down to do. Cancel puts the
+   old figure back. */
+(function () {
+    document.querySelectorAll('.pf-country').forEach(function (wrap) {
+        const country = wrap.dataset.name || wrap.dataset.cc;
+        const symbol  = wrap.dataset.symbol || '';
+
+        wrap.querySelectorAll('.pf-cp-list, .pf-cp-sale').forEach(function (input) {
+            let previous = input.value.trim();       // as the page was drawn
+
+            input.addEventListener('change', async function () {
+                const now = input.value.trim();
+                if (now === previous) { return; }
+                if (previous === '') { previous = now; return; }   // first price, not an edit
+
+                const which = input.classList.contains('pf-cp-sale') ? 'sale price' : 'price';
+
+                const ok = await dievonFxAsk(
+                    'Change the ' + country + ' ' + which + ' from ' +
+                    symbol + previous + ' to ' + symbol + now + '?\n\n' +
+                    'This is what a shopper in ' + country + ' pays. It is stored as typed — ' +
+                    'no exchange rate is applied to it afterwards.'
+                );
+
+                if (ok) {
+                    previous = now;
+                } else {
+                    input.value = previous;          // put it back exactly as it was
+                }
+            });
+        });
+    });
+})();
+
 async function dievonConvertAll() {
     const wraps = Array.from(document.querySelectorAll('.pf-country[data-rate]:not([data-rate=""])'));
     if (!wraps.length) { return; }
