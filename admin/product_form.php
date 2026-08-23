@@ -3622,6 +3622,72 @@ async function dievonConvertCountry(code, opts) {
     return true;
 }
 
+/* The rupee price moved and the country prices did not.
+   ────────────────────────────────────────────────────────────────────────────
+   Country prices are STORED, never live-converted — which is the right choice,
+   because a rate moving overnight must not change what a garment costs. The
+   cost of that choice is this: raise a kurti from ₹1,499 to ₹2,499 and its £19
+   stays £19, now far below the rupee price, with nothing anywhere saying so. A
+   shopper in Britain buys at the old figure and the shop finds out when it
+   reconciles, if ever.
+
+   So the question is asked at the one moment the two fall out of step — on
+   save, naming the country and both figures — instead of on every keystroke,
+   which is how people learn to click through a warning without reading it.
+
+   Only when a country actually HAS a price. A product sold only in India has
+   nothing to fall out of step with and is never interrupted. */
+(function () {
+    const form  = document.getElementById('productForm');
+    const price = document.querySelector('input[name="price"]');
+    if (!form || !price) { return; }
+
+    const originalPrice = price.value.trim();     // as the page was drawn
+    let settled = false;                          // asked and answered
+
+    const pricedCountries = () =>
+        Array.from(document.querySelectorAll('.pf-country')).filter(w => {
+            const l = w.querySelector('.pf-cp-list'), s = w.querySelector('.pf-cp-sale');
+            return (l && l.value.trim() !== '') || (s && s.value.trim() !== '');
+        });
+
+    form.addEventListener('submit', async function (e) {
+        if (settled) { return; }                                  // already answered
+        const now = price.value.trim();
+        if (now === originalPrice || originalPrice === '') { return; }
+
+        const busy = pricedCountries();
+        if (!busy.length) { return; }                             // nothing to fall out of step
+
+        /* stopImmediatePropagation as well as preventDefault: the double-submit
+           guard further down disables every Save button the moment a submit is
+           seen, and it would leave them disabled on a save we are cancelling. */
+        e.preventDefault();
+        e.stopImmediatePropagation();
+
+        const names = busy.map(w => {
+            const cur = w.querySelector('.pf-cp-list');
+            return w.dataset.name + ' at ' + (w.dataset.symbol || '') + (cur ? cur.value.trim() : '');
+        }).join(', ');
+
+        const update = await dievonFxAsk(
+            'The rupee price changed from ₹' + originalPrice + ' to ₹' + now + ', but ' + names +
+            ' still comes from the old figure.\n\n' +
+            'Update the country prices from today\'s rate?\n\n' +
+            'Cancel to save the new rupee price and leave the country prices exactly as they are.'
+        );
+
+        if (update) {
+            for (const w of busy) {
+                await dievonConvertCountry(w.dataset.cc, { force: true, quiet: true });
+            }
+        }
+
+        settled = true;
+        form.requestSubmit ? form.requestSubmit() : form.submit();
+    });
+})();
+
 async function dievonConvertAll() {
     const wraps = Array.from(document.querySelectorAll('.pf-country[data-rate]:not([data-rate=""])'));
     if (!wraps.length) { return; }
