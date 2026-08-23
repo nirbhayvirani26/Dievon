@@ -13410,3 +13410,43 @@ input.chk-input-error:focus {
         margin-right: 0;
     }
 }
+
+/* ── The Dievon Edit sizes its prints like Shop by Occasion ───────────────────
+   Going full width made the shelf wider, and --pf-visible is a COUNT rather
+   than a width — so the prints grew instead of more of them arriving. On a
+   1984px screen a print reached 450px against an Occasion tile's 398px, which
+   is what made the two neighbouring rows stop reading as a pair.
+
+   Laid side by side the two rails were running the same rhythm one step apart,
+   and changing bands at different widths:
+
+       Occasion    20vw (5 across)   25vw (4)   33vw (3)   67vw (1+peek)
+                   >=1200            >=992      >=768      phone
+       The Edit    4.2 across        3.2        2.2        1.5
+                   >=1280            >=992      >=768      phone
+
+   So the counts go up by one and the top boundary moves from 1280 to 1200 to
+   line up with Occasion's. The numbers are not the round 5.2 / 4.2 / 3.2 they
+   look like they should be, because the two rails measure differently: an
+   Occasion tile is 20vw and Owl adds the 15px gutter BETWEEN tiles, while a
+   print is sized to its share of the shelf MINUS the 22px gutter. Solving
+   view/P - 22 = the Occasion tile width at each band gives 4.75, 3.7 and 2.8,
+   which track Occasion within a few pixels right across the range rather than
+   only at one width.
+
+   Appended rather than edited in place: --pf-visible is declared in four
+   separate blocks scattered over 500 lines, and this stylesheet's oldest trap
+   is editing the wrong one of a duplicated pair.
+
+   The phone is deliberately untouched at 1.5. A print is 228px there against
+   an Occasion tile's 251px, which is close already, and that band was tuned
+   and signed off recently — not worth reopening for 23px. */
+@media (min-width: 1200px) {
+    .photo-fan-section { --pf-visible: 4.75; }
+}
+@media (min-width: 992px) and (max-width: 1199px) {
+    .photo-fan-section { --pf-visible: 3.7; }
+}
+@media (min-width: 768px) and (max-width: 991px) {
+    .photo-fan-section { --pf-visible: 2.8; }
+}
