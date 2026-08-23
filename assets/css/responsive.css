@@ -866,6 +866,25 @@
     .home-categories-grid > .category-card .category-card-overlay { padding: 11px; }
     .home-categories-grid > .category-card .category-card-overlay h3 { font-size: 13px; }
 }
+}   /* closes @media (max-width: 991px) opened at line 183 — see note below */
+
+/* ── The brace above is the fix for a long-standing bug ──────────────────────
+   That @media (max-width: 991px) block never closed. It ran from line 183 to
+   the end of the file, which swallowed roughly 1,300 lines of base CSS that
+   were written — and indented — as top-level rules.
+
+   The clearest casualty was the account page. Its whole desktop layout lives
+   below this point:
+
+       .account-container    { max-width: 1240px; ... }
+       .account-layout-grid  { display: grid; grid-template-columns: 260px 1fr; }
+       .account-menu-list    { list-style: none; }
+
+   All of it was trapped behind max-width: 991px, so on any desktop the sidebar
+   had no grid, no styling, and the menu rendered as a raw bulleted list.
+
+   Everything between here and the end of the file is now top-level again,
+   which is what its own indentation says it was always meant to be. */
 
 /* ── Touch & Mobile Interaction ────────────────────────── */
 a, button { touch-action: manipulation; }
@@ -2140,21 +2159,26 @@ html {
     .navbar-luxury.header-compact .header-top-bar { padding: 6px 0 !important; }
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   CLOSES @media (max-width: 991px), OPENED AT LINE 184
-   ───────────────────────────────────────────────────────────────────────────
-   That block was never closed, so every rule written after it — around 2000
-   lines, the rest of this file — was absorbed into it. Most of them are mobile
-   rules and belong there, which is why nothing looked obviously wrong and why it
-   survived this long.
+/* The brace that used to sit here has moved up to line 869.
+   ────────────────────────────────────────────────────────────────────────────
+   Closing the block at the END of the file was valid CSS but the wrong place:
+   it left every rule between line 183 and here INSIDE @media (max-width: 991px),
+   which is roughly 1,300 lines that were written — and indented — as top-level
+   rules.
 
-   The brace changes nothing by itself: a browser already closes an unterminated
-   block at end of file, so the nesting is identical either side of this line.
-   What it changes is that the file is valid, and anything appended below sits at
-   the top level where its author will expect it rather than being silently made
-   mobile-only.
-   ═══════════════════════════════════════════════════════════════════════════ */
-}
+   An earlier note here reasoned that "most of them are mobile rules and belong
+   there, which is why nothing looked obviously wrong". That was the mistake.
+   Some of them are not mobile rules at all, and the account page proves it: its
+   entire desktop layout lives in that range —
+
+       .account-container    { max-width: 1240px; ... }
+       .account-layout-grid  { display: grid; grid-template-columns: 260px 1fr; }
+       .account-menu-list    { list-style: none; }
+
+   — and those selectors appear NOWHERE else, not in style.css and not in the
+   page's own style block. So on any screen wider than 991px the account page had
+   no grid, no sidebar, and a menu rendered as a raw bulleted list. It looked
+   fine on a phone, which is exactly why it survived this long. */
 
 /* ── Lifted back out of that block ──────────────────────────────────────────
    Three things were written for ranges reaching above 991px, and the wrapper cut
