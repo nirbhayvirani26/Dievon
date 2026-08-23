@@ -12339,8 +12339,8 @@ input.chk-input-error:focus {
 .na-gallery.owl-carousel.owl-drag:active,
 .na-gallery.owl-carousel.owl-drag:active a,
 .na-gallery.owl-carousel.owl-drag:active img { cursor: default; }
-.na-gallery.owl-carousel.owl-drag a,
-.na-gallery.owl-carousel.owl-drag:active a { cursor: pointer; }
+/* The links inside get the arrow too — see the slider-cursor block near the
+   end of this file. This rule used to hand them a pointer back. */
 
 /* ══ THE FAN, ONCE OWL HAS IT ═══════════════════════════════════════════════
    Owl inserts .owl-stage-outer > .owl-stage > .owl-item between the track and
@@ -13158,4 +13158,62 @@ input.chk-input-error:focus {
         box-shadow: none;
         transform: none;
     }
+}
+
+/* ── Slider slides show the arrow, not the hand ───────────────────────────────
+   Every slide in every rail is a link, so the browser gives it a pointer by
+   default. Asked for the plain arrow instead, and it is applied to the slide
+   itself and to the anchor and image inside it, since the pointer comes from
+   the anchor rather than the slide.
+
+   The controls keep their pointer: the pager arrows, the wishlist and compare
+   buttons and Quick View are things you press, and they are small targets that
+   rely on the cursor to say so. */
+/* Each selector carries .owl-carousel.owl-drag so it out-ranks Owl's own
+   `.owl-carousel.owl-drag a { cursor: grab }` at (0,3,0). Without that the
+   Occasion strip's links kept the grab hand and New Arrivals' kept a pointer,
+   while the other three already read as the arrow — three cursors across five
+   rails on one page. */
+.na-gallery.owl-carousel.owl-drag a, .na-gallery.owl-carousel.owl-drag img,
+.occasion-slider.owl-carousel.owl-drag a, .occasion-slider.owl-carousel.owl-drag img,
+.home-categories-grid.owl-carousel.owl-drag a, .home-categories-grid.owl-carousel.owl-drag img,
+.photo-fan-section .pf-track.owl-carousel.owl-drag a,
+.photo-fan-section .pf-track.owl-carousel.owl-drag img,
+#heroSlider.owl-carousel.owl-drag a, #heroSlider.owl-carousel.owl-drag img,
+.na-gallery a, .na-gallery img,
+.occasion-slider a, .occasion-slider img,
+.home-categories-grid a, .home-categories-grid img,
+.photo-fan-section .pf-card a, .photo-fan-section .pf-card img,
+#heroSlider a, #heroSlider img {
+    cursor: default;
+}
+.na-gallery .dv-pager-btn, .occasion-slider .dv-pager-btn,
+.dv-pager-btn,
+.product-card-wishlist-btn, .compare-toggle, .quick-view-btn,
+#heroSlider .btn-luxury, #heroSlider .btn-luxury-outline {
+    cursor: pointer;
+}
+
+/* ── Smaller wishlist and compare buttons ─────────────────────────────────────
+   38x38 each, side by side, sat over roughly a fifth of a card's width on the
+   shop grid — enough to cover the model's face on a two-up phone layout. 30px
+   keeps a comfortable tap target (above the 24px minimum, and the row they sit
+   in has padding around it) while giving the photograph back its corner. */
+.product-card-tools { gap: 6px; }
+.product-card .product-card-wishlist-btn,
+.product-card .compare-toggle,
+.na-gallery .na-panel .compare-toggle,
+.na-gallery .na-panel .product-card-wishlist-btn {
+    width: 30px;
+    height: 30px;
+}
+.product-card .product-card-wishlist-btn i { font-size: 13px; }
+.product-card .compare-toggle-icon svg { width: 15px; height: 15px; }
+
+@media (max-width: 768px) {
+    .product-card-tools { top: 8px; right: 8px; gap: 5px; }
+    .product-card .product-card-wishlist-btn,
+    .product-card .compare-toggle { width: 28px; height: 28px; }
+    .product-card .product-card-wishlist-btn i { font-size: 12px; }
+    .product-card .compare-toggle-icon svg { width: 14px; height: 14px; }
 }
