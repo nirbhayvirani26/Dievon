@@ -3704,6 +3704,32 @@ async function dievonConvertCountry(code, opts) {
    asking permission to do the thing you just sat down to do. Cancel puts the
    old figure back. */
 (function () {
+    const form = document.getElementById('productForm');
+
+    /* A save must not overtake the question.
+       ────────────────────────────────────────────────────────────────────────
+       Clicking Save blurs the field, which is what fires the question — and the
+       click then submits the form in the same breath. The question is asynchronous
+       and the submit is not, so the product saved while the box was still on
+       screen: answering it changed nothing, and Cancel left the new price already
+       written. That is worse than not asking.
+
+       So a save that arrives while a question is open is held, not dropped. Once
+       the question is answered the save goes through, carrying whatever the answer
+       decided. */
+    let asking = null;
+
+    if (form) {
+        form.addEventListener('submit', function (e) {
+            if (!asking) { return; }
+            e.preventDefault();
+            e.stopImmediatePropagation();          // hold the other submit handlers too
+            asking.then(function () {
+                form.requestSubmit ? form.requestSubmit() : form.submit();
+            });
+        });
+    }
+
     document.querySelectorAll('.pf-country').forEach(function (wrap) {
         const country = wrap.dataset.name || wrap.dataset.cc;
         const symbol  = wrap.dataset.symbol || '';
@@ -3718,12 +3744,15 @@ async function dievonConvertCountry(code, opts) {
 
                 const which = input.classList.contains('pf-cp-sale') ? 'sale price' : 'price';
 
-                const ok = await dievonFxAsk(
+                asking = dievonFxAsk(
                     'Change the ' + country + ' ' + which + ' from ' +
                     symbol + previous + ' to ' + symbol + now + '?\n\n' +
                     'This is what a shopper in ' + country + ' pays. It is stored as typed — ' +
                     'no exchange rate is applied to it afterwards.'
                 );
+
+                const ok = await asking;
+                asking = null;
 
                 if (ok) {
                     previous = now;
