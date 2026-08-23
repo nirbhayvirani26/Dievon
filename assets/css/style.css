@@ -13072,3 +13072,36 @@ input.chk-input-error:focus {
     flex-basis: auto;
     width: 100%;
 }
+
+/* ── Collections: no zoom on hover, ON A PHONE ONLY ───────────────────────────
+   The card's photograph scaled to 1.06 under the pointer, which reads as the
+   tile growing. Not wanted on the slider — and a touchscreen makes it worse,
+   because :hover sticks after a tap, so a tile stayed enlarged until something
+   else was touched.
+
+   Above 768px this section is the desktop mosaic, not a slider, and the zoom is
+   the design there. It keeps it. This is gated to the width where the row IS a
+   slider, which is exactly the width where Owl drives it.
+
+   Both selector shapes, because Owl wraps each card in an .owl-item down here
+   and the original rules are written as direct children — the trap this section
+   has sprung three times already. */
+@media (max-width: 768px) {
+    .home-categories-grid > .category-card:hover .zoom-img,
+    .home-categories-grid > .category-card:focus-visible .zoom-img,
+    .home-categories-grid > .category-card:hover img,
+    .home-categories-grid > .category-card:focus-visible img,
+    .home-categories-grid .category-card:hover .zoom-img,
+    .home-categories-grid .category-card:focus-visible .zoom-img,
+    .home-categories-grid .category-card:hover img,
+    .home-categories-grid .category-card:focus-visible img {
+        transform: none;
+    }
+    .home-categories-grid > .category-card:hover,
+    .home-categories-grid > .category-card:focus-visible,
+    .home-categories-grid .category-card:hover,
+    .home-categories-grid .category-card:focus-visible {
+        box-shadow: none;
+        transform: none;
+    }
+}
