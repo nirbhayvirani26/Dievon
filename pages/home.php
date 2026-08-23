@@ -1247,6 +1247,19 @@ $pfHasBoth = count($pfPanels) > 1;
                      with the two tabs beside it. Its swap handler went with it —
                      see the tab switcher below. */ ?>
         </div>
+    </div>
+
+    <?php /* .container closes ABOVE the panels, so the strip runs edge to edge
+             while the heading and the tabs stay aligned with the rest of the
+             page — the same construction Shop by Occasion uses, and the reason
+             that strip reaches the glass and this one did not. Measured before
+             the change: at 1440 the Occasion rail ran 0 to 1434 while this
+             viewport sat at 72 with 78 to spare, and at 375 every other rail
+             started at 0 while this one started at 12.
+
+             The pager goes back INTO a container of its own below, because the
+             arrows belong on the page's gutter with the heading, not out at the
+             edge with the prints. Occasion does that too. */ ?>
 
         <?php $pfFirst = true; foreach ($pfPanels as $pfKey => $pfPanel): ?>
         <div class="pf-panel<?= $pfFirst ? ' is-active' : '' ?>"
@@ -1303,6 +1316,7 @@ $pfHasBoth = count($pfPanels) > 1;
                      said the same thing two pixels apart; the pill says it once,
                      in the same place and the same words as the other three
                      rails. Products page in fours, so this one takes the counter. */ ?>
+            <div class="container">
             <div class="dv-pager" data-pager-mode="count" data-pager="pf-<?= htmlspecialchars($pfKey) ?>" hidden>
               <div class="dv-pager-pill">
                 <button type="button" class="dv-pager-btn" data-pager-step="-1" aria-label="Previous products">
@@ -1315,10 +1329,9 @@ $pfHasBoth = count($pfPanels) > 1;
               </div>
               <span class="dv-sr-only" role="status" aria-live="polite" aria-atomic="true" data-pager-status></span>
             </div>
+            </div>
         </div>
         <?php $pfFirst = false; endforeach; ?>
-
-    </div>
 </section>
 <?php endif; ?>
 

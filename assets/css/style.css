@@ -13386,3 +13386,27 @@ input.chk-input-error:focus {
         transform: none;
     }
 }
+
+/* ── The Dievon Edit runs edge to edge ────────────────────────────────────────
+   The strip is a section child now rather than a container child, so it starts
+   at the glass on its own. What has to come off is the right-edge bleed that
+   was compensating for the container it no longer sits in:
+
+       @media (max-width: 768px) { .photo-fan-section .pf-viewport {
+           margin-right: calc(-1 * var(--dv-gutter)); } }
+
+   That pulled the viewport one gutter PAST its parent's right edge to reach the
+   screen — correct while the parent was inset, and one gutter of horizontal
+   overflow now that the parent is the full width of the page. The left inset it
+   never cancelled is what left this rail starting at 12px on a phone while
+   New Arrivals, Collections and Shop by Occasion all started at 0.
+
+   Written here rather than by deleting the rule above, because that rule sits
+   in the second of two `@media (max-width: 768px)` blocks that open 22 lines
+   apart — the duplicate-block trap this stylesheet is full of. Overriding from
+   the end is the reliable half of it. */
+@media (max-width: 768px) {
+    .photo-fan-section .pf-viewport {
+        margin-right: 0;
+    }
+}

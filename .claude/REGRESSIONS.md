@@ -84,6 +84,11 @@ Every item below lives in one of those.
   stays on after release — the rail reads as sluggish while the others feel clean. New Arrivals
   kills it at 1024, Collections at 768, the photo fan and Shop by Occasion at 767. Shop by
   Occasion was the one rail that never got the block, which is exactly how it was spotted.
+- **A full-bleed rail is a SECTION child, not a container child.** Shop by Occasion and The
+  Dievon Edit both close `.container` after the heading, run the strip at the section's full
+  width, and reopen a `.container` around the pager so the arrows stay on the page gutter.
+  Compensating with a negative margin instead leaves the opposite edge inset and overflows the
+  page the moment the parent changes.
 - **Never pass a literal speed to `to.owl.carousel`.** `[next, 300]` silently overrides the
   rail's `smartSpeed`, so raising smartSpeed fixes only the drag-release path while every arrow
   press keeps the old speed. Shop by Occasion and Collections both did this: built at 500,
