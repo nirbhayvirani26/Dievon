@@ -12834,9 +12834,11 @@ input.chk-input-error:focus {
 /* On a phone the rail keeps its own small inset — the page gutter down there is
    already 16-24px, and the rows all agreed on 12-16px before any of this. */
 @media (max-width: 768px) {
-    /* Only the page inset changes down here. The gutter does NOT — 22 is 22 on
-       a phone and on a desktop, or the rows stop matching at the one size where
-       the difference is most obvious. */
+    /* 15px between slides on a phone; the desktop keeps 22. includes/footer.php
+       reads this value at init to set Owl's margin, so this IS the gutter, not
+       just a flex gap. */
+    .occasion-slider { gap: 15px; }
+
     /* But it DOES take the inset on a phone. Down here the row is not the
        continuous band — it is one garment at a time with a 22px gutter between
        separate cards, on the same pale ground as every other rail — so the
@@ -12883,7 +12885,7 @@ input.chk-input-error:focus {
     .home-categories-grid.owl-loaded .owl-item  { flex: 0 0 auto; }
 
     .home-categories-grid.owl-loaded .category-card {
-        width: calc((100vw - 32px - 44px) / 2.3);
+        width: calc((100vw - 32px - 30px) / 2.3);   /* 2 gutters of 15 */
         flex: none;
         /* Restated because the direct-child rule that carried them no longer
            matches. Uniform 3:4 across the row — the mosaic's wide feature tile
@@ -12989,7 +12991,7 @@ input.chk-input-error:focus {
         width: calc(100vw - (2 * var(--dv-gutter)) - 32px);
     }
     .home-categories-grid.owl-loaded[data-count="2"] .category-card {
-        width: calc((100vw - (2 * var(--dv-gutter)) - 32px - 22px) / 2);
+        width: calc((100vw - (2 * var(--dv-gutter)) - 32px - 15px) / 2);
     }
 }
 

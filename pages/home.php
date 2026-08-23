@@ -922,8 +922,11 @@ document.addEventListener('DOMContentLoaded', function () {
             /* No stagePadding: it insets both sides and Owl reports it unset
                under autoWidth anyway. The rail's left inset is CSS now, shared
                with the Occasion strip so the two cannot drift. */
-            0:    { stagePadding: 0, margin: 22 },
-            600:  { stagePadding: 0, margin: 22 },
+            /* 15px between slides on a phone. The desktop row has no gutter at
+               all (it is one continuous band), so this number only ever
+               describes the phone and the small-tablet step. */
+            0:    { stagePadding: 0, margin: 15 },
+            600:  { stagePadding: 0, margin: 15 },
             1025: { items: 4, stagePadding: 0,  margin: 0  }
         }
     });
@@ -2178,7 +2181,7 @@ $occIsMen = function_exists('currentShopGender') && currentShopGender() === 'men
                    restated in viewport units in the stylesheet for exactly that
                    reason. */
                 autoWidth: true,
-                margin: 22,          // the gutter every other rail uses
+                margin: 15,          // the phone gutter every rail uses
                 nav: false,          // the page draws its own arrows
                 dots: false,         // and its own counter
                 loop: false,
@@ -2374,8 +2377,8 @@ $occIsMen = function_exists('currentShopGender') && currentShopGender() === 'men
                    phone, where one print fills the screen and the rails all
                    agreed on 12 long ago, and the full gutter above it. */
                 responsive: {
-                    0:   { margin: PF_GAP },
-                    768: { margin: PF_GAP }
+                    0:   { margin: 15 },        // phone
+                    768: { margin: PF_GAP }     // desktop keeps 22
                 },
                 nav: false,             // the page draws its own arrows
                 dots: false,            // and its own counter
