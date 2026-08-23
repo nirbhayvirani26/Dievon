@@ -359,7 +359,7 @@ h1, h2, h3, h4, h5 {
 
 .btn-outline {
     display: inline-flex; align-items: center; gap: 6px;
- padding: 8px 15px;
+    padding: 8px 15px;
     font-size: 12px; font-weight: 600;
     background: transparent; color: var(--color-secondary);
     /* was rgba(0,201,167,.3) — a mint green from the same discarded theme */
@@ -413,7 +413,7 @@ h1, h2, h3, h4, h5 {
     background: rgba(255,255,255,0.2);
     backdrop-filter: blur(8px);
     border: 1px solid rgba(255,255,255,0.35);
- padding: 6px 16px;
+    padding: 6px 16px;
     font-size: 12px; font-weight: 700;
     color: rgba(255,255,255,0.95);
     margin-bottom: 20px;
@@ -437,7 +437,7 @@ h1, h2, h3, h4, h5 {
 .hero-buttons { display: flex; gap: 14px; flex-wrap: wrap; }
 .btn-hero-primary {
     display: inline-flex; align-items: center; gap: 8px;
- padding: 14px 28px;
+    padding: 14px 28px;
     font-size: 15px; font-weight: 700;
     background: white; color: var(--color-primary);
     border: none; cursor: pointer;
@@ -449,7 +449,7 @@ h1, h2, h3, h4, h5 {
 
 .btn-hero-secondary {
     display: inline-flex; align-items: center; gap: 8px;
- padding: 14px 24px;
+    padding: 14px 24px;
     font-size: 15px; font-weight: 600;
     background: rgba(255,255,255,0.18);
     backdrop-filter: blur(8px);
@@ -507,7 +507,7 @@ h1, h2, h3, h4, h5 {
     color: var(--color-primary);
     background: var(--color-primary-bg);
     border: 1px solid rgba(81, 17, 38,0.2);
- padding: 5px 14px;
+    padding: 5px 14px;
     margin-bottom: 14px;
 }
 .section-header { text-align: center; margin-bottom: 40px; }
@@ -615,7 +615,7 @@ h1, h2, h3, h4, h5 {
 
 .btn-add-cart {
     display: flex; align-items: center; justify-content: center;
- width: 40px; height: 40px;
+    width: 40px; height: 40px;
     background: var(--color-primary-bg);
     border: 1.5px solid rgba(81, 17, 38,0.2);
     color: var(--color-primary);
@@ -664,7 +664,7 @@ h1, h2, h3, h4, h5 {
 .cart-header h2 { font-size: 19px; display: flex; align-items: center; gap: 10px; color: var(--text-primary); }
 
 .btn-close-cart {
- width: 34px; height: 34px;
+    width: 34px; height: 34px;
     display: flex; align-items: center; justify-content: center;
     background: var(--bg-surface); border: 1px solid var(--border-light);
     font-size: 16px; color: var(--text-muted); cursor: pointer; transition: var(--transition);
@@ -682,7 +682,7 @@ h1, h2, h3, h4, h5 {
 }
 .cart-item:last-child { border-bottom: none; }
 .cart-item-emoji {
- width: 50px; height: 50px;
+    width: 50px; height: 50px;
     display: flex; align-items: center; justify-content: center;
     font-size: 28px; flex-shrink: 0;
     background: var(--color-primary-bg);
@@ -694,7 +694,7 @@ h1, h2, h3, h4, h5 {
 
 .qty-controls { display: flex; align-items: center; gap: 8px; }
 .qty-btn {
- width: 28px; height: 28px;
+    width: 28px; height: 28px;
     background: var(--bg-main); border: 1px solid var(--border-light);
     color: var(--text-secondary); font-size: 14px; font-weight: 700;
     cursor: pointer; display: flex; align-items: center; justify-content: center;
@@ -752,7 +752,7 @@ h1, h2, h3, h4, h5 {
        here needs a flex row, because no alert on this site places a control
        beside its text — the links inside them are part of the sentence. */
     display: block;
- padding: 14px 18px;
+    padding: 14px 18px;
     font-size: 14px; font-weight: 500; margin-bottom: 20px;
     line-height: 1.55;
 }
@@ -818,7 +818,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
     display: inline-block;
     background: var(--color-primary-bg);
     border: 2px dashed rgba(81, 17, 38,0.35);
- padding: 16px 36px; margin-bottom: 32px;
+    padding: 16px 36px; margin-bottom: 32px;
 }
 .order-code-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-muted); margin-bottom: 6px; }
 .order-code-value { font-size: 28px; font-weight: 800; font-family: var(--font-heading); color: var(--color-primary); letter-spacing: 3px; }
@@ -832,7 +832,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 /* ── Status Badges ─────────────────────────────────────────── */
 .status-badge {
     display: inline-block; padding: 4px 12px;
- font-size: 11px; font-weight: 700;
+    font-size: 11px; font-weight: 700;
     text-transform: uppercase; letter-spacing: 0.05em;
 }
 .status-pending    { background: #fef9c3; color: #a16207; border: 1px solid #fde68a; }
@@ -849,7 +849,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 .admin-tab {
     padding: 11px 22px; font-size: 14px; font-weight: 600; cursor: pointer;
     color: var(--text-secondary); border-bottom: 2px solid transparent; margin-bottom: -2px;
- transition: var(--transition);
+    transition: var(--transition);
     display: flex; align-items: center; gap: 8px;
 }
 .admin-tab:hover { color: var(--text-primary); background: var(--color-primary-bg); }
@@ -890,7 +890,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 .items-pill {
     display: inline-flex; align-items: center; gap: 4px;
     background: var(--color-primary-bg); border: 1px solid rgba(81, 17, 38,0.15);
- padding: 3px 10px; font-size: 12px; margin: 2px;
+    padding: 3px 10px; font-size: 12px; margin: 2px;
     color: var(--text-primary);
 }
 
@@ -904,7 +904,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 
 /* Status select */
 .status-select {
- padding: 8px 12px;
+    padding: 8px 12px;
     background: var(--bg-surface); border: 1.5px solid var(--border-light);
     color: var(--text-primary); font-size: 13px; font-family: var(--font-body); cursor: pointer;
 }
@@ -975,7 +975,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 }
 .preview-card { padding: 28px; display: flex; flex-direction: column; align-items: center; text-align: center; }
 .preview-img-wrap {
- width: 140px; height: 140px;
+    width: 140px; height: 140px;
     display: flex; align-items: center; justify-content: center;
     margin-bottom: 14px; transition: var(--transition);
     background: var(--bg-main); border: 2px dashed var(--border-strong);
@@ -1023,7 +1023,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 /* ── "View Cart" navbar button ───────────────────────────── */
 .btn-view-cart {
     display: inline-flex; align-items: center; gap: 8px;
- padding: 10px 18px;
+    padding: 10px 18px;
     font-size: 13px; font-weight: 700;
     background: var(--bg-surface);
     border: 1.5px solid var(--border-color);
@@ -1046,7 +1046,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
     background: var(--grad-primary);
     color: white; font-size: 10px; font-weight: 700;
     min-width: 20px; height: 20px;
- padding: 0 5px;
+    padding: 0 5px;
     display: inline-flex; align-items: center; justify-content: center;
     border: none;
     font-family: var(--font-heading);
@@ -1075,7 +1075,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 .image-upload-label { font-size: 13px; color: var(--text-secondary); }
 .image-upload-label strong { color: var(--color-primary); }
 .image-current-thumb {
- width: 100%; max-width: 240px;
+    width: 100%; max-width: 240px;
     margin: 12px auto 0; display: block;
     object-fit: cover; border: 1.5px solid var(--border-light);
 }
@@ -1138,7 +1138,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 }
 .lightbox-inner img {
     max-width: 90vw; max-height: 85vh;
- object-fit: contain;
+    object-fit: contain;
     display: block; box-shadow: 0 24px 60px rgba(0,0,0,0.5);
 }
 .lightbox-caption {
@@ -1147,7 +1147,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 }
 .lightbox-close {
     position: absolute; top: -16px; right: -16px;
- width: 38px; height: 38px;
+    width: 38px; height: 38px;
     background: white; color: var(--text-primary);
     display: flex; align-items: center; justify-content: center;
     font-size: 18px; cursor: pointer; border: none;
@@ -1166,7 +1166,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
     gap: 16px;
 }
 .admin-gallery-item {
- overflow: hidden;
+    overflow: hidden;
     border: 1.5px solid var(--border-light);
     position: relative; background: var(--bg-main);
     box-shadow: var(--shadow-xs);
@@ -1176,7 +1176,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 .admin-gallery-item-caption { font-size: 12px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .admin-gallery-del {
     position: absolute; top: 6px; right: 6px;
- width: 28px; height: 28px;
+    width: 28px; height: 28px;
     background: rgba(239,68,68,0.9); color: white;
     display: flex; align-items: center; justify-content: center;
     font-size: 12px; cursor: pointer; border: none;
@@ -1203,7 +1203,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
     display: inline-flex; align-items: center; gap: 8px;
     background: rgba(255,255,255,0.2); backdrop-filter: blur(8px);
     border: 1px solid rgba(255,255,255,0.35);
- padding: 6px 18px;
+    padding: 6px 18px;
     font-size: 12px; font-weight: 700;
     color: rgba(255,255,255,0.95); margin-bottom: 20px;
     text-transform: uppercase; letter-spacing: 0.08em;
@@ -1230,7 +1230,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 .contact-map-section { padding: 64px 0; background: var(--bg-surface); }
 .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; }
 .map-container {
- overflow: hidden;
+    overflow: hidden;
     border: 1.5px solid var(--border-light);
     box-shadow: var(--shadow-sm);
     height: 380px;
@@ -1242,7 +1242,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 .social-buttons-grid { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; margin-top: 28px; }
 .social-btn {
     display: inline-flex; align-items: center; gap: 10px;
- padding: 13px 26px;
+    padding: 13px 26px;
     font-size: 14px; font-weight: 700;
     font-family: var(--font-heading);
     text-decoration: none; transition: var(--transition);
@@ -1272,7 +1272,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
     display: inline-flex; align-items: center; gap: 8px;
     background: rgba(255,255,255,0.2); backdrop-filter: blur(8px);
     border: 1px solid rgba(255,255,255,0.35);
- padding: 6px 18px;
+    padding: 6px 18px;
     font-size: 12px; font-weight: 700;
     color: rgba(255,255,255,0.95); margin-bottom: 24px;
     text-transform: uppercase; letter-spacing: 0.08em;
@@ -1307,7 +1307,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
     display: flex; align-items: center; gap: 10px;
     background: var(--color-primary-bg);
     border: 1px solid rgba(81, 17, 38,0.15);
- padding: 12px 18px;
+    padding: 12px 18px;
     flex: 1; min-width: 140px;
 }
 .story-highlight-icon { font-size: 24px; }
@@ -1330,7 +1330,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 .landing-cta-section p  { font-size: 16px; color: rgba(255,255,255,0.85); margin-bottom: 32px; position: relative; z-index: 1; }
 .btn-cta-white {
     display: inline-flex; align-items: center; gap: 10px;
- padding: 16px 36px;
+    padding: 16px 36px;
     font-size: 16px; font-weight: 700;
     background: white; color: var(--color-primary);
     border: none; cursor: pointer;
@@ -1369,7 +1369,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 .footer-col ul li a:hover { color: var(--color-primary-light); }
 .footer-social { display: flex; gap: 10px; margin-top: 16px; }
 .footer-social a {
- width: 36px; height: 36px;
+    width: 36px; height: 36px;
     background: rgba(255,255,255,0.08);
     border: 1px solid rgba(255,255,255,0.12);
     display: flex; align-items: center; justify-content: center;
@@ -1387,13 +1387,13 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 
 /* ── Cart item image ─────────────────────────────────────── */
 .cart-item-img {
- width: 50px; height: 50px;
+    width: 50px; height: 50px;
     object-fit: cover; flex-shrink: 0;
     border: 1px solid var(--border-light);
     background: var(--bg-main);
 }
 .cart-item-img-placeholder {
- width: 50px; height: 50px;
+    width: 50px; height: 50px;
     display: flex; align-items: center; justify-content: center;
     font-size: 26px; flex-shrink: 0;
     background: var(--color-primary-bg);
@@ -1521,7 +1521,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 
 .variant-picker-close {
     position: absolute; top: 14px; right: 14px;
- width: 32px; height: 32px;
+    width: 32px; height: 32px;
     background: var(--bg-main); border: 1px solid var(--border-light);
     display: flex; align-items: center; justify-content: center;
     font-size: 14px; color: var(--text-muted); cursor: pointer;
@@ -1649,7 +1649,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 .mobile-nav-actions .btn-view-cart { width: 100%; justify-content: center; }
 .mobile-drawer-close {
     position: absolute; top: 20px; right: 20px;
- width: 36px; height: 36px;
+    width: 36px; height: 36px;
     background: var(--bg-main); border: 1px solid var(--border-light);
     display: flex; align-items: center; justify-content: center;
     font-size: 16px; color: var(--text-muted); cursor: pointer;
@@ -1913,7 +1913,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
     width: 32px; height: 32px; padding: 0; flex: 0 0 32px;
     display: inline-flex; align-items: center; justify-content: center;
     font-size: 13px; line-height: 1; text-decoration: none; cursor: pointer;
- border: 1px solid var(--border-strong);
+    border: 1px solid var(--border-strong);
     background: transparent; color: var(--text-secondary);
     transition: background .15s ease, color .15s ease, border-color .15s ease;
 }
@@ -2060,7 +2060,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
    SIZE GUIDE — starter templates & missing-guide warning
    ═══════════════════════════════════════════════════════════ */
 .sg-template-bar { display: flex; gap: 18px; flex-wrap: wrap; align-items: center; justify-content: space-between;
- padding: 16px 18px; margin-bottom: 22px;
+    padding: 16px 18px; margin-bottom: 22px;
     background: rgba(16,185,129,0.07); border-left: 3px solid #10b981; }
 .sg-template-copy { flex: 1; min-width: 260px; font-size: 13px; line-height: 1.6; }
 .sg-template-title { display: block; margin-bottom: 3px; color: #10b981; }
@@ -2069,7 +2069,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 .sg-template-apply { white-space: nowrap; }
 
 .sg-missing-warning { display: flex; gap: 12px; align-items: flex-start;
- padding: 14px 16px; margin-bottom: 20px;
+    padding: 14px 16px; margin-bottom: 20px;
     background: rgba(245,158,11,0.10); border-left: 3px solid #f59e0b; font-size: 13px; line-height: 1.6; }
 .sg-missing-icon { color: #f59e0b; margin-top: 3px; font-size: 16px; }
 .sg-missing-title { display: block; margin-bottom: 2px; }
@@ -2089,7 +2089,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 
 /* Site-wide "how to measure" image — one upload used by every category */
 .sg-global-image { display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start; justify-content: space-between;
- padding: 16px 18px; margin-bottom: 20px;
+    padding: 16px 18px; margin-bottom: 20px;
     background: var(--bg-main); border: 1px solid var(--border-light); }
 .sg-global-image-copy { flex: 1; min-width: 280px; font-size: 13px; line-height: 1.65; }
 .sg-global-image-title { display: block; margin-bottom: 4px; }
@@ -2114,7 +2114,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 .sg-gender-btn { border-color: var(--border-strong) !important; color: var(--text-secondary) !important; }
 .sg-gender-btn.active { background: var(--color-primary) !important; border-color: var(--color-primary) !important; color: #fff !important; font-weight: 700; }
 .sg-scope-note { display: flex; gap: 10px; align-items: flex-start; padding: 11px 14px; margin-bottom: 14px;
- font-size: 12.5px; line-height: 1.6; }
+    font-size: 12.5px; line-height: 1.6; }
 .sg-scope-note i { margin-top: 3px; font-size: 14px; }
 .sg-scope-note--global { background: rgba(59,130,246,0.08); border-left: 3px solid #3b82f6; }
 .sg-scope-note--global i { color: #3b82f6; }
@@ -2123,7 +2123,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 
 /* Upload result banner on the size guide page */
 .sg-img-status { display: flex; gap: 9px; align-items: flex-start; padding: 12px 15px; margin-bottom: 16px;
- font-size: 13px; line-height: 1.6; }
+    font-size: 13px; line-height: 1.6; }
 .sg-img-status i { margin-top: 2px; }
 .sg-img-status--ok  { background: rgba(16,185,129,0.10); border-left: 3px solid #10b981; }
 .sg-img-status--ok i { color: #10b981; }
@@ -2134,7 +2134,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
    silently (a colour with no available size is never rendered; a colour with no
    images falls back to the product's default photos). */
 .color-warn { display: flex; gap: 10px; align-items: flex-start; padding: 10px 13px; margin-bottom: 14px;
- font-size: 12.5px; line-height: 1.55; }
+    font-size: 12.5px; line-height: 1.55; }
 .color-warn i { margin-top: 2px; font-size: 14px; }
 .color-warn--blocking { background: rgba(239,68,68,0.09); border-left: 3px solid #ef4444; }
 .color-warn--blocking i { color: #ef4444; }
@@ -2143,16 +2143,16 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 
 /* Store Settings — header logo field */
 .settings-logo-row { display:flex; gap:20px; align-items:flex-start; flex-wrap:wrap;
- padding:18px; margin-bottom:22px; border:1px solid var(--border-light); background:var(--bg-main); }
+    padding:18px; margin-bottom:22px; border:1px solid var(--border-light); background:var(--bg-main); }
 .settings-logo-preview { width:170px; min-height:90px; flex-shrink:0; display:flex; align-items:center; justify-content:center;
- background:#fff; border:1px solid var(--border-light); padding:12px; }
+    background:#fff; border:1px solid var(--border-light); padding:12px; }
 .settings-logo-preview img { max-width:100%; max-height:70px; width:auto; height:auto; object-fit:contain; display:block; }
 .settings-logo-fields { flex:1; min-width:260px; }
 .settings-logo-hint { font-size:12px; color:var(--text-muted); line-height:1.6; margin:4px 0 10px; }
 .settings-logo-input { font-size:12px; padding:7px; }
 .settings-logo-remove { display:flex; align-items:center; gap:7px; margin-top:10px; font-size:12.5px; color:#c0392b; cursor:pointer; }
 .settings-logo-status { display:flex; gap:9px; align-items:flex-start; padding:12px 15px; margin-bottom:18px;
- font-size:13px; line-height:1.6; }
+    font-size:13px; line-height:1.6; }
 .settings-logo-status--ok  { background:rgba(16,185,129,.10); border-left:3px solid #10b981; }
 .settings-logo-status--ok i { color:#10b981; }
 .settings-logo-status--err { background:rgba(239,68,68,.09); border-left:3px solid #ef4444; }
@@ -2168,7 +2168,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 /* Store Settings — field hints and the shipping status note */
 .settings-hint { display:block; font-size:11.5px; color:var(--text-muted); line-height:1.55; margin-top:5px; }
 .settings-shipping-note { display:flex; gap:9px; align-items:flex-start; padding:12px 15px; margin-bottom:16px;
- background:rgba(16,185,129,.09); border-left:3px solid #10b981;
+    background:rgba(16,185,129,.09); border-left:3px solid #10b981;
     font-size:12.5px; line-height:1.65; }
 .settings-shipping-note i { color:#10b981; margin-top:2px; }
 
@@ -2199,7 +2199,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 .refund-input {
     padding: 7px 10px; font-size: 13px;
     border: 1px solid var(--border-light, #cbd5e1);
- background: #fff; color: #1e293b;
+    background: #fff; color: #1e293b;
 }
 .refund-input-amount { width: 120px; }
 .refund-input-reason { flex: 1; min-width: 180px; }
@@ -2244,7 +2244,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 .mc-note { font-size: 12px; color: var(--text-muted, #64748b); }
 .mc-toonew {
     margin-top: 16px; padding: 11px 14px; line-height: 1.6;
- background: rgba(245, 158, 11, .07); border: 1px solid rgba(245, 158, 11, .3);
+    background: rgba(245, 158, 11, .07); border: 1px solid rgba(245, 158, 11, .3);
 }
 
 .mc-alert { padding: 12px 16px; margin-bottom: 20px; font-size: 14px; font-weight: 600; line-height: 1.6; }
@@ -2305,7 +2305,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 }
 .seo-check:last-child { border-bottom: 0; }
 .seo-check-mark {
- flex: 0 0 22px; height: 22px;
+    flex: 0 0 22px; height: 22px;
     display: flex; align-items: center; justify-content: center;
     font-size: 12px; font-weight: 700; color: #fff;
 }
@@ -2318,7 +2318,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 
 .seo-manual {
     background: var(--bg-surface-soft); border: 1px solid var(--border-light);
- padding: 16px 18px; font-size: 13px;
+    padding: 16px 18px; font-size: 13px;
     color: var(--text-secondary); line-height: 1.75;
 }
 .seo-manual ol { margin: 10px 0 10px 18px; padding: 0; }
@@ -2397,7 +2397,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 .stock-product { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .stock-thumb {
     width: 42px; height: 56px; flex-shrink: 0;
- overflow: hidden;
+    overflow: hidden;
     background: var(--bg-surface-soft);
     border: 1px solid var(--border-light);
     display: flex; align-items: center; justify-content: center;
@@ -2446,7 +2446,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 .stock-badge {
     display: inline-block;
     font-size: 10.5px; font-weight: 600; letter-spacing: 0.04em;
- padding: 3px 9px;
+    padding: 3px 9px;
 }
 .stock-badge-on  { background: rgba(46, 125, 50, 0.10); color: var(--color-success); }
 .stock-badge-off { background: var(--bg-surface-soft);  color: var(--text-muted); }
@@ -2512,7 +2512,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 .cat-gender-badge {
     display: inline-flex; align-items: center; gap: 5px;
     font-size: 10px; font-weight: 700; letter-spacing: 0.06em;
- padding: 3px 9px;
+    padding: 3px 9px;
     color: var(--cat-g, var(--color-primary));
     /* Flat fallback first: a browser without color-mix keeps a readable chip
        instead of coloured text floating on the header's own background. */
@@ -2527,11 +2527,11 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 .cat-sub-count {
     display: inline-flex; align-items: center; justify-content: center;
     min-width: 22px; height: 22px; padding: 0 6px;
- font-size: 11px; font-weight: 700;
+    font-size: 11px; font-weight: 700;
     background: var(--color-primary); color: #fff;
 }
 .cat-sub-chip {
- font-size: 11.5px; padding: 3px 9px;
+    font-size: 11.5px; padding: 3px 9px;
     background: var(--bg-surface-soft); color: var(--text-secondary);
     border: 1px solid var(--border-light); white-space: nowrap;
 }
@@ -2547,11 +2547,11 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
     display: flex; align-items: center; gap: 14px;
     margin-bottom: 10px; padding: 10px;
     background: var(--bg-surface-soft);
- border: 1px solid var(--border-light);
+    border: 1px solid var(--border-light);
 }
 .cat-img-current img {
     width: 84px; height: 60px; object-fit: cover;
- border: 1px solid var(--border-light); flex-shrink: 0;
+    border: 1px solid var(--border-light); flex-shrink: 0;
 }
 .cat-img-remove {
     display: inline-flex; align-items: center; gap: 7px;
@@ -2838,7 +2838,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
    holds the most controls on that table. */
 .rma-ship-in {
     width: 92px; font-size: 11px; padding: 4px 6px;
- border: 1px solid var(--border-strong);
+    border: 1px solid var(--border-strong);
 }
 
 /* Foreign-currency takings under the revenue tile. Listed, never summed with
@@ -2921,12 +2921,12 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 .pcv-over { color: var(--text-muted); }
 .pcv-in {
     width: 62px; padding: 3px 6px; font-size: 11px;
- border: 1px solid var(--border-light);
+    border: 1px solid var(--border-light);
     background: var(--bg-surface, #fff); color: var(--text-primary);
 }
 .pcv-save {
     padding: 3px 9px; font-size: 10px; font-weight: 700;
- border: 1px solid var(--color-primary);
+    border: 1px solid var(--color-primary);
     background: transparent; color: var(--color-primary); cursor: pointer;
 }
 .pcv-save:hover:not(:disabled) { background: var(--color-primary); color: #fff; }
@@ -2966,7 +2966,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 .dv-notice strong { color: var(--dvn-strong, inherit); font-weight: 700; }
 .dv-notice a { color: inherit; text-decoration: underline; font-weight: 600; }
 .dv-notice code {
- background: rgba(0,0,0,0.06); padding: 1px 5px;
+    background: rgba(0,0,0,0.06); padding: 1px 5px;
     font-size: 0.92em;
 }
 
@@ -3473,7 +3473,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 .sr-flash {
     display: flex; align-items: flex-start; gap: 10px;
     margin: 0 0 18px; padding: 12px 16px;
- font-size: 13px; line-height: 1.55;
+    font-size: 13px; line-height: 1.55;
 }
 .sr-flash.is-ok  { background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; }
 .sr-flash.is-bad { background: #fff5f5; border: 1px solid #fecaca; color: var(--color-danger); }
@@ -3482,7 +3482,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
    nothing left to press, and Shiprocket would accept a second booking. */
 .sr-booked {
     display: inline-flex; align-items: center; gap: 6px;
- padding: 6px 12px;
+    padding: 6px 12px;
     background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46;
     font-size: 12px; font-weight: 700; white-space: nowrap;
 }
@@ -3505,7 +3505,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 @media (hover: none) { .gal-move { opacity: 1; } }
 .gal-move-btn {
     width: 20px; height: 20px; padding: 0;
- border: 1px solid rgba(255,255,255,0.3);
+    border: 1px solid rgba(255,255,255,0.3);
     background: rgba(20,6,12,0.8); color: #fff;
     font-size: 11px; line-height: 1; cursor: pointer;
     transition: background 0.15s ease;

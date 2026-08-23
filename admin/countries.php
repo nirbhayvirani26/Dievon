@@ -107,6 +107,18 @@ $fxSupported = $countries && array_key_exists('fx_rate', $countries[0]);
     </div>
     <?php endif; ?>
 
+    <?php /* The Rate column simply vanishes when the columns are not there, which
+             from the admin's side is indistinguishable from the feature not
+             existing. Say what is actually wrong and what fixes it. */ ?>
+    <?php if (!$fxSupported): ?>
+    <div class="cn-note cn-note--warn">
+        <strong>Exchange rates are not set up on this server yet.</strong>
+        The two columns that hold them are missing from the database, which is why there is no Rate column below
+        and why the product form asks you to type every international price by hand.
+        Run <code>update_new_database.php</code> once and reload this page.
+    </div>
+    <?php endif; ?>
+
     <div class="cn-note">
         <strong>Prices are set per country, not converted.</strong>
         A product with no price for a country is simply not sold there — that is also how you keep a piece India-only.
