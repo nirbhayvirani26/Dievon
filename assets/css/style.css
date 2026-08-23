@@ -12311,3 +12311,22 @@ input.chk-input-error:focus {
    appear at all, on the one section of the homepage whose whole job is to show
    what is new. */
 
+
+/* New Arrivals keeps the ordinary pointer.
+   ────────────────────────────────────────────────────────────────────────────
+   The grab cursor is right for the other rails: they are strips of cards whose
+   only affordance is being pulled. This row is not that — every panel responds
+   to the pointer by opening, and each one is a link to a garment. A hand that
+   says "drag me" sitting over something that says "click me" is the wrong
+   instruction on the wrong element.
+
+   The global rule at :9087 is (0,2,0) and stays exactly as it is for every
+   other rail; this is (0,3,0) so it wins here and nowhere else. */
+.na-gallery.owl-carousel.owl-drag,
+.na-gallery.owl-carousel.owl-drag a,
+.na-gallery.owl-carousel.owl-drag img,
+.na-gallery.owl-carousel.owl-drag:active,
+.na-gallery.owl-carousel.owl-drag:active a,
+.na-gallery.owl-carousel.owl-drag:active img { cursor: default; }
+.na-gallery.owl-carousel.owl-drag a,
+.na-gallery.owl-carousel.owl-drag:active a { cursor: pointer; }

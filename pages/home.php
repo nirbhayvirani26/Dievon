@@ -880,10 +880,16 @@ document.addEventListener('DOMContentLoaded', function () {
         autoHeight: false,
         responsive: {
             /* A phone shows one garment with the next one peeking, which is what
-               says the row continues without an arrow having to. */
-            0:    { items: 1, stagePadding: 46 },
-            600:  { items: 2, stagePadding: 0 },
-            1025: { items: 4, stagePadding: 0 }
+               says the row continues without an arrow having to.
+
+               And a gutter between them, the same 12px every other rail on the
+               site uses. Edge to edge is the DESKTOP idea — four panels reading
+               as one continuous band of photography — and it does not survive
+               the trip down: at one garment per screen there is no band to
+               interrupt, just two unrelated pictures touching. */
+            0:    { items: 1, stagePadding: 46, margin: 12 },
+            600:  { items: 2, stagePadding: 0,  margin: 12 },
+            1025: { items: 4, stagePadding: 0,  margin: 0  }
         }
     });
 
@@ -1009,6 +1015,49 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     naLayout(null);
+
+    /* Two fingers sideways moves the row.
+       ────────────────────────────────────────────────────────────────────────
+       A step at a time rather than the pixel-for-pixel glide the other rails
+       have, and that is deliberate. Those rails are uniform: every card is the
+       same width, so the stage can be dragged directly and snapped to the
+       nearest one. This row is not uniform — the open panel is three times the
+       width of a narrow one, and the widths REARRANGE as the window moves. A
+       raw drag would be sliding a ruler whose markings move while you read it,
+       and the snap would land somewhere Owl disagreed with.
+
+       So the gesture is accumulated to a threshold and handed to Owl, which
+       animates the step over its own 500ms and leaves its index correct — the
+       same path the arrows take, and one already proven not to drift.
+
+       Horizontal only, so an ordinary scroll down the homepage never catches on
+       the row; and locked for the length of the animation, because a trackpad
+       fires wheel events in the dozens and one step each would run the row to
+       the end in a single flick. */
+    var naWheelAt = 0, naWheelLocked = false;
+    var NA_WHEEL_THRESHOLD = 40;
+
+    gallery.addEventListener('wheel', function (e) {
+        if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) { return; }   // vertical is the page's
+        e.preventDefault();                                          // and stops macOS "go back"
+        if (naWheelLocked) { return; }
+
+        naWheelAt += e.deltaX;
+        if (Math.abs(naWheelAt) < NA_WHEEL_THRESHOLD) { return; }
+
+        $g.trigger(naWheelAt > 0 ? 'next.owl.carousel' : 'prev.owl.carousel');
+        naWheelAt = 0;
+        naWheelLocked = true;
+        window.setTimeout(function () { naWheelLocked = false; }, 520);
+    }, { passive: false });
+
+    /* A gesture that never reached the threshold should not add itself to the
+       next one two seconds later. */
+    var naWheelIdle;
+    gallery.addEventListener('wheel', function () {
+        window.clearTimeout(naWheelIdle);
+        naWheelIdle = window.setTimeout(function () { naWheelAt = 0; }, 220);
+    }, { passive: true });
 
     /* Registered for the shared pager, like every other rail on this page. The
        section keeps what is its own — Owl, the responsive item counts — and
