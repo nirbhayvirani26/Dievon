@@ -12600,3 +12600,104 @@ input.chk-input-error:focus {
        with the pager still counting underneath it. */
     .na-gallery.owl-loaded .na-panel { width: 67vw; }
 }
+
+/* ── New Arrivals: no hover behaviour below the breakpoint ────────────────────
+   The panel opening under the pointer is the DESKTOP idea — one of four panels
+   grows and the others give way. On a phone there is one garment on screen and
+   nothing to give way, so the same rules only produce a card that flinches when
+   you touch it. Worse on a touchscreen: :hover sticks after a tap, so a garment
+   stayed zoomed and lifted until something else was tapped.
+
+   Written as a max-width gate rather than (hover: none) on purpose — a laptop
+   with a touchscreen matches both, and this is about the SIZE of the row, not
+   the input device. */
+@media (max-width: 1024px) {
+    .na-gallery.owl-loaded .na-panel:hover,
+    .na-gallery.owl-loaded .na-panel:focus-within,
+    .na-gallery.owl-loaded .owl-item:hover .na-panel,
+    .na-gallery.owl-loaded .owl-item .na-panel:hover {
+        transform: none;
+    }
+    .na-gallery .na-panel:hover .card-img,
+    .na-gallery .na-panel:focus-visible .card-img,
+    .na-gallery .na-panel:focus-within .card-img,
+    .na-gallery .na-panel.is-default .card-img {
+        transform: none;
+    }
+    /* The caption is already permanently visible down here, so the hover rules
+       that faded it in and out have nothing to do but flicker it. */
+    .na-gallery .na-panel:hover .product-card-details,
+    .na-gallery:hover .na-panel:not(:hover) .product-card-details {
+        opacity: 1;
+        transform: none;
+    }
+    .na-gallery .na-panel .quick-view-btn { display: none !important; }
+}
+
+/* ── Best Sellers and Trending: the same card as the rest, on a phone ─────────
+   The print styling is gated at 768px and up, so below it these two fell back
+   to the ordinary boxed shop card: a white panel under the photograph with the
+   name, the price and DETAILS inside it, plus a Quick View button. Every other
+   rail on the homepage shows a photograph with its caption ON it — the row read
+   as a different component sitting in the middle of the page.
+
+   This is not the desktop print brought down: no tilt, no overlap, no lift.
+   Just the chrome off and the caption where the other rails put it. */
+@media (max-width: 767px) {
+    .photo-fan-section .pf-card {
+        background: transparent;
+        border: 0;
+        padding: 0;
+        overflow: hidden;
+        position: relative;
+    }
+    .photo-fan-section .pf-card .card-img-container {
+        position: relative;
+        aspect-ratio: 3 / 4;
+        overflow: hidden;
+        border-bottom: 0;
+    }
+    .photo-fan-section .pf-card .card-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    /* Caption over the photograph, on the same scrim New Arrivals uses, so the
+       two rails read as one family rather than two. */
+    .photo-fan-section .pf-card .product-card-details {
+        position: absolute;
+        inset-inline: 0;
+        bottom: 0;
+        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+        padding: 16px;
+        margin: 0;
+        opacity: 1;
+        transform: none;
+        background: linear-gradient(transparent, rgba(20, 4, 8, 0.78));
+    }
+    .photo-fan-section .pf-card .product-card-title { font-size: clamp(15px, 4vw, 20px); }
+    .photo-fan-section .pf-card .product-card-title,
+    .photo-fan-section .pf-card .product-card-title a { color: #ffffff; }
+    .photo-fan-section .pf-card .product-card-price,
+    .photo-fan-section .pf-card .price-now   { color: rgba(255, 255, 255, 0.92); font-size: 14px; }
+    .photo-fan-section .pf-card .price-mrp-strike { color: rgba(255, 255, 255, 0.66); }
+    .photo-fan-section .pf-card .product-card-cta {
+        color: var(--color-accent) !important;
+        font-size: 10.5px;
+        margin-top: 2px;
+        width: auto;
+        padding: 0;
+        justify-content: flex-start;
+    }
+    /* Quick View goes for the same reason it goes on New Arrivals: on a card
+       this size it covers the caption, and a tap on the photograph already
+       opens the garment. */
+    .photo-fan-section .pf-card .quick-view-btn { display: none !important; }
+    /* And no hover pose down here either — there is no stack to lift out of. */
+    .photo-fan-section .pf-item:hover .pf-card,
+    .photo-fan-section .pf-item:focus-within .pf-card { transform: none; }
+}

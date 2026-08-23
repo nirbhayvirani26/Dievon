@@ -8,8 +8,7 @@
    that does not carry .section-space. It was on its own 80px, so the two gaps
    either side of it came out 140 against everyone else's 120; sharing the
    declaration means it can never fall out of step again. */
-.section-space,
-.occasion-banners-section { padding: 60px 0 !important; }
+.section-space { padding: 60px 0 !important; }
 
 @media (max-width: 991px) {
     /* .section-space step moved to the ladder at the end of this file. */
@@ -1937,8 +1936,7 @@ html {
        is most of a thumb-scroll of nothing, and the page reads as emptier than
        it is. Both selectors together for the same reason as above — the banners
        section carries no .section-space class and must not drift from it. */
-    .section-space,
-    .occasion-banners-section { padding: 40px 0 !important; }
+    .section-space { padding: 40px 0 !important; }
 
     /* Free delivery, easy returns and the rest move below the fold's business.
        ────────────────────────────────────────────────────────────────────────
