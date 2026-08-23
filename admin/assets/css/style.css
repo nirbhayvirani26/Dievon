@@ -3830,3 +3830,29 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 /* The button moved into the country's header, so it no longer needs a top
    margin pushing it away from an input above it. */
 .pf-country-head .pf-fx-btn { margin-top: 0; }
+
+
+/* ══ Countries — suggest the missing prices ═══════════════════════════════════
+   Sits under the "x of y" count it acts on, quiet enough that it reads as an
+   offer rather than the row's main control. The row's real switch is Selling
+   here, and that one must stay the loudest thing in it. */
+.cn-suggest {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+    padding: 4px 9px;
+    border: 1px solid var(--border-light);
+    border-radius: 4px;
+    background: var(--bg-surface-soft);
+    color: var(--color-secondary);
+    font-size: 11.5px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.cn-suggest:hover:not(:disabled) {
+    border-color: var(--color-secondary);
+    background: var(--color-secondary-bg);
+}
+.cn-suggest:disabled { opacity: .6; cursor: default; }

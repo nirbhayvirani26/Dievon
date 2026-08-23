@@ -196,6 +196,21 @@ $fxSupported = $countries && array_key_exists('fx_rate', $countries[0]);
                             <span class="cn-muted">all <?= $totalProducts ?></span>
                         <?php else: ?>
                             <span class="<?= $shown === 0 ? 'cn-warn' : '' ?>"><?= $shown ?> of <?= $totalProducts ?></span>
+                            <?php /* Fill the gap in one press instead of opening every product
+                                     and using its own Convert button — 16 products across three
+                                     countries is 48 prices typed by hand, and that is the reason
+                                     selling abroad gets put off. Offered only while products are
+                                     still unpriced here, and only when there is a rate to work
+                                     from; a button that cannot do anything is worse than none. */ ?>
+                            <?php if ($shown < $totalProducts && !empty($c['fx_rate'])): ?>
+                            <button type="button" class="cn-suggest"
+                                    data-code="<?= htmlspecialchars($c['country_code']) ?>"
+                                    data-name="<?= htmlspecialchars($c['country_name']) ?>"
+                                    data-missing="<?= (int)($totalProducts - $shown) ?>">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                                Suggest the other <?= (int)($totalProducts - $shown) ?>
+                            </button>
+                            <?php endif; ?>
                         <?php endif; ?>
                     </td>
                     <td style="text-align:right;">
@@ -252,6 +267,59 @@ document.addEventListener('change', e => {
         cnMsg('Note: no products have a price for ' + e.target.dataset.name +
               ' yet, so the shop would look empty there. Set prices on the product pages first.', false);
     }
+});
+
+/* Ask, then fill the country's missing prices.
+   ────────────────────────────────────────────────────────────────────────────
+   The count is spoken before anything is written, and the sentence says what
+   will NOT be touched — a bulk price change is exactly the operation where a
+   person needs to know the blast radius before they agree to it, not after.
+
+   It reloads on success so the "x of y priced" figure beside the button is the
+   real one from the database, rather than a number this script guessed. */
+document.querySelectorAll('.cn-suggest').forEach(function (btn) {
+    btn.addEventListener('click', async function () {
+        const code    = btn.dataset.code;
+        const name    = btn.dataset.name;
+        const missing = parseInt(btn.dataset.missing, 10) || 0;
+
+        const ask = (typeof window.dievonConfirm === 'function')
+            ? window.dievonConfirm : (m) => Promise.resolve(window.confirm(m));
+
+        const ok = await ask(
+            'Suggest prices for ' + name + '?\n\n' +
+            missing + ' product' + (missing === 1 ? '' : 's') + ' with no ' + code + ' price will be given one, ' +
+            'worked out from the rate on this row and rounded up.\n\n' +
+            'Products that already have a ' + code + ' price are left exactly as they are. ' +
+            'Nothing is shown to a shopper until you review it under Products.'
+        );
+        if (!ok) { return; }
+
+        btn.disabled = true;
+        const label = btn.innerHTML;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Working…';
+
+        try {
+            const fd = new FormData();
+            fd.append('action', 'suggest_prices');
+            fd.append('country_code', code);
+            if (window.ADMIN_CSRF_TOKEN) { fd.append('csrf_token', window.ADMIN_CSRF_TOKEN); }
+
+            const res  = await fetch('country_handler.php', { method: 'POST', body: fd });
+            const data = await res.json();
+
+            if (data && data.success) {
+                (window.dievonAlert || alert)(data.message, { type: 'success' });
+                window.location.reload();
+            } else {
+                btn.disabled = false; btn.innerHTML = label;
+                (window.dievonAlert || alert)((data && data.message) || 'Could not suggest prices.', { type: 'error' });
+            }
+        } catch (e) {
+            btn.disabled = false; btn.innerHTML = label;
+            (window.dievonAlert || alert)('Network error — nothing was changed.', { type: 'error' });
+        }
+    });
 });
 
 function saveCountries() {

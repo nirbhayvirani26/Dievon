@@ -25,6 +25,94 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') { cnFail('Invalid request method.', 4
 if (!verifyCsrfToken($_POST['csrf_token'] ?? '')) {
     cnFail('Your session has expired. Please refresh the page and try again.', 419);
 }
+/* Suggest a starting price for every product in one country.
+   ────────────────────────────────────────────────────────────────────────────
+   The product form already has "Convert all from ₹", but it fills ONE product.
+   At 16 products and three countries that is 48 prices typed by hand, and the
+   number only grows — which is the reason a shop puts off selling abroad.
+
+   Same rule as that button, applied across the catalogue: the rate SUGGESTS a
+   figure, and what gets stored is an ordinary price the owner can edit. No rate
+   is ever applied to a price a shopper sees, so a rate moving overnight still
+   cannot change what a garment costs.
+
+   Two things it will not do. It never touches a product that already has a price
+   for the country — a considered price must not be flattened by one click. And
+   it does one country per press, because rounding and what a market bears differ
+   per country, and a button that fills everything everywhere is one you press
+   once and regret. */
+if (($_POST['action'] ?? '') === 'suggest_prices') {
+    $code = strtoupper(trim((string)($_POST['country_code'] ?? '')));
+    $home = strtoupper((string)(homeCountryRow()['country_code'] ?? 'IN'));
+
+    if ($code === '' || $code === $home) {
+        cnFail('Choose a country other than the home country.');
+    }
+
+    $row = null;
+    foreach (enabledCountries() as $cc => $c) {
+        if (strtoupper((string)$cc) === $code) { $row = $c; break; }
+    }
+    if ($row === null) { cnFail('That country is not enabled.'); }
+
+    $rate = (float)($row['fx_rate'] ?? 0);
+    if ($rate <= 0) { cnFail('No exchange rate on record for ' . $code . '. Refresh the rates first, or type a rate in.'); }
+
+    try {
+        $live = $pdo->query(
+            "SELECT id, price, mrp_price FROM products
+              WHERE COALESCE(is_deleted, 0) = 0 AND price > 0"
+        )->fetchAll(PDO::FETCH_ASSOC);
+
+        $already = $pdo->prepare("SELECT product_id FROM product_country_prices WHERE country_code = :cc");
+        $already->execute([':cc' => $code]);
+        $skip = array_flip(array_map('intval', $already->fetchAll(PDO::FETCH_COLUMN)));
+
+        $ins = $pdo->prepare(
+            "INSERT INTO product_country_prices (product_id, country_code, price, sale_price)
+             VALUES (:pid, :cc, :price, :sale)"
+        );
+
+        $pdo->beginTransaction();
+        $filled = 0;
+        foreach ($live as $p) {
+            if (isset($skip[(int)$p['id']])) { continue; }
+
+            /* Rounded UP to a whole unit, matching dievonFxAmounts() in the
+               product form. 7230 INR at 0.00766 is 55.38: rounding down gives
+               away margin on every sale, up costs the shopper 62 paise. The two
+               must agree, or the same product priced two ways lands on two
+               different numbers. */
+            $inrPrice = (float)$p['price'];
+            $inrMrp   = (float)($p['mrp_price'] ?? 0);
+            $price = ceil(($inrMrp > $inrPrice ? $inrMrp : $inrPrice) * $rate);
+            $sale  = ($inrMrp > $inrPrice) ? ceil($inrPrice * $rate) : null;
+
+            $ins->execute([':pid' => (int)$p['id'], ':cc' => $code, ':price' => $price, ':sale' => $sale]);
+            $filled++;
+        }
+        $pdo->commit();
+
+        logAdminAction($_SESSION['admin_id'] ?? 0, 'country_prices_suggested',
+            "Suggested $filled price(s) for $code at rate $rate");
+
+        echo json_encode([
+            'success' => true,
+            'filled'  => $filled,
+            'skipped' => count($live) - $filled,
+            'message' => $filled === 0
+                ? 'Every product already has a price for ' . $code . ' — nothing was changed.'
+                : $filled . ' product' . ($filled === 1 ? '' : 's') . ' given a suggested price. '
+                  . (count($live) - $filled) . ' already priced and left alone. Review them under Products.',
+        ]);
+        exit;
+    } catch (PDOException $e) {
+        if ($pdo->inTransaction()) { $pdo->rollBack(); }
+        error_log('suggest_prices failed: ' . $e->getMessage());
+        cnFail('Could not write the prices. Nothing was changed.');
+    }
+}
+
 if (($_POST['action'] ?? '') !== 'save_countries') { cnFail('Unknown action.'); }
 
 $rows = json_decode((string)($_POST['rows'] ?? '[]'), true);
