@@ -13068,9 +13068,33 @@ input.chk-input-error:focus {
 .na-gallery.owl-loaded .na-panel:focus-within,
 .na-gallery.owl-loaded:hover .na-panel:not(:hover),
 .na-gallery.owl-loaded:focus-within .na-panel:not(:focus-within) {
-    flex: 1 1 auto;
+    /* flex-basis ONLY. Not width.
+       ────────────────────────────────────────────────────────────────────────
+       Setting width:100% here emptied the row on a phone. Below the breakpoint
+       this carousel runs on autoWidth, which means Owl leaves .owl-item at
+       width:auto and MEASURES the panel to decide how wide the item should be.
+       A panel asking for 100% of an item whose width is being derived from that
+       same panel is circular, and both collapse to zero — the slides vanished
+       and left the heading and the pager over empty space.
+
+       The panel already has its own width down here (67vw). All this rule has
+       to do is stop the legacy hover declaration replacing the flex-basis. */
+    flex-grow: 1;
+    flex-shrink: 1;
     flex-basis: auto;
-    width: 100%;
+}
+
+/* Above the breakpoint the item HAS a pixel width — the script writes it, and
+   that is the expanding row — so the panel filling it is both safe and what is
+   wanted. */
+@media (min-width: 1025px) {
+    .na-gallery.owl-loaded .na-panel:hover,
+    .na-gallery.owl-loaded .na-panel:focus-visible,
+    .na-gallery.owl-loaded .na-panel:focus-within,
+    .na-gallery.owl-loaded:hover .na-panel:not(:hover),
+    .na-gallery.owl-loaded:focus-within .na-panel:not(:focus-within) {
+        width: 100%;
+    }
 }
 
 /* ── Collections: no zoom on hover, ON A PHONE ONLY ───────────────────────────
