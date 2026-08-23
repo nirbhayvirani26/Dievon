@@ -12422,7 +12422,13 @@ input.chk-input-error:focus {
    there is no photograph behind these words any more. */
 .occasion-slider .occasion-tile-caption {
     display: block;
-    text-align: center;
+    /* Left, like every other caption on the homepage. New Arrivals and the
+       photo fan both set their garment name and price hard against the left
+       edge of the picture; this row was the only one centring its words under
+       the photograph, which read as a different component the moment the three
+       sat on the same page. The section HEADING stays centred — that is the
+       page's own convention and every section follows it. */
+    text-align: left;
     padding-top: 18px;
 }
 .occasion-slider .occasion-tile-label {

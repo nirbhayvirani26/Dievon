@@ -1170,6 +1170,25 @@ $pfHasBoth = count($pfPanels) > 1;
 <section class="trending-section section-space photo-fan-section">
     <div class="container">
 
+        <?php /* The section had no heading at all — it opened straight onto two
+                 tabs, while every other band on the page announces itself with an
+                 editorial label and an h2 above the content. Read down the page
+                 it was the one section that started mid-sentence.
+
+                 The shared block, not a bespoke one, so the mobile heading
+                 spacing already tuned for .section-title-wrapper applies here for
+                 free — the same reason Shop by Occasion uses it.
+
+                 The h2 names what the two tabs have in common; the tabs
+                 themselves stay the sub-navigation they always were. It is worth
+                 saying they are now an h2 followed by a tablist rather than two
+                 headings competing, which is also what a screen reader needs to
+                 hear to make sense of the pair. */ ?>
+        <div class="section-title-wrapper reveal-on-scroll">
+            <span class="editorial-label">Most Coveted</span>
+            <h2 class="section-title">The Dievon Edit</h2>
+        </div>
+
         <div class="pf-head">
             <?php if ($pfHasBoth): ?>
             <?php /* Real tabs, so a screen reader announces "tab 1 of 2, selected"
