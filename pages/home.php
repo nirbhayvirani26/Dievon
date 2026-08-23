@@ -741,10 +741,10 @@ $naFirstPageCount = min(count($naItems), $naPerPage);
         <?php foreach ($naItems as $naIndex => $naProduct):
             /* One panel per page is the open one, so it is the first of each set
                of four, not only the very first product. */
-            /* Owl owns which panels are on screen now, so nothing is hidden
-               here and no panel is the permanently-open one: every item must be
-               in the DOM and measurable when the carousel initialises. */
-            $naClasses = 'na-panel';
+            $naOnFirstPage = $naIndex < $naPerPage;
+            $naClasses = 'na-panel'
+                . ($naIndex % $naPerPage === 0 ? ' is-default' : '')
+                . ($naOnFirstPage ? '' : ' na-off');
             /* Stamped on the card by the partial's $cardDataAttrs, because the
                paging script reads it to decide which set a panel belongs to. */
             $cardDataAttrs = ' data-na-page="' . intdiv($naIndex, $naPerPage) . '"';
@@ -819,113 +819,117 @@ $naFirstPageCount = min(count($naItems), $naPerPage);
    and a final page of one would sit at half width with the rest of the gallery
    bare. Both go on the gallery, not the panels, so the inline values beat the
    [data-count] rules by being on the element those panels inherit from. */
-/* Inside DOMContentLoaded because jQuery and Owl are deferred in the head:
-   deferred scripts finish before that event, so both are guaranteed ready here
-   and neither is ready at parse time. The shared pager retries its wiring on
-   load, which is what lets this driver register a tick late. */
-document.addEventListener('DOMContentLoaded', function () {
+(function () {
     var stage = document.querySelector('.na-stage');
     if (!stage) { return; }
     var gallery = stage.querySelector('.na-gallery');
     if (!gallery) { return; }
 
-    /* Owl drives this row, like the hero and the Occasion strip.
+    var panels  = Array.prototype.slice.call(gallery.querySelectorAll('.na-panel'));
+    var perPage = parseInt(gallery.getAttribute('data-na-per-page'), 10) || 4;
+    var current = 0;
+
+    /* One garment per press, not a whole set of four.
        ────────────────────────────────────────────────────────────────────────
-       It was a hand-rolled flex row: four panels of unequal width, one open at
-       half the gallery and three narrow ones sharing the rest, swapping on
-       hover. That is the one thing a carousel library cannot do — Owl measures
-       every item once and writes a pixel width onto each .owl-item, so a panel
-       that grows on hover would overflow its slot instead of pushing its
-       neighbours along. Equal panels are the price of the library.
+       This paged: four panels swapped for the next four, and the three you had
+       just been shown left with them. A row of photographs is read across, so
+       the natural next step is the next garment — pressing forward and losing
+       everything on screen makes you re-read the row each time.
 
-       What survives is everything else the section was: the same shared product
-       card, the photograph filling the slot at the shape it was shot in, the
-       caption and zoom on hover, the badge, the price and the sold-out state.
-       What is gained is Owl's own drag, touch and momentum, and one garment per
-       press for free — slideBy: 1 is what the four-at-a-time paging never was.
+       So the four on screen are a WINDOW that moves by one, and the number of
+       stops is one per garment that can start the row. Eight products showing
+       four gives five stops rather than two pages. */
+    var stops = Math.max(1, panels.length - perPage + 1);
+    var pages = stops;
 
-       No library, no carousel: the panels are already in the markup as a plain
-       row, so a failed script costs the sliding, never the garments. */
-    if (!window.jQuery || typeof jQuery.fn.owlCarousel !== 'function') { return; }
-    var $g = jQuery(gallery);
+    function show(next) {
+        /* Wrap rather than disable. Two arrows that grey out at the ends need a
+           disabled style, a disabled cursor and an explanation; wrapping needs
+           none of them and cannot strand anyone on a dead control. */
+        current = ((next % stops) + stops) % stops;
 
-    /* Owl's stylesheet is scoped to .owl-carousel, which Owl never adds itself,
-       and it hides .owl-carousel until .owl-loaded exists. Added here rather
-       than in the HTML for that second reason: in the markup it would hide the
-       row until the script ran, and for ever if the library failed. */
-    $g.addClass('owl-carousel');
+        var live = 0;
+        panels.forEach(function (panel, i) {
+            var on = i >= current && i < current + perPage;
+            panel.classList.toggle('na-off', !on);
+            if (on) { live++; }
+        });
 
-    /* A panel is a link around a photograph, and both are draggable objects by
-       default — the browser's own drag-and-drop eats the mouse events Owl needs
-       and the row simply will not slide. Firefox ignores the CSS property, so
-       the attribute has to say it too. */
-    $g.find('a, img').attr('draggable', 'false');
-
-    $g.owlCarousel({
-        items: 4,
-        /* No gutter. The reference is one continuous band of photographs meeting
-           edge to edge, and a margin would cut it into four separate cards —
-           which is the thing this section was built to replace. */
-        margin: 0,
-        nav: false,          // the page draws its own arrows
-        dots: false,         // and its own counter
-        loop: false,         // a product row should stop at the end, not wrap
-        mouseDrag: true,
-        touchDrag: true,
-        freeDrag: false,
-        /* The whole point of the exercise: one garment per press. Paging by four
-           swapped out the three you were still reading to reach the fourth. */
-        slideBy: 1,
-        smartSpeed: 500,     // the flex row's own 500ms, kept
-        autoHeight: false,
-        responsive: {
-            /* A phone shows one garment with the next one peeking, which is what
-               says the row continues without an arrow having to. */
-            0:    { items: 1, stagePadding: 46 },
-            600:  { items: 2, stagePadding: 0 },
-            1025: { items: 4, stagePadding: 0 }
-        }
-    });
-
-    /* Registered for the shared pager, like every other rail on this page. The
-       section keeps what is its own — Owl, the responsive item counts — and
-       hands over the arrows and the counter, which are the same everywhere.
-
-       Read from Owl rather than remembered, so a drag and a button press cannot
-       drift apart. Stops, not pages: eight garments showing four can start the
-       row at eight different places, which is 5 stops, and that is what the
-       counter should say. */
-    function naItemCount() { return $g.find('.owl-item').not('.cloned').length || 1; }
-    function naPerView() {
-        var owl = $g.data('owl.carousel');
-        var n = owl && owl.settings ? owl.settings.items : 4;
-        return Math.max(1, Math.min(naItemCount(), Math.round(n)));
+        /* A page of one has nothing to sit beside, so it takes the whole width.
+           Any other page is CLEARED rather than set back to 50%: above 1600px
+           the stylesheet pins the open panel to 800px to hold the slot's shape,
+           and an inline 50% would out-rank that and put the crop back. */
+        if (live === 1) { gallery.style.setProperty('--na-open', '100%'); }
+        else            { gallery.style.removeProperty('--na-open'); }
+        gallery.style.setProperty('--na-rest', String(Math.max(1, live - 1)));
     }
+
+    /* Registered for the shared pager rather than wired here — see the engine at
+       the foot of this file. The section keeps the part that is genuinely its
+       own (which four panels are in the flow) and hands over the part that is
+       the same everywhere (a prev button, a next button and a counter).
+
+       pages() is a function, not the number: below 1025px this gallery is a
+       swipe rail with every panel in the flow at once, and the engine hides a
+       pager whose rail reports one page. */
+    /* matchMedia rather than a width read, so this agrees with the stylesheet's
+       own breakpoint instead of racing it. Above it the gallery pages in sets of
+       four; below it the same markup is a swipe rail, and the pager scrolls it —
+       which is the point of the exercise. The rail used to have no control at
+       all down here, leaving swipe as the only way through, and swipe is
+       invisible, unreachable by keyboard and impossible on a switch. */
+    function railMode() { return !window.matchMedia('(min-width: 1025px)').matches; }
+
+    /* Two fingers sideways moves it, one garment at a time.
+       ────────────────────────────────────────────────────────────────────────
+       The arrows were the only way through on a laptop, and the most natural
+       gesture there is did nothing — the same gap the Owl rails had. Not a drag:
+       this gallery opens a panel when you hover it, and dragging would fight the
+       thing the design is built around. A wheel does not fight anything.
+
+       Only above the breakpoint. Below it the gallery is a real scroll container
+       and the browser already moves it far better than any handler would.
+
+       Horizontal only, so scrolling the page never catches on it, and locked for
+       the length of the panel transition — a trackpad fires wheel events in the
+       dozens and one step each would run the row to the end in a flick. */
+    /* The pager's counter is repainted from here, not from a scroll event: above
+       the breakpoint nothing scrolls, the panels just change class, so a wheel
+       step would leave the counter reading the page it left. */
+    var moveCbs = [];
+    function moved() { moveCbs.forEach(function (cb) { cb(); }); }
+
+    var wheelLocked = false;
+    gallery.addEventListener('wheel', function (e) {
+        if (railMode()) { return; }                                 // the browser's job
+        if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) { return; }   // vertical is the page's
+        e.preventDefault();
+        if (wheelLocked || Math.abs(e.deltaX) < 12) { return; }
+
+        show(current + (e.deltaX > 0 ? 1 : -1));
+        moved();
+
+        wheelLocked = true;
+        window.setTimeout(function () { wheelLocked = false; }, 320);
+    }, { passive: false });
 
     window.dvRailDrivers = window.dvRailDrivers || {};
     window.dvRailDrivers.na = {
         label: 'New Arrivals',
         rail:  gallery,
-        pages: function () { return Math.max(1, naItemCount() - naPerView() + 1); },
-        page:  function () {
-            var owl = $g.data('owl.carousel');
-            if (!owl) { return 0; }
-            var i = owl.relative(owl.current());
-            return Math.max(0, Math.min(this.pages() - 1, i));
+        pages: function () { return railMode() ? window.dvRail.pages(gallery) : pages; },
+        page:  function () { return railMode() ? window.dvRail.page(gallery)  : current; },
+        go:    function (delta) {
+            if (railMode()) { window.dvRail.go(gallery, delta); } else { show(current + delta); }
         },
-        go: function (delta) {
-            $g.trigger(delta > 0 ? 'next.owl.carousel' : 'prev.owl.carousel');
-        },
-        /* Owl moves on its own whenever it is dragged or swiped; the counter
-           follows from its own event rather than from a scroll that no longer
-           happens. The tick lets Owl settle its index before it is read. */
+        /* Both ways this gallery moves on its own: a swipe below the breakpoint
+           (a real scroll) and a trackpad above it (a class change). */
         onMove: function (cb) {
-            $g.on('changed.owl.carousel dragged.owl.carousel', function () {
-                window.setTimeout(cb, 0);
-            });
+            moveCbs.push(cb);
+            gallery.addEventListener('scroll', cb, { passive: true });
         }
     };
-});
+})();
 </script>
 <?php endif; ?>
 
