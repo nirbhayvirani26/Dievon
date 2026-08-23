@@ -12786,10 +12786,7 @@ input.chk-input-error:focus {
    `.owl-carousel.owl-loaded { padding-left: 0 !important }` that has since been
    removed — worth knowing if that ever comes back from a vendor update, because
    the symptom is this padding silently doing nothing at any specificity. */
-.new-arrivals-section .na-gallery.owl-loaded {
-    padding-left: calc((100vw - min(100vw, 1440px)) / 2 + var(--dv-gutter));
-    padding-right: 0;
-}
+
 
 /* Shop by Occasion runs the full width of the screen.
    ────────────────────────────────────────────────────────────────────────────
@@ -12797,10 +12794,6 @@ input.chk-input-error:focus {
    nothing holding the row back on the right, so the strip reads as continuing
    past the screen rather than as a row that ends. The heading above it keeps
    the page gutter; only the photographs bleed. */
-.occasion-bar-section .occasion-slider.owl-loaded {
-    padding-left: 0;
-    padding-right: 0;
-}
 .occasion-slider .occasion-tile { margin-inline: 0; }
 
 /* On a phone the rail keeps its own small inset — the page gutter down there is
@@ -12813,3 +12806,50 @@ input.chk-input-error:focus {
 }
 
 
+
+/* ══ DIEVON COLLECTIONS ON OWL (PHONE ONLY) ════════════════════════════════
+   Above 768px this element is a mosaic grid and none of this applies — there
+   is no carousel up there to style.
+
+   Owl inserts .owl-stage-outer > .owl-stage > .owl-item between the rail and
+   the tiles, which breaks the mosaic's own rules in a useful way and a harmful
+   one at the same time:
+
+   Useful — every rule that sized these tiles was written
+   `.home-categories-grid[data-count] > .category-card`, a DIRECT child
+   selector. Once each tile sits inside an .owl-item it is no longer a direct
+   child, so those rules stop applying on their own and there is nothing to
+   undo.
+
+   Harmful — they took the tile's width with them, and it cannot simply be
+   restated: it was `calc((100% - 2 * gap) / 2.3)`, and a percentage inside an
+   .owl-item resolves against the STAGE, which is the whole track. Every tile
+   would come out several screens wide. So the width is rewritten against the
+   VIEWPORT, which is the one box that means the same thing inside a carousel
+   as outside it: the screen, less the rail's own 16px inset either side, less
+   the two 22px gutters between the 2.3 tiles on show. */
+@media (max-width: 768px) {
+    .home-categories-grid.owl-loaded {
+        display: block;
+        overflow: visible;
+        gap: 0;
+        /* Owl's own .owl-carousel.owl-drag rule hands vertical panning back to
+           the page; the native rail's pan-x pan-y would fight it. */
+        touch-action: auto;
+        scroll-snap-type: none;
+    }
+    .home-categories-grid.owl-loaded .owl-stage-outer { overflow: hidden; }
+    .home-categories-grid.owl-loaded .owl-stage { display: flex; align-items: stretch; }
+    .home-categories-grid.owl-loaded .owl-item  { flex: 0 0 auto; }
+
+    .home-categories-grid.owl-loaded .category-card {
+        width: calc((100vw - 32px - 44px) / 2.3);
+        flex: none;
+        /* Restated because the direct-child rule that carried them no longer
+           matches. Uniform 3:4 across the row — the mosaic's wide feature tile
+           is a grid idea and has nothing to say in a carousel. */
+        aspect-ratio: 3 / 4;
+        height: auto;
+        scroll-snap-align: none;
+    }
+}

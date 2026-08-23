@@ -2107,6 +2107,98 @@ $occIsMen = function_exists('currentShopGender') && currentShopGender() === 'men
     (function () {
         const rail = document.querySelector(".home-categories-grid");
         if (!rail) { return; }
+
+        /* Owl drives this rail on a phone — and ONLY on a phone.
+           ────────────────────────────────────────────────────────────────────
+           Above 768px this element is not a rail at all: it is a mosaic grid,
+           one large tile with three beside it and two beneath, and there is
+           nothing to slide. Below it the same markup becomes a horizontal
+           strip, and that strip was the last thing on the homepage still
+           running on native overflow scrolling while every other slider ran on
+           Owl.
+
+           The init is gated at DOMContentLoaded because jQuery and Owl are
+           deferred in the head, and gated on the breakpoint because turning the
+           mosaic into a carousel would be a different section entirely. */
+        const RAIL_ONLY = window.matchMedia("(max-width: 768px)");
+
+        function catOwl() {
+            if (!window.jQuery) { return null; }
+            const inst = window.jQuery(rail).data("owl.carousel");
+            return (inst && typeof inst.maximum === "function") ? inst : null;
+        }
+
+        function catInit() {
+            if (!RAIL_ONLY.matches || catOwl()) { return; }
+            if (!window.jQuery || typeof jQuery.fn.owlCarousel !== "function") { return; }
+            const $r = jQuery(rail);
+
+            /* Owl's stylesheet is scoped to .owl-carousel, which Owl never adds
+               itself, and it hides .owl-carousel until .owl-loaded exists — so
+               this goes on one line before init, never in the markup, or a
+               failed library would hide the collections for good. */
+            $r.addClass("owl-carousel");
+            $r.find("a, img").attr("draggable", "false");
+
+            $r.owlCarousel({
+                /* autoWidth, because the tiles carry their own width. It cannot
+                   be items:N here: the mosaic's own rules size these in
+                   PERCENTAGES of the flex container, and once Owl wraps each
+                   tile in an .owl-item those percentages resolve against the
+                   stage — the whole track — instead of the screen. The width is
+                   restated in viewport units in the stylesheet for exactly that
+                   reason. */
+                autoWidth: true,
+                margin: 22,          // the gutter every other rail uses
+                nav: false,          // the page draws its own arrows
+                dots: false,         // and its own counter
+                loop: false,
+                mouseDrag: true,
+                touchDrag: true,
+                freeDrag: false,
+                slideBy: 1,
+                smartSpeed: 500
+            });
+        }
+
+        function catDestroy() {
+            const inst = catOwl();
+            if (!inst) { return; }
+            jQuery(rail).trigger("destroy.owl.carousel").removeClass("owl-carousel");
+        }
+
+        /* Crossing the breakpoint has to hand the element back. Owl leaves its
+           wrappers and inline widths behind otherwise, and the mosaic above
+           768px would be laid out inside a stage that is no longer being
+           driven. */
+        function catSync() { RAIL_ONLY.matches ? catInit() : catDestroy(); }
+
+        /* This block runs at parse time — the surrounding IIFE is not deferred —
+           and jQuery and Owl are deferred in the head, so neither exists yet.
+           Deferred scripts finish before DOMContentLoaded, which is the first
+           moment the library can be there. Calling catSync() directly here did
+           nothing at all: it found no jQuery, returned, and the rail stayed on
+           native scrolling while reporting no error. */
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", catSync);
+        } else {
+            catSync();
+        }
+        if (RAIL_ONLY.addEventListener) { RAIL_ONLY.addEventListener("change", catSync); }
+        else if (RAIL_ONLY.addListener)  { RAIL_ONLY.addListener(catSync); }
+
+        /* And a debounced resize as well, because the matchMedia change event
+           cannot be relied on alone: measured here crossing 768px in both
+           directions without it firing once, leaving Owl driving a mosaic at
+           1440px — five pages of arrows over a grid that does not move.
+           catSync is idempotent (catInit returns if Owl is already up,
+           catDestroy if it is not), so the two paths cannot fight. */
+        var catResizeTimer;
+        window.addEventListener("resize", function () {
+            window.clearTimeout(catResizeTimer);
+            catResizeTimer = window.setTimeout(catSync, 150);
+        });
+
         window.dvRailDrivers = window.dvRailDrivers || {};
         window.dvRailDrivers.cat = {
             label: "Dievon Collections",
@@ -2116,10 +2208,32 @@ $occIsMen = function_exists('currentShopGender') && currentShopGender() === 'men
                retires the control. That is the same measured test this section
                already used, kept: whether a rail scrolls depends on tile width,
                gap and viewport together, so counting tiles would be a guess. */
-            pages: function () { return window.dvRail.pages(rail); },
-            page:  function () { return window.dvRail.page(rail); },
-            go:    function (delta) { window.dvRail.go(rail, delta); },
-            onMove: function (cb) { rail.addEventListener("scroll", cb, { passive: true }); }
+            /* Owl when it is driving, the native helpers when it is not —
+               above 768px this is a grid that cannot move, and dvRail's
+               scrollWidth test is what correctly reports one page and retires
+               the control. */
+            pages: function () {
+                const o = catOwl();
+                return o ? Math.max(1, o.maximum() + 1) : window.dvRail.pages(rail);
+            },
+            page: function () {
+                const o = catOwl();
+                return o ? Math.max(0, Math.min(o.maximum(), o.current())) : window.dvRail.page(rail);
+            },
+            go: function (delta) {
+                const o = catOwl();
+                if (!o) { window.dvRail.go(rail, delta); return; }
+                const total = o.maximum() + 1;
+                const next  = ((o.current() + delta) % total + total) % total;
+                jQuery(rail).trigger("to.owl.carousel", [next, 300]);
+            },
+            onMove: function (cb) {
+                rail.addEventListener("scroll", cb, { passive: true });
+                if (window.jQuery) {
+                    jQuery(rail).on("changed.owl.carousel translated.owl.carousel",
+                        function () { window.setTimeout(cb, 0); });
+                }
+            }
         };
     })();
 

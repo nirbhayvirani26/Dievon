@@ -2257,6 +2257,11 @@ html {
         margin-left: auto;
         margin-right: 0;
     }
+    .occasion-bar-section .occasion-slider.owl-loaded {
+    padding-left: 0;
+    padding-right: 0;
+}
+
 }
 
 /* The country picker is a glyph now, so on a phone it just tracks the icon
