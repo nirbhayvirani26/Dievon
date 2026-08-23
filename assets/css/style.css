@@ -12538,17 +12538,32 @@ input.chk-input-error:focus {
    scale are transforms: they change nothing about the layout, so Owl's widths
    and offsets are untouched by any of it. */
 @media (min-width: 768px) {
-    .photo-fan-section .pf-track.owl-loaded .owl-item:nth-child(4n + 1) .pf-card {
-        transform: rotate(-4deg) translateY(8px);
+    /* The same rotation and position pattern Shop by Occasion uses.
+       ────────────────────────────────────────────────────────────────────────
+       Identical values, identical five-step cycle: -3, -1.5, upright and a
+       little larger, 1.5, 3. Read from the same numbers as .occasion-tile
+       rather than approximated, because two rows meant to look alike drift the
+       first time either is touched otherwise.
+
+       Two things go, and both are why this row did not read like that one. The
+       translateY stagger — 8px down, 6px up — pushed the prints off a shared
+       baseline, which Occasion never does. And the four-step cycle meant the
+       upright print landed every fourth rather than every fifth, so the row had
+       a different rhythm even where the angles happened to agree. */
+    .photo-fan-section .pf-track.owl-loaded .owl-item:nth-child(5n + 1) .pf-card {
+        transform: rotate(-3deg);
     }
-    .photo-fan-section .pf-track.owl-loaded .owl-item:nth-child(4n + 2) .pf-card {
-        transform: rotate(-1.5deg) translateY(-6px);
+    .photo-fan-section .pf-track.owl-loaded .owl-item:nth-child(5n + 2) .pf-card {
+        transform: rotate(-1.5deg);
     }
-    .photo-fan-section .pf-track.owl-loaded .owl-item:nth-child(4n + 3) .pf-card {
-        transform: scale(1.05);
+    .photo-fan-section .pf-track.owl-loaded .owl-item:nth-child(5n + 3) .pf-card {
+        transform: scale(1.06);
     }
-    .photo-fan-section .pf-track.owl-loaded .owl-item:nth-child(4n + 4) .pf-card {
-        transform: rotate(4deg) translateY(8px);
+    .photo-fan-section .pf-track.owl-loaded .owl-item:nth-child(5n + 4) .pf-card {
+        transform: rotate(1.5deg);
+    }
+    .photo-fan-section .pf-track.owl-loaded .owl-item:nth-child(5n + 5) .pf-card {
+        transform: rotate(3deg);
     }
 
     /* Hover still wins over all four — it is what lifts the print being looked
