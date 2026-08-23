@@ -7271,7 +7271,10 @@ body.welcome-open { overflow: hidden; }
 
 /* 50px under the heading is right above a grid of tall cards; above a single
    row of chips it just looks like the two halves are unrelated. */
-.occasion-bar-section .section-title-wrapper { margin-bottom: 32px; }
+/* 22px, the same as every other section heading on the page. It was 32 — the
+   one heading on the homepage sitting further from its content than the rest,
+   which reads as a section that has drifted rather than as emphasis. */
+.occasion-bar-section .section-title-wrapper { margin-bottom: 22px; }
 
 /* ── The tiles ────────────────────────────────────────────────────────────
    Four photographs rather than four buttons. A fashion shopper picks an
@@ -12798,8 +12801,18 @@ input.chk-input-error:focus {
    nothing holding the row back on the right, so the strip reads as continuing
    past the screen rather than as a row that ends. The heading above it keeps
    the page gutter; only the photographs bleed. */
+/* Shop by Occasion keeps the page's edge spacing on the left, and runs off the
+   right.
+   ────────────────────────────────────────────────────────────────────────────
+   It was forced to 0 on BOTH sides, which wiped the inset the site sets at the
+   edge of every section — the sliders became the only place on the page where
+   content ran into the glass. "Edge to edge" means the row CONTINUES past the
+   right edge rather than stopping short of it; it does not mean deleting the
+   page's own margin on the left.
+
+   Same left inset as every other rail, nothing on the right. */
 .occasion-bar-section .occasion-slider.owl-loaded {
-    padding-left: 0;
+    padding-left: calc((100vw - min(100vw, 1440px)) / 2 + var(--dv-gutter));
     padding-right: 0;
 }
 .occasion-slider .occasion-tile { margin-inline: 0; }
@@ -12911,4 +12924,17 @@ input.chk-input-error:focus {
    same reading the other rails give at this width. */
 @media (min-width: 768px) and (max-width: 1024px) {
     .na-gallery.owl-loaded .na-panel { width: 38vw; }
+}
+
+/* The print fills its slide, so 22px means 22px.
+   ────────────────────────────────────────────────────────────────────────────
+   .pf-item carried 6px of horizontal padding, left over from when the prints
+   OVERLAPPED and needed a little room for the lift and its shadow to escape.
+   With a real gutter it is not room, it is extra gap: the card sat 12px
+   narrower than its own slide, so Owl's 22px margin read as 34px between
+   photographs while every other rail on the page read as 22. The one slider
+   with more space between slides than the rest. */
+.photo-fan-section .pf-track.owl-loaded .pf-item {
+    padding-left: 0;
+    padding-right: 0;
 }

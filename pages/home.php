@@ -995,7 +995,17 @@ document.addEventListener('DOMContentLoaded', function () {
            is Owl's own layout untouched. */
         if (!railQuery.matches) { naRelease(); return; }
 
-        var view    = gallery.clientWidth;
+        /* The CONTENT width, not clientWidth.
+           ────────────────────────────────────────────────────────────────────
+           clientWidth includes padding, and this rail has a left inset so its
+           first panel starts on the page gutter. Sizing the four visible panels
+           to clientWidth therefore made them sum to 72px MORE than the space
+           they actually had, and the fourth ran that far past the right edge —
+           the invariant still "held" against the wrong number, which is exactly
+           why it went unnoticed until it was looked at on a desktop. */
+        var padL = parseFloat(getComputedStyle(gallery).paddingLeft) || 0;
+        var padR = parseFloat(getComputedStyle(gallery).paddingRight) || 0;
+        var view    = gallery.clientWidth - padL - padR;
         var per     = Math.max(1, Math.round((owlOf() || {}).settings ? owlOf().settings.items : 4));
         var actives = (typeof startAt === 'number')
             ? items.slice(startAt, startAt + per)
