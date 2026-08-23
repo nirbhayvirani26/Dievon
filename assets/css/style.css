@@ -12082,6 +12082,7 @@ input.chk-input-error:focus {
 .product-card .product-card-title a { color: var(--text-primary); text-decoration: none; }
 .product-card .product-card-title a:hover { color: var(--color-primary); }
 
+
 /* Price, saving and struck MRP on one line, wrapping as a unit rather than
    breaking a figure in half. */
 .product-card .product-card-price {
@@ -13200,7 +13201,7 @@ input.chk-input-error:focus {
 .home-categories-grid a, .home-categories-grid img,
 .photo-fan-section .pf-card a, .photo-fan-section .pf-card img,
 #heroSlider a, #heroSlider img {
-    cursor: default;
+    cursor: pointer;
 }
 .na-gallery .dv-pager-btn, .occasion-slider .dv-pager-btn,
 .dv-pager-btn,
@@ -13263,4 +13264,50 @@ input.chk-input-error:focus {
 .home-categories-grid .category-card .category-card-link {
     color: var(--color-accent);
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.65);
+}
+
+/* ── Captions that sit ON a photograph are white, heading included ────────────
+   The rules that made these captions white targeted the ANCHOR —
+   `.pf-card .product-card-title a` — and left the h3 itself at --text-primary,
+   a dark maroon. Wherever the heading's own colour showed through, a product
+   name rendered dark maroon over a photograph: on a mustard kurta it was
+   effectively invisible.
+
+   Both elements, at every width, for both rows that put their caption on the
+   picture. The price and the prompt were already handled; this is the title
+   catching up with them. */
+.na-gallery .na-panel .product-card-title,
+.na-gallery .na-panel .product-card-title a,
+.photo-fan-section .pf-card .product-card-title,
+.photo-fan-section .pf-card .product-card-title a {
+    color: #ffffff;
+}
+
+/* ── One cursor rule for every slider ─────────────────────────────────────────
+   The slides read as the arrow — they are photographs to look at, and the row
+   is scrolled rather than clicked through. Everything you actually press keeps
+   the pointer. Written once, for all five rails, so the answer cannot differ
+   between them again. */
+.na-gallery a, .na-gallery img, .na-gallery .na-panel,
+.occasion-slider a, .occasion-slider img, .occasion-slider .occasion-tile,
+.home-categories-grid a, .home-categories-grid img, .home-categories-grid .category-card,
+.photo-fan-section .pf-card, .photo-fan-section .pf-card a, .photo-fan-section .pf-card img,
+#heroSlider a, #heroSlider img, #heroSlider .slide,
+.na-gallery.owl-carousel.owl-drag a, .na-gallery.owl-carousel.owl-drag img,
+.occasion-slider.owl-carousel.owl-drag a, .occasion-slider.owl-carousel.owl-drag img,
+.home-categories-grid.owl-carousel.owl-drag a, .home-categories-grid.owl-carousel.owl-drag img,
+.photo-fan-section .pf-track.owl-carousel.owl-drag a,
+.photo-fan-section .pf-track.owl-carousel.owl-drag img,
+#heroSlider.owl-carousel.owl-drag a, #heroSlider.owl-carousel.owl-drag img {
+    cursor: default;
+}
+.dv-pager-btn,
+.product-card-wishlist-btn,
+.compare-toggle,
+.quick-view-btn,
+.pf-tab,
+.pf-viewall,
+#heroSlider .btn-luxury,
+#heroSlider .btn-luxury-outline {
+    cursor: pointer;
 }
