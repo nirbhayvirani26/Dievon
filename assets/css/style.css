@@ -12701,3 +12701,28 @@ input.chk-input-error:focus {
     .photo-fan-section .pf-item:hover .pf-card,
     .photo-fan-section .pf-item:focus-within .pf-card { transform: none; }
 }
+
+/* Quick View: flex, not block.
+   ────────────────────────────────────────────────────────────────────────────
+   The button is an eye icon and a label, laid out by the base card as a flex
+   row — `align-items: center` to sit them on the same line, `gap: 9px` between
+   them, `justify-content: center` to hold the pair in the middle of the button.
+   The fan revealed it with `display: block !important`, which throws all three
+   away: the icon and the words fall back to inline flow, the gap does nothing,
+   and the pair sits left inside a button that is itself perfectly centred. The
+   button looked misaligned because its CONTENTS were.
+
+   Same reveal as the base card, which has used flex for this all along. */
+@media (min-width: 768px) {
+    .photo-fan-section .pf-item:hover .quick-view-btn,
+    .photo-fan-section .pf-item:focus-within .quick-view-btn {
+        display: flex !important;
+    }
+    .photo-fan-section .pf-card .quick-view-btn {
+        align-items: center;
+        justify-content: center;
+        gap: 9px;
+        line-height: 1;
+        text-align: center;
+    }
+}
