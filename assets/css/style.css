@@ -13053,14 +13053,22 @@ input.chk-input-error:focus {
 
    Released below the breakpoint. Above it the expanding row is the design and
    the script drives the widths in pixels, so nothing here touches it. */
-@media (max-width: 1024px) {
-    .na-gallery.owl-loaded .na-panel:hover,
-    .na-gallery.owl-loaded .na-panel:focus-visible,
-    .na-gallery.owl-loaded .na-panel:focus-within,
-    .na-gallery.owl-loaded:hover .na-panel:not(:hover),
-    .na-gallery.owl-loaded:focus-within .na-panel:not(:focus-within) {
-        flex: 1 1 auto;
-        flex-basis: auto;
-        width: 100%;
-    }
+/* At EVERY width, not just below the breakpoint.
+   ────────────────────────────────────────────────────────────────────────────
+   Under Owl the panel is not what varies — the .owl-item is. The script sizes
+   the ITEM in pixels (that is the whole expanding-row mechanism) and the panel
+   simply fills whatever item it is in. So a hover rule that resizes the PANEL
+   is left over from the flex-row design and is wrong at any size: on a phone it
+   halved the slide, and on a desktop it fights the pixel widths the script just
+   wrote.
+
+   The panel fills its item, always. What opens and closes is the item. */
+.na-gallery.owl-loaded .na-panel:hover,
+.na-gallery.owl-loaded .na-panel:focus-visible,
+.na-gallery.owl-loaded .na-panel:focus-within,
+.na-gallery.owl-loaded:hover .na-panel:not(:hover),
+.na-gallery.owl-loaded:focus-within .na-panel:not(:focus-within) {
+    flex: 1 1 auto;
+    flex-basis: auto;
+    width: 100%;
 }

@@ -2405,7 +2405,15 @@ $occIsMen = function_exists('currentShopGender') && currentShopGender() === 'men
             function gateTabbing() {
                 $t.find('.owl-item').each(function (i, el) {
                     var off = !el.classList.contains('active');
-                    if (off && el.contains(document.activeElement)) { view.focus(); }
+                    /* preventScroll, or this JUMPS THE PAGE. focus() on a tabindex="-1"
+                       element scrolls it into view by default, so moving focus off a print
+                       that had paged out of frame dragged the whole page to the strip. The
+                       point here is only to get focus out of an element about to go inert;
+                       where the reader is looking is none of its business. */
+                    if (off && el.contains(document.activeElement)) {
+                        try { view.focus({ preventScroll: true }); }
+                        catch (err) { view.focus(); }
+                    }
                     if (off) { el.setAttribute('inert', ''); }
                     else     { el.removeAttribute('inert'); }
                 });
