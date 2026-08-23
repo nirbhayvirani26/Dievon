@@ -13036,3 +13036,31 @@ input.chk-input-error:focus {
         padding-right: 0;
     }
 }
+
+/* ── The actual cause of the width change on hover on a phone ─────────────────
+   .owl-item is display:flex, so .na-panel is a FLEX ITEM. And the original
+   flex-row design left this rule ungated:
+
+       .na-gallery .na-panel:hover,
+       .na-gallery .na-panel:focus-visible,
+       .na-gallery .na-panel:focus-within { flex-basis: var(--na-open); }
+
+   --na-open is 50%. So hovering — or tapping, which leaves :hover on a
+   touchscreen, or focusing a link inside the card — set the panel to half its
+   item's width at EVERY size, and the slide visibly resized. This is what was
+   being reported over and over while I kept checking `transform`, which was
+   never involved: a transform cannot change layout width.
+
+   Released below the breakpoint. Above it the expanding row is the design and
+   the script drives the widths in pixels, so nothing here touches it. */
+@media (max-width: 1024px) {
+    .na-gallery.owl-loaded .na-panel:hover,
+    .na-gallery.owl-loaded .na-panel:focus-visible,
+    .na-gallery.owl-loaded .na-panel:focus-within,
+    .na-gallery.owl-loaded:hover .na-panel:not(:hover),
+    .na-gallery.owl-loaded:focus-within .na-panel:not(:focus-within) {
+        flex: 1 1 auto;
+        flex-basis: auto;
+        width: 100%;
+    }
+}
