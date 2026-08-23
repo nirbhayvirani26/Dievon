@@ -12969,10 +12969,37 @@ input.chk-input-error:focus {
    more go back to 2.3 across with the next one peeking, which is what says the
    strip continues. */
 @media (max-width: 768px) {
+    /* The width has to come off the RAIL's content box, not off 100vw.
+       ────────────────────────────────────────────────────────────────────────
+       This rail sits inside the container's gutters AND carries 16px of its own
+       padding, so the space a tile actually has is
+       100vw - 2x(page gutter) - 32. Sizing against 100vw - 32 made two tiles
+       come to 344 in a 319 box: they overflowed by 25px, Owl decided the row
+       could scroll, and the arrows appeared over two tiles that had nowhere to
+       go. --dv-gutter rather than a number, because it steps down per
+       breakpoint. */
     .home-categories-grid.owl-loaded[data-count="1"] .category-card {
-        width: calc(100vw - 32px);
+        width: calc(100vw - (2 * var(--dv-gutter)) - 32px);
     }
     .home-categories-grid.owl-loaded[data-count="2"] .category-card {
-        width: calc((100vw - 32px - 22px) / 2);
+        width: calc((100vw - (2 * var(--dv-gutter)) - 32px - 22px) / 2);
+    }
+}
+
+/* The collection label keeps its one line under Owl too.
+   ────────────────────────────────────────────────────────────────────────────
+   The rule that sized it down and set nowrap is written
+   `.home-categories-grid > .category-card .category-card-link` — a DIRECT child
+   selector, and once Owl wraps each tile in an .owl-item the tile stops being a
+   direct child, so the rule silently stopped applying. "View Collection →"
+   went back to its full size and broke after the words, dropping the arrow onto
+   a second line.
+
+   Restated for the wrapped case, same values. */
+@media (max-width: 768px) {
+    .home-categories-grid.owl-loaded .category-card .category-card-link {
+        font-size: 8.5px;
+        letter-spacing: 0.06em;
+        white-space: nowrap;
     }
 }
