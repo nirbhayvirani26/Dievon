@@ -12585,3 +12585,18 @@ input.chk-input-error:focus {
     width: 100%;
     white-space: nowrap;
 }
+
+
+/* New Arrivals on a phone: the panel carries its own width, which is what Owl
+   measures under autoWidth. Two thirds of the screen — the same as the Occasion
+   rail — so the whole remainder goes to the peek on the right instead of being
+   split into a gutter either side. */
+@media (max-width: 1024px) {
+    /* .owl-loaded in the selector on purpose: the desktop block above sets
+       `.na-gallery.owl-loaded .na-panel { width: 100% }` outside any media
+       query, at (0,3,0), and a bare `.na-gallery .na-panel` here loses to it.
+       100% of an item whose width Owl is trying to MEASURE from this panel is
+       circular, and both resolved to zero — the row rendered as an empty band
+       with the pager still counting underneath it. */
+    .na-gallery.owl-loaded .na-panel { width: 67vw; }
+}

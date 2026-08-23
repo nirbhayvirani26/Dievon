@@ -862,6 +862,17 @@ document.addEventListener('DOMContentLoaded', function () {
     $g.find('a, img').attr('draggable', 'false');
 
     $g.owlCarousel({
+        /* autoWidth below the breakpoint, decided HERE rather than in the
+           responsive block — Owl applies responsive settings after it has
+           already measured, so autoWidth arriving late left width:auto on every
+           item and the row collapsed to nothing (measured: an empty band where
+           the garments were).
+
+           It is what lets the slide be two thirds of the screen AND start at the
+           edge inset. With items:1 the only lever is stagePadding, which insets
+           BOTH sides — 46px of it to get the width, and so 62px of gutter down
+           the left of the first slide where the other rails start at 12. */
+        autoWidth: window.matchMedia('(max-width: 1024px)').matches,
         items: 4,
         /* No gutter. The reference is one continuous band of photographs meeting
            edge to edge, and a margin would cut it into four separate cards —
@@ -869,6 +880,13 @@ document.addEventListener('DOMContentLoaded', function () {
         margin: 0,
         nav: false,          // the page draws its own arrows
         dots: false,         // and its own counter
+        /* Looped only where the stage padding would otherwise show a blank
+           band: on a phone the row is inset 46px each side so the neighbouring
+           garment shows in it, and at the first slide there IS no neighbour on
+           the left — a sixth of the screen, empty, before the photograph.
+           Looping fills it with the last garment. Above the breakpoint four
+           panels fill the row edge to edge, there is no padding to fill, and a
+           product row should stop at the end rather than wrap. */
         loop: false,         // a product row should stop at the end, not wrap
         mouseDrag: true,
         touchDrag: true,
@@ -887,8 +905,27 @@ document.addEventListener('DOMContentLoaded', function () {
                as one continuous band of photography — and it does not survive
                the trip down: at one garment per screen there is no band to
                interrupt, just two unrelated pictures touching. */
-            0:    { items: 1, stagePadding: 46, margin: 12 },
-            600:  { items: 2, stagePadding: 0,  margin: 12 },
+            /* stagePadding insets BOTH sides, so 46 cost 62px of empty gutter
+               on the left and another 62 on the right — a sixth of a 375px
+               screen given away before the photograph started, while the
+               Occasion rail beside it began at 16px and the fan at 12. It was
+               chosen to make the next slide peek; the slide width does that on
+               its own, and 16 lines this rail's left edge up with the others. */
+            /* A phone shows one garment with the next peeking, and a 12px
+               gutter to match every other rail.
+
+               stagePadding is what makes the slide narrower than the screen
+               when items is 1 — and it insets BOTH sides, so 46 leaves 62px
+               down the left of the FIRST slide where there is no previous slide
+               to show in it. Loop fills that band with the last garment instead
+               of leaving it blank, which is the only way to keep the slide two
+               thirds of the screen AND have the row start at the edge:
+               autoWidth in a responsive block does not work (Owl writes
+               width:auto onto every item and the row collapses to nothing —
+               measured), and a smaller stagePadding just makes the photograph
+               bigger and the section taller. */
+            0:    { stagePadding: 14, margin: 12 },
+            600:  { stagePadding: 14, margin: 12 },
             1025: { items: 4, stagePadding: 0,  margin: 0  }
         }
     });
@@ -1054,6 +1091,15 @@ document.addEventListener('DOMContentLoaded', function () {
        counter should say. */
     function naItemCount() { return $g.find('.owl-item').not('.cloned').length || 1; }
     function naPerView() {
+        /* Counted off the row, not read from settings.items.
+           ────────────────────────────────────────────────────────────────────
+           Below the breakpoint this carousel runs on autoWidth, where items is
+           not what decides how many fit — the panel's own width is. The counter
+           went on saying "1 / 5" on a phone showing one garment at a time, five
+           being the desktop arithmetic for four across. .owl-item.active is what
+           Owl actually put on screen, at either width. */
+        var live = $g.find('.owl-item.active').length;
+        if (live) { return Math.max(1, Math.min(naItemCount(), live)); }
         var owl = $g.data('owl.carousel');
         var n = owl && owl.settings ? owl.settings.items : 4;
         return Math.max(1, Math.min(naItemCount(), Math.round(n)));
@@ -1144,15 +1190,12 @@ $pfHasBoth = count($pfPanels) > 1;
             <h2 class="section-title pf-single-title"><?= htmlspecialchars(reset($pfPanels)['label']) ?></h2>
             <?php endif; ?>
 
-            <?php /* One link per panel, swapped with the tab, because "View all"
-                     has to mean the tab you are looking at. ?badges= is the shop's
-                     own filter — the same one the shop page's badge facet writes —
-                     rather than a route invented for this section. */ ?>
-            <?php $pfFirst = true; foreach ($pfPanels as $pfKey => $pfPanel): ?>
-            <a class="pf-viewall" data-pf-viewall="<?= $pfKey ?>"
-               href="<?= SITE_URL ?>/shop?badges=<?= urlencode($pfPanel['badge']) ?>"
-               <?= $pfFirst ? '' : 'hidden' ?>>View All</a>
-            <?php $pfFirst = false; endforeach; ?>
+            <?php /* The "View All" link that sat here is gone, on every screen
+                     size. It was one link per panel, swapped with the tab. The
+                     row already leads to each garment, the tabs already say what
+                     is in it, and on a phone it was a third heading competing
+                     with the two tabs beside it. Its swap handler went with it —
+                     see the tab switcher below. */ ?>
         </div>
 
         <?php $pfFirst = true; foreach ($pfPanels as $pfKey => $pfPanel): ?>
@@ -2298,9 +2341,6 @@ $occIsMen = function_exists('currentShopGender') && currentShopGender() === 'men
                 var on = p.getAttribute('data-pf-panel') === key;
                 p.hidden = !on;
                 p.classList.toggle('is-active', on);
-            });
-            section.querySelectorAll('[data-pf-viewall]').forEach(function (a) {
-                a.hidden = a.getAttribute('data-pf-viewall') !== key;
             });
             sliders.forEach(function (s) {
                 if (s.panel.getAttribute('data-pf-panel') === key) { s.reset(); }
