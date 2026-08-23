@@ -1034,12 +1034,31 @@ document.addEventListener('DOMContentLoaded', function () {
 
     /* Hover is read on the gallery, not bound per item: Owl rebuilds .owl-item
        elements on refresh and per-item listeners would be lost with them. */
+    /* Every one of these is gated on the breakpoint, and that gate is the fix
+       for a bug reported many times: the slide CHANGED WIDTH on hover on a
+       phone.
+       ────────────────────────────────────────────────────────────────────────
+       I kept looking for it in the CSS transforms, and it was never there. It
+       is this: naLayout() ran on every mouseover at every width. Below the
+       breakpoint it takes the release path, which clears the inline widths and
+       triggers a refresh — so Owl re-measured mid-hover and the slide visibly
+       resized. A phone fires mouseover on tap, so it happened on touch too.
+
+       Nothing hover-driven runs below 1025px now. The row only rearranges where
+       rearranging is the design. */
+    function naHoverActive() { return railQuery.matches; }
+
     gallery.addEventListener('mouseover', function (e) {
+        if (!naHoverActive()) { return; }
         var item = e.target.closest ? e.target.closest('.owl-item') : null;
         if (item) { naLayout(item); }
     });
-    gallery.addEventListener('mouseleave', function () { naLayout(null); });
+    gallery.addEventListener('mouseleave', function () {
+        if (!naHoverActive()) { return; }
+        naLayout(null);
+    });
     gallery.addEventListener('focusin', function (e) {
+        if (!naHoverActive()) { return; }
         var item = e.target.closest ? e.target.closest('.owl-item') : null;
         if (item) { naLayout(item); }
     });

@@ -13003,3 +13003,36 @@ input.chk-input-error:focus {
         white-space: nowrap;
     }
 }
+
+/* ── Every rail runs to the right edge on a phone ─────────────────────────────
+   Left keeps the page's inset; right runs off the screen, so the strip reads as
+   continuing rather than stopping. Two of them were stopping:
+
+   Collections sat inside the container (351px on a 375 screen) AND carried 16px
+   of right padding, so its strip ended 40px short of the glass — the sliver of
+   the next tile followed by a band of empty page.
+
+   The Dievon Edit's viewport is inside .container too, so it ended 12px short.
+
+   Both get a negative right margin the width of the page gutter, which is the
+   same trick the rails already use on the left to break out of the container.
+   Owl clips at the element's own box, so widening the box widens the clip and
+   nothing overflows the document. */
+@media (max-width: 768px) {
+    /* [data-count] in the selector because the rule that sets this rail's
+       margins is `.home-categories-grid[data-count]` — same specificity, so a
+       plain `.owl-loaded` here lost the margin half of the fight and the strip
+       stayed 24px short of the glass. */
+    .featured-categories .home-categories-grid[data-count].owl-loaded {
+        padding-right: 0;
+        margin-right: calc(-1 * var(--dv-gutter));
+    }
+    .photo-fan-section .pf-viewport {
+        margin-right: calc(-1 * var(--dv-gutter));
+    }
+    /* Occasion kept 16px of right padding, which held its strip that far off
+       the edge while its left inset was doing the job it was meant to. */
+    .occasion-bar-section .occasion-slider.owl-loaded {
+        padding-right: 0;
+    }
+}
