@@ -12989,22 +12989,22 @@ input.chk-input-error:focus {
    so the widths can answer it. One tile takes the row; two split it; three or
    more go back to 2.3 across with the next one peeking, which is what says the
    strip continues. */
-@media (max-width: 768px) {
-    /* The width has to come off the RAIL's content box, not off 100vw.
-       ────────────────────────────────────────────────────────────────────────
-       This rail sits inside the container's gutters AND carries 16px of its own
-       padding, so the space a tile actually has is
-       100vw - 2x(page gutter) - 32. Sizing against 100vw - 32 made two tiles
-       come to 344 in a 319 box: they overflowed by 25px, Owl decided the row
-       could scroll, and the arrows appeared over two tiles that had nowhere to
-       go. --dv-gutter rather than a number, because it steps down per
-       breakpoint. */
-    .home-categories-grid.owl-loaded[data-count="1"] .category-card {
-        width: calc(100vw - (2 * var(--dv-gutter)) - 32px);
-    }
-    .home-categories-grid.owl-loaded[data-count="2"] .category-card {
-        width: calc((100vw - (2 * var(--dv-gutter)) - 32px - 15px) / 2);
-    }
+/* ── A short Collections row sits centred, it does not stretch ────────────────
+   One or two collections used to be widened to fill the rail. That keeps the
+   row full but makes a tile a different size depending on how many the shop
+   happens to have, so the same collection looks one way with two siblings and
+   another with five.
+
+   The tiles keep their size now and the ROW is centred instead — the same
+   treatment the Occasion strip already gets from includes/footer.php when its
+   content fits. owl-content-fits is set by catInit in pages/home.php. */
+.home-categories-grid.owl-loaded.owl-content-fits .owl-stage {
+    margin-inline: auto;
+}
+/* Owl puts its margin on every item including the last, so a centred row
+   carries one trailing gap with nothing balancing it on the left. */
+.home-categories-grid.owl-loaded.owl-content-fits .owl-item:last-child {
+    margin-right: 0 !important;
 }
 
 /* The collection label keeps its one line under Owl too.
@@ -13216,4 +13216,36 @@ input.chk-input-error:focus {
     .product-card .compare-toggle { width: 28px; height: 28px; }
     .product-card .product-card-wishlist-btn i { font-size: 12px; }
     .product-card .compare-toggle-icon svg { width: 14px; height: 14px; }
+}
+
+/* ── Collection captions stay readable over any photograph ────────────────────
+   The tuned scrim and the caption colours are written
+   `.home-categories-grid > .category-card ...` — direct children. Owl wraps
+   each tile in an .owl-item, so on the phone slider none of them applied and
+   the tile fell back to a weaker, shorter gradient: 0.6 at the very bottom
+   fading out by half height. Over a bright photograph — a green suit against
+   pale stone — the white title and the gold link sat on almost nothing.
+
+   Restated for the wrapped case, and stronger than the original rather than
+   equal to it: the scrim reaches higher up the frame and holds more density
+   behind the words, because these tiles are a third of a phone screen wide and
+   the caption occupies most of their lower half.
+
+   The link also gets the brighter accent. It was resolving to a dark gold
+   (138,106,18) which is legible on a dark scrim and invisible on a light one. */
+.home-categories-grid .category-card .category-card-overlay {
+    background: linear-gradient(to top,
+        rgba(0, 0, 0, 0.80) 0%,
+        rgba(0, 0, 0, 0.55) 30%,
+        rgba(0, 0, 0, 0.18) 60%,
+        rgba(0, 0, 0, 0) 85%);
+}
+.home-categories-grid .category-card .category-card-overlay h3,
+.home-categories-grid .category-card h3 {
+    color: #ffffff;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
+}
+.home-categories-grid .category-card .category-card-link {
+    color: var(--color-accent);
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.65);
 }

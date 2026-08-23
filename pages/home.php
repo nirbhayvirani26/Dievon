@@ -2193,6 +2193,56 @@ $occIsMen = function_exists('currentShopGender') && currentShopGender() === 'men
                 slideBy: 1,
                 smartSpeed: 500
             });
+
+            catSyncFit();
+            $r.on('refreshed.owl.carousel resized.owl.carousel changed.owl.carousel',
+                  function () { window.setTimeout(catSyncFit, 0); });
+        }
+
+        /* A row that fits sits centred rather than hard left.
+           ────────────────────────────────────────────────────────────────────
+           With one or two collections the tiles do not fill the rail, and Owl
+           lays its stage out from the left — so they sat against the left edge
+           with a band of empty rail beside them, which reads as something
+           having failed to load rather than as a short row.
+
+           The stage is measured to its real content first. Owl's own inline
+           width INCLUDES the margin after the final item, so centring that box
+           would leave the tiles one gap-width off true centre. Owl's value is
+           kept and restored the moment the row can scroll again, because its
+           positioning maths depends on that trailing margin being counted.
+
+           Same approach the Occasion strip gets from includes/footer.php. */
+        function catSyncFit() {
+            const outer = rail.querySelector('.owl-stage-outer');
+            const stage = rail.querySelector('.owl-stage');
+            if (!outer || !stage) { return; }
+            /* Measure the CONTENT, not the stage box. Under autoWidth Owl gives
+               the stage a width of its own that runs well past the last tile,
+               so asking whether the STAGE fits answers no even when the tiles
+               plainly do — two tiles reported "does not fit" while leaving 72px
+               of empty rail beside them. The sum of the items and the gaps
+               between them is the only honest measure of how wide the row is. */
+            let content = 0;
+            Array.prototype.forEach.call(stage.children, function (item, i, all) {
+                content += item.getBoundingClientRect().width;
+                if (i < all.length - 1) {
+                    content += parseFloat(getComputedStyle(item).marginRight) || 0;
+                }
+            });
+            const fits = content > 0
+                      && content <= outer.getBoundingClientRect().width + 2;
+            rail.classList.toggle('owl-content-fits', fits);
+
+            if (fits) {
+                if (stage.dataset.owlWidth === undefined) {
+                    stage.dataset.owlWidth = stage.style.width || '';
+                }
+                stage.style.width = Math.ceil(content) + 'px';
+            } else if (stage.dataset.owlWidth !== undefined) {
+                stage.style.width = stage.dataset.owlWidth;
+                delete stage.dataset.owlWidth;
+            }
         }
 
         function catDestroy() {
@@ -2230,7 +2280,7 @@ $occIsMen = function_exists('currentShopGender') && currentShopGender() === 'men
         var catResizeTimer;
         window.addEventListener("resize", function () {
             window.clearTimeout(catResizeTimer);
-            catResizeTimer = window.setTimeout(catSync, 150);
+            catResizeTimer = window.setTimeout(function () { catSync(); catSyncFit(); }, 150);
         });
 
         window.dvRailDrivers = window.dvRailDrivers || {};
