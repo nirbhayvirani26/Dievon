@@ -1413,6 +1413,11 @@ if ($occasions) {
             ?>
                 <a href="<?= SITE_URL ?>/shop?<?= in_array($occ, array_column($menuCategories ?? [], 'name'), true) ? 'category' : 'occasions' ?>=<?= urlencode($occ) ?>"
                    class="occasion-tile">
+                    <?php /* The photograph is its own box now, because the caption sits
+                             UNDER it rather than on it. The 3:4 frame moves here with
+                             the picture — the tile itself is picture plus caption and
+                             has no ratio of its own. */ ?>
+                    <span class="occasion-tile-frame">
                     <?php if ($occCover !== ''): ?>
                         <?php /* alt="" on purpose. The tile's accessible name is the label
                                  underneath it, so describing the photograph as well would
@@ -1427,7 +1432,16 @@ if ($occasions) {
                                  a gap in the row would look broken, and the link works. */ ?>
                         <span class="occasion-tile-img occasion-tile-img--blank"></span>
                     <?php endif; ?>
-                    <span class="occasion-tile-label"><?= htmlspecialchars($occ) ?></span>
+                    </span>
+                    <?php /* Caption under the print, like the reference: the occasion in
+                             serif caps, and one small underlined prompt beneath it. The
+                             prompt is a span, not a second link — the whole tile is
+                             already the link, and nesting one inside it would give a
+                             keyboard two stops to reach the same page. */ ?>
+                    <span class="occasion-tile-caption">
+                        <span class="occasion-tile-label"><?= htmlspecialchars($occ) ?></span>
+                        <span class="occasion-tile-cta">Explore</span>
+                    </span>
                 </a>
             <?php endforeach; ?>
     </div>
@@ -1479,6 +1493,29 @@ if ($occasions) {
             var inst = window.jQuery(rail).data('owl.carousel');
             return (inst && typeof inst.maximum === 'function') ? inst : null;
         }
+
+        /* The prints have to stack left over right.
+           ────────────────────────────────────────────────────────────────────
+           A fan of photographs dropped on a table falls that way, and source
+           order paints the opposite — which put each print's right-hand edge
+           UNDER its neighbour and buried the caption of the one beside it.
+           Owl's .owl-item is the stacking element, and the count is not
+           knowable in CSS, so it is written from here.
+
+           Deferred to load because includes/footer.php initialises this rail
+           after this file's scripts run: there are no .owl-item elements to
+           number yet at parse time. */
+        function occStack() {
+            var items = rail.querySelectorAll('.owl-item');
+            for (var i = 0; i < items.length; i++) { items[i].style.zIndex = String(40 - i); }
+        }
+        window.addEventListener('load', function () {
+            occStack();
+            if (window.jQuery) {
+                window.jQuery(rail).on('changed.owl.carousel translated.owl.carousel refreshed.owl.carousel',
+                    function () { window.setTimeout(occStack, 0); });
+            }
+        });
 
         window.dvRailDrivers = window.dvRailDrivers || {};
         window.dvRailDrivers.occ = {
