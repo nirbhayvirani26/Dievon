@@ -7642,13 +7642,7 @@ body.welcome-open { overflow: hidden; }
    against the left edge with empty space beside them — which reads as
    something having failed to load rather than as a deliberate row.
 
-   Centred only while it fits. As soon as there is more than the strip can
-   show, the class comes off and the row starts at the left edge again, which
-   is what makes the scroll read correctly. */
-.js-owl-rail.owl-content-fits .owl-stage {
-    margin-left: auto;
-    margin-right: auto;
-}
+
 /* Owl puts its item margin on EVERY item including the last, so a centred row
    carries one trailing gap that is not balanced on the left — the tiles sat
    14px off true centre. Dropped only while centred; when the rail scrolls, a
@@ -12776,8 +12770,24 @@ input.chk-input-error:focus {
 /* ── Shop by Occasion ── */
 .occasion-slider {
     --occ-overlap: 0px;
-    /* Read by includes/footer.php at init to set Owl's margin. */
-    gap: 20px;
+    /* Read by includes/footer.php at init to set Owl's margin. 22px, the same
+       number every other rail uses, at every width. */
+    gap: 22px;
+}
+/* Both rails start where their heading starts.
+   ────────────────────────────────────────────────────────────────────────────
+   The inset is derived, not typed: --dv-gutter is the page gutter and steps
+   down per breakpoint in responsive.css, and .container is capped at 1440 and
+   centred — so this lands on the same pixel .container's content starts on at
+   every width. Typing 72px would be right at 1440 and wrong everywhere else.
+
+   .owl-loaded is in the selector because these rails only need the inset once
+   Owl has taken them over. It used to need !important as well, to answer a
+   `.owl-carousel.owl-loaded { padding-left: 0 !important }` that has since been
+   removed — worth knowing if that ever comes back from a vendor update, because
+   the symptom is this padding silently doing nothing at any specificity. */
+.occasion-bar-section .occasion-slider.owl-loaded,
+.new-arrivals-section .na-gallery.owl-loaded {
     padding-left: calc((100vw - min(100vw, 1440px)) / 2 + var(--dv-gutter));
     padding-right: 0;
 }
@@ -12786,5 +12796,11 @@ input.chk-input-error:focus {
 /* On a phone the rail keeps its own small inset — the page gutter down there is
    already 16-24px, and the rows all agreed on 12-16px before any of this. */
 @media (max-width: 768px) {
-    .occasion-slider { padding-left: 16px; gap: 12px; }
+    /* Only the page inset changes down here. The gutter does NOT — 22 is 22 on
+       a phone and on a desktop, or the rows stop matching at the one size where
+       the difference is most obvious. */
+    .occasion-bar-section .occasion-slider.owl-loaded,
+    .new-arrivals-section .na-gallery.owl-loaded { padding-left: 16px; }
 }
+
+

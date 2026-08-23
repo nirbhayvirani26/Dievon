@@ -905,27 +905,25 @@ document.addEventListener('DOMContentLoaded', function () {
                as one continuous band of photography — and it does not survive
                the trip down: at one garment per screen there is no band to
                interrupt, just two unrelated pictures touching. */
-            /* stagePadding insets BOTH sides, so 46 cost 62px of empty gutter
-               on the left and another 62 on the right — a sixth of a 375px
-               screen given away before the photograph started, while the
-               Occasion rail beside it began at 16px and the fan at 12. It was
-               chosen to make the next slide peek; the slide width does that on
-               its own, and 16 lines this rail's left edge up with the others. */
-            /* A phone shows one garment with the next peeking, and a 12px
-               gutter to match every other rail.
+            /* One garment with the next peeking, and the same 22px gutter
+               every other rail uses.
 
-               stagePadding is what makes the slide narrower than the screen
-               when items is 1 — and it insets BOTH sides, so 46 leaves 62px
-               down the left of the FIRST slide where there is no previous slide
-               to show in it. Loop fills that band with the last garment instead
-               of leaving it blank, which is the only way to keep the slide two
-               thirds of the screen AND have the row start at the edge:
-               autoWidth in a responsive block does not work (Owl writes
-               width:auto onto every item and the row collapses to nothing —
-               measured), and a smaller stagePadding just makes the photograph
-               bigger and the section taller. */
-            0:    { stagePadding: 14, margin: 12 },
-            600:  { stagePadding: 14, margin: 12 },
+               The width comes from the panel (autoWidth, set at init above),
+               not from stagePadding. stagePadding insets BOTH sides, so making
+               the slide two thirds of the screen that way cost 62px of empty
+               gutter down the left of the FIRST slide, where there is no
+               previous slide to show in it. The 14 that remains is only the
+               page inset.
+
+               Edge to edge is the DESKTOP idea — four panels reading as one
+               continuous band of photography — and it does not survive the trip
+               down: at one garment per screen there is no band to interrupt,
+               just two unrelated pictures touching. */
+            /* No stagePadding: it insets both sides and Owl reports it unset
+               under autoWidth anyway. The rail's left inset is CSS now, shared
+               with the Occasion strip so the two cannot drift. */
+            0:    { stagePadding: 0, margin: 22 },
+            600:  { stagePadding: 0, margin: 22 },
             1025: { items: 4, stagePadding: 0,  margin: 0  }
         }
     });
@@ -2180,7 +2178,10 @@ $occIsMen = function_exists('currentShopGender') && currentShopGender() === 'men
             /* The prints used to overlap by a negative margin — a stack of
                photographs dropped on a table. They stand apart now, so this is
                a real gutter, and Owl owns it rather than CSS. */
-            var PF_GAP = 20;
+            /* 22px, and the SAME 22 at every width. It was 20 above the
+               breakpoint and 12 below — two numbers doing one job, which made
+               the row read tighter on a phone than the rails beside it. */
+            var PF_GAP = 22;
 
             /* Owl's stylesheet is scoped to .owl-carousel, which Owl never adds
                itself, and it hides .owl-carousel until .owl-loaded exists —
@@ -2230,7 +2231,7 @@ $occIsMen = function_exists('currentShopGender') && currentShopGender() === 'men
                    phone, where one print fills the screen and the rails all
                    agreed on 12 long ago, and the full gutter above it. */
                 responsive: {
-                    0:   { margin: 12 },
+                    0:   { margin: PF_GAP },
                     768: { margin: PF_GAP }
                 },
                 nav: false,             // the page draws its own arrows

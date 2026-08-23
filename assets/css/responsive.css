@@ -2220,7 +2220,13 @@ html {
        Owl), which changes the desktop sizing too and is a separate job. Between
        a 2px error at the start of the strip and a 16px one at the end, the
        start is what anyone actually sees against the rail above it. */
-    .occasion-slider { gap: 12px; padding: 0 16px 6px; scroll-padding-left: 16px; }
+    /* gap stays 22px — the number every rail on the homepage uses, at every
+       width. It was 12 here, which is why Shop by Occasion came out tighter
+       than The Dievon Edit and New Arrivals on a phone while matching them on
+       a desktop. includes/footer.php reads this value at init to set Owl's
+       margin, so it is the gutter, not just a flex gap. Only the page inset
+       steps down. */
+    .occasion-slider { padding: 0 16px 6px; scroll-padding-left: 16px; }
     /* flex-basis here has never applied: .occasion-slider .occasion-tile in
        style.css out-specifies a bare .occasion-tile whatever the file order, so
        the vw rules there are what size these. Removed rather than left to read
