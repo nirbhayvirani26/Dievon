@@ -2188,7 +2188,16 @@ $occIsMen = function_exists('currentShopGender') && currentShopGender() === 'men
 
             $t.owlCarousel({
                 autoWidth: true,        // widths come from the prints themselves
-                margin: 0,              // the overlap is a negative margin in CSS
+                /* No gutter above the breakpoint: the prints OVERLAP up there,
+                   by a negative margin in CSS, and that is the whole look. On a
+                   phone they do not overlap — there is one print on screen —
+                   so they need the same 12px gutter every other rail has, or
+                   this is the one slider on the page whose slides touch. */
+                margin: 0,
+                responsive: {
+                    0:   { margin: 12 },
+                    768: { margin: 0  }
+                },
                 nav: false,             // the page draws its own arrows
                 dots: false,            // and its own counter
                 loop: false,            // a product strip stops at the end

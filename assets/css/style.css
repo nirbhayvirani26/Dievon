@@ -11829,7 +11829,10 @@ input.chk-input-error:focus {
    the later won, so an iPad in portrait got the one-print phone layout. */
 @media (max-width: 767px) {
     .photo-fan-section {
-        --pf-visible: 1.15;
+        /* 1.5, not 1.15. Every rail on this page shows about two thirds of the
+           screen with the next item peeking; at 1.15 this one filled 83% and
+           read as a different slider on the same page. */
+        --pf-visible: 1.5;
         --pf-overlap: 0px;
         --pf-lift-room: 10px;
     }
@@ -12478,4 +12481,14 @@ input.chk-input-error:focus {
     .occasion-slider .occasion-tile,
     .occasion-slider .occasion-tile-img { transition: none; }
     .occasion-slider.owl-loaded .owl-item .occasion-tile:hover { transform: none; }
+}
+
+/* Shop by Occasion on a phone: one print, not five.
+   ────────────────────────────────────────────────────────────────────────────
+   20vw is a fifth of the screen, which is the point of it on a desktop and
+   absurd on a phone — five prints across a 375px screen came out 75px wide,
+   smaller than the caption underneath them. Every other rail here shows one
+   item with the next one peeking, so this one does too. */
+@media (max-width: 767px) {
+    .occasion-slider .occasion-tile { flex: 0 0 67vw; width: 67vw; }
 }
