@@ -1314,6 +1314,11 @@ document.addEventListener('DOMContentLoaded', function () {
             touchDrag: true,
             freeDrag: false,
             slideBy: 1,
+            /* 500ms, the same as every other rail on the homepage. Left unset
+               this fell back to Owl's own 250, which is why this strip felt
+               abrupt beside New Arrivals (500), the fan (620) and the hero
+               (800) — it was moving at twice their speed. */
+            smartSpeed: 500,
             /* Whole cards, never a sliver.
                A rail without autoWidth divides the row into a WHOLE number of
                cards at each width, so the strip always ends flush instead of

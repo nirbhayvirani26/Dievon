@@ -640,11 +640,12 @@ $heroSlideCount = !empty($heroBanners)
         <?php /* The shared rail pager — see .dv-pager in style.css. No counter:
                  this rail slides, it does not page through sets, and a page
                  number under a row of collections reframes browsing as a chore. */ ?>
-        <div class="dv-pager" data-pager="cat" hidden>
+        <div class="dv-pager" data-pager-mode="count" data-pager="cat" hidden>
           <div class="dv-pager-pill">
             <button type="button" class="dv-pager-btn" data-pager-step="-1" aria-label="Previous collections">
                 <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 5 8 12l7 7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </button>
+            <span class="dv-pager-count" data-pager-count aria-hidden="true">1&#8202;/&#8202;1</span>
             <button type="button" class="dv-pager-btn" data-pager-step="1" aria-label="Next collections">
                 <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 5 7 7-7 7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </button>
@@ -1555,11 +1556,12 @@ if ($occasions) {
              page number under a curated row of occasions reframes browsing as a
              chore. */ ?>
     <div class="container">
-        <div class="dv-pager" data-pager="occ" hidden>
+        <div class="dv-pager" data-pager-mode="count" data-pager="occ" hidden>
           <div class="dv-pager-pill">
             <button type="button" class="dv-pager-btn" data-pager-step="-1" aria-label="Previous occasions">
                 <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 5 8 12l7 7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </button>
+            <span class="dv-pager-count" data-pager-count aria-hidden="true">1&#8202;/&#8202;1</span>
             <button type="button" class="dv-pager-btn" data-pager-step="1" aria-label="Next occasions">
                 <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 5 7 7-7 7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </button>
