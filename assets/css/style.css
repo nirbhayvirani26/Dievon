@@ -12422,13 +12422,6 @@ input.chk-input-error:focus {
    there is no photograph behind these words any more. */
 .occasion-slider .occasion-tile-caption {
     display: block;
-    /* Left, like every other caption on the homepage. New Arrivals and the
-       photo fan both set their garment name and price hard against the left
-       edge of the picture; this row was the only one centring its words under
-       the photograph, which read as a different component the moment the three
-       sat on the same page. The section HEADING stays centred — that is the
-       page's own convention and every section follows it. */
-    text-align: left;
     padding-top: 18px;
 }
 .occasion-slider .occasion-tile-label {
@@ -12732,3 +12725,19 @@ input.chk-input-error:focus {
         text-align: center;
     }
 }
+
+/* ── Two section headings read left ───────────────────────────────────────────
+   The Dievon Edit and Shop by Occasion sit above rails whose captions are
+   themselves left-aligned, so a centred heading over a left-aligned row put the
+   title and the first garment's name on two different axes. These two line up
+   with the content they introduce.
+
+   The rule the rest of the page follows is at :2992 and is untouched — every
+   other section still centres. The 50px gold divider is centred by
+   `margin: 14px auto 0`, so it has to be told to start at the left edge too,
+   or the heading moves and the line it sits under stays behind. */
+.photo-fan-section .section-title-wrapper,
+.occasion-bar-section .section-title-wrapper { text-align: left; }
+
+.photo-fan-section .section-title-wrapper::after,
+.occasion-bar-section .section-title-wrapper::after { margin-inline: 0 auto; }
