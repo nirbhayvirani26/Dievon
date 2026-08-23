@@ -12329,3 +12329,41 @@ input.chk-input-error:focus {
 .na-gallery.owl-carousel.owl-drag:active img { cursor: default; }
 .na-gallery.owl-carousel.owl-drag a,
 .na-gallery.owl-carousel.owl-drag:active a { cursor: pointer; }
+
+/* ══ THE FAN, ONCE OWL HAS IT ═══════════════════════════════════════════════
+   Owl inserts .owl-stage-outer > .owl-stage > .owl-item between the track and
+   the prints, which moves three things the design depended on. Nothing here
+   changes how the fan LOOKS — it re-attaches the same rules to the elements
+   that now carry them. Appended last so it beats the originals on a tie. */
+
+/* 1. The lift needs room INSIDE the clip. A print rises 14px and scales 1.03,
+      and Owl's stage-outer clips at its own box — so the top of whichever print
+      is being hovered was shaved off. Same trick the viewport already used:
+      pad the box out, pull it back with a negative margin, so the clip is
+      taller than the content while the horizontal clip is untouched. */
+.photo-fan-section .pf-track.owl-loaded .owl-stage-outer {
+    padding-block: var(--pf-lift-room);
+    margin-block: calc(-1 * var(--pf-lift-room));
+    overflow: hidden;
+}
+.photo-fan-section .pf-track.owl-loaded .owl-stage { display: flex; align-items: flex-start; }
+.photo-fan-section .pf-track.owl-loaded .owl-item  { flex: 0 0 auto; }
+
+/* 2. The tilt. It was .pf-item:nth-child(4n+k), and every .pf-item is now an
+      only child of its own .owl-item — so every print was print number one and
+      the whole fan straightened out. The pattern moves to the wrapper, where
+      the siblings actually are. Same four angles, same cycle. */
+@media (min-width: 768px) {
+    .photo-fan-section .pf-track.owl-loaded .owl-item:nth-child(4n + 1) .pf-card { transform: rotate(-3deg); }
+    .photo-fan-section .pf-track.owl-loaded .owl-item:nth-child(4n + 2) .pf-card { transform: rotate(-1deg); }
+    .photo-fan-section .pf-track.owl-loaded .owl-item:nth-child(4n + 3) .pf-card { transform: rotate(1deg);  }
+    .photo-fan-section .pf-track.owl-loaded .owl-item:nth-child(4n + 4) .pf-card { transform: rotate(3deg);  }
+}
+
+/* 3. The width now comes from the script in pixels, because the fan shows 4.2
+      prints and Owl counts whole ones. The flex basis and max-width that used
+      to size the print would fight it. */
+.photo-fan-section .pf-track.owl-loaded .pf-item {
+    flex: 0 0 auto;
+    max-width: none;
+}

@@ -1172,13 +1172,13 @@ $pfHasBoth = count($pfPanels) > 1;
                      its own box, and overflow:hidden would shave the top off the
                      one being hovered. */ ?>
             <div class="pf-viewport" tabindex="-1">
-                <ul class="pf-track" data-pf-track>
+                <div class="pf-track" data-pf-track>
                     <?php foreach ($pfPanel['items'] as $pfIndex => $pfProduct): ?>
                     <?php /* --pf-i drives the stacking order below: a fan of
                              prints falls with the LEFT one on top, so an earlier
                              print has to out-rank a later one. Source order gives
                              the opposite. */ ?>
-                    <li class="pf-item" data-pf-index="<?= $pfIndex ?>" style="--pf-i: <?= $pfIndex ?>">
+                    <div class="pf-item" data-pf-index="<?= $pfIndex ?>" style="--pf-i: <?= $pfIndex ?>">
                         <?php
                         /* The shared product card in its 'home' variant — see
                            includes/product_card.php. One component, two designs:
@@ -1197,9 +1197,9 @@ $pfHasBoth = count($pfPanels) > 1;
                         // Quick View stays on: it is what the hover reveals here.
                         include __DIR__ . '/../includes/product_card.php';
                         ?>
-                    </li>
+                    </div>
                     <?php endforeach; ?>
-                </ul>
+                </div>
             </div>
 
             <?php /* The shared rail pager — see .dv-pager in style.css. It replaces
@@ -2086,7 +2086,11 @@ $occIsMen = function_exists('currentShopGender') && currentShopGender() === 'men
        down, and changing one of them needs no matching change here.
 
        Never autoplays. There is no timer in this file. */
-    (function () {
+    /* Inside DOMContentLoaded because jQuery and Owl are deferred in the head:
+       deferred scripts finish before that event and neither exists at parse
+       time. This block ran as a plain IIFE while it had its own engine and
+       needed no library; the moment Owl drives the fan it does. */
+    document.addEventListener('DOMContentLoaded', function () {
         var section = document.querySelector('.photo-fan-section');
         if (!section) { return; }
 
@@ -2094,138 +2098,151 @@ $occIsMen = function_exists('currentShopGender') && currentShopGender() === 'men
         var tabs   = Array.prototype.slice.call(section.querySelectorAll('.pf-tab'));
         var sliders = [];
 
+        /* Owl drives the fan now, like every other slider on the page.
+           ────────────────────────────────────────────────────────────────────
+           The design is untouched: the prints keep their tilt, their overlap,
+           their stacking order and their lift. What goes is a hand-rolled
+           engine — measure, paint, a pointer drag with its own threshold, its
+           own inert bookkeeping — replaced by the library that was already
+           loaded for the hero and the Occasion strip.
+
+           autoWidth, because the fan shows a FRACTION of a card on purpose:
+           4.2 across, so the strip is visibly cut by the edge of the screen and
+           says there is more without any furniture saying it. Owl's `items`
+           counts whole cards and cannot express that, so the width is written
+           onto each print in pixels and Owl is told to measure rather than
+           divide. --pf-visible stays the single place the number lives, read
+           back out of the stylesheet so the breakpoints keep owning it. */
         function makeSlider(panel) {
-            var track   = panel.querySelector('[data-pf-track]');
-            var items   = Array.prototype.slice.call(panel.querySelectorAll('.pf-item'));
-            var view    = panel.querySelector('.pf-viewport');
-            if (!track || !items.length) { return null; }
+            var track = panel.querySelector('[data-pf-track]');
+            var view  = panel.querySelector('.pf-viewport');
+            var items = Array.prototype.slice.call(panel.querySelectorAll('.pf-item'));
+            if (!track || !view || !items.length) { return null; }
+            if (!window.jQuery || typeof jQuery.fn.owlCarousel !== 'function') { return null; }
 
-            var index = 0, step = 0, visible = 1, maxIndex = 0;
+            var $t = jQuery(track);
 
-            function measure() {
-                /* Straight off the layout. With one item there is no gap to read,
-                   so fall back to the item's own width. */
-                step = items.length > 1
-                    ? (items[1].offsetLeft - items[0].offsetLeft)
-                    : items[0].offsetWidth;
-                if (step < 1) { step = 1; }
-                visible  = Math.max(1, Math.floor(view.clientWidth / step));
-                maxIndex = Math.max(0, items.length - visible);
-                if (index > maxIndex) { index = maxIndex; }
+            /* Owl's stylesheet is scoped to .owl-carousel, which Owl never adds
+               itself, and it hides .owl-carousel until .owl-loaded exists —
+               so this goes on one line before init, never in the markup, or a
+               failed library would hide the prints for good. */
+            $t.addClass('owl-carousel');
+
+            /* A print is a link round a photograph and both are draggable
+               objects by default; the native drag eats the pointer stream Owl
+               needs. Firefox ignores the CSS property, so the attribute says it
+               too. */
+            $t.find('a, img').attr('draggable', 'false');
+
+            function visibleCount() {
+                var v = parseFloat(getComputedStyle(panel.closest('.photo-fan-section') || panel)
+                                    .getPropertyValue('--pf-visible'));
+                return (v && v > 0) ? v : 4;
             }
 
-            function paint(animate) {
-                track.style.transform = 'translate3d(' + (-index * step) + 'px, 0, 0)';
-
-                /* A card scrolled out of frame must not be reachable by Tab —
-                   otherwise the focus ring walks off the side of the screen and
-                   the page appears to jump for no reason. inert takes the whole
-                   subtree out of the tab order and the accessibility tree at
-                   once. If focus is already inside one, move it out first, or the
-                   browser is left with focus on an inert node. */
-                for (var i = 0; i < items.length; i++) {
-                    var off = (i < index || i > index + visible - 1);
-                    if (off && items[i].contains(document.activeElement)) {
-                        /* The viewport carries tabindex="-1" for exactly this.
-                           Focus used to be thrown to the next arrow, which no
-                           longer lives inside the panel. */
-                        view.focus();
-                    }
-                    if (off) { items[i].setAttribute('inert', ''); }
-                    else     { items[i].removeAttribute('inert'); }
-                }
-                if (!animate) { void track.offsetWidth; }
+            /* The print's width, in pixels, so a fractional count survives. */
+            function sizeItems() {
+                var w = view.clientWidth / visibleCount();
+                items.forEach(function (el) { el.style.width = w + 'px'; });
+                return w;
             }
 
-            function go(to) {
-                index = Math.max(0, Math.min(maxIndex, to));
-                paint(true);
+            sizeItems();
+
+            $t.owlCarousel({
+                autoWidth: true,        // widths come from the prints themselves
+                margin: 0,              // the overlap is a negative margin in CSS
+                nav: false,             // the page draws its own arrows
+                dots: false,            // and its own counter
+                loop: false,            // a product strip stops at the end
+                mouseDrag: true,
+                touchDrag: true,
+                freeDrag: false,
+                slideBy: 1,
+                smartSpeed: 620,        // the strip's own 620ms, kept
+                autoHeight: false
+            });
+
+            /* A fan of prints falls LEFT over right, so an earlier print has to
+               out-rank a later one — and source order paints the opposite way,
+               which put every print's right corner under its neighbour and
+               swallowed the wishlist heart. The rule used to live on .pf-item;
+               Owl's wrapper is the stacking element now, so it moves here. */
+            function stack() {
+                $t.find('.owl-item').each(function (i, el) { el.style.zIndex = String(40 - i); });
+            }
+            stack();
+
+            /* A print scrolled out of frame must not be reachable by Tab, or the
+               focus ring walks off the side of the screen and the page appears
+               to jump for no reason. Owl marks what is on screen; this turns
+               that into the tab order. */
+            function gateTabbing() {
+                $t.find('.owl-item').each(function (i, el) {
+                    var off = !el.classList.contains('active');
+                    if (off && el.contains(document.activeElement)) { view.focus(); }
+                    if (off) { el.setAttribute('inert', ''); }
+                    else     { el.removeAttribute('inert'); }
+                });
+            }
+            gateTabbing();
+
+            function owl() { return $t.data('owl.carousel'); }
+            function shown() {
+                var n = $t.find('.owl-item.active').length;
+                return Math.max(1, n || Math.floor(visibleCount()));
+            }
+            function pages() {
+                /* An inactive tab is display:none, so Owl measures a zero-width
+                   viewport and marks one print visible — which reported three
+                   pages for a strip of three that cannot move, and put arrows
+                   over it the moment the tab was opened. Nothing can page while
+                   it has no width. */
+                if (!view.clientWidth) { return 1; }
+                return Math.max(1, items.length - shown() + 1);
+            }
+            function page()  {
+                var o = owl();
+                if (!o) { return 0; }
+                return Math.max(0, Math.min(pages() - 1, o.relative(o.current())));
             }
 
-            /* Left and right arrows move the strip while the focus is anywhere
-               inside this panel. Only those two keys are taken; everything else,
-               Tab included, behaves normally. */
-            panel.addEventListener('keydown', function (e) {
-                if (e.key === 'ArrowLeft')  { e.preventDefault(); go(index - 1); }
-                if (e.key === 'ArrowRight') { e.preventDefault(); go(index + 1); }
+            var onPaint = null;
+            $t.on('changed.owl.carousel translated.owl.carousel', function () {
+                window.setTimeout(function () {
+                    stack(); gateTabbing();
+                    if (onPaint) { onPaint(); }
+                }, 0);
             });
-
-            /* Drag and swipe. Pointer events cover mouse, trackpad and finger in
-               one path. The 8px threshold is what separates a drag from a click:
-               below it the card link fires as normal, above it the click is
-               swallowed so a shopper who flicks the strip does not land on a
-               product page they never chose. */
-            var down = false, moved = false, startX = 0, startIdx = 0, dx = 0;
-            var THRESHOLD = 8;
-
-            /* Firefox ignores -webkit-user-drag, so the attribute says it too.
-               Without this the first pointermove starts a native drag and the
-               browser cancels the pointer, killing the swipe. */
-            panel.querySelectorAll('.pf-card a, .pf-card img').forEach(function (el) {
-                el.setAttribute('draggable', 'false');
-            });
-            view.addEventListener('dragstart', function (e) { e.preventDefault(); });
-
-            view.addEventListener('pointerdown', function (e) {
-                if (e.button !== undefined && e.button !== 0) { return; }
-                down = true; moved = false; startX = e.clientX; startIdx = index; dx = 0;
-            });
-            view.addEventListener('pointermove', function (e) {
-                if (!down) { return; }
-                dx = e.clientX - startX;
-                if (!moved && Math.abs(dx) > THRESHOLD) {
-                    moved = true;
-                    track.classList.add('is-dragging');
-                    if (view.setPointerCapture) { try { view.setPointerCapture(e.pointerId); } catch (err) {} }
-                }
-                if (moved) {
-                    track.style.transform = 'translate3d(' + (-startIdx * step + dx) + 'px, 0, 0)';
-                }
-            });
-            function release() {
-                if (!down) { return; }
-                down = false;
-                if (!moved) { return; }
-                track.classList.remove('is-dragging');
-                go(Math.round(startIdx - dx / step));
-            }
-            view.addEventListener('pointerup', release);
-            view.addEventListener('pointercancel', release);
-            view.addEventListener('click', function (e) {
-                if (moved) { e.preventDefault(); e.stopPropagation(); moved = false; }
-            }, true);
-
-            /* Paged for the shared pager rather than stepped one card at a time.
-               The strip still DRAGS by the card — the pointer handler above
-               rounds to whichever card it lands nearest — but a press moves a
-               full screenful, which is what the other three rails do and what
-               the counter has to mean for "2 / 3" to be true. */
-            function pages()    { return Math.max(1, Math.ceil(items.length / visible)); }
-            function pageIndex(){ return Math.min(pages() - 1, Math.round(index / visible)); }
 
             var api = {
                 panel: panel,
-                reset: function () { index = 0; measure(); paint(false); },
-                refresh: function () { measure(); paint(false); },
+                /* Both of these repaint the pager by hand. Owl only fires
+                   changed/translated when it actually moves, so a tab switched
+                   back to a strip already at zero moved nothing, said nothing,
+                   and left the arrows showing over a strip with one page. */
+                reset: function () {
+                    $t.trigger('to.owl.carousel', [0, 0, true]);
+                    stack(); gateTabbing();
+                    if (onPaint) { onPaint(); }
+                },
+                refresh: function () {
+                    sizeItems();
+                    $t.trigger('refresh.owl.carousel');
+                    stack(); gateTabbing();
+                    if (onPaint) { onPaint(); }
+                },
                 driver: {
                     label: panel.getAttribute('data-pf-label') || 'Products',
                     rail:  view,
                     pages: pages,
-                    page:  pageIndex,
+                    page:  page,
                     go: function (delta) {
-                        var total = pages();
-                        /* Wrap, like every other rail here. */
-                        var next  = ((pageIndex() + delta) % total + total) % total;
-                        go(next * visible);
+                        $t.trigger(delta > 0 ? 'next.owl.carousel' : 'prev.owl.carousel');
                     },
-                    onMove: function (cb) { api.onPaint = cb; }
+                    onMove: function (cb) { onPaint = cb; }
                 }
             };
-            api.onPaint = null;
-            /* A drag moves the strip without going through the pager, so the
-               counter is repainted from paint() rather than only from a press. */
-            var basePaint = paint;
-            paint = function (animate) { basePaint(animate); if (api.onPaint) { api.onPaint(); } };
             return api;
         }
 
@@ -2292,7 +2309,7 @@ $occIsMen = function_exists('currentShopGender') && currentShopGender() === 'men
                 nextTab.click();
             });
         });
-    })();
+    });
 
     // ── Reviews Testimonials Carousel Slider ───────────────
     let reviewIndex = 0;
