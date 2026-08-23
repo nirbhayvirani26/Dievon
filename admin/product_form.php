@@ -5241,6 +5241,42 @@ function moveComponentSpec(id, componentId, direction) {
    ────────────────────────────────────────────────────────────────────── */
 ?>
 <script>
+/* Enter in a field does not save the product.
+   ────────────────────────────────────────────────────────────────────────
+   ────────────────────────────────────────────────────────────────────────────
+   A form submits when Enter is pressed in a single-line input — standard
+   browser behaviour, and reasonable on a form with two fields. This one has 69,
+   so typing a price and pressing Enter out of habit saved the whole product:
+   the page reloaded, anything half-typed elsewhere went with it, and the save
+   happened at a moment nobody chose.
+
+   Enter now commits the field instead. The value is kept and any check attached
+   to that field runs exactly as it would if you had clicked away — which is
+   what pressing Enter after typing a number is meant to mean.
+
+   Textareas keep Enter as a new line. Buttons keep it too, so tabbing to Save
+   and pressing Enter still saves — the deliberate way to submit from the
+   keyboard is untouched. */
+(function () {
+    const form = document.getElementById('productForm');
+    if (!form) { return; }
+
+    form.addEventListener('keydown', function (e) {
+        if (e.key !== 'Enter') { return; }
+
+        const el = e.target;
+        if (!el || !el.tagName) { return; }
+        const tag = el.tagName.toLowerCase();
+
+        if (tag === 'textarea') { return; }                       // a new line
+        if (tag === 'button' || el.type === 'submit' || el.type === 'button') { return; }
+        if (tag !== 'input' && tag !== 'select') { return; }
+
+        e.preventDefault();
+        el.blur();                                                // commit, and let change fire
+    });
+})();
+
 /* One save per press.
    ────────────────────────────────────────────────────────────────────────
    There was no guard against submitting this form twice. On a NEW product
