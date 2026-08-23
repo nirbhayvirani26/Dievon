@@ -12229,24 +12229,72 @@ input.chk-input-error:focus {
     transition: none;
 }
 
-/* The slot's shape, desktop only.
+/* The expanding row, desktop only.
    ────────────────────────────────────────────────────────────────────────────
-   4/5 = 0.80, the shape the garments are photographed in (1122x1402 and
-   1086x1448 both land on 0.78-0.80), so cover has almost nothing to cut.
+   The widths themselves are written in pixels by the script — see the long note
+   there for why, and for the invariant that keeps Owl's offsets correct. This
+   block supplies only what CSS is actually better at: the animation, and the
+   height.
 
-   Deliberately NOT applied below 1025px. The phone rail already has its own
-   taller shape (3 / 4.2) chosen for a screen with no width to spare, and that
-   is the design, not an accident — an unscoped rule here would have quietly
-   restyled the mobile row while claiming to be a desktop carousel fix. */
+   Height first, because it is what broke the first attempt. The original rule
+   is unchanged and is here for its original reason: the open panel is half the
+   row, so a gallery 0.625 as tall as it is wide makes the open SLOT
+   0.5/0.625 = 0.80 — the shape the garments are photographed at, which is a
+   slot the picture fills exactly with nothing cropped to achieve it.
+
+   It has to be handed down explicitly through EVERY wrapper. Owl inserts a
+   stage-outer and a stage between the gallery and the panels, and a panel
+   asking for height:100% against a parent of height:auto resolves to nothing —
+   which is what left a tall band of bare burgundy with the photographs
+   flattened inside it. */
 @media (min-width: 1025px) {
-    .na-gallery.owl-loaded .na-panel,
-    .na-gallery.owl-loaded .na-panel.is-default,
-    .na-gallery.owl-loaded .na-panel:hover,
-    .na-gallery.owl-loaded .na-panel:focus-visible,
-    .na-gallery.owl-loaded .na-panel:focus-within {
-        aspect-ratio: 4 / 5;
-        height: auto;
+    .na-gallery.owl-loaded             { height: clamp(520px, 62.5vw, 1000px); }
+    .na-gallery.owl-loaded .owl-stage-outer,
+    .na-gallery.owl-loaded .owl-stage,
+    .na-gallery.owl-loaded .owl-item,
+    .na-gallery.owl-loaded .na-panel   { height: 100%; }
+
+    /* The panel fills whatever width the script gave its item. aspect-ratio is
+       released: the slot's shape comes from the gallery's height and the open
+       panel's half-width, exactly as it did in the flex version — an
+       aspect-ratio here would fight both. */
+    .na-gallery.owl-loaded .na-panel   { width: 100%; aspect-ratio: auto; }
+
+    /* The 500ms the flex version used, moved from flex-basis to width, which is
+       the property the script now animates. */
+    .na-gallery.owl-loaded .owl-item {
+        /* The stage is a flex row, so an item's width is a SUGGESTION until
+           shrinking is switched off — the default flex-shrink:1 quietly pulled
+           every panel back to an equal quarter no matter what the script wrote
+           on it. The four visible and the four off screen come to exactly the
+           stage width, so nothing needs to shrink for the row to fit. */
+        flex: 0 0 auto;
+        transition: width 500ms cubic-bezier(0.4, 0, 0.2, 1);
     }
+    .na-gallery.owl-loaded.na-sliding .owl-item { transition: none; }
+
+    /* The open panel carries the caption, as it always did: a 239px strip has
+       no room for a name and a price, and four captions competing is the card
+       grid this section replaced. is-open sits on the .owl-item, because the
+       item is what the width lives on. */
+    .na-gallery.owl-loaded .owl-item.is-open .product-card-details,
+    .na-gallery.owl-loaded .owl-item.is-open .compare-toggle {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    .na-gallery.owl-loaded .owl-item.is-open .card-img { object-position: center 30%; }
+}
+
+/* Below the breakpoint every panel keeps its caption. One garment is on screen,
+   so nothing competes for the space — and a touchscreen has no hover, so a
+   caption waiting for one never arrives. Without this the phone showed
+   photographs with no name, no price and no sold-out state. */
+@media (max-width: 1024px) {
+    .na-gallery.owl-loaded .na-panel .product-card-details {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    .na-gallery.owl-loaded .na-panel .compare-toggle { opacity: 1; }
 }
 
 /* The caption is no longer a hover secret.
@@ -12262,15 +12310,4 @@ input.chk-input-error:focus {
    name, the price, the sale percentage and the sold-out state would never
    appear at all, on the one section of the homepage whose whole job is to show
    what is new. */
-.na-gallery.owl-loaded .na-panel .product-card-details,
-.na-gallery.owl-loaded:hover .na-panel:not(:hover) .product-card-details,
-.na-gallery.owl-loaded:focus-within .na-panel:not(:focus-within) .product-card-details {
-    opacity: 1;
-    transform: translateY(0);
-}
-/* The compare button was tied to the same open-panel state, so it never showed
-   either. It stays a hover affordance on a pointer, but a touch device gets it
-   outright — the same reasoning as the caption. */
-@media (hover: none) {
-    .na-gallery.owl-loaded .na-panel .compare-toggle { opacity: 1; }
-}
+

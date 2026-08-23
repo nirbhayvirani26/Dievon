@@ -887,6 +887,129 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
+    /* The expanding row, on top of Owl.
+       ────────────────────────────────────────────────────────────────────────
+       One panel open at half the row, three narrow ones sharing the rest,
+       swapping as the pointer moves — the design the section was built around,
+       kept while Owl does the sliding.
+
+       What makes it safe on a carousel is ONE INVARIANT: the four panels on
+       screen always add to exactly one viewport width, and every panel off
+       screen keeps the quarter width Owl gave it.
+
+       Owl shows item k by translating the stage to -(k x quarter). With the
+       four visible summing to a viewport, item k still begins k quarters from
+       the start and item k+4 still begins one viewport after item k — so Owl's
+       arithmetic stays right to the pixel while the row rearranges itself.
+       Break the sum and the arrows drift by exactly however much it is out.
+
+       Set in PIXELS from here rather than in CSS. The first attempt sized these
+       with calc(var(--na-view) / 4) and the variable resolved to its 100%
+       fallback — which inside a flex row means 100% of the STAGE, all eight
+       items, not the viewport. Every panel came out double width and the height
+       chain collapsed with it. Pixels have no such ambiguity, and the script
+       already knows the only number involved. */
+    var railQuery = window.matchMedia('(min-width: 1025px)');
+    var OPEN_SHARE = 0.5;          // the open panel's share of the row
+
+    function naItems()  { return $g.find('.owl-item').toArray(); }
+    function naActive() { return naItems().filter(function (i) { return i.classList.contains('active'); }); }
+
+    /* Whether our pixel widths are currently sitting on the items.
+       ────────────────────────────────────────────────────────────────────────
+       The widths are an OVERRIDE of Owl's own inline widths, so taking them off
+       cannot mean blanking style.width — that deletes Owl's layout too. Below
+       the breakpoint that collapsed the whole rail to a single pixel: items of
+       zero width, a panel whose aspect-ratio then resolved to zero height, and
+       a gallery 1px tall with the garments inside it.
+
+       So the widths come off only if we put them there, and Owl is asked to
+       re-measure afterwards — it is the only thing that knows what an item
+       should be at this breakpoint, with the stage padding the phone adds. The
+       flag is also what stops the refresh it triggers coming straight back
+       through the refreshed handler as a loop. */
+    var naOverridden = false;
+
+    function naRelease() {
+        if (!naOverridden) { return; }
+        naItems().forEach(function (i) { i.style.width = ''; i.classList.remove('is-open'); });
+        naOverridden = false;
+        $g.trigger('refresh.owl.carousel');
+    }
+
+    /* hovered is the item the pointer is over, or null for the resting state,
+       in which the open one is the first on screen — the same rule the flex
+       version used for the first panel of each page. */
+    function naLayout(hovered) {
+        var items = naItems();
+
+        /* Below the breakpoint Owl shows one garment at a time and there is
+           nothing to redistribute. Every override comes off, so the phone rail
+           is Owl's own layout untouched. */
+        if (!railQuery.matches) { naRelease(); return; }
+
+        var view    = gallery.clientWidth;
+        var actives = naActive();
+        var quarter = view / actives.length;
+
+        /* Fewer on screen than a full window — a short catalogue, or a moment
+           mid-refresh. Equal widths still satisfy the invariant, and there is no
+           sensible open panel when there is only one. */
+        if (actives.length < 2) { naRelease(); return; }
+
+        var open   = (hovered && actives.indexOf(hovered) !== -1) ? hovered : actives[0];
+        var narrow = (view * OPEN_SHARE) / (actives.length - 1);
+
+        items.forEach(function (item) {
+            var isActive = actives.indexOf(item) !== -1;
+            item.classList.toggle('is-open', isActive && item === open);
+            /* Off screen: exactly the width Owl assigned, which is what keeps
+               every offset outside the window where Owl expects it. */
+            item.style.width = (!isActive ? quarter
+                                          : (item === open ? view * OPEN_SHARE : narrow)) + 'px';
+        });
+        naOverridden = true;
+    }
+
+    /* Hover is read on the gallery, not bound per item: Owl rebuilds .owl-item
+       elements on refresh and per-item listeners would be lost with them. */
+    gallery.addEventListener('mouseover', function (e) {
+        var item = e.target.closest ? e.target.closest('.owl-item') : null;
+        if (item) { naLayout(item); }
+    });
+    gallery.addEventListener('mouseleave', function () { naLayout(null); });
+    gallery.addEventListener('focusin', function (e) {
+        var item = e.target.closest ? e.target.closest('.owl-item') : null;
+        if (item) { naLayout(item); }
+    });
+
+    /* Owl's slide and the width transition are both 500ms and ran against each
+       other: the open slot moved to a new panel halfway through the translate
+       and the row visibly kneaded itself. Widths hold still for the move, then
+       the new window lays itself out. */
+    var slideTimer;
+    $g.on('translate.owl.carousel', function () {
+        gallery.classList.add('na-sliding');
+        window.clearTimeout(slideTimer);
+        slideTimer = window.setTimeout(function () {
+            gallery.classList.remove('na-sliding');
+        }, 560);
+    });
+
+    /* After every move, and after Owl re-measures at a new width — Owl rewrites
+       the inline widths itself on both, so the layout has to be re-applied or
+       the row silently returns to four equal quarters. */
+    $g.on('changed.owl.carousel', function () { window.setTimeout(function () { naLayout(null); }, 0); });
+    $g.on('resized.owl.carousel refreshed.owl.carousel', function () { naLayout(null); });
+
+    var naResizeTimer;
+    window.addEventListener('resize', function () {
+        window.clearTimeout(naResizeTimer);
+        naResizeTimer = window.setTimeout(function () { naLayout(null); }, 120);
+    });
+
+    naLayout(null);
+
     /* Registered for the shared pager, like every other rail on this page. The
        section keeps what is its own — Owl, the responsive item counts — and
        hands over the arrows and the counter, which are the same everywhere.
