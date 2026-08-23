@@ -2177,6 +2177,11 @@ $occIsMen = function_exists('currentShopGender') && currentShopGender() === 'men
 
             var $t = jQuery(track);
 
+            /* The prints used to overlap by a negative margin — a stack of
+               photographs dropped on a table. They stand apart now, so this is
+               a real gutter, and Owl owns it rather than CSS. */
+            var PF_GAP = 20;
+
             /* Owl's stylesheet is scoped to .owl-carousel, which Owl never adds
                itself, and it hides .owl-carousel until .owl-loaded exists —
                so this goes on one line before init, never in the markup, or a
@@ -2196,8 +2201,17 @@ $occIsMen = function_exists('currentShopGender') && currentShopGender() === 'men
             }
 
             /* The print's width, in pixels, so a fractional count survives. */
+            /* The gutter comes off the print's width, not out of the row.
+               ────────────────────────────────────────────────────────────────
+               --pf-visible says how many prints are on screen and Owl puts the
+               margin BETWEEN them, so sizing each at view/visible and then
+               adding a margin would push the count below what the stylesheet
+               asked for and cut the last print short. The gap is subtracted
+               from the print instead: 4.2 across still means 4.2 across. */
             function sizeItems() {
-                var w = view.clientWidth / visibleCount();
+                var per = visibleCount();
+                var w = (view.clientWidth / per) - PF_GAP;
+                if (w < 60) { w = view.clientWidth / per; }   // absurdly narrow screen
                 items.forEach(function (el) { el.style.width = w + 'px'; });
                 return w;
             }
@@ -2206,15 +2220,18 @@ $occIsMen = function_exists('currentShopGender') && currentShopGender() === 'men
 
             $t.owlCarousel({
                 autoWidth: true,        // widths come from the prints themselves
-                /* No gutter above the breakpoint: the prints OVERLAP up there,
-                   by a negative margin in CSS, and that is the whole look. On a
-                   phone they do not overlap — there is one print on screen —
-                   so they need the same 12px gutter every other rail has, or
-                   this is the one slider on the page whose slides touch. */
-                margin: 0,
+                /* A real gutter now. The prints used to overlap by a negative
+                   margin — a stack of photographs dropped on a table — and the
+                   row is meant to read as separate prints standing apart. */
+                margin: PF_GAP,
+                /* Owl picks the HIGHEST breakpoint at or below the viewport, so
+                   a lone 0 entry wins at every width and the top-level margin
+                   never applies. Both steps have to be spelled out: 12 on a
+                   phone, where one print fills the screen and the rails all
+                   agreed on 12 long ago, and the full gutter above it. */
                 responsive: {
                     0:   { margin: 12 },
-                    768: { margin: 0  }
+                    768: { margin: PF_GAP }
                 },
                 nav: false,             // the page draws its own arrows
                 dots: false,            // and its own counter

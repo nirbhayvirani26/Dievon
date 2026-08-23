@@ -12741,3 +12741,50 @@ input.chk-input-error:focus {
 
 .photo-fan-section .section-title-wrapper::after,
 .occasion-bar-section .section-title-wrapper::after { margin-inline: 0 auto; }
+
+/* ══ BOTH ROWS START AT THE PAGE GUTTER, AND THE PRINTS STAND APART ═════════
+   Two changes to The Dievon Edit and Shop by Occasion.
+
+   1. No more overlap. Both rows pulled their cards together with a negative
+      margin — the stack-of-prints idea — which is why neither had any space
+      between slides. The negative margin comes off and the gap is a real
+      gutter that Owl owns (see PF_GAP in pages/home.php, and the Occasion
+      rail's column-gap, which includes/footer.php reads at init).
+
+   2. Both start on the page gutter. The heading above each now reads left, and
+      a row that began 30-90px inside it put the title and the first garment on
+      two different axes — the exact thing left-aligning the heading was meant
+      to fix.
+
+      The inset is derived, not typed: --dv-gutter is the page gutter and steps
+      down per breakpoint in responsive.css, and the container is capped at
+      1440 and centred, so this is the same pixel .container's content starts
+      on at every width. Typing 72px would be right at 1440 and wrong at every
+      other size. */
+
+/* ── The Dievon Edit ── */
+.photo-fan-section { --pf-overlap: 0px; }
+.photo-fan-section .pf-item { margin-inline: 0; }
+.photo-fan-section .pf-viewport {
+    /* The 4px bleed existed to let a hovered print's shadow escape the clip.
+       With the prints no longer overlapping the first one has room of its own,
+       and the 4px was pulling the row off the gutter it should sit on. */
+    padding-inline: 0;
+    margin-inline: 0;
+}
+
+/* ── Shop by Occasion ── */
+.occasion-slider {
+    --occ-overlap: 0px;
+    /* Read by includes/footer.php at init to set Owl's margin. */
+    gap: 20px;
+    padding-left: calc((100vw - min(100vw, 1440px)) / 2 + var(--dv-gutter));
+    padding-right: 0;
+}
+.occasion-slider .occasion-tile { margin-inline: 0; }
+
+/* On a phone the rail keeps its own small inset — the page gutter down there is
+   already 16-24px, and the rows all agreed on 12-16px before any of this. */
+@media (max-width: 768px) {
+    .occasion-slider { padding-left: 16px; gap: 12px; }
+}
