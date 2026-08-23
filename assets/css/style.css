@@ -12789,8 +12789,18 @@ input.chk-input-error:focus {
    `.owl-carousel.owl-loaded { padding-left: 0 !important }` that has since been
    removed — worth knowing if that ever comes back from a vendor update, because
    the symptom is this padding silently doing nothing at any specificity. */
+/* New Arrivals takes NO left inset.
+   ────────────────────────────────────────────────────────────────────────────
+   It had one, to line the first panel up with its heading. That is right for a
+   row of separate cards on a pale ground and wrong for this one: the gallery
+   has a dark burgundy background, so the inset was not empty space, it was a
+   340px block of solid colour sitting to the left of the photographs with
+   nothing in it.
+
+   This band is meant to read as one continuous run of photography from edge to
+   edge. The heading above keeps the page gutter, as every heading does. */
 .new-arrivals-section .na-gallery.owl-loaded {
-    padding-left: calc((100vw - min(100vw, 1440px)) / 2 + var(--dv-gutter));
+    padding-left: 0;
     padding-right: 0;
 }
 
@@ -12823,7 +12833,7 @@ input.chk-input-error:focus {
     /* Only the page inset changes down here. The gutter does NOT — 22 is 22 on
        a phone and on a desktop, or the rows stop matching at the one size where
        the difference is most obvious. */
-    .new-arrivals-section .na-gallery.owl-loaded { padding-left: 16px; }
+    .new-arrivals-section .na-gallery.owl-loaded { padding-left: 0; }
 }
 
 
