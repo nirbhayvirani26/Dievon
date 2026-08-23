@@ -3622,145 +3622,102 @@ async function dievonConvertCountry(code, opts) {
     return true;
 }
 
-/* The rupee price moved and the country prices did not.
+/* Every price question is asked when you press Save.
    ────────────────────────────────────────────────────────────────────────────
-   Country prices are STORED, never live-converted — which is the right choice,
-   because a rate moving overnight must not change what a garment costs. The
-   cost of that choice is this: raise a kurti from ₹1,499 to ₹2,499 and its £19
-   stays £19, now far below the rupee price, with nothing anywhere saying so. A
-   shopper in Britain buys at the old figure and the shop finds out when it
-   reconciles, if ever.
+   These used to be asked at two different moments and it made the two prices
+   behave like different features: changing the rupee price was Save → confirm →
+   done, while changing a country price asked the moment you left the box, so
+   you answered a question and THEN still had to press Save. Same screen, same
+   kind of edit, two different rituals.
 
-   So the question is asked at the one moment the two fall out of step — on
-   save, naming the country and both figures — instead of on every keystroke,
-   which is how people learn to click through a warning without reading it.
+   Asking both here also removes a race that only existed because of the split:
+   clicking Save blurs the field, which fired the question, while the click
+   submitted the form in the same breath — the product saved while the box was
+   still on screen, so confirming changed nothing and Cancel left the new price
+   already written.
 
-   Only when a country actually HAS a price. A product sold only in India has
-   nothing to fall out of step with and is never interrupted. */
+   One handler, asked in the order a person would think of them: what you typed
+   first, then what it knocked out of step. Nothing is written until every
+   question has an answer. */
 (function () {
     const form  = document.getElementById('productForm');
     const price = document.querySelector('input[name="price"]');
-    if (!form || !price) { return; }
+    if (!form) { return; }
 
-    const originalPrice = price.value.trim();     // as the page was drawn
-    let settled = false;                          // asked and answered
-
-    const pricedCountries = () =>
-        Array.from(document.querySelectorAll('.pf-country')).filter(w => {
-            const l = w.querySelector('.pf-cp-list'), s = w.querySelector('.pf-cp-sale');
-            return (l && l.value.trim() !== '') || (s && s.value.trim() !== '');
+    const originalPrice = price ? price.value.trim() : '';
+    const boxes = Array.from(document.querySelectorAll('.pf-country .pf-cp-list, .pf-country .pf-cp-sale'))
+        .map(function (input) {
+            const wrap = input.closest('.pf-country');
+            return {
+                input:    input,
+                original: input.value.trim(),          // as the page was drawn
+                country:  wrap.dataset.name || wrap.dataset.cc,
+                symbol:   wrap.dataset.symbol || '',
+                cc:       wrap.dataset.cc,
+                isSale:   input.classList.contains('pf-cp-sale')
+            };
         });
 
+    let settled = false;                               // asked and answered
+
     form.addEventListener('submit', async function (e) {
-        if (settled) { return; }                                  // already answered
-        const now = price.value.trim();
-        if (now === originalPrice || originalPrice === '') { return; }
+        if (settled) { return; }
 
-        const busy = pricedCountries();
-        if (!busy.length) { return; }                             // nothing to fall out of step
+        /* A country price CHANGED by hand — not one filled in for the first
+           time. Filling an empty box is pricing a product, not changing a price,
+           and interrupting that would be asking permission to do the thing you
+           sat down to do. */
+        const edited = boxes.filter(function (b) {
+            return b.original !== '' && b.input.value.trim() !== b.original;
+        });
 
-        /* stopImmediatePropagation as well as preventDefault: the double-submit
-           guard further down disables every Save button the moment a submit is
-           seen, and it would leave them disabled on a save we are cancelling. */
+        // The rupee price moved while a country still carries its old figure.
+        const priceNow  = price ? price.value.trim() : '';
+        const priceMoved = price && originalPrice !== '' && priceNow !== originalPrice;
+        const stillPriced = boxes.filter(function (b) {
+            return b.input.value.trim() !== '' && edited.indexOf(b) === -1;
+        });
+
+        if (!edited.length && !(priceMoved && stillPriced.length)) { return; }
+
         e.preventDefault();
-        e.stopImmediatePropagation();
+        e.stopImmediatePropagation();      // hold the double-submit guard too
 
-        const names = busy.map(w => {
-            const cur = w.querySelector('.pf-cp-list');
-            return w.dataset.name + ' at ' + (w.dataset.symbol || '') + (cur ? cur.value.trim() : '');
-        }).join(', ');
+        for (const b of edited) {
+            const which = b.isSale ? 'sale price' : 'price';
+            const ok = await dievonFxAsk(
+                'Change the ' + b.country + ' ' + which + ' from ' +
+                b.symbol + b.original + ' to ' + b.symbol + b.input.value.trim() + '?\n\n' +
+                'This is what a shopper in ' + b.country + ' pays. It is stored as typed — ' +
+                'no exchange rate is applied to it afterwards.'
+            );
+            if (!ok) { b.input.value = b.original; }    // put it back exactly
+        }
 
-        const update = await dievonFxAsk(
-            'The rupee price changed from ₹' + originalPrice + ' to ₹' + now + ', but ' + names +
-            ' still comes from the old figure.\n\n' +
-            'Update the country prices from today\'s rate?\n\n' +
-            'Cancel to save the new rupee price and leave the country prices exactly as they are.'
-        );
+        if (priceMoved && stillPriced.length) {
+            const names = stillPriced.map(function (b) {
+                return b.country + ' at ' + b.symbol + b.input.value.trim();
+            }).join(', ');
 
-        if (update) {
-            for (const w of busy) {
-                await dievonConvertCountry(w.dataset.cc, { force: true, quiet: true });
+            const update = await dievonFxAsk(
+                'The rupee price changed from ₹' + originalPrice + ' to ₹' + priceNow +
+                ', but ' + names + ' still comes from the old figure.\n\n' +
+                'Update the country prices from today\'s rate?\n\n' +
+                'Cancel to save the new rupee price and leave the country prices exactly as they are.'
+            );
+
+            if (update) {
+                const done = {};
+                for (const b of stillPriced) {
+                    if (done[b.cc]) { continue; }
+                    done[b.cc] = true;
+                    await dievonConvertCountry(b.cc, { force: true, quiet: true });
+                }
             }
         }
 
         settled = true;
         form.requestSubmit ? form.requestSubmit() : form.submit();
-    });
-})();
-
-/* Changing a country price that already has one asks first.
-   ────────────────────────────────────────────────────────────────────────────
-   This is the price a shopper abroad actually pays, and unlike the rupee price
-   it is easy to change without noticing: the boxes sit in a row, a stray digit
-   in the wrong one is invisible, and nothing downstream ever questions it.
-
-   On `change`, not on input — that fires once, when you leave the box, so it is
-   one question per edit rather than one per keystroke. Programmatic writes do
-   not fire it at all, so the Convert buttons are unaffected and keep their own
-   confirmation.
-
-   Only when the box ALREADY had a price. Filling an empty one is not a change,
-   it is pricing a product for the first time, and interrupting that would be
-   asking permission to do the thing you just sat down to do. Cancel puts the
-   old figure back. */
-(function () {
-    const form = document.getElementById('productForm');
-
-    /* A save must not overtake the question.
-       ────────────────────────────────────────────────────────────────────────
-       Clicking Save blurs the field, which is what fires the question — and the
-       click then submits the form in the same breath. The question is asynchronous
-       and the submit is not, so the product saved while the box was still on
-       screen: answering it changed nothing, and Cancel left the new price already
-       written. That is worse than not asking.
-
-       So a save that arrives while a question is open is held, not dropped. Once
-       the question is answered the save goes through, carrying whatever the answer
-       decided. */
-    let asking = null;
-
-    if (form) {
-        form.addEventListener('submit', function (e) {
-            if (!asking) { return; }
-            e.preventDefault();
-            e.stopImmediatePropagation();          // hold the other submit handlers too
-            asking.then(function () {
-                form.requestSubmit ? form.requestSubmit() : form.submit();
-            });
-        });
-    }
-
-    document.querySelectorAll('.pf-country').forEach(function (wrap) {
-        const country = wrap.dataset.name || wrap.dataset.cc;
-        const symbol  = wrap.dataset.symbol || '';
-
-        wrap.querySelectorAll('.pf-cp-list, .pf-cp-sale').forEach(function (input) {
-            let previous = input.value.trim();       // as the page was drawn
-
-            input.addEventListener('change', async function () {
-                const now = input.value.trim();
-                if (now === previous) { return; }
-                if (previous === '') { previous = now; return; }   // first price, not an edit
-
-                const which = input.classList.contains('pf-cp-sale') ? 'sale price' : 'price';
-
-                asking = dievonFxAsk(
-                    'Change the ' + country + ' ' + which + ' from ' +
-                    symbol + previous + ' to ' + symbol + now + '?\n\n' +
-                    'This is what a shopper in ' + country + ' pays. It is stored as typed — ' +
-                    'no exchange rate is applied to it afterwards.'
-                );
-
-                const ok = await asking;
-                asking = null;
-
-                if (ok) {
-                    previous = now;
-                } else {
-                    input.value = previous;          // put it back exactly as it was
-                }
-            });
-        });
     });
 })();
 
