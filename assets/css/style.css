@@ -12786,6 +12786,10 @@ input.chk-input-error:focus {
    `.owl-carousel.owl-loaded { padding-left: 0 !important }` that has since been
    removed — worth knowing if that ever comes back from a vendor update, because
    the symptom is this padding silently doing nothing at any specificity. */
+.new-arrivals-section .na-gallery.owl-loaded {
+    padding-left: calc((100vw - min(100vw, 1440px)) / 2 + var(--dv-gutter));
+    padding-right: 0;
+}
 
 
 /* Shop by Occasion runs the full width of the screen.
@@ -12794,6 +12798,10 @@ input.chk-input-error:focus {
    nothing holding the row back on the right, so the strip reads as continuing
    past the screen rather than as a row that ends. The heading above it keeps
    the page gutter; only the photographs bleed. */
+.occasion-bar-section .occasion-slider.owl-loaded {
+    padding-left: 0;
+    padding-right: 0;
+}
 .occasion-slider .occasion-tile { margin-inline: 0; }
 
 /* On a phone the rail keeps its own small inset — the page gutter down there is
@@ -12852,4 +12860,55 @@ input.chk-input-error:focus {
         height: auto;
         scroll-snap-align: none;
     }
+}
+
+/* ── Icon-only buttons get no label gap ───────────────────────────────────────
+   `button svg, a.btn svg, .btn-luxury svg … { margin-right: 8px !important }`
+   exists so an icon sitting BEFORE a word has room after it. On a button whose
+   whole content is the icon there is no word, so the 8px is dead space on one
+   side only — which pushes the glyph off centre in its own box. On the slider
+   arrows that is a 19px arrow sitting 4px left of the middle of a 44px button,
+   on every pager on the page.
+
+   !important to answer !important, and scoped to the two buttons that are
+   genuinely icon-only rather than to `button svg` at large, because the rule is
+   right everywhere else. */
+.dv-pager .dv-pager-btn svg,
+.dv-pager .dv-pager-btn i,
+.nav-action-item > svg,
+.nav-action-item > i { margin: 0 !important; }
+
+/* ── Shop by Occasion: how many prints fit, by width ──────────────────────────
+   Five across is a DESKTOP number. Below 1025px it produced five prints of
+   154px on a 768px tablet — narrower than the word "Wedding Guest" underneath
+   them — because the old steps that handled this range were written in
+   percentages of the flex container and went inert the moment Owl wrapped each
+   tile in an .owl-item (a percentage in there resolves against the stage, not
+   the screen).
+
+   Restated in viewport units, which mean the same thing inside a carousel and
+   out. The steps match the ones the rail always had: five, then four, then
+   three, then one with the next peeking. */
+@media (max-width: 1199px) {
+    .occasion-slider .occasion-tile { flex: 0 0 25vw; width: 25vw; }   /* four */
+}
+@media (max-width: 991px) {
+    .occasion-slider .occasion-tile { flex: 0 0 33vw; width: 33vw; }   /* three */
+}
+@media (max-width: 767px) {
+    .occasion-slider .occasion-tile { flex: 0 0 67vw; width: 67vw; }   /* one + peek */
+}
+
+/* ── New Arrivals on a tablet ─────────────────────────────────────────────────
+   67vw is a PHONE number: one garment with the next peeking, on a screen about
+   400px wide. It applied all the way up to 1024, where it made the panel 686px
+   wide and — at the 3/4.2 shape the phone rail uses — 961px TALL, on a screen
+   768px high. One garment taller than the entire viewport, in a section 1275px
+   deep.
+
+   The expanding four-panel row starts at 1025, so this band between the phone
+   and the desktop needed its own number. Two and a half across, which is the
+   same reading the other rails give at this width. */
+@media (min-width: 768px) and (max-width: 1024px) {
+    .na-gallery.owl-loaded .na-panel { width: 38vw; }
 }
