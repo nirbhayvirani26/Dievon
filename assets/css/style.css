@@ -12798,7 +12798,10 @@ input.chk-input-error:focus {
    nothing in it.
 
    This band is meant to read as one continuous run of photography from edge to
-   edge. The heading above keeps the page gutter, as every heading does. */
+   edge. The heading above keeps the page gutter, as every heading does.
+
+   Above the breakpoint only — see the phone rule further down, where the row is
+   separate cards and the inset is real spacing. */
 .new-arrivals-section .na-gallery.owl-loaded {
     padding-left: 0;
     padding-right: 0;
@@ -12821,10 +12824,11 @@ input.chk-input-error:focus {
    page's own margin on the left.
 
    Same left inset as every other rail, nothing on the right. */
-.occasion-bar-section .occasion-slider.owl-loaded {
-    padding-left: calc((100vw - min(100vw, 1440px)) / 2 + var(--dv-gutter));
-    padding-right: 0;
-}
+/* No inset rule here on purpose.
+   Shop by Occasion's desktop inset is set in responsive.css (min-width: 769px,
+   padding 0 both sides — full bleed, as asked for). A second declaration here
+   only ever fought it, and which one won depended on file order rather than on
+   anyone's intent. One rule, one place. */
 .occasion-slider .occasion-tile { margin-inline: 0; }
 
 /* On a phone the rail keeps its own small inset — the page gutter down there is
@@ -12833,7 +12837,12 @@ input.chk-input-error:focus {
     /* Only the page inset changes down here. The gutter does NOT — 22 is 22 on
        a phone and on a desktop, or the rows stop matching at the one size where
        the difference is most obvious. */
-    .new-arrivals-section .na-gallery.owl-loaded { padding-left: 0; }
+    /* But it DOES take the inset on a phone. Down here the row is not the
+       continuous band — it is one garment at a time with a 22px gutter between
+       separate cards, on the same pale ground as every other rail — so the
+       inset is real spacing rather than a slab of burgundy. 16px, the same as
+       the rails beside it. */
+    .new-arrivals-section .na-gallery.owl-loaded { padding-left: 16px; }
 }
 
 
@@ -12947,4 +12956,23 @@ input.chk-input-error:focus {
 .photo-fan-section .pf-track.owl-loaded .pf-item {
     padding-left: 0;
     padding-right: 0;
+}
+
+/* ── Collections with fewer than three tiles ──────────────────────────────────
+   The rail is sized to show 2.3 tiles, which is right when the shop has a
+   handful of collections and wrong when it has one or two: the tiles stayed
+   130px and left 53px of empty rail beside two of them, or 205px beside one —
+   a row that looks like it failed to load rather than one that is simply short.
+
+   data-count is already on the element (the section counts what it rendered),
+   so the widths can answer it. One tile takes the row; two split it; three or
+   more go back to 2.3 across with the next one peeking, which is what says the
+   strip continues. */
+@media (max-width: 768px) {
+    .home-categories-grid.owl-loaded[data-count="1"] .category-card {
+        width: calc(100vw - 32px);
+    }
+    .home-categories-grid.owl-loaded[data-count="2"] .category-card {
+        width: calc((100vw - 32px - 22px) / 2);
+    }
 }
