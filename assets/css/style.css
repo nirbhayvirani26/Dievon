@@ -13352,3 +13352,13 @@ input.chk-input-error:focus {
     .home-categories-grid.owl-loaded[data-count="1"] .category-card { width: 67vw; }
     .home-categories-grid.owl-loaded[data-count="2"] .category-card { width: 44vw; }
 }
+
+/* ── Collection tiles frame from the top ──────────────────────────────────────
+   The tile is a fixed frame and the photograph is cropped to fill it, so the
+   crop has to choose which part to keep. Centred, it kept the middle of the
+   garment and cut the top — on a full-length shot that takes the face and the
+   neckline, which is the part that identifies the collection. Anchoring the
+   crop to the top keeps the head of the frame and lets the hem go instead. */
+.home-categories-grid a img {
+    object-position: top;
+}
