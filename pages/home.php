@@ -697,7 +697,12 @@ $heroSlideCount = !empty($heroBanners)
    .na-off is only honoured above 1024px, so the rail keeps all of them. */
 $naItems    = array_slice($newArrivals, 0, 12);
 $naPerPage  = 4;
-$naPages    = (int)ceil(count($naItems) / $naPerPage);
+/* Stops, not pages. The four on screen are a window that moves by ONE garment,
+   so the number of positions is one per garment that can start the row — eight
+   products showing four gives five stops, not two pages. Computed here as well
+   as in the script so the counter is right on the first paint instead of saying
+   "1 / 2" until JavaScript corrects it. */
+$naPages    = max(1, count($naItems) - $naPerPage + 1);
 /* data-count sizes the panels for the set actually on screen, so it is the
    size of the FIRST page, not the total. With JavaScript off that is the only
    page there is, and the four still add to exactly 100%. */
@@ -821,18 +826,31 @@ $naFirstPageCount = min(count($naItems), $naPerPage);
     if (!gallery) { return; }
 
     var panels  = Array.prototype.slice.call(gallery.querySelectorAll('.na-panel'));
-    var pages   = parseInt(gallery.getAttribute('data-na-pages'), 10) || 1;
+    var perPage = parseInt(gallery.getAttribute('data-na-per-page'), 10) || 4;
     var current = 0;
+
+    /* One garment per press, not a whole set of four.
+       ────────────────────────────────────────────────────────────────────────
+       This paged: four panels swapped for the next four, and the three you had
+       just been shown left with them. A row of photographs is read across, so
+       the natural next step is the next garment — pressing forward and losing
+       everything on screen makes you re-read the row each time.
+
+       So the four on screen are a WINDOW that moves by one, and the number of
+       stops is one per garment that can start the row. Eight products showing
+       four gives five stops rather than two pages. */
+    var stops = Math.max(1, panels.length - perPage + 1);
+    var pages = stops;
 
     function show(next) {
         /* Wrap rather than disable. Two arrows that grey out at the ends need a
            disabled style, a disabled cursor and an explanation; wrapping needs
            none of them and cannot strand anyone on a dead control. */
-        current = ((next % pages) + pages) % pages;
+        current = ((next % stops) + stops) % stops;
 
         var live = 0;
-        panels.forEach(function (panel) {
-            var on = parseInt(panel.getAttribute('data-na-page'), 10) === current;
+        panels.forEach(function (panel, i) {
+            var on = i >= current && i < current + perPage;
             panel.classList.toggle('na-off', !on);
             if (on) { live++; }
         });
@@ -862,6 +880,39 @@ $naFirstPageCount = min(count($naItems), $naPerPage);
        invisible, unreachable by keyboard and impossible on a switch. */
     function railMode() { return !window.matchMedia('(min-width: 1025px)').matches; }
 
+    /* Two fingers sideways moves it, one garment at a time.
+       ────────────────────────────────────────────────────────────────────────
+       The arrows were the only way through on a laptop, and the most natural
+       gesture there is did nothing — the same gap the Owl rails had. Not a drag:
+       this gallery opens a panel when you hover it, and dragging would fight the
+       thing the design is built around. A wheel does not fight anything.
+
+       Only above the breakpoint. Below it the gallery is a real scroll container
+       and the browser already moves it far better than any handler would.
+
+       Horizontal only, so scrolling the page never catches on it, and locked for
+       the length of the panel transition — a trackpad fires wheel events in the
+       dozens and one step each would run the row to the end in a flick. */
+    /* The pager's counter is repainted from here, not from a scroll event: above
+       the breakpoint nothing scrolls, the panels just change class, so a wheel
+       step would leave the counter reading the page it left. */
+    var moveCbs = [];
+    function moved() { moveCbs.forEach(function (cb) { cb(); }); }
+
+    var wheelLocked = false;
+    gallery.addEventListener('wheel', function (e) {
+        if (railMode()) { return; }                                 // the browser's job
+        if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) { return; }   // vertical is the page's
+        e.preventDefault();
+        if (wheelLocked || Math.abs(e.deltaX) < 12) { return; }
+
+        show(current + (e.deltaX > 0 ? 1 : -1));
+        moved();
+
+        wheelLocked = true;
+        window.setTimeout(function () { wheelLocked = false; }, 320);
+    }, { passive: false });
+
     window.dvRailDrivers = window.dvRailDrivers || {};
     window.dvRailDrivers.na = {
         label: 'New Arrivals',
@@ -871,7 +922,12 @@ $naFirstPageCount = min(count($naItems), $naPerPage);
         go:    function (delta) {
             if (railMode()) { window.dvRail.go(gallery, delta); } else { show(current + delta); }
         },
-        onMove: function (cb) { gallery.addEventListener('scroll', cb, { passive: true }); }
+        /* Both ways this gallery moves on its own: a swipe below the breakpoint
+           (a real scroll) and a trackpad above it (a class change). */
+        onMove: function (cb) {
+            moveCbs.push(cb);
+            gallery.addEventListener('scroll', cb, { passive: true });
+        }
     };
 })();
 </script>

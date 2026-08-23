@@ -21,6 +21,7 @@ Every item below lives in one of those.
 | A sideways swipe on a slider does NOT scroll the page — `touch-action: pan-y` on `.owl-carousel.owl-drag`, its stage and stage-outer | `assets/css/style.css` | Swipe a rail on a phone |
 | Checkout refuses a foreign postcode at the address step, with a red message under the field, not at Place Order | `pages/checkout.php`, `assets/css/style.css` | Type `HA3 8JD` |
 | Section spacing is one value in one place (`responsive.css` line ~11), covering `.section-space` AND `.occasion-banners-section` | `assets/css/responsive.css` | Gaps identical between every homepage section |
+| New Arrivals moves ONE garment per press, not four — it is a sliding window (8 products, 4 shown = 5 stops), and two fingers sideways moves it too. Not a drag: dragging fights the hover-to-open panel | `pages/home.php` | Counter reads `1 / 5`, not `1 / 2`; next shifts panels 0-3 to 1-4 |
 | Home page sections do not repeat the same products | `pages/home.php` | Compare New Arrivals / Best Sellers / Trending |
 | Occasion tiles are built from the occasions INSIDE each product's list, each tile a different garment | `pages/home.php`, `config/config.php` | Tiles read "Casual", not "Casual / Everyday / Day Out" |
 | "New" badge disappears 30 days after a product was added — including the carousel's fallback badge | `includes/product_card.php`, `config/config.php` | A product added >30 days ago shows no badge |
