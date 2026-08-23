@@ -12185,3 +12185,92 @@ input.chk-input-error:focus {
     .product-card .quick-view-btn { bottom: 10px; padding: 9px 12px; font-size: 9px; letter-spacing: 0.08em; gap: 6px; }
     .product-card .quick-view-eye { width: 14px; height: 14px; }
 }
+
+/* ── New Arrivals, once Owl has it ─────────────────────────────────────────────
+   Appended at the end of the file deliberately. Several of the panel rules
+   above are (0,3,0) — `.na-gallery .na-panel:hover`, `.na-gallery
+   .na-panel.is-default` — and so is everything here. A tie is settled by source
+   order, so these have to come last or the hover rule would still be resizing
+   panels underneath a carousel that has already fixed their widths.
+
+   Everything the section looked like is above this block and untouched: the
+   photograph filling the slot, the caption sliding up, the zoom, the badge,
+   the price. Only the geometry moves — from a flex row that redistributed
+   itself to four equal slots Owl can position. */
+.na-gallery.owl-loaded {
+    /* The flex row is gone; Owl's stage is the row now. */
+    display: block;
+    /* Height was clamp(520px, 62.5vw, 1000px) because the OPEN panel was half
+       the width and the slot had to come out at 0.80 — the shape the garments
+       are photographed in. With four equal panels that arithmetic changes: the
+       slot is a quarter of the row, so the shape is set on the panel itself and
+       the row takes whatever height that gives. Same 0.80 slot, same reason —
+       nothing letterboxed, nothing cropped to make it fit. */
+    height: auto;
+    overflow: hidden;
+}
+.na-gallery.owl-loaded .owl-stage-outer { overflow: hidden; }
+.na-gallery.owl-loaded .owl-stage { display: flex; }
+.na-gallery.owl-loaded .owl-item  { display: flex; }
+
+.na-gallery.owl-loaded .na-panel,
+.na-gallery.owl-loaded .na-panel.is-default,
+.na-gallery.owl-loaded .na-panel:hover,
+.na-gallery.owl-loaded .na-panel:focus-visible,
+.na-gallery.owl-loaded .na-panel:focus-within {
+    /* Owl writes the width onto .owl-item; the panel fills it. flex-basis is
+       explicitly released — the calc() above resolves against the ITEM once the
+       panel is a flex child of one, which sized every panel at a sixth. */
+    flex: 1 1 auto;
+    width: 100%;
+    /* Nothing animates its own width any more — Owl animates the stage. Leaving
+       the 500ms flex-basis transition on would have every panel easing to a
+       width it was never going to change to. */
+    transition: none;
+}
+
+/* The slot's shape, desktop only.
+   ────────────────────────────────────────────────────────────────────────────
+   4/5 = 0.80, the shape the garments are photographed in (1122x1402 and
+   1086x1448 both land on 0.78-0.80), so cover has almost nothing to cut.
+
+   Deliberately NOT applied below 1025px. The phone rail already has its own
+   taller shape (3 / 4.2) chosen for a screen with no width to spare, and that
+   is the design, not an accident — an unscoped rule here would have quietly
+   restyled the mobile row while claiming to be a desktop carousel fix. */
+@media (min-width: 1025px) {
+    .na-gallery.owl-loaded .na-panel,
+    .na-gallery.owl-loaded .na-panel.is-default,
+    .na-gallery.owl-loaded .na-panel:hover,
+    .na-gallery.owl-loaded .na-panel:focus-visible,
+    .na-gallery.owl-loaded .na-panel:focus-within {
+        aspect-ratio: 4 / 5;
+        height: auto;
+    }
+}
+
+/* The caption is no longer a hover secret.
+   ────────────────────────────────────────────────────────────────────────────
+   In the flex row one panel was always open and always captioned; the three
+   narrow ones showed their name and price on hover, and that was a fair trade
+   because a 200px strip has no room for either.
+
+   Four equal panels changes the arithmetic twice over. There is room now — a
+   358px panel carries a name and a price comfortably. And with no open panel
+   there is no captioned one, so at rest the row became four unlabelled
+   photographs. On a touchscreen that is permanent: there is no hover, so the
+   name, the price, the sale percentage and the sold-out state would never
+   appear at all, on the one section of the homepage whose whole job is to show
+   what is new. */
+.na-gallery.owl-loaded .na-panel .product-card-details,
+.na-gallery.owl-loaded:hover .na-panel:not(:hover) .product-card-details,
+.na-gallery.owl-loaded:focus-within .na-panel:not(:focus-within) .product-card-details {
+    opacity: 1;
+    transform: translateY(0);
+}
+/* The compare button was tied to the same open-panel state, so it never showed
+   either. It stays a hover affordance on a pointer, but a touch device gets it
+   outright — the same reasoning as the caption. */
+@media (hover: none) {
+    .na-gallery.owl-loaded .na-panel .compare-toggle { opacity: 1; }
+}
