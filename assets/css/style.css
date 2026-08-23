@@ -10981,6 +10981,18 @@ input.chk-input-error:focus {
    trap is documented at .cat-rail-nav. */
 .dv-pager[hidden] { display: none; }
 
+/* The gutter is applied ONCE, not twice.
+   ────────────────────────────────────────────────────────────────────────────
+   .dv-pager carries `padding-inline: var(--dv-gutter)` so a pager under a
+   full-bleed rail lines up with the page. Three of them are not under
+   full-bleed rails though — Collections, The Dievon Edit and Shop by Occasion
+   sit inside .container, which already supplies that same gutter. Those got it
+   twice and their arrows sat at 24px from the edge while the hero's and New
+   Arrivals' sat at 12, on the same screen.
+
+   Inside a container the container is the gutter, so the pager adds none. */
+.container .dv-pager { padding-inline: 0; }
+
 .dv-pager-pill {
     display: flex;
     align-items: center;
@@ -13035,6 +13047,15 @@ input.chk-input-error:focus {
     .featured-categories .home-categories-grid[data-count].owl-loaded {
         padding-right: 0;
         margin-right: calc(-1 * var(--dv-gutter));
+        /* width:auto, or the negative margin does nothing on the right.
+           Something pins this rail to its container's content width (351px on a
+           375 screen), and a pinned width means pulling the right margin out
+           cannot widen the box — so the strip stopped 24px short of the glass
+           and .owl-stage-outer's overflow:hidden cut the peeking tile 103px
+           early. It reads as a row that ends rather than one that continues.
+           With the width released the box reaches the screen edge and the clip
+           happens at the glass, which is where a peek is supposed to be cut. */
+        width: auto;
     }
     .photo-fan-section .pf-viewport {
         margin-right: calc(-1 * var(--dv-gutter));
