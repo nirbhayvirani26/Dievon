@@ -1748,28 +1748,12 @@ $occIsMen = function_exists('currentShopGender') && currentShopGender() === 'men
 </section>
 
 
-<!-- ==================== 10. NEWSLETTER ==================== -->
-<section class="newsletter-section section-space">
-    <div class="container newsletter-container">
-        <span class="editorial-label">Private Membership</span>
-        <h2 class="section-title">Dievon Invitations</h2>
-        <p class="newsletter-subtitle">Subscribe for private lookbook access, digital invitations, and seasonal collection releases.</p>
-        
-        <?php // This form used to be a fake: action="#" and a showToast that
-              // pretended to subscribe. The footer's form records real signups in
-              // newsletter_subscribers via actions/newsletter_action.php — this one
-              // now posts to the same endpoint, so a visitor signing up here is
-              // actually captured. ?> 
-        <form method="POST" onsubmit="return submitHomeNewsletter(event, this);">
-            <div class="newsletter-input-wrap">
-                <input type="email" id="newsletterEmailInput" name="email" class="animated-input" required autocomplete="off">
-                <label for="newsletterEmailInput" class="animated-label">Enter your email address</label>
-            </div>
-            <button type="submit" class="btn-luxury btn-newsletter">Request Membership</button>
-            <div class="newsletter-home-msg" id="newsletterHomeMsg" style="display:none; margin-top:12px; font-size:13px; text-align:center;"></div>
-        </form>
-    </div>
-</section>
+<?php /* Dievon Invitations moved to includes/footer.php.
+         ─────────────────────────────────────────────────────────────────────
+         It sits above the footer on EVERY page now, not only this one. A
+         private-membership invitation that only ever appeared to someone who
+         reached the bottom of the home page was the one page they were least
+         likely to be on when they decided they wanted it. */ ?>
 
 <!-- ==================== 11. FASHION BLOG ==================== -->
 <?php if (!empty($latestPosts)): ?>
@@ -2054,34 +2038,6 @@ $occIsMen = function_exists('currentShopGender') && currentShopGender() === 'men
     // any more, and #filmModal no longer exists, so every one of them would have
     // returned on its first line forever.
 
-    // ── Homepage newsletter — real signup (same endpoint as the footer) ──
-    function submitHomeNewsletter(e, form) {
-        e.preventDefault();
-        const msg = document.getElementById('newsletterHomeMsg');
-        const btn = form.querySelector('button[type="submit"]');
-        const originalLabel = btn.textContent;
-        btn.disabled = true;
-        const formData = new FormData(form);
-        fetch(window.SITE_URL + '/actions/newsletter_action.php', { method: 'POST', body: formData })
-            .then(r => r.json())
-            .then(data => {
-                msg.style.display = 'block';
-                msg.style.color = data.success ? '#10b981' : '#ef4444';
-                msg.textContent = data.message;
-                if (data.success) form.reset();
-                btn.disabled = false;
-                btn.textContent = originalLabel;
-            })
-            .catch(() => {
-                msg.style.display = 'block';
-                msg.style.color = '#ef4444';
-                msg.textContent = 'Something went wrong. Please try again.';
-                btn.disabled = false;
-                btn.textContent = originalLabel;
-            });
-        return false;
-    }
-
     /* ── Collections rail ───────────────────────────────────────────────────
        A driver for the shared pager, nothing more. This used to be a pair of
        globals reached from inline onclick attributes — which is why they could
@@ -2267,7 +2223,19 @@ $occIsMen = function_exists('currentShopGender') && currentShopGender() === 'men
                    changed/translated when it actually moves, so a tab switched
                    back to a strip already at zero moved nothing, said nothing,
                    and left the arrows showing over a strip with one page. */
+                /* Called when this tab is opened, and it has to RE-MEASURE, not
+                   just rewind.
+                   ────────────────────────────────────────────────────────────
+                   The inactive panel is display:none, so Owl initialises against
+                   a viewport of zero width and writes 0px onto every print.
+                   Opening the tab showed an empty strip: the panel was there,
+                   the prints were there, and every one of them was nothing
+                   wide. Nothing re-measures on its own — Owl has no idea the
+                   element became visible — so the width is recomputed here and
+                   handed back before the strip is rewound. */
                 reset: function () {
+                    sizeItems();
+                    $t.trigger('refresh.owl.carousel');
                     $t.trigger('to.owl.carousel', [0, 0, true]);
                     stack(); gateTabbing();
                     if (onPaint) { onPaint(); }

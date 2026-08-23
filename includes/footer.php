@@ -164,6 +164,43 @@ $minimalFooter = !empty($minimalFooter);
          footer so the landmark wraps exactly the page's own content. */ ?>
 </main>
 
+<?php /* ── Dievon Invitations ──────────────────────────────────────────────
+         Was section 10 of the home page, and only ever appeared to someone who
+         had scrolled to the bottom of it. It lives here now, directly above the
+         footer, so it is on every page — the shop, a product, the journal, the
+         lookbook.
+
+         Gated on $minimalFooter for the same reason every other footer block
+         is: checkout deliberately drops everything that leads away from the
+         purchase, and an invitation to join a mailing list mid-payment is
+         exactly that.
+
+         The band is above <footer> rather than inside it on purpose. It is not
+         footer content — it is a call to action with its own ground colour and
+         its own section spacing, and putting it inside the landmark would
+         announce it to a screen reader as part of the site's small print. */ ?>
+<?php if (!$minimalFooter): ?>
+<section class="newsletter-section section-space">
+    <div class="container newsletter-container">
+        <span class="editorial-label">Private Membership</span>
+        <h2 class="section-title">Dievon Invitations</h2>
+        <p class="newsletter-subtitle">Subscribe for private lookbook access, digital invitations, and seasonal collection previews.</p>
+
+        <?php /* Posts to the same endpoint the footer column always did, so a
+                 signup here is recorded in newsletter_subscribers exactly as one
+                 from anywhere else. */ ?>
+        <form method="POST" onsubmit="return submitHomeNewsletter(event, this);">
+            <div class="newsletter-input-wrap">
+                <input type="email" id="newsletterEmailInput" name="email" class="animated-input" required autocomplete="email" placeholder=" ">
+                <label for="newsletterEmailInput" class="animated-label">Enter your email address</label>
+            </div>
+            <button type="submit" class="btn-luxury btn-newsletter">Request Membership</button>
+            <div class="newsletter-home-msg" id="newsletterHomeMsg" style="display:none; margin-top:12px; font-size:13px;"></div>
+        </form>
+    </div>
+</section>
+<?php endif; ?>
+
 <footer class="footer-enhanced<?= $minimalFooter ? ' footer-minimal' : '' ?>">
     <div class="container">
 
@@ -261,16 +298,23 @@ $minimalFooter = !empty($minimalFooter);
                     <li><a href="<?= SITE_URL ?>/terms">Terms &amp; Conditions</a></li>
                 </ul>
             </div>
+            <?php /* The Newsletter column that stood here is gone. Dievon
+                     Invitations now sits directly above this footer on every
+                     page, and the two were the same signup to the same endpoint
+                     about two hundred pixels apart — asking twice reads as a
+                     page that did not notice you had already answered.
+
+                     submitNewsletterSignup() is kept below: the same handler
+                     still serves any other footer form, and deleting a working
+                     endpoint helper to save nine lines is how the next form
+                     silently stops recording. */ ?>
             <div class="footer-col">
-                <h4>Newsletter</h4>
+                <h4>Client Care</h4>
                 <p>
-                    Subscribe to receive private invitations, lookbook launches, and boutique updates.
+                    Our boutique team is here for sizing, styling and order
+                    questions.
                 </p>
-                <form class="footer-newsletter-form" onsubmit="return submitNewsletterSignup(event, this);">
-                    <input type="email" name="email" placeholder="YOUR EMAIL ADDRESS" required>
-                    <button type="submit">Join</button>
-                </form>
-                <div class="footer-newsletter-msg" style="display:none; font-size:12px; margin-top:8px;"></div>
+                <a class="footer-care-link" href="<?= SITE_URL ?>/contact">Contact the Atelier</a>
             </div>
         </div>
         <?php endif; ?>
@@ -521,6 +565,38 @@ document.addEventListener('DOMContentLoaded', () => {
 <script src="<?= SITE_URL ?>/assets/js/search.js" defer></script>
 <script src="<?= SITE_URL ?>/assets/js/dievon-password.js?v=<?= filemtime(__DIR__ . '/../assets/js/dievon-password.js') ?>" defer></script>
 <script>
+/* Dievon Invitations' handler, moved here with the band it serves.
+   ────────────────────────────────────────────────────────────────────────────
+   It lived in pages/home.php, which is where the form used to be. Leaving it
+   there would have shipped the form to every page and the code to one of them —
+   a submit button that silently did nothing everywhere except the home page. */
+function submitHomeNewsletter(e, form) {
+    e.preventDefault();
+    const msg = document.getElementById('newsletterHomeMsg');
+    const btn = form.querySelector('button[type="submit"]');
+    const originalLabel = btn.textContent;
+    btn.disabled = true;
+    const formData = new FormData(form);
+    fetch(window.SITE_URL + '/actions/newsletter_action.php', { method: 'POST', body: formData })
+        .then(r => r.json())
+        .then(data => {
+            msg.style.display = 'block';
+            msg.style.color = data.success ? '#10b981' : '#ef4444';
+            msg.textContent = data.message;
+            if (data.success) form.reset();
+            btn.disabled = false;
+            btn.textContent = originalLabel;
+        })
+        .catch(() => {
+            msg.style.display = 'block';
+            msg.style.color = '#ef4444';
+            msg.textContent = 'Something went wrong. Please try again.';
+            btn.disabled = false;
+            btn.textContent = originalLabel;
+        });
+    return false;
+}
+
 function submitNewsletterSignup(e, form) {
     e.preventDefault();
     const msg = form.parentElement.querySelector('.footer-newsletter-msg');

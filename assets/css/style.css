@@ -12492,3 +12492,96 @@ input.chk-input-error:focus {
 @media (max-width: 767px) {
     .occasion-slider .occasion-tile { flex: 0 0 67vw; width: 67vw; }
 }
+
+/* ── Quick View, centred properly on a print ──────────────────────────────────
+   The base card centres this button between left:0 and right:0 with
+   margin-inline:auto, and there is a long comment at :11984 explaining why:
+   `left:50%` with `right:auto` makes an absolutely positioned box shrink to the
+   space from the middle to the right edge, and nowrap text then runs straight
+   out of its own button.
+
+   The fan's rule set left:50% and a translate WITHOUT clearing the right:0 it
+   inherited — so the button was anchored at the centre AND at the right edge,
+   sized to that half, then dragged back by half of that wrong width. Measured:
+   left:50%, right:0, on every print.
+
+   Same technique as the base, plus the vertical centring the fan wants. */
+@media (min-width: 768px) {
+    .photo-fan-section .pf-card .quick-view-btn {
+        top: 50%;
+        bottom: auto;
+        left: 0;
+        right: 0;
+        width: fit-content;
+        max-width: calc(100% - 24px);
+        margin-inline: auto;
+        transform: translateY(-50%);
+    }
+}
+
+/* ── The prints fan out properly now ─────────────────────────────────────────
+   -3/-1/1/3 was too even to read as a stack: four prints leaning almost the
+   same amount looked like a row that had been nudged, not photographs dropped
+   on a table. Shop by Occasion got a wider spread and an upright print at its
+   centre, and that is the one that reads — so the same idea comes back here.
+
+   Wider angles, a vertical stagger so the tops do not line up, and the third
+   print upright and slightly larger to give the group a centre. translateY and
+   scale are transforms: they change nothing about the layout, so Owl's widths
+   and offsets are untouched by any of it. */
+@media (min-width: 768px) {
+    .photo-fan-section .pf-track.owl-loaded .owl-item:nth-child(4n + 1) .pf-card {
+        transform: rotate(-4deg) translateY(8px);
+    }
+    .photo-fan-section .pf-track.owl-loaded .owl-item:nth-child(4n + 2) .pf-card {
+        transform: rotate(-1.5deg) translateY(-6px);
+    }
+    .photo-fan-section .pf-track.owl-loaded .owl-item:nth-child(4n + 3) .pf-card {
+        transform: scale(1.05);
+    }
+    .photo-fan-section .pf-track.owl-loaded .owl-item:nth-child(4n + 4) .pf-card {
+        transform: rotate(4deg) translateY(8px);
+    }
+
+    /* Hover still wins over all four — it is what lifts the print being looked
+       at out of the stack, and it has to out-rank the resting pose whichever
+       one that print happens to be. */
+    .photo-fan-section .pf-track.owl-loaded .owl-item .pf-item:hover .pf-card,
+    .photo-fan-section .pf-track.owl-loaded .owl-item .pf-item:focus-within .pf-card {
+        transform: rotate(0deg) translateY(-14px) scale(1.03);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .photo-fan-section .pf-track.owl-loaded .owl-item .pf-card { transform: none !important; }
+}
+
+/* The link replacing the footer's old Newsletter form. Styled like the column
+   list links beside it rather than as a button — it is one more way to reach
+   the boutique, not a call to action competing with the Invitations band
+   directly above it. */
+.footer-care-link {
+    display: inline-block;
+    margin-top: 4px;
+    padding-bottom: 3px;
+    color: inherit;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    text-decoration: none;
+    border-bottom: 1px solid currentColor;
+    opacity: 0.85;
+    transition: opacity 220ms ease;
+}
+.footer-care-link:hover,
+.footer-care-link:focus-visible { opacity: 1; }
+
+/* The Invitations field's floating label wrapped onto two lines and sat across
+   the input's own underline: the label was 200px wide inside a 400px field, so
+   "Enter your email address" broke after "email". It was always like this — it
+   is just visible on every page now instead of only at the foot of the home
+   page. The label has the field's width to use, and no reason to wrap. */
+.newsletter-section .newsletter-input-wrap .animated-label {
+    width: 100%;
+    white-space: nowrap;
+}
