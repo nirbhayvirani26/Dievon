@@ -1981,6 +1981,27 @@ function fxFetchLiveRates(array $currencies): array {
  *
  * Returns [CODE => ['rate'=>float|null, 'updated_at'=>?string, 'stale'=>bool]].
  */
+/**
+ * Why there is no usable exchange rate — '' when there is one.
+ *
+ * 'schema'    the fx_rate columns do not exist, so update_new_database.php has
+ *             not been run on this server. Nothing will ever fetch a rate until
+ *             it is, and no amount of retrying helps.
+ * 'unfetched' the columns are there but every enabled country is still NULL, so
+ *             the request to the rate service never succeeded. Usually a host
+ *             that blocks outbound HTTPS; the fix is to type a rate by hand.
+ *
+ * Called with an argument it records; called without one it reports. The two
+ * causes look identical from outside — both end with no price suggestion — and
+ * telling an admin to "type them by hand" when the real answer is "run the
+ * database update" is how a five-minute fix becomes an afternoon.
+ */
+function fxRatesProblem(?string $set = null): string {
+    static $reason = '';
+    if ($set !== null) { $reason = $set; }
+    return $reason;
+}
+
 function fxRatesForCountries(?PDO $pdo = null, bool $force = false): array {
     $pdo = $pdo ?: ($GLOBALS['pdo'] ?? null);
     if (!($pdo instanceof PDO)) { return []; }
@@ -1995,6 +2016,10 @@ function fxRatesForCountries(?PDO $pdo = null, bool $force = false): array {
         )->fetchAll(PDO::FETCH_ASSOC);
     } catch (PDOException $e) {
         // Column missing means update_new_database.php has not been run yet.
+        // Recorded rather than merely returned empty: "no rates" and "no rate
+        // COLUMN" need completely different things done about them, and the
+        // admin screens could not tell them apart from an empty array.
+        fxRatesProblem('schema');
         return $cache = [];
     }
 
@@ -2041,6 +2066,18 @@ function fxRatesForCountries(?PDO $pdo = null, bool $force = false): array {
             'stale'      => (int)$r['is_home'] !== 1 && ($age === null || $age > $maxAge),
         ];
     }
+
+    /* One pass to say whether anything usable came back. Two things it must not
+       get wrong: a home country always has a rate of 1, so it is no evidence
+       that the fetch worked; and a shop selling only at home has no rate to
+       fetch and no problem to report. */
+    $foreign = 0; $usable = 0;
+    foreach ($rows as $r) {
+        if ((int)$r['is_home'] === 1) { continue; }
+        $foreign++;
+        if ($r['fx_rate'] !== null) { $usable++; }
+    }
+    fxRatesProblem(($foreign === 0 || $usable > 0) ? '' : 'unfetched');
 
     if (!$force) { $cache = $out; }
     return $out;

@@ -673,7 +673,7 @@ h1, h2, h3, h4, h5 {
 
 .btn-danger {
     display: inline-flex; align-items: center; gap: 6px;
- padding: 8px 15px;
+    padding: 8px 15px;
     font-size: 12px; font-weight: 600;
     background: #fff5f5; color: var(--color-danger);
     border: 1px solid #fecaca; cursor: pointer; transition: var(--transition);
@@ -682,7 +682,7 @@ h1, h2, h3, h4, h5 {
 
 .btn-outline {
     display: inline-flex; align-items: center; gap: 6px;
- padding: 8px 15px;
+    padding: 8px 15px;
     font-size: 12px; font-weight: 600;
     background: transparent; color: var(--color-primary);
     border: 1px solid var(--border-strong); cursor: pointer; transition: var(--transition);
@@ -735,7 +735,7 @@ h1, h2, h3, h4, h5 {
     background: rgba(255,255,255,0.2);
     backdrop-filter: blur(8px);
     border: 1px solid rgba(255,255,255,0.35);
- padding: 6px 16px;
+    padding: 6px 16px;
     font-size: 12px; font-weight: 700;
     color: rgba(255,255,255,0.95);
     margin-bottom: 20px;
@@ -759,7 +759,7 @@ h1, h2, h3, h4, h5 {
 .hero-buttons { display: flex; gap: 14px; flex-wrap: wrap; }
 .btn-hero-primary {
     display: inline-flex; align-items: center; gap: 8px;
- padding: 14px 28px;
+    padding: 14px 28px;
     font-size: 15px; font-weight: 700;
     background: white; color: var(--color-primary);
     border: none; cursor: pointer;
@@ -771,7 +771,7 @@ h1, h2, h3, h4, h5 {
 
 .btn-hero-secondary {
     display: inline-flex; align-items: center; gap: 8px;
- padding: 14px 24px;
+    padding: 14px 24px;
     font-size: 15px; font-weight: 600;
     background: rgba(255,255,255,0.18);
     backdrop-filter: blur(8px);
@@ -829,7 +829,7 @@ h1, h2, h3, h4, h5 {
     color: var(--color-primary);
     background: var(--color-primary-bg);
     border: 1px solid rgba(255,77,109,0.2);
- padding: 5px 14px;
+    padding: 5px 14px;
     margin-bottom: 14px;
 }
 .section-header { text-align: center; margin-bottom: 45px; position: relative; }
@@ -989,7 +989,7 @@ h1, h2, h3, h4, h5 {
 .cart-header h2 { font-size: 19px; display: flex; align-items: center; gap: 10px; color: var(--text-primary); font-family: var(--font-heading); font-weight: var(--font-heading-weight); text-transform: uppercase; letter-spacing: 0.05em; margin: 0; }
 
 .btn-close-cart {
- width: 34px; height: 34px;
+    width: 34px; height: 34px;
     display: flex; align-items: center; justify-content: center;
     background: var(--bg-surface); border: 1px solid var(--border-light);
     font-size: 16px; color: var(--text-muted); cursor: pointer; transition: var(--transition);
@@ -1008,7 +1008,7 @@ h1, h2, h3, h4, h5 {
 .cart-item:last-child { border-bottom: none; }
 .cart-item-img {
     width: 65px; height: 75px; object-fit: cover;
- border: 1px solid var(--border-light); flex-shrink: 0;
+    border: 1px solid var(--border-light); flex-shrink: 0;
 }
 .cart-item-info { flex: 1; min-width: 0; }
 .cart-item-name {
@@ -1081,7 +1081,7 @@ h1, h2, h3, h4, h5 {
 /* ── Alerts ────────────────────────────────────────────────── */
 .alert {
     display: flex; align-items: flex-start; gap: 12px;
- padding: 14px 18px;
+    padding: 14px 18px;
     font-size: 14px; font-weight: 500; margin-bottom: 20px;
 }
 .alert i { margin-top: 1px; flex-shrink: 0; }
@@ -1146,7 +1146,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
     display: inline-block;
     background: var(--color-primary-bg);
     border: 2px dashed rgba(255,77,109,0.35);
- padding: 16px 36px; margin-bottom: 32px;
+    padding: 16px 36px; margin-bottom: 32px;
 }
 .order-code-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-muted); margin-bottom: 6px; }
 .order-code-value { font-size: 28px; font-weight: 800; font-family: var(--font-heading); color: var(--color-primary); letter-spacing: 3px; }
@@ -1160,7 +1160,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 /* ── Status Badges ─────────────────────────────────────────── */
 .status-badge {
     display: inline-block; padding: 4px 12px;
- font-size: 11px; font-weight: 700;
+    font-size: 11px; font-weight: 700;
     text-transform: uppercase; letter-spacing: 0.05em;
 }
 .status-pending    { background: #fef9c3; color: #a16207; border: 1px solid #fde68a; }
@@ -1177,7 +1177,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 .admin-tab {
     padding: 11px 22px; font-size: 14px; font-weight: 600; cursor: pointer;
     color: var(--text-secondary); border-bottom: 2px solid transparent; margin-bottom: -2px;
- transition: var(--transition);
+    transition: var(--transition);
     display: flex; align-items: center; gap: 8px;
 }
 .admin-tab:hover { color: var(--text-primary); background: var(--color-primary-bg); }
@@ -1218,7 +1218,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 .items-pill {
     display: inline-flex; align-items: center; gap: 4px;
     background: var(--color-primary-bg); border: 1px solid rgba(255,77,109,0.15);
- padding: 3px 10px; font-size: 12px; margin: 2px;
+    padding: 3px 10px; font-size: 12px; margin: 2px;
     color: var(--text-primary);
 }
 
@@ -1232,7 +1232,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 
 /* Status select */
 .status-select {
- padding: 8px 12px;
+    padding: 8px 12px;
     background: var(--bg-surface); border: 1.5px solid var(--border-light);
     color: var(--text-primary); font-size: 13px; font-family: var(--font-body); cursor: pointer;
 }
@@ -1305,7 +1305,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 }
 .preview-card { padding: 28px; display: flex; flex-direction: column; align-items: center; text-align: center; }
 .preview-img-wrap {
- width: 140px; height: 140px;
+    width: 140px; height: 140px;
     display: flex; align-items: center; justify-content: center;
     margin-bottom: 14px; transition: var(--transition);
     background: var(--bg-main); border: 2px dashed var(--border-strong);
@@ -1402,7 +1402,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 /* ── "View Cart" navbar button ───────────────────────────── */
 .btn-view-cart {
     display: inline-flex; align-items: center; gap: 8px;
- padding: 10px 18px;
+    padding: 10px 18px;
     font-size: 13px; font-weight: 700;
     background: var(--bg-surface);
     border: 1.5px solid var(--border-color);
@@ -1425,7 +1425,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
     background: var(--grad-primary);
     color: white; font-size: 10px; font-weight: 700;
     min-width: 20px; height: 20px;
- padding: 0 5px;
+    padding: 0 5px;
     display: inline-flex; align-items: center; justify-content: center;
     border: none;
     font-family: var(--font-heading);
@@ -1454,7 +1454,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 .image-upload-label { font-size: 13px; color: var(--text-secondary); }
 .image-upload-label strong { color: var(--color-primary); }
 .image-current-thumb {
- width: 100%; max-width: 240px;
+    width: 100%; max-width: 240px;
     margin: 12px auto 0; display: block;
     object-fit: cover; border: 1.5px solid var(--border-light);
 }
@@ -1517,7 +1517,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 }
 .lightbox-inner img {
     max-width: 90vw; max-height: 85vh;
- object-fit: contain;
+    object-fit: contain;
     display: block; box-shadow: 0 24px 60px rgba(0,0,0,0.5);
 }
 .lightbox-caption {
@@ -1526,7 +1526,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 }
 .lightbox-close {
     position: absolute; top: -16px; right: -16px;
- width: 38px; height: 38px;
+    width: 38px; height: 38px;
     background: white; color: var(--text-primary);
     display: flex; align-items: center; justify-content: center;
     font-size: 18px; cursor: pointer; border: none;
@@ -1545,7 +1545,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
     gap: 16px;
 }
 .admin-gallery-item {
- overflow: hidden;
+    overflow: hidden;
     border: 1.5px solid var(--border-light);
     position: relative; background: var(--bg-main);
     box-shadow: var(--shadow-xs);
@@ -1555,7 +1555,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 .admin-gallery-item-caption { font-size: 12px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .admin-gallery-del {
     position: absolute; top: 6px; right: 6px;
- width: 28px; height: 28px;
+    width: 28px; height: 28px;
     background: rgba(239,68,68,0.9); color: white;
     display: flex; align-items: center; justify-content: center;
     font-size: 12px; cursor: pointer; border: none;
@@ -1582,7 +1582,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
     display: inline-flex; align-items: center; gap: 8px;
     background: rgba(255,255,255,0.2); backdrop-filter: blur(8px);
     border: 1px solid rgba(255,255,255,0.35);
- padding: 6px 18px;
+    padding: 6px 18px;
     font-size: 12px; font-weight: 700;
     color: rgba(255,255,255,0.95); margin-bottom: 20px;
     text-transform: uppercase; letter-spacing: 0.08em;
@@ -1609,7 +1609,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 .contact-map-section { background: var(--bg-surface); }
 .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; }
 .map-container {
- overflow: hidden;
+    overflow: hidden;
     border: 1.5px solid var(--border-light);
     box-shadow: var(--shadow-sm);
     height: 380px;
@@ -1621,7 +1621,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 .social-buttons-grid { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; margin-top: 28px; }
 .social-btn {
     display: inline-flex; align-items: center; gap: 10px;
- padding: 13px 26px;
+    padding: 13px 26px;
     font-size: 14px; font-weight: 700;
     font-family: var(--font-heading);
     text-decoration: none; transition: var(--transition);
@@ -1651,7 +1651,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
     display: inline-flex; align-items: center; gap: 8px;
     background: rgba(255,255,255,0.2); backdrop-filter: blur(8px);
     border: 1px solid rgba(255,255,255,0.35);
- padding: 6px 18px;
+    padding: 6px 18px;
     font-size: 12px; font-weight: 700;
     color: rgba(255,255,255,0.95); margin-bottom: 24px;
     text-transform: uppercase; letter-spacing: 0.08em;
@@ -1685,7 +1685,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
     display: flex; align-items: center; gap: 10px;
     background: var(--color-primary-bg);
     border: 1px solid rgba(255,77,109,0.15);
- padding: 12px 18px;
+    padding: 12px 18px;
     flex: 1; min-width: 140px;
 }
 .story-highlight-icon { font-size: 24px; }
@@ -1707,7 +1707,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 .landing-cta-section p  { font-size: 16px; color: rgba(255,255,255,0.85); margin-bottom: 32px; position: relative; z-index: 1; }
 .btn-cta-white {
     display: inline-flex; align-items: center; gap: 10px;
- padding: 16px 36px;
+    padding: 16px 36px;
     font-size: 16px; font-weight: 700;
     background: white; color: var(--color-primary);
     border: none; cursor: pointer;
@@ -1746,7 +1746,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 .footer-col ul li a:hover { color: var(--color-primary-light); }
 .footer-social { display: flex; gap: 10px; margin-top: 16px; }
 .footer-social a {
- width: 36px; height: 36px;
+    width: 36px; height: 36px;
     background: rgba(255,255,255,0.08);
     border: 1px solid rgba(255,255,255,0.12);
     display: flex; align-items: center; justify-content: center;
@@ -1843,13 +1843,13 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 
 /* ── Cart item image ─────────────────────────────────────── */
 .cart-item-img {
- width: 50px; height: 50px;
+    width: 50px; height: 50px;
     object-fit: cover; flex-shrink: 0;
     border: 1px solid var(--border-light);
     background: var(--bg-main);
 }
 .cart-item-img-placeholder {
- width: 50px; height: 50px;
+    width: 50px; height: 50px;
     display: flex; align-items: center; justify-content: center;
     font-size: 26px; flex-shrink: 0;
     background: var(--color-primary-bg);
@@ -1977,7 +1977,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
 
 .variant-picker-close {
     position: absolute; top: 14px; right: 14px;
- width: 32px; height: 32px;
+    width: 32px; height: 32px;
     background: var(--bg-main); border: 1px solid var(--border-light);
     display: flex; align-items: center; justify-content: center;
     font-size: 14px; color: var(--text-muted); cursor: pointer;
@@ -4018,7 +4018,7 @@ body.dievon-sg-open { overflow: hidden; }
         top: 12px; right: 12px; font-size: 24px;
         width: 44px; height: 44px;
         display: flex; align-items: center; justify-content: center;
- background: rgba(0, 0, 0, 0.55);
+        background: rgba(0, 0, 0, 0.55);
     }
     .product-lightbox-nav.prev { left: 10px; }
     .product-lightbox-nav.next { right: 10px; }
@@ -5194,7 +5194,7 @@ body.admin-wrapper {
     margin-top: 10px;
 }
 .product-gallery-slide-counter .dot {
- width: 6px; height: 6px;
+    width: 6px; height: 6px;
     background: var(--border-strong);
     transition: background 0.2s ease, transform 0.2s ease;
 }
@@ -5377,7 +5377,7 @@ body.admin-wrapper {
     font-family: var(--font-body, inherit);
     font-size: 12px; font-weight: 600;
     text-transform: uppercase; letter-spacing: 0.08em;
- padding: 12px 26px;
+    padding: 12px 26px;
     cursor: pointer; border: 1px solid transparent;
     transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
     min-width: 116px;
@@ -5455,7 +5455,7 @@ body.dv-dialog-open { overflow: hidden; }
    ═══════════════════════════════════════════════════════════ */
 .shipping-zone-note {
     font-size: 12.5px; line-height: 1.6; margin: 0 0 14px;
- padding: 10px 13px;
+    padding: 10px 13px;
     background: var(--bg-surface-soft); border-left: 3px solid var(--border-strong);
     color: var(--text-secondary);
 }
@@ -5476,11 +5476,11 @@ body.dv-dialog-open { overflow: hidden; }
    the panel is tall, there is no way left to dismiss the popup. */
 .qv-modal { position: relative; width: 100%; max-width: 880px; display: flex; flex-direction: column;
     max-height: 88vh; max-height: 88dvh; overflow: hidden;
- background: var(--bg-surface); box-shadow: 0 24px 60px rgba(40,12,24,.3);
+    background: var(--bg-surface); box-shadow: 0 24px 60px rgba(40,12,24,.3);
     transform: translateY(12px) scale(.97); transition: transform .26s cubic-bezier(.22,1,.36,1); }
 .qv-overlay.is-open .qv-modal { transform: translateY(0) scale(1); }
 .qv-close { position: absolute; top: 12px; right: 14px; z-index: 3; background: rgba(255,255,255,.92); border: none;
- font-size: 26px; line-height: 1; width: 34px; height: 34px; cursor: pointer; color: var(--text-muted);
+    font-size: 26px; line-height: 1; width: 34px; height: 34px; cursor: pointer; color: var(--text-muted);
     box-shadow: 0 2px 8px rgba(40,12,24,.18); }
 .qv-close:hover { color: var(--color-primary); }
 .qv-body { display: grid; grid-template-columns: 1fr 1fr; gap: 0; min-height: 340px;
@@ -5499,10 +5499,10 @@ body.dv-dialog-open { overflow: hidden; }
    the element take the image's own shape means the frame always hugs the photo —
    nothing cropped and no bars, for every ratio in the catalogue. */
 .qv-img { max-width: 100%; max-height: min(56vh, 520px); width: auto; height: auto;
- display: block; }
+    display: block; }
 .qv-img-fallback { width: 100%; aspect-ratio: 4 / 5; max-height: min(56vh, 520px);
     display: flex; align-items: center; justify-content: center; font-size: 68px;
- background: var(--bg-surface); }
+    background: var(--bg-surface); }
 .qv-thumbs { display: flex; gap: 8px; flex-wrap: wrap; align-self: stretch; }
 .qv-thumb { width: 54px; height: 54px; object-fit: cover; cursor: pointer;
     border: 2px solid transparent; opacity: .7; flex: 0 0 auto; }
@@ -5510,7 +5510,7 @@ body.dv-dialog-open { overflow: hidden; }
 
 .qv-info { padding: 30px 28px; display: flex; flex-direction: column; }
 .qv-badge { align-self: flex-start; background: var(--color-accent); color: #fff; font-size: 10px; font-weight: 700;
- letter-spacing: .08em; text-transform: uppercase; padding: 3px 9px; margin-bottom: 9px; }
+    letter-spacing: .08em; text-transform: uppercase; padding: 3px 9px; margin-bottom: 9px; }
 .qv-cat { font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--text-muted); }
 .qv-title { font-family: var(--font-heading); font-size: 23px; font-weight: var(--font-heading-weight); margin: 5px 0 12px; color: var(--text-primary); }
 .qv-price-row { margin-bottom: 12px; }
@@ -5523,7 +5523,7 @@ body.dv-dialog-open { overflow: hidden; }
     color: var(--text-muted); margin-bottom: 7px; }
 .qv-size-row { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 16px; }
 .qv-size { min-width: 46px; padding: 8px 12px; font-size: 12px; font-weight: 600; cursor: pointer;
- background: transparent; border: 1px solid var(--border-strong); color: var(--text-primary); }
+    background: transparent; border: 1px solid var(--border-strong); color: var(--text-primary); }
 .qv-size:hover:not(.is-out) { border-color: var(--color-primary); }
 .qv-size.is-selected { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
 .qv-size.is-out { opacity: .35; cursor: not-allowed; text-decoration: line-through; }
@@ -5607,7 +5607,7 @@ body.qv-open { overflow: hidden; }
    15px, so 48px clears it. Bottom-left is not free: .quick-view-btn is centred
    along the bottom and reveals on the same hover. */
 .compare-toggle { position: absolute; top: 48px; left: 15px; z-index: 11; display: flex; align-items: center; gap: 5px;
- background: rgba(255,255,255,.94); border: 1px solid var(--border-light);
+    background: rgba(255,255,255,.94); border: 1px solid var(--border-light);
     padding: 4px 10px 4px 7px; font-size: 10.5px; font-weight: 600; letter-spacing: .04em;
     text-transform: uppercase; color: var(--text-secondary); cursor: pointer; opacity: 0; transition: opacity .2s ease; }
 .product-card:hover .compare-toggle,
@@ -5628,7 +5628,7 @@ body.qv-open { overflow: hidden; }
     justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 .cmp-bar-items { display: flex; gap: 8px; flex-wrap: wrap; flex: 1; min-width: 200px; }
 .cmp-chip { display: inline-flex; align-items: center; gap: 7px; background: var(--bg-surface-soft);
- border: 1px solid var(--border-light); padding: 5px 8px 5px 13px; font-size: 12px; }
+    border: 1px solid var(--border-light); padding: 5px 8px 5px 13px; font-size: 12px; }
 .cmp-chip button { background: none; border: none; font-size: 16px; line-height: 1; cursor: pointer;
     color: var(--text-muted); padding: 0 2px; }
 .cmp-chip button:hover { color: #c0392b; }
@@ -5644,7 +5644,7 @@ body.qv-open { overflow: hidden; }
     transition: opacity .22s ease, visibility .22s ease; }
 .cmp-overlay.is-open { opacity: 1; visibility: visible; }
 .cmp-modal { width: 100%; max-width: 960px; max-height: 88vh; display: flex; flex-direction: column;
- background: var(--bg-surface); box-shadow: 0 24px 60px rgba(40,12,24,.3); }
+    background: var(--bg-surface); box-shadow: 0 24px 60px rgba(40,12,24,.3); }
 .cmp-head { display: flex; align-items: center; justify-content: space-between;
     padding: 18px 24px; border-bottom: 1px solid var(--border-light); }
 .cmp-head h2 { font-family: var(--font-heading); font-size: 20px; font-weight: var(--font-heading-weight); margin: 0; }
@@ -5664,7 +5664,7 @@ body.qv-open { overflow: hidden; }
 .cmp-name { display: block; font-weight: 700; font-size: 13px; color: var(--text-primary); text-decoration: none; margin-bottom: 4px; }
 .cmp-name:hover { color: var(--color-primary); }
 .cmp-best { display: inline-block; background: rgba(16,185,129,.12); color: #0e8f68; font-size: 10px;
- font-weight: 700; letter-spacing: .05em; text-transform: uppercase; padding: 2px 8px; margin-bottom: 6px; }
+    font-weight: 700; letter-spacing: .05em; text-transform: uppercase; padding: 2px 8px; margin-bottom: 6px; }
 .cmp-remove { display: block; margin: 4px auto 0; background: none; border: none; font-size: 11px;
     color: var(--text-muted); text-decoration: underline; cursor: pointer; }
 .cmp-remove:hover { color: #c0392b; }
@@ -6188,7 +6188,7 @@ body.welcome-open { overflow: hidden; }
 
 .welcome-close {
     position: absolute; top: 10px; right: 12px;
- width: 36px; height: 36px;
+    width: 36px; height: 36px;
     background: none; border: none; cursor: pointer;
     font-size: 26px; line-height: 1; color: var(--text-muted);
 }
@@ -6389,7 +6389,7 @@ body.welcome-open { overflow: hidden; }
 .au-msg.is-ok  { background: #ecfdf5; border: 1px solid #10b981; color: #065f46; }
 .au-msg.is-err { background: #fef2f2; border: 1px solid #f87171; color: #991b1b; }
 .au-warn {
- padding: 14px 16px; font-size: 13px; line-height: 1.6;
+    padding: 14px 16px; font-size: 13px; line-height: 1.6;
     background: #fffbeb; border: 1px solid #f59e0b; color: #92400e; margin-bottom: 16px;
 }
 .au-warn code { background: rgba(0,0,0,0.06); padding: 1px 5px; }
@@ -6400,7 +6400,7 @@ body.welcome-open { overflow: hidden; }
 .au-ok   { color: #10b981; font-weight: 600; }
 .au-fail { color: #ef4444; font-weight: 600; }
 .au-pill {
- display: inline-block; margin-left: 6px; padding: 1px 7px;
+    display: inline-block; margin-left: 6px; padding: 1px 7px;
     font-size: 10px; font-weight: 700; background: rgba(81,17,38,0.1); color: var(--color-primary);
 }
 .au-pw-btn { padding: 6px 12px; font-size: 12px; }
@@ -6410,9 +6410,22 @@ body.welcome-open { overflow: hidden; }
 .cn-msg.is-ok  { background: #ecfdf5; border: 1px solid #10b981; color: #065f46; }
 .cn-msg.is-err { background: #fffbeb; border: 1px solid #f59e0b; color: #92400e; }
 .cn-note {
- padding: 14px 16px; font-size: 13px; line-height: 1.7;
+    padding: 14px 16px; font-size: 13px; line-height: 1.7;
     background: var(--bg-surface-soft); border: 1px solid var(--border-light);
     color: var(--text-secondary); margin-bottom: 18px;
+}
+/* A note that is reporting a fault, not explaining a rule. Amber ground and
+   border like .cn-msg.is-err rather than the .cn-warn text colour, which is a
+   utility for a word or two and turns a whole paragraph bold amber. */
+.cn-note--warn {
+    background: #fffbeb;
+    border-color: #f59e0b;
+    color: #92400e;
+}
+.cn-note--warn code {
+    background: rgba(146, 64, 14, 0.10);
+    padding: 1px 5px;
+    font-size: 12px;
 }
 .cn-in-xs { width: 70px; }
 .cn-in-sm { width: 80px; }
@@ -6433,11 +6446,11 @@ body.welcome-open { overflow: hidden; }
 .cn-switch input { opacity: 0; width: 0; height: 0; }
 .cn-slider {
     position: absolute; inset: 0; cursor: pointer; background: #cbd5e1;
- transition: 0.2s;
+    transition: 0.2s;
 }
 .cn-slider::before {
     content: ""; position: absolute; height: 16px; width: 16px; left: 3px; bottom: 3px;
- background: #fff; transition: 0.2s;
+    background: #fff; transition: 0.2s;
 }
 .cn-switch input:checked + .cn-slider { background: var(--color-primary); }
 .cn-switch input:checked + .cn-slider::before { transform: translateX(20px); }
@@ -6455,11 +6468,11 @@ body.welcome-open { overflow: hidden; }
 .au-2fa-step { font-size: 13px; line-height: 1.8; margin: 0 0 8px; color: var(--text-secondary); }
 .au-secret {
     display: inline-block; font-size: 14px; letter-spacing: 2px; padding: 6px 10px;
- background: #fff; border: 1px solid var(--border-strong); user-select: all;
+    background: #fff; border: 1px solid var(--border-strong); user-select: all;
 }
 .au-2fa-confirm { display: flex; gap: 10px; align-items: center; margin-top: 10px; max-width: 320px; }
 .au-codes {
- background: #fff; border: 1px solid var(--border-strong);
+    background: #fff; border: 1px solid var(--border-strong);
     padding: 14px 16px; font-size: 14px; letter-spacing: 1px; line-height: 2; user-select: all; margin: 10px 0 0;
 }
 .admin-2fa-hint { font-size: 13px; color: var(--text-secondary); line-height: 1.7; margin: 0 0 16px; }
@@ -6480,7 +6493,7 @@ body.welcome-open { overflow: hidden; }
 
 /* GST / invoice identity notice in Store Settings. */
 .gst-note {
- padding: 12px 14px; font-size: 12px; line-height: 1.7;
+    padding: 12px 14px; font-size: 12px; line-height: 1.7;
     background: var(--bg-surface-soft); border: 1px solid var(--border-light); color: var(--text-secondary);
 }
 .gst-note-warn { color: #b45309; font-weight: 600; }
@@ -6547,7 +6560,7 @@ body.welcome-open { overflow: hidden; }
 /* ── Policy pages ─────────────────────────────────────────────────────────── */
 .legal-value   { font-weight: 600; color: var(--text-primary); }
 .legal-missing {
- display: inline-block; padding: 1px 7px;
+    display: inline-block; padding: 1px 7px;
     background: rgba(217, 119, 6, 0.12); color: #b45309;
     font-weight: 600; font-size: 0.95em;
 }
@@ -6565,7 +6578,7 @@ body.welcome-open { overflow: hidden; }
 .legal-page th       { font-weight: 700; color: var(--text-primary); background: var(--bg-surface-soft); }
 .legal-updated       { font-size: 13px; color: var(--text-muted); margin-bottom: 32px; }
 .legal-toc           { background: var(--bg-surface-soft); border: 1px solid var(--border-light);
- padding: 20px 24px; margin-bottom: 40px; }
+    padding: 20px 24px; margin-bottom: 40px; }
 .legal-toc ol        { margin: 0 0 0 18px; padding: 0; columns: 2; column-gap: 32px; }
 .legal-toc li        { margin-bottom: 6px; break-inside: avoid; }
 .legal-toc a         { color: inherit; text-decoration: none; }
@@ -6598,7 +6611,7 @@ body.welcome-open { overflow: hidden; }
 /* Policy pages: the notice shown when the business identity is not filled in. */
 .legal-gap-notice {
     background: rgba(217, 119, 6, 0.10); border: 1px solid rgba(217, 119, 6, 0.35);
- padding: 16px 20px; margin-bottom: 28px;
+    padding: 16px 20px; margin-bottom: 28px;
     font-size: 14px; line-height: 1.75; color: #92400e;
 }
 .legal-gap-notice strong { display: block; margin-bottom: 4px; color: #7c2d12; }
@@ -6614,7 +6627,7 @@ body.welcome-open { overflow: hidden; }
 .legal-summary {
     background: var(--bg-surface-soft); border: 1px solid var(--border-light);
     border-left: 3px solid var(--color-accent);
- padding: 22px 26px; margin-bottom: 32px;
+    padding: 22px 26px; margin-bottom: 32px;
 }
 .legal-summary h2 { margin: 0 0 12px; font-size: 17px; }
 .legal-summary ul { margin: 0 0 12px 18px; }
@@ -7676,7 +7689,7 @@ body.welcome-open { overflow: hidden; }
 .dv-notice strong { color: var(--dvn-strong, inherit); font-weight: 700; }
 .dv-notice a { color: inherit; text-decoration: underline; font-weight: 600; }
 .dv-notice code {
- background: rgba(0,0,0,0.06); padding: 1px 5px;
+    background: rgba(0,0,0,0.06); padding: 1px 5px;
     font-size: 0.92em;
 }
 

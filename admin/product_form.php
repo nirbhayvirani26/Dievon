@@ -1713,9 +1713,25 @@ require_once __DIR__ . '/includes/header.php';
                                         <?php endif; ?>
                                     </span>
                                 <?php else: ?>
+                                    <?php /* Name the actual cause. These two both end with no
+                                             Convert button, and they need completely different
+                                             things done about them — one is a database migration
+                                             that has never run, the other is a blocked outbound
+                                             request. "Type them by hand" was true for both and
+                                             useful for neither. */ ?>
                                     <span class="pf-fx-note pf-fx-stale">
-                                        No exchange rate on record yet, so prices must be typed in by hand.
-                                        Set or refresh rates under <a href="countries.php" target="_blank">Countries We Sell To</a>.
+                                        <?php if (fxRatesProblem() === 'schema'): ?>
+                                            <strong>The exchange-rate columns are missing from the database.</strong>
+                                            Run <code>update_new_database.php</code> once on this server, then reload
+                                            this page — rates fetch themselves after that. Until then, prices for each
+                                            country have to be typed in by hand.
+                                        <?php else: ?>
+                                            <strong>Could not reach the exchange-rate service,</strong> so there is no
+                                            rate to convert from yet. It retries on its own, but if this keeps showing,
+                                            your host is likely blocking outbound requests — type a rate by hand in the
+                                            Rate column under <a href="countries.php" target="_blank">Countries We Sell To</a>
+                                            and Convert will work from that.
+                                        <?php endif; ?>
                                     </span>
                                 <?php endif; ?>
                             </div>
