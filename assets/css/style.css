@@ -9065,7 +9065,18 @@ main#mainContent:focus { outline: none; }
    An open hand over a draggable rail, closing while it is held, is the
    convention people already know from maps and photo galleries. Scoped to
    .owl-drag so it only appears on rails Owl has actually made draggable — never
-   on a strip that cannot move. */
+   on a strip that cannot move.
+
+   Restored after the redesign: the three selectors were deleted and this comment
+   left behind it, so the rails read as un-draggable again while still dragging
+   perfectly well. The .photo-fan section has its own grab cursor and is not
+   touched by these. */
+.owl-carousel.owl-drag { cursor: grab; }
+.owl-carousel.owl-drag a,
+.owl-carousel.owl-drag img { cursor: grab; }
+.owl-carousel.owl-drag:active,
+.owl-carousel.owl-drag:active a,
+.owl-carousel.owl-drag:active img { cursor: grabbing; }
 
 /* The collections rail's navigation is the shared .dv-pager now. Its old pair
    of outlined squares lived only inside @media (max-width: 768px), which is

@@ -17,6 +17,7 @@ Every item below lives in one of those.
 |---|---|---|
 | Sliders answer a trackpad — two fingers sideways scrolls the rail, and the rail follows the fingers pixel-for-pixel rather than hopping a slide | `includes/footer.php` | Two-finger swipe a rail on a laptop |
 | Sliders can be dragged with a mouse — links and images inside a rail have `draggable="false"`, or the browser's own drag-and-drop eats the gesture | `includes/footer.php`, `assets/css/style.css` | Press a tile and pull |
+| Rails show a grab cursor — check the SELECTOR `.owl-carousel.owl-drag { cursor: grab }` exists, not just the text "cursor: grab", which also appears on the lightbox and photo-fan. The redesign deleted these three rules and left the comment behind, and a text search passed anyway | `assets/css/style.css` | Hover a rail |
 | A sideways swipe on a slider does NOT scroll the page — `touch-action: pan-y` on `.owl-carousel.owl-drag`, its stage and stage-outer | `assets/css/style.css` | Swipe a rail on a phone |
 | Checkout refuses a foreign postcode at the address step, with a red message under the field, not at Place Order | `pages/checkout.php`, `assets/css/style.css` | Type `HA3 8JD` |
 | Section spacing is one value in one place (`responsive.css` line ~11), covering `.section-space` AND `.occasion-banners-section` | `assets/css/responsive.css` | Gaps identical between every homepage section |
