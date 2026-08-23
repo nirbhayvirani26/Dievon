@@ -13362,3 +13362,27 @@ input.chk-input-error:focus {
 .home-categories-grid a img {
     object-position: top;
 }
+
+/* ── Shop by Occasion: no hover zoom on a phone ───────────────────────────────
+   Every other rail on this page already switches its hover gesture off below
+   the breakpoint — New Arrivals at 1024, Collections at 768, the photo fan at
+   767 — and this one was the only rail that never got the same treatment, so
+   it was the only rail whose picture animated while you were dragging it.
+
+   On a touchscreen :hover fires the moment a finger lands and STAYS until
+   something else is touched. So a drag here started a 0.6s scale(1.07) on the
+   photograph under the finger, ran it while the rail was moving, and left the
+   tile zoomed after the finger lifted. That is what made this strip feel
+   heavier than the others: they move the row and nothing else, this one
+   animated a photograph at the same time.
+
+   The tilt and the lift are already gated at 768 and up, so the picture zoom
+   was all that was left to switch off. The desktop gesture is untouched. */
+@media (max-width: 767px) {
+    .occasion-slider .occasion-tile:hover .occasion-tile-img,
+    .occasion-slider .occasion-tile:focus-visible .occasion-tile-img,
+    .occasion-slider .occasion-tile:focus-within .occasion-tile-img,
+    .occasion-tile:hover .occasion-tile-img {
+        transform: none;
+    }
+}

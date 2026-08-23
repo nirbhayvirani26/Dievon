@@ -79,3 +79,12 @@ Every item below lives in one of those.
 - **Two copies of one rule drift.** The fabric check was fixed in the publish path and stayed broken on the SEO page for weeks.
 - **One scroll-lock owner.** Use `dievonScrollLock.lock/unlock`, never `body.style.overflow`.
 - **Deploy excludes `uploads/` and `assets/images/`.** Add/overwrite only — mirror wipes live photographs.
+- **A new rail needs its hover gesture switched OFF on a phone.** `:hover` sticks after a tap on
+  a touchscreen, so a hover zoom starts under the finger, animates through the whole drag and
+  stays on after release — the rail reads as sluggish while the others feel clean. New Arrivals
+  kills it at 1024, Collections at 768, the photo fan and Shop by Occasion at 767. Shop by
+  Occasion was the one rail that never got the block, which is exactly how it was spotted.
+- **Never pass a literal speed to `to.owl.carousel`.** `[next, 300]` silently overrides the
+  rail's `smartSpeed`, so raising smartSpeed fixes only the drag-release path while every arrow
+  press keeps the old speed. Shop by Occasion and Collections both did this: built at 500,
+  arrowing at 300, beside New Arrivals at 500 and the fan at 620. Read `o.settings.smartSpeed`.

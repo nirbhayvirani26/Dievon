@@ -1632,7 +1632,19 @@ if ($occasions) {
                 if (!o) { window.dvRail.go(rail, delta); return; }
                 var total = o.maximum() + 1;
                 var next  = ((o.current() + delta) % total + total) % total;
-                window.jQuery(rail).trigger('to.owl.carousel', [next, 300]);
+                /* The rail's OWN speed, not a number written here.
+                   ────────────────────────────────────────────────────────────
+                   This passed 300, which overrode the 500 the rail is built
+                   with and made the arrow move this strip at roughly twice the
+                   speed of New Arrivals (500) and the photo fan (620) — the
+                   two rails it sits between. smartSpeed was raised to 500 for
+                   exactly that reason, but only the drag-release path reads it;
+                   an explicit third argument here beat it on every arrow press,
+                   so the strip still jumped where the others glided.
+
+                   Reading it off the instance means the two can no longer drift
+                   apart the way they just did. */
+                window.jQuery(rail).trigger('to.owl.carousel', [next, o.settings.smartSpeed]);
             },
             onMove: function (cb) {
                 /* Owl announces every settle, including the ones a drag causes,
@@ -2309,7 +2321,9 @@ $occIsMen = function_exists('currentShopGender') && currentShopGender() === 'men
                 if (!o) { window.dvRail.go(rail, delta); return; }
                 const total = o.maximum() + 1;
                 const next  = ((o.current() + delta) % total + total) % total;
-                jQuery(rail).trigger("to.owl.carousel", [next, 300]);
+                // Same 300-over-500 override Shop by Occasion had; see the note
+                // on that rail's go(). The rail's own smartSpeed, not a literal.
+                jQuery(rail).trigger("to.owl.carousel", [next, o.settings.smartSpeed]);
             },
             onMove: function (cb) {
                 rail.addEventListener("scroll", cb, { passive: true });
