@@ -12786,9 +12786,19 @@ input.chk-input-error:focus {
    `.owl-carousel.owl-loaded { padding-left: 0 !important }` that has since been
    removed — worth knowing if that ever comes back from a vendor update, because
    the symptom is this padding silently doing nothing at any specificity. */
-.occasion-bar-section .occasion-slider.owl-loaded,
 .new-arrivals-section .na-gallery.owl-loaded {
     padding-left: calc((100vw - min(100vw, 1440px)) / 2 + var(--dv-gutter));
+    padding-right: 0;
+}
+
+/* Shop by Occasion runs the full width of the screen.
+   ────────────────────────────────────────────────────────────────────────────
+   Edge to edge, both sides, at every width — no page gutter on the left and
+   nothing holding the row back on the right, so the strip reads as continuing
+   past the screen rather than as a row that ends. The heading above it keeps
+   the page gutter; only the photographs bleed. */
+.occasion-bar-section .occasion-slider.owl-loaded {
+    padding-left: 0;
     padding-right: 0;
 }
 .occasion-slider .occasion-tile { margin-inline: 0; }
@@ -12799,7 +12809,6 @@ input.chk-input-error:focus {
     /* Only the page inset changes down here. The gutter does NOT — 22 is 22 on
        a phone and on a desktop, or the rows stop matching at the one size where
        the difference is most obvious. */
-    .occasion-bar-section .occasion-slider.owl-loaded,
     .new-arrivals-section .na-gallery.owl-loaded { padding-left: 16px; }
 }
 
