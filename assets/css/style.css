@@ -12271,7 +12271,6 @@ input.chk-input-error:focus {
         flex: 0 0 auto;
         transition: width 500ms cubic-bezier(0.4, 0, 0.2, 1);
     }
-    .na-gallery.owl-loaded.na-sliding .owl-item { transition: none; }
 
     /* The open panel carries the caption, as it always did: a 239px strip has
        no room for a name and a price, and four captions competing is the card

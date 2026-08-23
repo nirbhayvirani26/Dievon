@@ -918,6 +918,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var railQuery = window.matchMedia('(min-width: 1025px)');
     var OPEN_SHARE = 0.5;          // the open panel's share of the row
 
+    function owlOf()    { return $g.data('owl.carousel'); }
     function naItems()  { return $g.find('.owl-item').toArray(); }
     function naActive() { return naItems().filter(function (i) { return i.classList.contains('active'); }); }
 
@@ -946,7 +947,12 @@ document.addEventListener('DOMContentLoaded', function () {
     /* hovered is the item the pointer is over, or null for the resting state,
        in which the open one is the first on screen — the same rule the flex
        version used for the first panel of each page. */
-    function naLayout(hovered) {
+    /* startAt is the index the row is moving TO. Passed in when the layout has
+       to run before Owl has updated its own .active classes — which is the case
+       for every arrow press and every trackpad step, because the widths have to
+       start moving at the same moment the stage does. Left out, the window is
+       read from the classes, which is right for hover and for resize. */
+    function naLayout(hovered, startAt) {
         var items = naItems();
 
         /* Below the breakpoint Owl shows one garment at a time and there is
@@ -955,8 +961,12 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!railQuery.matches) { naRelease(); return; }
 
         var view    = gallery.clientWidth;
-        var actives = naActive();
-        var quarter = view / actives.length;
+        var per     = Math.max(1, Math.round((owlOf() || {}).settings ? owlOf().settings.items : 4));
+        var actives = (typeof startAt === 'number')
+            ? items.slice(startAt, startAt + per)
+            : naActive();
+        if (!actives.length) { actives = naActive(); }
+        var quarter = view / (per || actives.length);
 
         /* Fewer on screen than a full window — a short catalogue, or a moment
            mid-refresh. Equal widths still satisfy the invariant, and there is no
@@ -989,23 +999,29 @@ document.addEventListener('DOMContentLoaded', function () {
         if (item) { naLayout(item); }
     });
 
-    /* Owl's slide and the width transition are both 500ms and ran against each
-       other: the open slot moved to a new panel halfway through the translate
-       and the row visibly kneaded itself. Widths hold still for the move, then
-       the new window lays itself out. */
-    var slideTimer;
-    $g.on('translate.owl.carousel', function () {
-        gallery.classList.add('na-sliding');
-        window.clearTimeout(slideTimer);
-        slideTimer = window.setTimeout(function () {
-            gallery.classList.remove('na-sliding');
-        }, 560);
+    /* The widths move WITH the slide, not after it.
+       ────────────────────────────────────────────────────────────────────────
+       They used to be frozen for the length of the translate and then applied
+       in one go — which read as a blink: the row was still gliding when the
+       incoming panel snapped from a third of its width to full, and the
+       outgoing one collapsed in the same frame.
+
+       Both animations are 500ms, so they simply run together. That means
+       starting the widths at the moment the stage starts, which is BEFORE Owl
+       has moved its .active classes — hence the explicit index. The end state
+       is identical either way (item k begins k quarters in, because everything
+       before it is an inactive quarter), so the two arrive together and nothing
+       jumps at the finish. */
+    $g.on('changed.owl.carousel', function (e) {
+        if (!e.property || e.property.name !== 'position') { return; }
+        var owl = owlOf();
+        if (!owl) { return; }
+        naLayout(null, Math.max(0, owl.relative(e.property.value)));
     });
 
-    /* After every move, and after Owl re-measures at a new width — Owl rewrites
-       the inline widths itself on both, so the layout has to be re-applied or
-       the row silently returns to four equal quarters. */
-    $g.on('changed.owl.carousel', function () { window.setTimeout(function () { naLayout(null); }, 0); });
+    /* And once more when the move has landed, reading the classes this time —
+       cheap, and it is the resync if anything above was a frame out. */
+    $g.on('translated.owl.carousel', function () { naLayout(null); });
     $g.on('resized.owl.carousel refreshed.owl.carousel', function () { naLayout(null); });
 
     var naResizeTimer;
