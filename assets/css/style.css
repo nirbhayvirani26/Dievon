@@ -13311,3 +13311,43 @@ input.chk-input-error:focus {
 #heroSlider .btn-luxury-outline {
     cursor: pointer;
 }
+
+/* ── The text links inside a slide keep the pointer ───────────────────────────
+   The slide itself reads as the arrow — it is a photograph, and the row is
+   scrolled rather than clicked through. But the small worded links sitting on
+   it are a different thing: "Details", "View Collection", "Explore" are the
+   written invitation to click, they are underlined and coloured to say so, and
+   an arrow over them contradicts what they look like.
+
+   So: photograph arrow, words pointer. */
+/* Each carries .owl-carousel.owl-drag where the slide rule does, so these
+   out-rank it — the slide rule is (0,4,0) and a plain `.na-gallery
+   .product-card-cta` at (0,2,0) lost to it, which is why Details kept the
+   arrow while Explore and View Collection had already taken the pointer. */
+.na-gallery.owl-carousel.owl-drag .product-card-cta,
+.na-gallery .product-card-cta,
+.occasion-slider.owl-carousel.owl-drag .occasion-tile-cta,
+.occasion-slider .occasion-tile-cta,
+.home-categories-grid.owl-carousel.owl-drag .category-card-link,
+.home-categories-grid .category-card-link,
+.photo-fan-section .pf-track.owl-carousel.owl-drag .product-card-cta,
+.photo-fan-section .pf-card .product-card-cta,
+#heroSlider.owl-carousel.owl-drag .slide-content a,
+#heroSlider .slide-content a {
+    cursor: pointer;
+}
+
+/* ── Two collections should not look lost on a phone ──────────────────────────
+   Centring a short row stopped it hugging the left edge, but two tiles at their
+   normal 2.3-across width are 136px each on a 375px screen — a third of the
+   screen between two margins, which reads as small rather than deliberate.
+
+   So a short row grows as well as centring: one collection takes two thirds of
+   the screen, two take a bit under half each. They still do not stretch to fill
+   the rail edge to edge — that is what made a tile's size depend on how many
+   the shop happened to have — but they are sized for a phone rather than for a
+   row of five that never arrived. */
+@media (max-width: 768px) {
+    .home-categories-grid.owl-loaded[data-count="1"] .category-card { width: 67vw; }
+    .home-categories-grid.owl-loaded[data-count="2"] .category-card { width: 44vw; }
+}
