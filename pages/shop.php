@@ -1028,6 +1028,39 @@ $activeSearch = trim((string)($_GET['search'] ?? $_GET['q'] ?? ''));
    top-level categories", which is what an empty or failed list amounts to. */
 $categoryFilterIsSubLevel = false;
 
+/* What narrows THIS page, as SQL the filter lists can reuse.
+   ────────────────────────────────────────────────────────────────────────────
+   The sidebar was built from the whole catalogue on every page. On
+   /shop?sale=1 that meant one discounted product beneath a sidebar offering 12
+   colours, 12 occasions and 3 fabrics — almost every tick landing on "no
+   products found". The grid was scoped and the filters were not, so the two
+   disagreed about what the page contained.
+
+   This is the same fault the comment above $liveWhere already describes for
+   gender, and the same fault as the first-page/AJAX split fixed alongside the
+   sub-category filter: two things computed from different sets of products.
+
+   Returns '' on the plain shop, so nothing changes where nothing is narrowed.
+   Takes an alias because the colour list reaches products through a join. */
+$shopPageScopeSql = static function (string $alias = '') use ($pdo): string {
+    $t   = $alias !== '' ? $alias . '.' : '';
+    $sql = '';
+    if (!empty($_GET['sale'])) {
+        $sql .= " AND {$t}mrp_price IS NOT NULL AND {$t}mrp_price > {$t}price";
+    }
+    // A collection page: only values the products in that collection carry.
+    $catName = trim((string)($_GET['category'] ?? ''));
+    if ($catName !== '' && function_exists('categoryIdsForNames')) {
+        try {
+            $ids = categoryIdsForNames($pdo, [$catName]);
+            if ($ids) {
+                $sql .= " AND {$t}category_id IN (" . implode(',', array_map('intval', $ids)) . ")";
+            }
+        } catch (Throwable $e) { /* leave the list broad rather than empty */ }
+    }
+    return $sql;
+};
+
 try {
     $categories = $pdo->query("SELECT * FROM categories ORDER BY sort_order ASC, name ASC")->fetchAll();
     // Only the side of the shop being browsed. Without this the men's filter
@@ -1061,6 +1094,34 @@ try {
                 // Never hide a category because the count failed — a visible
                 // filter that returns nothing beats a category nobody can reach.
                 return true;
+            }
+        }));
+    }
+
+    /* On a narrowed page, only categories that still hold something.
+       ────────────────────────────────────────────────────────────────────────
+       categorySeo() counts a category across the WHOLE catalogue, which is right
+       for the category pages and the sitemap that also use it, and wrong here:
+       on /shop?sale=1 it kept every category that has any product at all, so the
+       sidebar offered categories with nothing discounted in them.
+
+       Counted directly rather than through categorySeo(), because the count
+       needed here is "within this page", which is not what that helper means. */
+    $scopeForCounts = $shopPageScopeSql();
+    if ($categories && $scopeForCounts !== '') {
+        $categories = array_values(array_filter($categories, function ($c) use ($pdo, $scopeForCounts) {
+            try {
+                $ids = categoryIdsForNames($pdo, [(string)$c['name']]);
+                if (!$ids) { return true; }
+                $in  = implode(',', array_map('intval', $ids));
+                $n   = (int)$pdo->query(
+                    "SELECT COUNT(*) FROM products
+                      WHERE available = 1 AND (is_deleted = 0 OR is_deleted IS NULL)
+                        AND category_id IN ($in)" . $scopeForCounts
+                )->fetchColumn();
+                return $n > 0;
+            } catch (Throwable $e) {
+                return true;   // broad beats empty
             }
         }));
     }
@@ -1147,7 +1208,7 @@ try {
             "SELECT DISTINCT brand FROM products
               WHERE brand IS NOT NULL AND brand <> ''
                 AND available = 1 AND (is_deleted = 0 OR is_deleted IS NULL)
-                $brandGenderSql
+                $brandGenderSql" . $shopPageScopeSql() . "
            ORDER BY brand ASC"
         )->fetchAll(PDO::FETCH_COLUMN);
     } catch (PDOException $e) {
@@ -1236,18 +1297,18 @@ try {
         "SELECT DISTINCT color AS c FROM products
           WHERE color IS NOT NULL AND color <> ''
             AND available = 1 AND (is_deleted = 0 OR is_deleted IS NULL)
-            $colorGenderSql",
+            $colorGenderSql" . $shopPageScopeSql(),
         "SELECT DISTINCT color_way AS c FROM products
           WHERE color_way IS NOT NULL AND color_way <> ''
             AND available = 1 AND (is_deleted = 0 OR is_deleted IS NULL)
-            $colorGenderSql",
+            $colorGenderSql" . $shopPageScopeSql(),
         "SELECT DISTINCT pc.color_name AS c
            FROM product_colors pc
            JOIN products p ON p.id = pc.product_id
           WHERE pc.color_name IS NOT NULL AND pc.color_name <> ''
             AND pc.is_active = 1
             AND p.available = 1 AND (p.is_deleted = 0 OR p.is_deleted IS NULL)
-            " . shopGenderSqlFilter('p'),
+            " . shopGenderSqlFilter('p') . $shopPageScopeSql('p'),
     ];
     foreach ($colorSources as $colorSql) {
         try {
@@ -1380,7 +1441,10 @@ try {
     // chips (Brocade, Georgette, Linen, Rayon, Rib Knit, Satin, Silk) plus
     // womenswear-only Boat Neck, Scoop Neck, Resort and Party — more than half
     // the sidebar answering an empty grid.
-    $liveWhere = "available = 1 AND (is_deleted = 0 OR is_deleted IS NULL)" . shopGenderSqlFilter();
+    // ...and scoped to what this page is showing, for the same reason: a chip
+    // that cannot match anything on the page it sits beside is not a filter.
+    $liveWhere = "available = 1 AND (is_deleted = 0 OR is_deleted IS NULL)"
+               . shopGenderSqlFilter() . $shopPageScopeSql();
 
     /* One helper, one guard per list.
        ────────────────────────────────────────────────────────────────────────
