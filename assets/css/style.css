@@ -11717,12 +11717,17 @@ input.chk-input-error:focus {
     }
     .photo-fan-section .pf-card:hover { transform: none; }   /* the item drives it, not the card */
 
-    /* -3, -1, 1, 3 and repeat. nth-child(4n) rather than a class per print, so the
-       pattern continues however many products the tab holds. */
-    .photo-fan-section .pf-item:nth-child(4n + 1) .pf-card { transform: rotate(-3deg); }
-    .photo-fan-section .pf-item:nth-child(4n + 2) .pf-card { transform: rotate(-1deg); }
-    .photo-fan-section .pf-item:nth-child(4n + 3) .pf-card { transform: rotate(1deg); }
-    .photo-fan-section .pf-item:nth-child(4n + 4) .pf-card { transform: rotate(3deg); }
+    /* The tilt used to live here as .pf-item:nth-child(4n+k). It does not any
+       more: Owl wraps every print in its own .owl-item, so each .pf-item became
+       an only child and ALL of them matched 4n+1 — the whole fan straightened
+       out. The pattern moved to the wrapper, where the siblings actually are
+       (search for `.owl-item:nth-child(5n` further down this file).
+
+       These four rules were left behind. They still matched every print, and
+       only lost because the replacement out-ranks them on specificity — so the
+       fan was one selector away from silently flattening again, while the
+       comment above them claimed they were what produced it. Removed rather
+       than left as a trap for whoever reads this next. */
 
     .photo-fan-section .pf-card .card-img-container {
         position: relative;

@@ -184,9 +184,10 @@ $cardUrl = productUrl($cardProduct['id'], $cardProduct['name'], $cardProduct['se
                          <?php if ($cardHoverWebp): ?>data-webp="<?= htmlspecialchars($cardHoverWebp) ?>"<?php endif; ?>>
                 <?php endif; ?>
             <?php elseif (!empty($cardProduct['video_url'])):
-                $cardVid = trim((string)$cardProduct['video_url']);
-                $cardVidSrc = (str_starts_with($cardVid, 'http://') || str_starts_with($cardVid, 'https://'))
-                    ? $cardVid : SITE_URL . '/uploads/products/' . $cardVid;
+                // Shared resolver — see dievonVideoSrc(). Same rule everywhere a
+                // product video is rendered, including the https upgrade that
+                // stops a plain-http URL being blocked on a secure page.
+                $cardVidSrc = dievonVideoSrc($cardProduct['video_url'] ?? '');
             ?>
                 <video src="<?= htmlspecialchars($cardVidSrc) ?>" autoplay loop muted playsinline class="card-img"></video>
             <?php else: ?>

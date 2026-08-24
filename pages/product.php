@@ -850,7 +850,10 @@ require_once __DIR__ . '/../includes/header.php';
                         ?>
                             <iframe class="gallery-grid-video" src="https://www.youtube-nocookie.com/embed/<?= $ytId ?>?autoplay=0&mute=1&loop=1&playlist=<?= $ytId ?>" frameborder="0" allow="encrypted-media" allowfullscreen></iframe>
                         <?php else: ?>
-                            <?php $videoSrc = (strpos($vUrl, 'http://') === 0 || strpos($vUrl, 'https://') === 0) ? $vUrl : SITE_URL . '/uploads/products/' . $vUrl; ?>
+                            <?php /* Shared resolver: also upgrades a plain http:// address on an
+                                 https page, which the browser would otherwise block as mixed
+                                 content and report as an unsupported format. */ ?>
+                        <?php $videoSrc = dievonVideoSrc($vUrl); ?>
                             <video class="gallery-grid-video" src="<?= htmlspecialchars($videoSrc) ?>" autoplay loop muted playsinline controls></video>
                         <?php endif; ?>
                     </div>
@@ -1614,7 +1617,7 @@ require_once __DIR__ . '/../includes/header.php';
                         </button>
                         <div class="product-accordion-content">
                             <video style="width: 100%; max-height: 400px; object-fit: cover; border: 1px solid var(--border-light);" controls>
-                                <source src="<?= htmlspecialchars($product['video_url']) ?>" type="video/mp4">
+                                <source src="<?= htmlspecialchars(dievonVideoSrc($product['video_url'] ?? '')) ?>" type="video/mp4">
                                 Your browser does not support the video tag.
                             </video>
                         </div>
@@ -2577,7 +2580,10 @@ document.addEventListener('keydown', e => {
                     ?>
                         <iframe class="gallery-grid-video" src="https://www.youtube-nocookie.com/embed/<?= $ytId ?>?autoplay=0&mute=1&loop=1&playlist=<?= $ytId ?>" frameborder="0" allow="encrypted-media" allowfullscreen></iframe>
                     <?php else: ?>
-                        <?php $videoSrc = (strpos($vUrl, 'http://') === 0 || strpos($vUrl, 'https://') === 0) ? $vUrl : SITE_URL . '/uploads/products/' . $vUrl; ?>
+                        <?php /* Shared resolver: also upgrades a plain http:// address on an
+                                 https page, which the browser would otherwise block as mixed
+                                 content and report as an unsupported format. */ ?>
+                        <?php $videoSrc = dievonVideoSrc($vUrl); ?>
                         <video class="gallery-grid-video" src="<?= htmlspecialchars($videoSrc) ?>" autoplay loop muted playsinline controls></video>
                     <?php endif; ?>
                 </div>`;

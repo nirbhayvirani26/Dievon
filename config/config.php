@@ -7476,3 +7476,39 @@ function dievonColorWayChecklist(PDO $pdo, ?string $current): string {
     }
     return $html . '</div>';
 }
+
+/* ── A product video that the browser will actually load ──────────────────────
+ * video_url holds either an uploaded filename or an absolute URL, and the three
+ * places that render it each rebuilt that decision by hand. One of them dropped
+ * a plain http:// address straight into an https:// page, where the browser
+ * blocks it as mixed content and the player reports "No video with supported
+ * format and MIME type found" — which reads as a broken file rather than a
+ * blocked request, so it is easy to chase the wrong thing. Seen on this shop's
+ * own products, which point at an http:// sample video.
+ *
+ * The upgrade to https is applied ONLY when the page itself is served over
+ * https. On a plain-http page nothing is blocked, and rewriting there could
+ * break a host that genuinely has no certificate — so the rule can only ever
+ * help, never take away a video that was working.
+ *
+ * YouTube links are not this function's business: those are turned into an
+ * embed by the caller and never reach a <video> element.
+ */
+function dievonVideoSrc(?string $raw): string {
+    $url = trim((string)$raw);
+    if ($url === '') { return ''; }
+
+    $isAbsolute = str_starts_with($url, 'http://') || str_starts_with($url, 'https://');
+    if (!$isAbsolute) {
+        return SITE_URL . '/uploads/products/' . $url;
+    }
+
+    $pageIsHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https')
+        || (($_SERVER['SERVER_PORT'] ?? '') === '443');
+
+    if ($pageIsHttps && str_starts_with($url, 'http://')) {
+        return 'https://' . substr($url, 7);
+    }
+    return $url;
+}
