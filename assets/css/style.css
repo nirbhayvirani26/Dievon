@@ -5235,7 +5235,9 @@ body.admin-wrapper {
     .product-gallery-grid {
         display: flex;
         grid-template-columns: none;
-        gap: 0;
+        /* Paired with the slide width below: the gap is the breathing space
+           between the current photograph and the one peeking in after it. */
+        gap: 8px;
         overflow-x: auto;
         scroll-snap-type: x mandatory;
         -webkit-overflow-scrolling: touch;
@@ -5245,7 +5247,16 @@ body.admin-wrapper {
     .product-gallery-grid::-webkit-scrollbar { display: none; }
     .gallery-grid-item {
         aspect-ratio: 3 / 4;
-        flex: 0 0 100%;
+        /* A slide stops short of the full width so the NEXT photograph shows
+           at the right edge. A slider that ends exactly at the screen edge
+           looks like a single static picture — nothing tells the shopper there
+           are four more. The peeking sliver is what says "swipe me", and it
+           says it without an arrow or a caption.
+           84px = 8px gap + 76px of the next photograph. Nothing in the JS
+           hardcodes that number — the slide counter and the arrows measure the
+           real slide pitch off the DOM — so this stays the single place the
+           peek is tuned. */
+        flex: 0 0 calc(100% - 84px);
         scroll-snap-align: start;
         border: none;
     }
@@ -5253,6 +5264,10 @@ body.admin-wrapper {
         grid-column: unset;
         max-width: none;
         margin: 0;
+        /* Nothing to peek at when there is only one photograph, so take the
+           full width back — otherwise the peek gap became 84px of dead
+           background beside the only picture the product has. */
+        flex: 0 0 100%;
     }
     .product-gallery-slide-counter {
         display: flex;

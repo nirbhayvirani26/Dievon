@@ -2779,10 +2779,32 @@ document.addEventListener('keydown', e => {
         counter.innerHTML = Array.from(slides).map((_, i) => `<span class="dot${i === 0 ? ' active' : ''}"></span>`).join('');
     }
 
+    /* How far it is from one slide to the next, in pixels.
+       ────────────────────────────────────────────────────────────────────
+       This used to be assumed to be grid.clientWidth, which was true only
+       while a slide filled the viewport exactly. It no longer does: a slide
+       stops 84px short so the next photograph peeks in (see the responsive
+       CSS), so the pitch is ~290px where clientWidth is 366px.
+       Dividing by the wrong one silently lit dot 3 on slide 4 and dot 4 on
+       slide 5 — the error accumulates, so it looked fine for the first few
+       photographs and only went wrong further along.
+       Measured off two real slides rather than recomputed from the peek
+       constant, so the CSS stays the only place the peek is tuned. */
+    function gallerySlidePitch(grid) {
+        const slides = grid.querySelectorAll('.gallery-grid-item');
+        if (slides.length > 1) {
+            const pitch = slides[1].offsetLeft - slides[0].offsetLeft;
+            // Guard the desktop grid, where slide 2 sits on the next row and
+            // the difference is 0 or negative.
+            if (pitch > 0) return pitch;
+        }
+        return (slides[0] && slides[0].getBoundingClientRect().width) || grid.clientWidth;
+    }
+
     function navGallerySlide(direction) {
         const grid = document.getElementById('productGalleryGrid');
         if (!grid || !grid.clientWidth) return;
-        grid.scrollBy({ left: direction * grid.clientWidth, behavior: 'smooth' });
+        grid.scrollBy({ left: direction * gallerySlidePitch(grid), behavior: 'smooth' });
     }
     (function () {
         const grid = document.getElementById('productGalleryGrid');
@@ -2795,7 +2817,9 @@ document.addEventListener('keydown', e => {
             scrollTimer = setTimeout(() => {
                 const dots = counter.querySelectorAll('.dot');
                 if (!dots.length || !grid.clientWidth) return;
-                const idx = Math.max(0, Math.min(dots.length - 1, Math.round(grid.scrollLeft / grid.clientWidth)));
+                const pitch = gallerySlidePitch(grid);
+                if (!pitch) return;
+                const idx = Math.max(0, Math.min(dots.length - 1, Math.round(grid.scrollLeft / pitch)));
                 dots.forEach((d, i) => d.classList.toggle('active', i === idx));
             }, 60);
         }, { passive: true });
