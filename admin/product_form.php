@@ -3396,7 +3396,17 @@ require_once __DIR__ . '/includes/header.php';
                          a dead end here — the link says where to add it and comes
                          back to this product. */ ?>
                 <span style="display:flex; flex-direction:column; gap:3px; flex:1; min-width:140px;">
-                    <select id="newColorName" class="form-control"><?= dievonColorOptions($pdo, '', '— Select a colour —') ?></select>
+                    <?php /* Search above the picker for the same reason Color Way has one:
+                             a native <select> lets you type to JUMP, but only by prefix and
+                             invisibly, so it cannot find "Bottle Green" from "green". This
+                             filters the list instead. It rebuilds the select's options rather
+                             than hiding them, because `option { display:none }` is ignored by
+                             Safari — and it stays a real <select>, so the phone's native
+                             picker, the keyboard and the form post all keep working. */ ?>
+                    <input type="search" class="form-control dv-colour-search" data-colour-search="new"
+                           placeholder="Search colours&hellip;" autocomplete="off"
+                           style="padding:6px 10px; font-size:12.5px;">
+                    <select id="newColorName" class="form-control" data-colour-search-target="new"><?= dievonColorOptions($pdo, '', '— Select a colour —') ?></select>
                     <a href="attributes.php?type=colors" target="_blank" rel="noopener"
                        style="font-size:11px; color:var(--text-muted); text-decoration:underline;">
                         Colour not listed? Add it in the Color tab &rarr;
@@ -4350,6 +4360,58 @@ function removeNewSelectedImage(index) {
 function escHtml(str) {
     return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
+
+/* Colour search: filter a list without changing what is chosen.
+   ────────────────────────────────────────────────────────────────────────────
+   Two shapes to serve. Color Way is a set of checkboxes, so filtering is just
+   showing and hiding labels — and hiding a TICKED one is deliberate: it stays
+   ticked and still posts, because a search is a way of looking, not of
+   unchoosing.
+
+   The variant picker is a real <select>, and its options are REBUILT rather
+   than hidden: Safari ignores `display:none` on an <option>, so hiding would
+   work in Chrome and quietly fail there. The full list is kept in memory and
+   the currently selected colour is always re-added even when it does not match
+   the search, or typing after choosing would throw the choice away. */
+(function () {
+    function wire(box) {
+        var key = box.getAttribute('data-colour-search');
+        var target = document.querySelector('[data-colour-search-target="' + key + '"]');
+        if (!target) { return; }
+
+        if (target.tagName === 'SELECT') {
+            var all = Array.prototype.map.call(target.options, function (o) {
+                return { value: o.value, text: o.text };
+            });
+            box.addEventListener('input', function () {
+                var q = box.value.trim().toLowerCase();
+                var keep = target.value;
+                target.innerHTML = '';
+                all.forEach(function (o) {
+                    var isPlaceholder = o.value === '';
+                    if (q && !isPlaceholder && o.text.toLowerCase().indexOf(q) === -1 && o.value !== keep) { return; }
+                    var opt = document.createElement('option');
+                    opt.value = o.value; opt.text = o.text;
+                    target.appendChild(opt);
+                });
+                target.value = keep;
+            });
+            return;
+        }
+
+        var labels = Array.prototype.slice.call(target.querySelectorAll('label'));
+        box.addEventListener('input', function () {
+            var q = box.value.trim().toLowerCase();
+            labels.forEach(function (l) {
+                var ticked = l.querySelector('input') && l.querySelector('input').checked;
+                l.style.display = (!q || ticked || l.textContent.toLowerCase().indexOf(q) > -1) ? '' : 'none';
+            });
+        });
+    }
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('[data-colour-search]').forEach(wire);
+    });
+})();
 
 // ── Colour Variant Management ──────────────────────────────────
 function addColor(productId) {

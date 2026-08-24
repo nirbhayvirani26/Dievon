@@ -1560,9 +1560,6 @@ if (function_exists('currentShopGender') && currentShopGender() === 'men') {
                                   // Colours & Sizes. The name is always shown as well, never replaced
                                   // by the chip — a swatch alone is unreadable to a screen reader and
                                   // ambiguous between two similar shades. ?>
-                            <?php if (!empty($colorHexMap[$c])): ?>
-                                <span class="filter-color-chip" style="background: <?= htmlspecialchars($colorHexMap[$c]) ?>;" aria-hidden="true"></span>
-                            <?php endif; ?>
                             <?= htmlspecialchars($c) ?>
                         </label>
                     <?php endforeach; ?>

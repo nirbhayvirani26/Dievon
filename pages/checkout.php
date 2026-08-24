@@ -819,6 +819,23 @@ function applyShippingZone() {
     const codLabel  = document.getElementById('pmCodLabel');
     const codRadio  = document.getElementById('pmCodRadio');
 
+    /* The error under the postcode field, on every keystroke.
+       ────────────────────────────────────────────────────────────────────────
+       The amber note below explains the delivery METHOD; this one belongs to the
+       field that is wrong, and appears as it is typed. Waiting for Continue meant
+       filling in a whole address before being told the first line of it could
+       never work.
+
+       Declared HERE, with the other lookups, not further down. It was a `const`
+       below the no-postcode branch that reads it, and a const is in its temporal
+       dead zone for the whole function until the line that declares it — so
+       arriving at checkout with the field still empty threw
+       "Cannot access 'pcErr' before initialization" and abandoned the rest of
+       this function, leaving the shipping note uninitialised. It healed itself
+       as soon as a postcode was typed, because that path skips the branch, which
+       is exactly why it went unnoticed. */
+    const pcErr = document.getElementById('postcodeError');
+
     if (!zone) {                                   // no postcode yet — leave as-is
         if (pcErr) { pcErr.hidden = true; }
         if (pcEl)  { pcEl.classList.remove('chk-input-error'); }
@@ -827,14 +844,6 @@ function applyShippingZone() {
     }
 
     const domestic = zone === 'domestic';
-
-    /* The error under the postcode field, on every keystroke.
-       ────────────────────────────────────────────────────────────────────────
-       The amber note below explains the delivery METHOD; this one belongs to
-       the field that is wrong, and appears as it is typed. Waiting for Continue
-       meant filling in a whole address before being told the first line of it
-       could never work. */
-    const pcErr = document.getElementById('postcodeError');
 
     /* Not a foreign order — an address we cannot serve. The controls stay in
        their normal domestic state so the page is never left with nothing to
