@@ -119,6 +119,24 @@ try {
         $pdo->exec("ALTER TABLE `customers` ADD COLUMN `email_verify_sent_at` DATETIME DEFAULT NULL");
     } catch (PDOException $e) {}
 
+    /* Color Way holds a LIST now, so 100 characters is no longer enough.
+       ────────────────────────────────────────────────────────────────────────
+       A garment that IS two or three colours stores them comma separated, and
+       varchar(100) fitted only eight of the shop's own colour names before MySQL
+       cut the value — mid-name, producing a colour that matches nothing and no
+       error to say so. 255 is the same storage cost in InnoDB for the values
+       actually held; only the declared ceiling moves.
+
+       Guarded by SHOW COLUMNS so it runs once rather than on every request, and
+       widened only — never narrowed, which could truncate real data. */
+    try {
+        $cwCol = $pdo->query("SHOW COLUMNS FROM `products` LIKE 'color_way'")->fetch();
+        if ($cwCol && preg_match('/varchar\((\d+)\)/i', (string)($cwCol['Type'] ?? ''), $m)
+            && (int)$m[1] < 255) {
+            $pdo->exec("ALTER TABLE `products` MODIFY `color_way` VARCHAR(255) DEFAULT NULL");
+        }
+    } catch (PDOException $e) {}
+
     // Auto-ensure product_images table exists
     try {
         $pdo->exec("CREATE TABLE IF NOT EXISTS `product_images` (

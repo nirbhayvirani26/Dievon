@@ -7410,7 +7410,21 @@ function dievonNormaliseColorWay(PDO $pdo, $posted): string {
         }
         if (!in_array($canonical, $clean, true)) { $clean[] = $canonical; }
     }
-    return implode(',', $clean);
+
+    /* Never hand the column more than it can hold.
+       ────────────────────────────────────────────────────────────────────────
+       MySQL truncates a too-long value silently, and it would cut mid-name —
+       leaving a final "colour" that is half a word and matches nothing in the
+       filter. Dropping whole colours off the end instead keeps every value that
+       survives a real, findable one. config/db.php widens the column to 255 on
+       first run; this is the belt to that pair of braces, and it is what stops a
+       shop with very long colour names losing the end of its list quietly. */
+    $joined = implode(',', $clean);
+    while (strlen($joined) > 255 && count($clean) > 1) {
+        array_pop($clean);
+        $joined = implode(',', $clean);
+    }
+    return $joined;
 }
 
 /** "Purple,Gold" as a person reads it. */
