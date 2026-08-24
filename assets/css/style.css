@@ -5374,7 +5374,10 @@ body.admin-wrapper {
         width: 36px;
         padding: 0;
         border: 1px solid var(--border-light);
-        border-radius: 50%;
+        /* Square, matching the .gallery-nav buttons these replaced — a
+           browser's default button rounding would have crept in otherwise,
+           and the shop's arrows are square everywhere else. */
+        border-radius: 0;
         background: rgba(255, 255, 255, 0.85);
         color: var(--text-primary);
         font-size: 14px;
