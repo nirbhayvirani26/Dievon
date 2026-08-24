@@ -7520,7 +7520,7 @@ const DIEVON_ATTR_TYPES = [
                   'columns' => ['products.color', 'products.color_way', 'product_colors.color_name']],
     'sleeve'  => ['label' => 'Sleeve',  'plural' => 'Sleeves',  'tab' => 'sleeves',
                   'columns' => ['products.sleeve']],
-    'neck'    => ['label' => 'Neck',    'plural' => 'Necks',    'tab' => 'necks',
+    'neck'    => ['label' => 'Neckline', 'plural' => 'Necklines', 'tab' => 'necks',
                   'columns' => ['products.neck']],
     'pattern' => ['label' => 'Pattern', 'plural' => 'Patterns', 'tab' => 'patterns',
                   'columns' => ['products.pattern']],
