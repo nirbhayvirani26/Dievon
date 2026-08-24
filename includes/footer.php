@@ -1514,6 +1514,96 @@ document.addEventListener('DOMContentLoaded', function () {
         $r.trigger(direction > 0 ? 'next.owl.carousel' : 'prev.owl.carousel');
         return true;
     };
+
+    /* Stop the last slide short of empty space.
+       ────────────────────────────────────────────────────────────────────────
+       Under autoWidth Owl picks its last page by walking items from the right
+       until they fill the viewport, then scrolls to that item's own coordinate.
+       When the final item is narrower than the viewport that coordinate lies
+       PAST the end of the content, so the row parks with a band of background
+       showing on one side. Measured on a 456px phone, product gallery: Owl went
+       to -356 where the content ends at -280, leaving 12px of gap on the left
+       against 96px on the right.
+
+       It is not a rail-by-rail bug — every autoWidth rail on the site does it:
+       Shop by Occasion overshot by 92px, The Dievon Edit by 128, Collections by
+       56. So the correction lives here, once, and every rail gets it.
+
+       How it corrects: Owl fires `translate` and then, in the same synchronous
+       task, writes the target transform inline on the stage and lets CSS animate
+       to it. A zero-delay timer scheduled from that event therefore runs right
+       after the write and before the browser paints, reads the INLINE value —
+       the target, not the interpolated position getComputedStyle would give —
+       and rewrites it if it is past the end. The transition is already running,
+       so the row travels to the corrected place in one movement; there is no
+       second hop, and Owl's own index is untouched, so the counter still reads
+       "2 / 2" on the last page.
+
+       A timer rather than requestAnimationFrame on purpose: rAF does not fire
+       in a background tab, so a rail moved by a script while the tab was hidden
+       would have kept the overshoot and shown it the moment the tab came back.
+
+       Loops are skipped: the hero wraps around on purpose and has no end to
+       stop at. */
+    function dvClampOwlTail(railEl) {
+        var $r = jQuery(railEl);
+        var inst = $r.data('owl.carousel');
+        if (!inst || (inst.settings && inst.settings.loop)) { return; }
+
+        var outer = railEl.querySelector('.owl-stage-outer');
+        var stage = railEl.querySelector('.owl-stage');
+        if (!outer || !stage) { return; }
+
+        /* The CONTENT width, not the stage box. Owl's inline stage width counts
+           the margin after the final item, and clamping to that would leave one
+           gutter of dead space inside the right edge — the same trap the
+           centring helper above had to work around. */
+        function contentWidth() {
+            var total = 0, kids = stage.children;
+            for (var i = 0; i < kids.length; i++) {
+                total += kids[i].getBoundingClientRect().width;
+                if (i < kids.length - 1) {
+                    total += parseFloat(getComputedStyle(kids[i]).marginRight) || 0;
+                }
+            }
+            return total;
+        }
+
+        function limit() {
+            var view = outer.clientWidth;
+            if (!view) { return null; }          // a hidden panel measures zero
+            return Math.min(0, view - contentWidth());
+        }
+
+        function targetX() {
+            var m = /translate3d\(\s*(-?[\d.]+)px/.exec(stage.style.transform || '');
+            return m ? parseFloat(m[1]) : null;
+        }
+
+        function clamp() {
+            var end = limit(), at = targetX();
+            if (end === null || at === null) { return; }
+            if (at < end - 0.5) {
+                stage.style.transform = 'translate3d(' + end + 'px, 0px, 0px)';
+            }
+        }
+
+        $r.on('translate.owl.carousel changed.owl.carousel', function () {
+            window.setTimeout(clamp, 0);
+        });
+        $r.on('translated.owl.carousel refreshed.owl.carousel resized.owl.carousel', clamp);
+        clamp();
+    }
+    window.dvClampOwlTail = dvClampOwlTail;
+
+    /* Every rail on the page, whoever built it — the four on the homepage, the
+       Occasion strip above, and the product gallery, which is initialised by
+       pages/product.php and would otherwise need the same fix written a second
+       time. Deferred to load because each page initialises its own rails at
+       DOMContentLoaded and they do not all exist yet at this point. */
+    window.addEventListener('load', function () {
+        jQuery('.owl-carousel.owl-loaded').each(function () { dvClampOwlTail(this); });
+    });
 });
 </script>
 

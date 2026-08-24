@@ -84,6 +84,15 @@ Every item below lives in one of those.
   stays on after release — the rail reads as sluggish while the others feel clean. New Arrivals
   kills it at 1024, Collections at 768, the photo fan and Shop by Occasion at 767. Shop by
   Occasion was the one rail that never got the block, which is exactly how it was spotted.
+- **Owl's last page overshoots under autoWidth.** It picks the final page by walking items from
+  the right until they fill the viewport, then scrolls to that item's own coordinate — which lies
+  past the end of the content when the last item is narrower than the viewport, parking the row
+  with dead background on one side. `dvClampOwlTail()` in includes/footer.php corrects every rail
+  on the site; do not re-solve it per rail. It skips `loop` rails (the hero has no end).
+- **rAF does not fire in a background tab.** A correction scheduled on requestAnimationFrame
+  silently does nothing while the tab is hidden, then shows the uncorrected state when the tab
+  comes back. Use `setTimeout(fn, 0)` for anything that must run after a write regardless of
+  visibility.
 - **A full-bleed rail is a SECTION child, not a container child.** Shop by Occasion and The
   Dievon Edit both close `.container` after the heading, run the strip at the section's full
   width, and reopen a `.container` around the pager so the arrows stay on the page gutter.
