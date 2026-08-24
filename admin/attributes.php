@@ -154,13 +154,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reconcile'])) {
                    copy of what was actually bought. */
                 try {
                     $pdo->beginTransaction();
-                    $a = $pdo->prepare("UPDATE products SET color = :to WHERE color = :from");
+                    $moved = 0;
+
+                    /* Colour Way can hold a LIST, so only the matching PART moves.
+                       ────────────────────────────────────────────────────────
+                       A garment that is "Black,Green" must come back as
+                       "Black,Emerald Green" when Green is renamed — an exact-match
+                       UPDATE would never touch it, and a blind string replace could
+                       corrupt a name that contains another ("Green" inside "Emerald
+                       Green"). Splitting and comparing whole parts is the only safe
+                       way. */
+                    $rows = $pdo->query("SELECT id, color_way FROM products
+                                          WHERE color_way IS NOT NULL AND color_way <> ''");
+                    $setWay = $pdo->prepare("UPDATE products SET color_way = :cw WHERE id = :id");
+                    foreach ($rows as $row) {
+                        $parts = dievonColorWayList((string)$row['color_way']);
+                        $hit = false;
+                        foreach ($parts as $i => $part) {
+                            if (strcasecmp(trim($part), $stray) === 0) { $parts[$i] = $to; $hit = true; }
+                        }
+                        if (!$hit) { continue; }
+                        // unique(), or renaming one half onto the other leaves "Green,Green".
+                        $setWay->execute(['cw' => implode(',', array_values(array_unique($parts))), 'id' => (int)$row['id']]);
+                        $moved++;
+                    }
+
+                    // products.color holds the PRIMARY colour only — a single value.
+                    $a = $pdo->prepare("UPDATE products SET color = :to WHERE LOWER(TRIM(color)) = LOWER(TRIM(:from))");
                     $a->execute(['to' => mb_substr($to, 0, 50), 'from' => $stray]);
-                    $b = $pdo->prepare("UPDATE products SET color_way = :to WHERE color_way = :from");
-                    $b->execute(['to' => $to, 'from' => $stray]);
-                    $c = $pdo->prepare("UPDATE product_colors SET color_name = :to WHERE color_name = :from");
+
+                    // A colour variant is always one colour, never a list.
+                    $c = $pdo->prepare("UPDATE product_colors SET color_name = :to WHERE LOWER(TRIM(color_name)) = LOWER(TRIM(:from))");
                     $c->execute(['to' => $to, 'from' => $stray]);
-                    $moved = $a->rowCount() + $b->rowCount() + $c->rowCount();
+
+                    $moved += $a->rowCount() + $c->rowCount();
                     $pdo->commit();
                     $successMsg = "'{$stray}' renamed to '{$to}' on {$moved} row(s). "
                                 . "Sizes, stock, images and price overrides are untouched — they belong to the colour, not its name.";
@@ -298,8 +325,13 @@ require_once __DIR__ . '/../config/config.php';
                                         <option value="<?= htmlspecialchars($a['name']) ?>"><?= htmlspecialchars($a['name']) ?></option>
                                     <?php endforeach; ?>
                                 </select>
+                                <?php /* The shop's own dialog, not the browser's grey confirm box:
+                                         window.dievonConfirm, loaded on every admin page by
+                                         admin/includes/footer.php and used the same way by countries.php
+                                         and the product form. Wired below rather than inline, because it
+                                         returns a Promise and an onclick can only return true or false. */ ?>
                                 <button type="submit" name="reconcile" value="rename" class="btn-secondary" style="padding:5px 10px; font-size:12px;"
-                                        onclick="return confirm('Rename <?= htmlspecialchars($sc['value'], ENT_QUOTES) ?> on <?= count($sc['products']) ?> product(s)?\n\nOnly the colour name changes. Sizes, stock, images and price overrides stay exactly where they are.');">
+                                        data-confirm-rename="Rename <?= htmlspecialchars($sc['value'], ENT_QUOTES) ?> on <?= count($sc['products']) ?> product(s)?&#10;&#10;Only the colour name changes. Sizes, stock, images and price overrides stay exactly where they are.">
                                     Rename
                                 </button>
                             <?php endif; ?>
@@ -311,6 +343,31 @@ require_once __DIR__ . '/../config/config.php';
         </table>
     </div>
 </div>
+<script>
+/* Uses the shop's dialog when it is there and the browser's box only if it is
+   not, the same fallback countries.php and the product form use.
+
+   requestSubmit(button) rather than form.submit(): the pressed button carries
+   name="reconcile" value="rename", and a plain submit() drops the submitter, so
+   the handler would receive no action at all and silently do nothing. The
+   `confirmed` flag stops the second, real press from asking again. */
+document.addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-confirm-rename]');
+    if (!btn || btn.dataset.confirmed === '1') { return; }
+    e.preventDefault();
+    var ask = (typeof window.dievonConfirm === 'function')
+        ? window.dievonConfirm
+        : function (m) { return Promise.resolve(window.confirm(m)); };
+    Promise.resolve(ask(btn.getAttribute('data-confirm-rename'))).then(function (ok) {
+        if (!ok) { return; }
+        btn.dataset.confirmed = '1';
+        var form = btn.form;
+        if (form && typeof form.requestSubmit === 'function') { form.requestSubmit(btn); }
+        else { btn.click(); }
+    });
+});
+</script>
+
 <?php endif; ?>
 
 <div class="glass-panel" style="padding:0; overflow:hidden;">

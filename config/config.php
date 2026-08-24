@@ -7303,14 +7303,25 @@ function dievonStrayColors(PDO $pdo): array {
     foreach ($sources as $src) {
         try { $rows = $pdo->query($src['sql']); } catch (PDOException $e) { continue; }
         foreach ($rows as $r) {
-            $value = trim((string)$r['c']);
-            if ($value === '' || in_array(strtolower($value), $master, true)) { continue; }
-            $key = strtolower($value);
-            if (!isset($found[$key])) {
-                $found[$key] = ['value' => $value, 'fields' => [], 'products' => []];
+            /* SPLIT first. Color Way can hold a list — "Black,Green" is one
+               garment that IS black and green — and comparing the whole string
+               against the colour list reported that valid pair as a single
+               unknown colour called "Black,Green". Every multi-colour garment
+               was being listed as a problem to fix, which is the opposite of
+               true: both halves are on the list, which is the only way they
+               could have been ticked in the first place.
+
+               A colour variant is always one colour, so splitting is a no-op
+               there and this stays one loop for all three sources. */
+            foreach (dievonColorWayList((string)$r['c']) as $value) {
+                if ($value === '' || in_array(strtolower($value), $master, true)) { continue; }
+                $key = strtolower($value);
+                if (!isset($found[$key])) {
+                    $found[$key] = ['value' => $value, 'fields' => [], 'products' => []];
+                }
+                $found[$key]['fields'][$src['where']] = true;
+                $found[$key]['products'][(int)$r['id']] = (string)$r['name'];
             }
-            $found[$key]['fields'][$src['where']] = true;
-            $found[$key]['products'][(int)$r['id']] = (string)$r['name'];
         }
     }
 
