@@ -416,14 +416,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $colorWayParts = dievonColorWayList($color_way);
     $color = mb_substr($colorWayParts[0] ?? '', 0, 50);
     $fabric       = trim($_POST['fabric'] ?? '');
-    $sleeve       = trim($_POST['sleeve'] ?? '');
+    /* Sleeve, Neck and Pattern come from a managed list now.
+       ────────────────────────────────────────────────────────────────────────
+       A <select> is only a suggestion to anything that is not a browser, and
+       this handler takes a POST, so the rule is enforced where the write
+       happens — the same as colour. Stored in the list's own spelling, so one
+       value cannot arrive in three casings.
+
+       The important part is what happens to a value that is NOT on the list.
+       Blanking it would be destructive: a product tagged "Half Sleeve" before
+       the list existed would lose that tag the next time anyone edited its
+       price. So an unlisted value is KEPT when it is the value the product
+       already had, and refused only when a request is trying to introduce a
+       new one. That is also what the picker shows — the product's own value,
+       selected and labelled "not on the Sleeve list" — so the screen and the
+       save agree. The reconciliation panel in Attributes is where those get
+       merged onto real entries. */
+    $dvKeepListed = static function (string $type, string $field) use ($pdo, $product): string {
+        $posted = trim((string)($_POST[$field] ?? ''));
+        if ($posted === '') { return ''; }
+        $canonical = dievonCanonicalAttribute($pdo, $type, $posted);
+        if ($canonical !== null) { return $canonical; }
+        if (!dievonMasterList($pdo, $type)) { return $posted; }   // list not set up yet
+        $existing = trim((string)(($product ?? [])[$field] ?? ''));
+        return (strcasecmp($existing, $posted) === 0) ? $existing : '';
+    };
+
+    $sleeve       = $dvKeepListed('sleeve', 'sleeve');
     // Fit / model reference — see the form comment: no invented defaults.
     $image_alt       = trim($_POST['image_alt'] ?? '');
     $fit_description = trim($_POST['fit_description'] ?? '');
     $model_height    = trim($_POST['model_height'] ?? '');
     $model_size_worn = trim($_POST['model_size_worn'] ?? '');
-    $neck         = trim($_POST['neck'] ?? '');
-    $pattern      = trim($_POST['pattern'] ?? '');
+    $neck         = $dvKeepListed('neck', 'neck');
+    $pattern      = $dvKeepListed('pattern', 'pattern');
     $occasion     = trim($_POST['occasion'] ?? '');
     // The input is gone (see the note in the fashion fields below), so absent now
     // means "keep what is stored" rather than "reset to 0" — the same rule as
@@ -2177,17 +2203,41 @@ require_once __DIR__ . '/includes/header.php';
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Sleeve</label>
-                                <input type="text" name="sleeve" list="dv-sleeve-options" class="form-control" placeholder="e.g. Full Sleeve" value="<?= htmlspecialchars($product['sleeve'] ?? '') ?>">
+                                <?php /* Chosen from the sleeve list, not typed. This was a text box whose
+                                         suggestions came from values already saved, so the first
+                                         typo became a suggestion for the next product — which is
+                                         how the shop filter ended up with three names for one
+                                         sleeve, a fabric filed under Neck and a neck under
+                                         Pattern. */ ?>
+                                <input type="search" class="form-control dv-colour-search" data-colour-search="sleeve"
+                                       placeholder="Search sleeve&hellip;" autocomplete="off">
+                                <select name="sleeve" class="form-control" data-colour-search-target="sleeve"><?= dievonAttributeOptions($pdo, 'sleeve', (string)($product['sleeve'] ?? '')) ?></select>
                             </div>
                         </div>
                         <div class="form-row">
                             <div class="form-group">
                                 <label class="form-label">Neck</label>
-                                <input type="text" name="neck" list="dv-neck-options" class="form-control" placeholder="e.g. Round Neck" value="<?= htmlspecialchars($product['neck'] ?? '') ?>">
+                                <?php /* Chosen from the neck list, not typed. This was a text box whose
+                                         suggestions came from values already saved, so the first
+                                         typo became a suggestion for the next product — which is
+                                         how the shop filter ended up with three names for one
+                                         sleeve, a fabric filed under Neck and a neck under
+                                         Pattern. */ ?>
+                                <input type="search" class="form-control dv-colour-search" data-colour-search="neck"
+                                       placeholder="Search neck&hellip;" autocomplete="off">
+                                <select name="neck" class="form-control" data-colour-search-target="neck"><?= dievonAttributeOptions($pdo, 'neck', (string)($product['neck'] ?? '')) ?></select>
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Pattern</label>
-                                <input type="text" name="pattern" list="dv-pattern-options" class="form-control" placeholder="e.g. Floral" value="<?= htmlspecialchars($product['pattern'] ?? '') ?>">
+                                <?php /* Chosen from the pattern list, not typed. This was a text box whose
+                                         suggestions came from values already saved, so the first
+                                         typo became a suggestion for the next product — which is
+                                         how the shop filter ended up with three names for one
+                                         sleeve, a fabric filed under Neck and a neck under
+                                         Pattern. */ ?>
+                                <input type="search" class="form-control dv-colour-search" data-colour-search="pattern"
+                                       placeholder="Search pattern&hellip;" autocomplete="off">
+                                <select name="pattern" class="form-control" data-colour-search-target="pattern"><?= dievonAttributeOptions($pdo, 'pattern', (string)($product['pattern'] ?? '')) ?></select>
                             </div>
                         </div>
                         <div class="form-row">

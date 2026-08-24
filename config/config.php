@@ -7225,24 +7225,9 @@ function productImageRatioError(string $tmpPath, string $shownName = ''): ?strin
  * disturbing a single variant or a single past order.
  */
 function dievonMasterColors(PDO $pdo): array {
-    static $cache = null;
-    if ($cache !== null) { return $cache; }
-    $cache = [];
-    try {
-        $rows = $pdo->query("SELECT name, code FROM product_attributes
-                              WHERE attr_type = 'color' AND name IS NOT NULL AND name <> ''
-                              ORDER BY name ASC, id ASC");
-        foreach ($rows as $r) {
-            $name = trim((string)$r['name']);
-            if ($name !== '') { $cache[$name] = trim((string)($r['code'] ?? '')); }
-        }
-    } catch (PDOException $e) {
-        /* No master table yet (a fresh install before the Color tab is opened).
-           Returning empty would make every save fail, so callers treat an empty
-           master as "not configured" and let the value through — see
-           dievonIsMasterColor(). */
-    }
-    return $cache;
+    // One implementation, in dievonMasterList(). Kept as a name because the
+    // colour call sites read better for it, not as a second copy of the rule.
+    return dievonMasterList($pdo, 'color');
 }
 
 /**
@@ -7253,12 +7238,7 @@ function dievonMasterColors(PDO $pdo): array {
  * the same colour in three casings, which is the drift this is meant to stop.
  */
 function dievonCanonicalColor(PDO $pdo, string $name): ?string {
-    $needle = strtolower(trim($name));
-    if ($needle === '') { return null; }
-    foreach (array_keys(dievonMasterColors($pdo)) as $master) {
-        if (strtolower(trim($master)) === $needle) { return $master; }
-    }
-    return null;
+    return dievonCanonicalAttribute($pdo, 'color', $name);
 }
 
 /**
@@ -7271,9 +7251,7 @@ function dievonCanonicalColor(PDO $pdo, string $name): ?string {
  * the value through. The moment one colour exists, the list is enforced.
  */
 function dievonIsMasterColor(PDO $pdo, string $name): bool {
-    if (trim($name) === '') { return true; }              // blank is "no colour", always allowed
-    if (!dievonMasterColors($pdo)) { return true; }       // master not configured yet
-    return dievonCanonicalColor($pdo, $name) !== null;
+    return dievonIsOnMasterList($pdo, 'color', $name);
 }
 
 /**
@@ -7343,22 +7321,7 @@ function dievonStrayColors(PDO $pdo): array {
  * sees what it is and chooses deliberately.
  */
 function dievonColorOptions(PDO $pdo, string $current = '', string $blankLabel = '— Select a colour —'): string {
-    $current = trim($current);
-    $html = '<option value="">' . htmlspecialchars($blankLabel) . '</option>';
-    $matched = false;
-
-    foreach (array_keys(dievonMasterColors($pdo)) as $name) {
-        $selected = ($current !== '' && strcasecmp(trim($name), $current) === 0);
-        if ($selected) { $matched = true; }
-        $html .= '<option value="' . htmlspecialchars($name) . '"' . ($selected ? ' selected' : '') . '>'
-               . htmlspecialchars($name) . '</option>';
-    }
-
-    if ($current !== '' && !$matched) {
-        $html = '<option value="' . htmlspecialchars($current) . '" selected>'
-              . htmlspecialchars($current) . ' — not in Color tab</option>' . $html;
-    }
-    return $html;
+    return dievonAttributeOptions($pdo, 'color', $current, $blankLabel);
 }
 
 /* ── A product that IS two colours ────────────────────────────────────────────
@@ -7533,4 +7496,137 @@ function dievonVideoSrc(?string $raw): string {
         return 'https://' . substr($url, 7);
     }
     return $url;
+}
+
+/* ── Managed attribute lists, beyond colour ───────────────────────────────────
+ * Sleeve, Neck and Pattern were free-text boxes with a datalist of suggestions,
+ * and the suggestions were built FROM the values already saved — so the first
+ * typo became a suggestion for the next product and the mess compounded. Live
+ * showed exactly that: "3/4 Sleeves", "Three-quarter Sleeve" and "Three-quarter
+ * Sleeves" as three separate filters for one kind of sleeve, a fabric
+ * composition sitting in the Neck filter, and a neck sitting in Pattern.
+ *
+ * Colour is the only one of the six that is clean, and the only one with a
+ * managed list. So these three join it, using the same product_attributes table
+ * (which has always taken any attr_type) and the same picker, guard and
+ * reconciliation screen.
+ *
+ * Everything below is the colour logic with the type lifted out of it. The
+ * dievon*Color* functions further up are now thin wrappers on these, so every
+ * existing colour call site keeps working untouched.
+ */
+const DIEVON_ATTR_TYPES = [
+    'color'   => ['label' => 'Colour',  'plural' => 'Colours',  'tab' => 'colors',
+                  'columns' => ['products.color', 'products.color_way', 'product_colors.color_name']],
+    'sleeve'  => ['label' => 'Sleeve',  'plural' => 'Sleeves',  'tab' => 'sleeves',
+                  'columns' => ['products.sleeve']],
+    'neck'    => ['label' => 'Neck',    'plural' => 'Necks',    'tab' => 'necks',
+                  'columns' => ['products.neck']],
+    'pattern' => ['label' => 'Pattern', 'plural' => 'Patterns', 'tab' => 'patterns',
+                  'columns' => ['products.pattern']],
+];
+
+/** Every value on a managed list, in its own spelling. */
+function dievonMasterList(PDO $pdo, string $type): array {
+    static $cache = [];
+    if (isset($cache[$type])) { return $cache[$type]; }
+    $cache[$type] = [];
+    try {
+        $st = $pdo->prepare("SELECT name, code FROM product_attributes
+                              WHERE attr_type = :t AND name IS NOT NULL AND name <> ''
+                              ORDER BY name ASC, id ASC");
+        $st->execute(['t' => $type]);
+        foreach ($st as $r) {
+            $name = trim((string)$r['name']);
+            if ($name !== '') { $cache[$type][$name] = trim((string)($r['code'] ?? '')); }
+        }
+    } catch (PDOException $e) {
+        /* No table yet. Callers treat an empty list as "not configured" and let
+           values through, so a fresh install is never locked out of its own
+           product form. */
+    }
+    return $cache[$type];
+}
+
+/** The list's own spelling of a value, or null when it is not on the list. */
+function dievonCanonicalAttribute(PDO $pdo, string $type, string $name): ?string {
+    $needle = strtolower(trim($name));
+    if ($needle === '') { return null; }
+    foreach (array_keys(dievonMasterList($pdo, $type)) as $known) {
+        if (strtolower(trim($known)) === $needle) { return $known; }
+    }
+    return null;
+}
+
+/** Whether a value may be saved. An empty list means "not set up yet". */
+function dievonIsOnMasterList(PDO $pdo, string $type, string $name): bool {
+    if (trim($name) === '') { return true; }
+    if (!dievonMasterList($pdo, $type)) { return true; }
+    return dievonCanonicalAttribute($pdo, $type, $name) !== null;
+}
+
+/** <option> list for a picker, keeping a value the product already holds. */
+function dievonAttributeOptions(PDO $pdo, string $type, string $current = '', string $blankLabel = ''): string {
+    $label   = $blankLabel !== '' ? $blankLabel
+             : '— Select a ' . strtolower(DIEVON_ATTR_TYPES[$type]['label'] ?? $type) . ' —';
+    $current = trim($current);
+    $html    = '<option value="">' . htmlspecialchars($label) . '</option>';
+    $matched = false;
+
+    foreach (array_keys(dievonMasterList($pdo, $type)) as $name) {
+        $on = ($current !== '' && strcasecmp(trim($name), $current) === 0);
+        if ($on) { $matched = true; }
+        $html .= '<option value="' . htmlspecialchars($name) . '"' . ($on ? ' selected' : '') . '>'
+               . htmlspecialchars($name) . '</option>';
+    }
+    /* A value saved before the list existed stays, selected and labelled, so
+       opening a product and saving cannot silently retag it. */
+    if ($current !== '' && !$matched) {
+        /* Names the list, so the note says where to go and not merely that
+           something is wrong: "not on the Colour list", "not on the Sleeve
+           list". The colour picker used to say "not in Color tab"; now that
+           there are four lists, each says its own. */
+        $listName = DIEVON_ATTR_TYPES[$type]['label'] ?? ucfirst($type);
+        $html = '<option value="' . htmlspecialchars($current) . '" selected>'
+              . htmlspecialchars($current) . ' — not on the ' . htmlspecialchars($listName) . ' list</option>'
+              . $html;
+    }
+    return $html;
+}
+
+/**
+ * Values products carry that the list does not have, with the products using
+ * them. Reads whichever database it runs in and hardcodes nothing, so a shop is
+ * always reconciled against its own data.
+ */
+function dievonStrayAttributes(PDO $pdo, string $type): array {
+    if ($type === 'color') { return dievonStrayColors($pdo); }   // colour reads three columns
+
+    $column = DIEVON_ATTR_TYPES[$type]['columns'][0] ?? '';
+    if (!str_starts_with($column, 'products.')) { return []; }
+    $field = substr($column, strlen('products.'));
+    if (!preg_match('/^[a-z_]+$/', $field)) { return []; }        // never interpolate anything else
+
+    $master = array_map(
+        static fn($n) => strtolower(trim((string)$n)),
+        array_keys(dievonMasterList($pdo, $type))
+    );
+
+    $found = [];
+    try {
+        $rows = $pdo->query("SELECT id, name, `$field` AS v FROM products
+                              WHERE `$field` IS NOT NULL AND `$field` <> ''");
+    } catch (PDOException $e) { return []; }
+
+    foreach ($rows as $r) {
+        $value = trim((string)$r['v']);
+        if ($value === '' || in_array(strtolower($value), $master, true)) { continue; }
+        $key = strtolower($value);
+        if (!isset($found[$key])) {
+            $found[$key] = ['value' => $value, 'fields' => [DIEVON_ATTR_TYPES[$type]['label']], 'products' => []];
+        }
+        $found[$key]['products'][(int)$r['id']] = (string)$r['name'];
+    }
+    ksort($found);
+    return array_values($found);
 }

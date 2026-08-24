@@ -137,6 +137,23 @@ try {
         }
     } catch (PDOException $e) {}
 
+    /* product_attributes.attr_type was ENUM('color','size').
+       ────────────────────────────────────────────────────────────────────────
+       Sleeve, Neck and Pattern are managed lists now and live in this same
+       table, and an ENUM silently REFUSES anything not named in it — MySQL
+       reports "Data truncated for column 'attr_type'" and the row never
+       arrives. Verified against the real column before widening.
+
+       VARCHAR rather than a longer ENUM, so the next list to be managed is a
+       line in DIEVON_ATTR_TYPES and not another schema change. Guarded by SHOW
+       COLUMNS so it runs once, and only ever widens. */
+    try {
+        $atCol = $pdo->query("SHOW COLUMNS FROM `product_attributes` LIKE 'attr_type'")->fetch();
+        if ($atCol && stripos((string)($atCol['Type'] ?? ''), 'enum') === 0) {
+            $pdo->exec("ALTER TABLE `product_attributes` MODIFY `attr_type` VARCHAR(20) NOT NULL DEFAULT 'color'");
+        }
+    } catch (PDOException $e) {}
+
     // Auto-ensure product_images table exists
     try {
         $pdo->exec("CREATE TABLE IF NOT EXISTS `product_images` (

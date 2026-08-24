@@ -32,8 +32,26 @@ requireAdminCapability('catalogue.manage');
 // Existing attr_type='size' rows are left in the table — unreferenced, but a
 // harmless record, and deleting a shopkeeper's data to tidy a page is not a
 // trade worth making.
-$type = 'colors';
-$activeTab = 'colors';
+/* Four managed lists now, not one.
+   ────────────────────────────────────────────────────────────────────────────
+   Sleeve, Neck and Pattern were free-text boxes whose suggestions were built
+   from whatever had already been typed, so a typo became a suggestion and the
+   shop filter filled with near-duplicates — "3/4 Sleeves" beside
+   "Three-quarter Sleeve" beside "Three-quarter Sleeves", a fabric composition
+   filed under Neck, a neck filed under Pattern. Colour was the only clean
+   filter and the only managed one, so the other three join it here.
+
+   Fabric and Occasion are deliberately NOT here: both are currently clean, and
+   a list to maintain is a cost that should be paid where there is a problem.
+   Adding them later is one line in DIEVON_ATTR_TYPES. */
+$tabToType = [];
+foreach (DIEVON_ATTR_TYPES as $attrKey => $meta) { $tabToType[$meta['tab']] = $attrKey; }
+
+$type = (string)($_GET['type'] ?? 'colors');
+if (!isset($tabToType[$type])) { $type = 'colors'; }   // an unknown tab is not an error, it is colours
+$attrType  = $tabToType[$type];
+$attrMeta  = DIEVON_ATTR_TYPES[$attrType];
+$activeTab = $type;
 $successMsg = '';
 $errorMsg   = '';
 
@@ -41,7 +59,7 @@ $errorMsg   = '';
 try {
     $pdo->exec("CREATE TABLE IF NOT EXISTS `product_attributes` (
         `id` INT AUTO_INCREMENT PRIMARY KEY,
-        `attr_type` ENUM('color','size') NOT NULL,
+        `attr_type` VARCHAR(20) NOT NULL DEFAULT 'color',   -- not an ENUM: see config/db.php
         `name` VARCHAR(100) NOT NULL,
         `code` VARCHAR(50) DEFAULT NULL,
         `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -54,7 +72,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_attr']) && !verif
 } elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_attr'])) {
     $name = trim($_POST['name'] ?? '');
     $code = trim($_POST['code'] ?? '');
-    $attrType = $type === 'sizes' ? 'size' : 'color';
     if ($name) {
         try {
             /* No duplicates, compared without case.
@@ -125,13 +142,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reconcile'])) {
         } elseif ($mode === 'add') {
             try {
                 $clash = $pdo->prepare("SELECT name FROM product_attributes
-                                         WHERE attr_type = 'color' AND LOWER(TRIM(name)) = LOWER(TRIM(:name)) LIMIT 1");
-                $clash->execute(['name' => $stray]);
+                                         WHERE attr_type = :t AND LOWER(TRIM(name)) = LOWER(TRIM(:name)) LIMIT 1");
+                $clash->execute(['t' => $attrType, 'name' => $stray]);
                 if ($clash->fetchColumn()) {
                     throw new RuntimeException("'{$stray}' is already on the list.");
                 }
-                $ins = $pdo->prepare("INSERT INTO product_attributes (attr_type, name, code) VALUES ('color', :name, '')");
-                $ins->execute(['name' => $stray]);
+                $ins = $pdo->prepare("INSERT INTO product_attributes (attr_type, name, code) VALUES (:t, :name, '')");
+                $ins->execute(['t' => $attrType, 'name' => $stray]);
                 $successMsg = "'{$stray}' added to the colour list. The products already using it now match the filter.";
             } catch (RuntimeException $e) {
                 $errorMsg = $e->getMessage();
@@ -156,42 +173,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reconcile'])) {
                     $pdo->beginTransaction();
                     $moved = 0;
 
-                    /* Colour Way can hold a LIST, so only the matching PART moves.
-                       ────────────────────────────────────────────────────────
-                       A garment that is "Black,Green" must come back as
-                       "Black,Emerald Green" when Green is renamed — an exact-match
-                       UPDATE would never touch it, and a blind string replace could
-                       corrupt a name that contains another ("Green" inside "Emerald
-                       Green"). Splitting and comparing whole parts is the only safe
-                       way. */
-                    $rows = $pdo->query("SELECT id, color_way FROM products
-                                          WHERE color_way IS NOT NULL AND color_way <> ''");
-                    $setWay = $pdo->prepare("UPDATE products SET color_way = :cw WHERE id = :id");
-                    foreach ($rows as $row) {
-                        $parts = dievonColorWayList((string)$row['color_way']);
-                        $hit = false;
-                        foreach ($parts as $i => $part) {
-                            if (strcasecmp(trim($part), $stray) === 0) { $parts[$i] = $to; $hit = true; }
+                    if ($attrType === 'color') {
+                        /* Colour spans three columns, and Colour Way can hold a
+                           LIST, so only the matching PART moves: "Black,Green"
+                           must come back "Black,Emerald Green". An exact-match
+                           UPDATE would never touch it, and a blind string
+                           replace would corrupt "Emerald Green" while renaming
+                           "Green". */
+                        $rows = $pdo->query("SELECT id, color_way FROM products
+                                              WHERE color_way IS NOT NULL AND color_way <> ''");
+                        $setWay = $pdo->prepare("UPDATE products SET color_way = :cw WHERE id = :id");
+                        foreach ($rows as $row) {
+                            $parts = dievonColorWayList((string)$row['color_way']);
+                            $hit = false;
+                            foreach ($parts as $i2 => $part) {
+                                if (strcasecmp(trim($part), $stray) === 0) { $parts[$i2] = $to; $hit = true; }
+                            }
+                            if (!$hit) { continue; }
+                            // unique(), or renaming one half onto the other leaves "Green,Green".
+                            $setWay->execute(['cw' => implode(',', array_values(array_unique($parts))), 'id' => (int)$row['id']]);
+                            $moved++;
                         }
-                        if (!$hit) { continue; }
-                        // unique(), or renaming one half onto the other leaves "Green,Green".
-                        $setWay->execute(['cw' => implode(',', array_values(array_unique($parts))), 'id' => (int)$row['id']]);
-                        $moved++;
+                        $a = $pdo->prepare("UPDATE products SET color = :to WHERE LOWER(TRIM(color)) = LOWER(TRIM(:from))");
+                        $a->execute(['to' => mb_substr($to, 0, 50), 'from' => $stray]);
+                        $c = $pdo->prepare("UPDATE product_colors SET color_name = :to WHERE LOWER(TRIM(color_name)) = LOWER(TRIM(:from))");
+                        $c->execute(['to' => $to, 'from' => $stray]);
+                        $moved += $a->rowCount() + $c->rowCount();
+                    } else {
+                        /* Sleeve, Neck and Pattern are one plain column each and
+                           never a list — one garment, one sleeve. The column name
+                           comes from DIEVON_ATTR_TYPES and is checked against
+                           [a-z_] before it goes near the SQL, because a column
+                           name cannot be a bound parameter. */
+                        $col = $attrMeta['columns'][0] ?? '';
+                        $field = str_starts_with($col, 'products.') ? substr($col, strlen('products.')) : '';
+                        if ($field === '' || !preg_match('/^[a-z_]+$/', $field)) {
+                            throw new RuntimeException('That list cannot be renamed automatically.');
+                        }
+                        $u = $pdo->prepare("UPDATE products SET `$field` = :to
+                                             WHERE LOWER(TRIM(`$field`)) = LOWER(TRIM(:from))");
+                        $u->execute(['to' => $to, 'from' => $stray]);
+                        $moved += $u->rowCount();
                     }
-
-                    // products.color holds the PRIMARY colour only — a single value.
-                    $a = $pdo->prepare("UPDATE products SET color = :to WHERE LOWER(TRIM(color)) = LOWER(TRIM(:from))");
-                    $a->execute(['to' => mb_substr($to, 0, 50), 'from' => $stray]);
-
-                    // A colour variant is always one colour, never a list.
-                    $c = $pdo->prepare("UPDATE product_colors SET color_name = :to WHERE LOWER(TRIM(color_name)) = LOWER(TRIM(:from))");
-                    $c->execute(['to' => $to, 'from' => $stray]);
-
-                    $moved += $a->rowCount() + $c->rowCount();
                     $pdo->commit();
                     $successMsg = "'{$stray}' renamed to '{$to}' on {$moved} row(s). "
                                 . "Sizes, stock, images and price overrides are untouched — they belong to the colour, not its name.";
-                } catch (PDOException $e) {
+                } catch (Throwable $e) {
                     if ($pdo->inTransaction()) { $pdo->rollBack(); }
                     $errorMsg = 'Rename failed, nothing was changed: ' . $e->getMessage();
                 }
@@ -201,11 +228,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reconcile'])) {
 }
 
 $strayColors = [];
-try { $strayColors = dievonStrayColors($pdo); } catch (Throwable $e) {}
+try { $strayColors = dievonStrayAttributes($pdo, $attrType); } catch (Throwable $e) {}
 
 $attributes = [];
 try {
-    $targetType = $type === 'sizes' ? 'size' : 'color';
+    $targetType = $attrType;
 
     /* Alphabetical. This was id DESC, so the list was in the order the colours
        happened to be typed, backwards — and a colour list exists to be looked up
@@ -235,11 +262,38 @@ require_once __DIR__ . '/../config/config.php';
 
 ?>
 
-<div class="admin-page-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+<div class="admin-page-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
     <div>
-        <h1 class="admin-page-title">🎨 <?= ucfirst($type) ?> Master Attributes</h1>
-        <p class="admin-page-subtitle">Configure <?= strtolower($type) ?> options available for product size selectors and shop filters.</p>
+        <h1 class="admin-page-title">🎨 <?= htmlspecialchars($attrMeta['plural']) ?></h1>
+        <p class="admin-page-subtitle">
+            The <?= htmlspecialchars(strtolower($attrMeta['label'])) ?> options a product can be given, and the
+            <?= htmlspecialchars(strtolower($attrMeta['label'])) ?> filter a shopper sees. Products choose from this
+            list; they cannot type their own.
+        </p>
     </div>
+</div>
+
+<?php /* One tab per managed list. These were four separate ideas living in one
+         table with nothing to switch between them — the page simply forced
+         itself to colours. Each list is edited the same way and has the same
+         reconciliation panel, so a tab is all that was missing. */ ?>
+<div style="display:flex; gap:4px; margin-bottom:22px; border-bottom:1px solid var(--border-light); flex-wrap:wrap;">
+    <?php foreach (DIEVON_ATTR_TYPES as $tKey => $tMeta):
+        $isOn = ($tKey === $attrType);
+        $pending = 0;
+        try { $pending = count(dievonStrayAttributes($pdo, $tKey)); } catch (Throwable $e) {}
+    ?>
+        <a href="attributes.php?type=<?= htmlspecialchars($tMeta['tab']) ?>"
+           style="padding:10px 16px; font-size:13.5px; font-weight:<?= $isOn ? '700' : '500' ?>; text-decoration:none;
+                  color:<?= $isOn ? 'var(--color-primary)' : 'var(--text-muted)' ?>;
+                  border-bottom:2px solid <?= $isOn ? 'var(--color-primary)' : 'transparent' ?>; margin-bottom:-1px;">
+            <?= htmlspecialchars($tMeta['plural']) ?>
+            <?php if ($pending): ?>
+                <span style="display:inline-block; min-width:18px; padding:1px 6px; margin-left:5px; border-radius:9px;
+                             background:#c9a227; color:#fff; font-size:11px; font-weight:700;"><?= (int)$pending ?></span>
+            <?php endif; ?>
+        </a>
+    <?php endforeach; ?>
 </div>
 
 <?php if ($successMsg): ?>
@@ -251,20 +305,25 @@ require_once __DIR__ . '/../config/config.php';
 <?php endif; ?>
 
 <div class="glass-panel form-section" style="margin-bottom: 24px;">
-    <h3 style="font-size: 16px; font-weight: 700; color: var(--text-primary); margin-bottom: 16px;">Add New <?= ucfirst($type) ?> Attribute</h3>
+    <h3 style="font-size: 16px; font-weight: 700; color: var(--text-primary); margin-bottom: 16px;">Add a <?= htmlspecialchars(strtolower($attrMeta['label'])) ?></h3>
     <form action="attributes.php?type=<?= htmlspecialchars($type) ?>" method="POST">
         <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
         <div class="form-row" style="display: grid; grid-template-columns: 1fr auto auto; gap: 12px; align-items: center;">
             <div class="form-group" style="margin:0;">
-                <input type="text" name="name" class="form-control" placeholder="<?= $type === 'sizes' ? 'Size Label (e.g. S, M, L, XL, 38)' : 'Color Name (e.g. Emerald Green, Rose Gold)' ?>" required>
+                <input type="text" name="name" class="form-control" placeholder="<?= htmlspecialchars([
+                    'color'   => 'Colour name (e.g. Emerald Green, Rose Gold)',
+                    'sleeve'  => 'Sleeve (e.g. Three-quarter Sleeves, Long Sleeve)',
+                    'neck'    => 'Neckline (e.g. Round Neck, V-neck)',
+                    'pattern' => 'Pattern (e.g. Floral Embroidered, Ikat-inspired Print)',
+                ][$attrType] ?? 'Name') ?>" required>
             </div>
-            <?php if ($type === 'colors'): ?>
+            <?php if ($attrType === 'color'): ?>
                 <div class="form-group" style="margin:0;">
                     <input type="color" name="code" value="#991b1b" style="width: 50px; height: 42px; padding: 2px; border: 1px solid var(--border-strong); cursor: pointer;">
                 </div>
             <?php endif; ?>
             <button type="submit" name="add_attr" class="btn-primary" style="padding: 10px 20px; font-size: 14px;">
-                Add <?= ucfirst($type) ?>
+                Add <?= htmlspecialchars(strtolower($attrMeta['label'])) ?>
             </button>
         </div>
     </form>
@@ -380,7 +439,7 @@ document.addEventListener('click', function (e) {
                 <tr>
                     <th style="width: 60px;">ID</th>
                     <th><?= ucfirst($type) ?> Name</th>
-                    <?php if ($type === 'colors'): ?><th>Color Code</th><?php endif; ?>
+                    <?php if ($attrType === 'color'): ?><th>Colour Code</th><?php endif; ?>
                     <th style="width: 100px; text-align: right;">Action</th>
                 </tr>
             </thead>
@@ -392,7 +451,7 @@ document.addEventListener('click', function (e) {
                         <tr>
                             <td style="color: var(--text-muted); font-size: 12px;">#<?= $a['id'] ?></td>
                             <td><strong style="color: var(--text-primary); font-size: 14px;"><?= htmlspecialchars($a['name']) ?></strong></td>
-                            <?php if ($type === 'colors'): ?>
+                            <?php if ($attrType === 'color'): ?>
                                 <td>
                                     <div style="display: flex; align-items: center; gap: 8px;">
                                         <span style="display: inline-block; width: 22px; height: 22px; background: <?= htmlspecialchars($a['code'] ?? '#991b1b') ?>; border: 1px solid var(--border-light);"></span>
