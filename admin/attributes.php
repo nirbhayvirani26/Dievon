@@ -68,6 +68,14 @@ $attrTypeFromPost = static function (array $src) use ($tabToType): ?string {
 $type      = (string)($_GET['type'] ?? 'colors');
 if (!isset($tabToType[$type])) { $type = 'colors'; }
 $activeTab = $type;
+
+/* Which list is open when the page draws.
+   ────────────────────────────────────────────────────────────────────────────
+   After an add, a delete or a rename the page reloads, and landing back on
+   Colours when you were half way through tidying Patterns is the kind of small
+   rudeness that makes a screen tiring. $openType is set to whichever list was
+   acted on, further down, so you come back where you were. */
+$openType = $tabToType[$type];
 $successMsg = '';
 $errorMsg   = '';
 
@@ -90,6 +98,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_attr']) && !verif
     // its own add form on the one page now.
     $attrType = $attrTypeFromPost($_POST) ?? 'color';
     $attrMeta = DIEVON_ATTR_TYPES[$attrType];
+    $openType = $attrType;   // come back to the list that was just changed
     $name = trim($_POST['name'] ?? '');
     $code = trim($_POST['code'] ?? '');
     if ($name) {
@@ -130,6 +139,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete'])) {
     } else {
         $delId = (int)$_POST['delete'];
         $attrType = $attrTypeFromPost($_POST) ?? 'color';
+        $openType = $attrType;
         try {
             $pdo->prepare("DELETE FROM product_attributes WHERE id = :id")->execute(['id' => $delId]);
             $successMsg = "Item deleted successfully.";
@@ -159,6 +169,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reconcile'])) {
         $stray = trim((string)($_POST['stray'] ?? ''));
         $attrType = $attrTypeFromPost($_POST) ?? 'color';
         $attrMeta = DIEVON_ATTR_TYPES[$attrType];
+        $openType = $attrType;
 
         if ($stray === '') {
             $errorMsg = 'Nothing selected.';
@@ -239,8 +250,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reconcile'])) {
                         $moved += $u->rowCount();
                     }
                     $pdo->commit();
+                    /* The reassurance has to be true for the list being renamed.
+                       "Sizes, stock, images and price overrides" is the COLOUR
+                       story — those hang off product_colors.id — and printing it
+                       after a pattern rename claims something that was never at
+                       risk, which is worse than saying nothing. */
                     $successMsg = "'{$stray}' renamed to '{$to}' on {$moved} row(s). "
-                                . "Sizes, stock, images and price overrides are untouched — they belong to the colour, not its name.";
+                                . ($attrType === 'color'
+                                    ? 'Sizes, stock, images and price overrides are untouched — they belong to the colour, not its name.'
+                                    : 'Only the label changed; nothing else about those products moved.');
                 } catch (Throwable $e) {
                     if ($pdo->inTransaction()) { $pdo->rollBack(); }
                     $errorMsg = 'Rename failed, nothing was changed: ' . $e->getMessage();
@@ -291,18 +309,31 @@ require_once __DIR__ . '/../config/config.php';
     <?= dvNotice(htmlspecialchars($errorMsg), 'danger') ?>
 <?php endif; ?>
 
-<?php /* A jump bar, not tabs. Nothing is hidden — this only scrolls — and the
-         number beside a list is how many values products are using that the list
-         itself does not have, which is the only thing here that needs attention. */ ?>
-<div style="display:flex; gap:8px; margin-bottom:24px; flex-wrap:wrap;">
+<?php /* Real tabs, and real links underneath them.
+         ────────────────────────────────────────────────────────────────────
+         Each is an <a href="?type=…">, so with no JavaScript at all pressing
+         one loads that list the ordinary way. The script below intercepts and
+         swaps instantly instead, which is the whole point: four lists on one
+         screen without scrolling past three to reach the fourth.
+
+         The number is how many values products use that the list does not
+         have — the only thing on this page asking to be dealt with, so it is
+         visible from every tab rather than only from the one it belongs to. */ ?>
+<div role="tablist" style="display:flex; gap:4px; margin-bottom:22px;
+     border-bottom:1px solid var(--border-light); flex-wrap:wrap;">
     <?php foreach (DIEVON_ATTR_TYPES as $tKey => $tMeta):
         $pending = 0;
         try { $pending = count(dievonStrayAttributes($pdo, $tKey)); } catch (Throwable $e) {}
+        $isOn = ($tKey === $openType);
     ?>
-        <a href="#list-<?= htmlspecialchars($tKey) ?>"
-           style="padding:8px 14px; font-size:13px; font-weight:600; text-decoration:none;
-                  color:var(--color-primary); border:1px solid var(--border-light);
-                  background:var(--bg-surface);">
+        <a href="attributes.php?type=<?= htmlspecialchars($tMeta['tab']) ?>"
+           role="tab" aria-selected="<?= $isOn ? 'true' : 'false' ?>"
+           data-attr-tab="<?= htmlspecialchars($tKey) ?>"
+           style="padding:10px 18px; font-size:13.5px; text-decoration:none; white-space:nowrap;
+                  font-weight:<?= $isOn ? '700' : '500' ?>;
+                  color:<?= $isOn ? 'var(--color-primary)' : 'var(--text-muted)' ?>;
+                  border-bottom:2px solid <?= $isOn ? 'var(--color-primary)' : 'transparent' ?>;
+                  margin-bottom:-1px;">
             <?= htmlspecialchars($tMeta['plural']) ?>
             <?php if ($pending): ?>
                 <span style="display:inline-block; min-width:18px; padding:1px 6px; margin-left:5px; border-radius:9px;
@@ -327,7 +358,8 @@ foreach (DIEVON_ATTR_TYPES as $attrType => $attrMeta):
     ][$attrType] ?? 'Name';
 ?>
 
-<section id="list-<?= htmlspecialchars($attrType) ?>" style="margin-bottom:38px;">
+<section id="list-<?= htmlspecialchars($attrType) ?>" data-attr-section="<?= htmlspecialchars($attrType) ?>"
+         style="margin-bottom:38px;<?= $attrType === $openType ? '' : ' display:none;' ?>">
 
     <h2 style="font-size:18px; font-weight:700; color:var(--text-primary); margin:0 0 4px;">
         <?= htmlspecialchars($attrMeta['plural']) ?>
@@ -477,6 +509,43 @@ foreach (DIEVON_ATTR_TYPES as $attrType => $attrMeta):
 </section>
 
 <?php endforeach; ?>
+
+<script>
+/* Swap tabs without a reload. Every list is already in the page, so this only
+   shows one and hides the rest — nothing is fetched and nothing can half-load.
+
+   The tabs are ordinary links, so this is an enhancement rather than the
+   mechanism: with the script gone they still work, just with a page load. The
+   URL is kept in step with replaceState so a refresh, or a link copied out of
+   the address bar, opens the same list. */
+(function () {
+    var tabs = [].slice.call(document.querySelectorAll('[data-attr-tab]'));
+    if (!tabs.length) { return; }
+
+    function show(key) {
+        [].forEach.call(document.querySelectorAll('[data-attr-section]'), function (sec) {
+            sec.style.display = (sec.getAttribute('data-attr-section') === key) ? '' : 'none';
+        });
+        tabs.forEach(function (t) {
+            var on = t.getAttribute('data-attr-tab') === key;
+            t.style.fontWeight = on ? '700' : '500';
+            t.style.color = on ? 'var(--color-primary)' : 'var(--text-muted)';
+            t.style.borderBottomColor = on ? 'var(--color-primary)' : 'transparent';
+            t.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+    }
+
+    tabs.forEach(function (t) {
+        t.addEventListener('click', function (e) {
+            e.preventDefault();
+            var key = t.getAttribute('data-attr-tab');
+            show(key);
+            try { history.replaceState(null, '', t.getAttribute('href')); } catch (err) {}
+            window.scrollTo(0, 0);
+        });
+    });
+})();
+</script>
 
 <script>
 /* Uses the shop's dialog when it is there and the browser's box only if it is
