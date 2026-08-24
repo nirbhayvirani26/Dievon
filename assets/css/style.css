@@ -5141,7 +5141,11 @@ body.admin-wrapper {
     position: relative;
     aspect-ratio: 3 / 4;
     overflow: hidden;
-    background: #ffffff;
+    /* The tone behind a letterboxed photograph (see .gallery-grid-img). Soft
+       surface rather than #ffffff: the bands sit against the page, and white
+       read as a lit panel behind the garment instead of the page showing
+       through. A photograph that fills the frame never reveals it. */
+    background: var(--bg-surface-soft);
     border: 1px solid var(--border-light);
     cursor: zoom-in;
     transition: box-shadow 0.3s ease;
@@ -5149,10 +5153,23 @@ body.admin-wrapper {
 
 
 .gallery-grid-item picture { display: block; width: 100%; height: 100%; }
+/* Show the whole garment, never a trimmed one.
+   ────────────────────────────────────────────────────────────────────────
+   The frame is a fixed 3/4 and `cover` filled it by cropping whatever did not
+   fit — a square photograph lost a quarter of itself, and what it dropped was
+   the top and bottom: the model's head and the hem. On a clothing shop those
+   are the parts being sold.
+
+   No-op for correctly sized photography. A 3/4 photograph in a 3/4 frame
+   renders identically under cover and contain — only the odd shape out
+   changes, which is the one that was losing a quarter of itself.
+
+   Video keeps `cover` (see .gallery-grid-video): clips are usually 16/9, and
+   contained in a 3/4 frame one would be mostly empty band. */
 .gallery-grid-img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
     transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.25s ease;
 }
 
@@ -5193,6 +5210,10 @@ body.admin-wrapper {
     gap: 6px;
     margin-top: 10px;
 }
+
+/* Hidden until the carousel claims it. The desktop gallery is a grid with
+   every photograph already on screen, so there is nothing to count. */
+.product-gallery-frame-count { display: none; }
 .product-gallery-slide-counter .dot {
     width: 6px; height: 6px;
     background: var(--border-strong);
@@ -5262,30 +5283,6 @@ body.admin-wrapper {
         scroll-snap-align: start;
         border: none;
     }
-    /* Show the whole garment, never a trimmed one.
-       ────────────────────────────────────────────────────────────────
-       The frame is a fixed 3/4, and `cover` fills it by cropping whatever
-       does not fit — a square photograph lost a quarter of itself, taking
-       the model's head and feet with it. On a clothing shop the hem and
-       the neckline are the things being sold, so a photograph that is not
-       3/4 is letterboxed rather than cut.
-
-       A photograph that IS 3/4 renders identically either way, so this
-       changes nothing for correctly sized shots — it only stops the odd
-       one out from being trimmed.
-
-       Phones only, by request: the desktop grid keeps `cover`.
-
-       The soft surface tone, not white: the bands sit against the page,
-       and #ffffff would read as a lit panel behind the garment rather
-       than as the page showing through. */
-    .gallery-grid-item {
-        background: var(--bg-surface-soft);
-    }
-    .gallery-grid-img {
-        object-fit: contain;
-    }
-
     .product-gallery-grid > .gallery-grid-item:only-child {
         grid-column: unset;
         max-width: none;
@@ -5423,6 +5420,39 @@ body.admin-wrapper {
     .product-gallery-slider-wrap.is-owl .owl-nav button.disabled {
         opacity: 0.35;
         pointer-events: none;
+    }
+
+    /* ── "3 / 7" over the photograph ───────────────────────────────
+       Bottom LEFT, not bottom right as in the reference: this gallery
+       already carries the details (i) button in the right corner, and the
+       reference had no such button to make room for. Two chips fighting
+       for one corner is worse than a mirrored one.
+       Inset past the peeking photograph so it reads as belonging to the
+       picture it counts, rather than floating between two of them. */
+    .product-gallery-slider-wrap.is-owl .product-gallery-frame-count {
+        display: block;
+        position: absolute;
+        left: 12px;
+        bottom: 54px;
+        z-index: 4;
+        padding: 5px 10px;
+        font-size: 12px;
+        letter-spacing: 0.06em;
+        color: #ffffff;
+        background: rgba(0, 0, 0, 0.42);
+        /* Safari still needs the prefix, and this shop's traffic is largely
+           iPhones — unprefixed, the chip lost its blur on exactly the
+           browsers the gallery was rebuilt for. The tint alone keeps it
+           legible where neither is supported. */
+        -webkit-backdrop-filter: blur(4px);
+        backdrop-filter: blur(4px);
+        pointer-events: none;
+    }
+    /* The details button sits clear of the peeking photograph too — parked
+       over the sliver it hid the very cue that says there is more. */
+    .product-gallery-slider-wrap.is-owl .gallery-details-btn {
+        right: 94px;
+        bottom: 46px;
     }
 
     /* ── Owl's dots, below the photograph ──────────────────────────── */

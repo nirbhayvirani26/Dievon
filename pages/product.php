@@ -859,6 +859,17 @@ require_once __DIR__ . '/../includes/header.php';
                 <button type="button" class="gallery-nav gallery-nav-prev" onclick="navGallerySlide(-1)" aria-label="Previous photo"><i class="fa-solid fa-chevron-left"></i></button>
                 <button type="button" class="gallery-nav gallery-nav-next" onclick="navGallerySlide(1)" aria-label="Next photo"><i class="fa-solid fa-chevron-right"></i></button>
                 <div class="product-gallery-slide-counter" id="gallerySlideCounter" aria-hidden="true"></div>
+                <?php /* "3 / 7" over the photograph.
+                         ──────────────────────────────────────────────────────────
+                         The dots say WHERE you are; they do not say how much is
+                         left once there are more than a handful, because five
+                         identical dashes do not read as a number at a glance.
+                         Written by JS and left empty here, so a product with a
+                         single photograph renders nothing at all rather than a
+                         permanent "1 / 1". aria-hidden because the count is
+                         decorative duplication — the carousel's own controls are
+                         what a screen reader is given. */ ?>
+                <div class="product-gallery-frame-count" id="galleryFrameCount" aria-hidden="true"></div>
                 <?php /* Every detail this page holds, one tap from the photograph.
                          ──────────────────────────────────────────────────────────
                          The details are all on the page already, but only reachable
@@ -2864,6 +2875,14 @@ document.addEventListener('keydown', e => {
         function wrap()  { return document.getElementById('galleryWrap'); }
         function ready() { return !!window.jQuery && typeof jQuery.fn.owlCarousel === 'function'; }
 
+        /* "3 / 7". Blanked rather than shown as "1 / 1" for a single
+           photograph — a counter that can only ever read one is furniture. */
+        function setFrameCount(index, total) {
+            var el = document.getElementById('galleryFrameCount');
+            if (!el) { return; }
+            el.textContent = (total > 1) ? ((index + 1) + ' / ' + total) : '';
+        }
+
         /* Owl's autoWidth reads each slide's own width, so it has to be a
            real number before init. Measured off the wrap rather than the
            grid: the grid is the element Owl restructures, and once it holds
@@ -2952,6 +2971,14 @@ document.addEventListener('keydown', e => {
 
             labelControls(g);
             $g.on('refreshed.owl.carousel', function () { labelControls(g); });
+            /* Owl reports the index and the total on every settle, which is
+               the only place both are known for certain — autoWidth means the
+               last page can hold more than one slide, so counting presses
+               would drift. */
+            $g.on('changed.owl.carousel', function (e) {
+                if (e.item) { setFrameCount(e.item.index, e.item.count); }
+            });
+            setFrameCount(0, g.querySelectorAll('.gallery-grid-item').length);
             wp.classList.add('is-owl');
             active = true;
         }
@@ -2973,6 +3000,9 @@ document.addEventListener('keydown', e => {
                 el.style.width = '';
             });
             if (wp) { wp.classList.remove('is-owl'); }
+            // Otherwise a stale "2 / 5" is left behind for the colour that
+            // was showing, and reappears the moment a carousel is rebuilt.
+            setFrameCount(0, 0);
             active = false;
         }
 
