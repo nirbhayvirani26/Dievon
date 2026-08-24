@@ -51,20 +51,20 @@ try {
 
 // Only accept POST
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Location: ' . SITE_URL . '/pages/checkout.php');
+    header('Location: ' . SITE_URL . '/checkout');
     exit;
 }
 
 if (!verifyCsrfToken($_POST['csrf_token'] ?? '')) {
     $_SESSION['checkout_errors'] = ['Your session expired. Please review your order and submit again.'];
-    header('Location: ' . SITE_URL . '/pages/checkout.php');
+    header('Location: ' . SITE_URL . '/checkout');
     exit;
 }
 
 // ── Validate cart ─────────────────────────────────────────
 $cart = $_SESSION['cart'] ?? [];
 if (empty($cart)) {
-    header('Location: ' . SITE_URL . '/pages/shop.php?empty_cart=1');
+    header('Location: ' . SITE_URL . '/shop?empty_cart=1');
     exit;
 }
 
@@ -110,12 +110,12 @@ if ($orderType === 'collection') {
 // ── Bot protection check ─────────────────────────────────────
 if (!empty($_POST['website'])) {
     $_SESSION['checkout_errors'] = ['Order could not be submitted. Please refresh and try again.'];
-    header('Location: ' . SITE_URL . '/pages/checkout.php'); exit;
+    header('Location: ' . SITE_URL . '/checkout'); exit;
 }
 $loadedAt = (int)($_POST['form_loaded_at'] ?? 0);
 if ($loadedAt > 0 && ((time() * 1000) - $loadedAt) < 2500) {
     $_SESSION['checkout_errors'] = ['Please take a moment to review your order before submitting.'];
-    header('Location: ' . SITE_URL . '/pages/checkout.php'); exit;
+    header('Location: ' . SITE_URL . '/checkout'); exit;
 }
 
 $errors = [];
@@ -153,13 +153,13 @@ if ($orderType === 'delivery') {
     }
     if ($minOrderValue > 0 && $preCheckSubtotal < $minOrderValue) {
         $_SESSION['checkout_errors'] = ['Minimum order for delivery is ' . formatPrice($minOrderValue) . '. Please add more items to your cart.'];
-        header('Location: ' . SITE_URL . '/pages/checkout.php'); exit;
+        header('Location: ' . SITE_URL . '/checkout'); exit;
     }
 }
 
 if (!empty($errors)) {
     $_SESSION['checkout_errors'] = $errors;
-    header('Location: ' . SITE_URL . '/pages/checkout.php');
+    header('Location: ' . SITE_URL . '/checkout');
     exit;
 }
 
@@ -186,7 +186,7 @@ foreach ($cart as $key => $item) {
     $pRow = $pChk->fetch();
     if (!$pRow) {
         $_SESSION['checkout_errors'] = ["Item '{$item['name']}' is no longer available."];
-        header('Location: ' . SITE_URL . '/pages/checkout.php'); exit;
+        header('Location: ' . SITE_URL . '/checkout'); exit;
     }
 
     $price     = (float)$item['price'];
@@ -200,7 +200,7 @@ foreach ($cart as $key => $item) {
         $vRow = $vChk->fetch();
         if (!$vRow) {
             $_SESSION['checkout_errors'] = ["Selected variant for '{$item['name']}' is invalid or no longer available."];
-            header('Location: ' . SITE_URL . '/pages/checkout.php'); exit;
+            header('Location: ' . SITE_URL . '/checkout'); exit;
         }
 
         if (!empty($vRow['color_id'])) {
@@ -210,14 +210,14 @@ foreach ($cart as $key => $item) {
             $cRow = $cChk->fetch();
             if (!$cRow) {
                 $_SESSION['checkout_errors'] = ["Selected colour for '{$item['name']}' is no longer available."];
-                header('Location: ' . SITE_URL . '/pages/checkout.php'); exit;
+                header('Location: ' . SITE_URL . '/checkout'); exit;
             }
             // NULL stock_qty means "not tracked", not "none left". Casting it
             // straight to int made it 0 and refused the order for every variant
             // the owner had deliberately left uncounted.
             if ($vRow['stock_qty'] !== null && (int)$vRow['stock_qty'] < $qty) {
                 $_SESSION['checkout_errors'] = ["Sorry, only " . max(0, (int)$vRow['stock_qty']) . " left of '{$item['name']}' ({$vRow['name']}, {$cRow['color_name']})."];
-                header('Location: ' . SITE_URL . '/pages/checkout.php'); exit;
+                header('Location: ' . SITE_URL . '/checkout'); exit;
             }
             $colorId   = (int)$cRow['id'];
             $colorName = $cRow['color_name'];
@@ -241,7 +241,7 @@ foreach ($cart as $key => $item) {
             // from the first day.
             if ($vRow['stock_qty'] !== null && (int)$vRow['stock_qty'] < $qty) {
                 $_SESSION['checkout_errors'] = ["Sorry, only " . max(0, (int)$vRow['stock_qty']) . " left of '{$item['name']}' ({$vRow['name']})."];
-                header('Location: ' . SITE_URL . '/pages/checkout.php'); exit;
+                header('Location: ' . SITE_URL . '/checkout'); exit;
             }
             // The SAME function the cart and the product page use.
             //
@@ -262,7 +262,7 @@ foreach ($cart as $key => $item) {
         $avail = max(0, $ts - $dmg - $off - $sol);
         if ($avail < $qty) {
             $_SESSION['checkout_errors'] = ["Sorry, only {$avail} left of '{$item['name']}'."];
-            header('Location: ' . SITE_URL . '/pages/checkout.php'); exit;
+            header('Location: ' . SITE_URL . '/checkout'); exit;
         }
     }
 
@@ -287,7 +287,7 @@ foreach ($cart as $key => $item) {
             $cRow2 = $cOnly->fetch();
             if (!$cRow2) {
                 $_SESSION['checkout_errors'] = ["Selected colour for '{$item['name']}' is no longer available."];
-                header('Location: ' . SITE_URL . '/pages/checkout.php'); exit;
+                header('Location: ' . SITE_URL . '/checkout'); exit;
             }
             $colorId   = (int)$cRow2['id'];
             $colorName = $cRow2['color_name'];
@@ -308,7 +308,7 @@ foreach ($cart as $key => $item) {
         $countryPricing = productCountryPricing($pRow);
         if ($countryPricing === null) {
             $_SESSION['checkout_errors'] = ["'{$item['name']}' is not available for delivery to your selected country. Please remove it from your bag."];
-            header('Location: ' . SITE_URL . '/pages/checkout.php'); exit;
+            header('Location: ' . SITE_URL . '/checkout'); exit;
         }
         $price = $countryPricing['price'];
     }
@@ -461,7 +461,7 @@ if ($paymentMethod === 'cod') {
         // by nothing, so the page reloaded with the form still filled in and no
         // explanation at all. The shopper pressed Place Order again and again.
         $_SESSION['checkout_errors'] = ['Cash on Delivery is only available for delivery within India. Please choose online payment for international orders.'];
-        header('Location: ' . SITE_URL . '/pages/checkout.php?err=cod_international');
+        header('Location: ' . SITE_URL . '/checkout?err=cod_international');
         exit;
     }
 
@@ -473,7 +473,7 @@ if ($paymentMethod === 'cod') {
     if ($codMaxOrder > 0 && $total > $codMaxOrder) {
         $_SESSION['checkout_errors'] = ['Cash on Delivery is available for orders up to ' . formatPrice($codMaxOrder)
             . '. Please choose online payment for this order.'];
-        header('Location: ' . SITE_URL . '/pages/checkout.php?err=cod_cap');
+        header('Location: ' . SITE_URL . '/checkout?err=cod_cap');
         exit;
     }
 }
@@ -755,7 +755,7 @@ foreach ($items as $resItem) {
 if ($stockShortfall !== null) {
     $releaseReservedStock($stockReservations);
     $_SESSION['checkout_errors'] = [$stockShortfall];
-    header('Location: ' . SITE_URL . '/pages/checkout.php');
+    header('Location: ' . SITE_URL . '/checkout');
     exit;
 }
 
@@ -819,7 +819,14 @@ for ($attempt = 1; $attempt <= 3; $attempt++) {
                 $releaseReservedStock($stockReservations);
                 $_SESSION['checkout_errors'] = ['Sorry, we could not place your order. Please try again.'];
                 error_log("Order save error (retry): " . $e2->getMessage());
-                header('Location: checkout.php');
+                /* SITE_URL, not a bare 'checkout.php'. This file lives in
+                   /actions/, so the browser resolved that against THAT folder and
+                   asked for /actions/checkout.php — a 404. This is the order-save
+                   failure path: the stock had just been released and the error
+                   message put in the session, and then the shopper was handed a
+                   dead page instead of the checkout screen that would have shown
+                   them what went wrong. */
+                header('Location: ' . SITE_URL . '/checkout');
                 exit;
             }
             break;
@@ -828,7 +835,8 @@ for ($attempt = 1; $attempt <= 3; $attempt++) {
         $releaseReservedStock($stockReservations);
         $_SESSION['checkout_errors'] = ['Sorry, we could not place your order. Please try again.'];
         error_log("Order save error: " . $e->getMessage());
-        header('Location: checkout.php');
+        // Same 404 as above, on the outer save-failure path.
+        header('Location: ' . SITE_URL . '/checkout');
         exit;
     }
 }
@@ -840,7 +848,7 @@ if (!$orderId) {
     $releaseReservedStock($stockReservations);
     $_SESSION['checkout_errors'] = ['Sorry, we could not place your order. Please try again.'];
     error_log('Order save produced no order id — reserved stock released');
-    header('Location: ' . SITE_URL . '/pages/checkout.php');
+    header('Location: ' . SITE_URL . '/checkout');
     exit;
 }
 
@@ -1023,5 +1031,5 @@ $_SESSION['own_orders'] = array_slice(
     array_unique(array_merge($_SESSION['own_orders'] ?? [], [$orderCode])), -20
 );
 
-header('Location: ' . SITE_URL . '/pages/order_confirmation.php?code=' . urlencode($orderCode));
+header('Location: ' . SITE_URL . '/order_confirmation?code=' . urlencode($orderCode));
 exit;

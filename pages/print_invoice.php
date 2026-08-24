@@ -20,7 +20,8 @@ $invPlacedHere = $invOrderCode !== ''
     && in_array($invOrderCode, $_SESSION['own_orders'] ?? [], true);
 
 if (!isset($_SESSION['customer_id']) && !$invPlacedHere) {
-    header('Location: ' . SITE_URL . '/pages/login.php');
+    // The routed /login, not the file path — same rule as the checkout redirects.
+    header('Location: ' . SITE_URL . '/login');
     exit;
 }
 
