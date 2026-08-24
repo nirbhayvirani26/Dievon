@@ -5262,6 +5262,30 @@ body.admin-wrapper {
         scroll-snap-align: start;
         border: none;
     }
+    /* Show the whole garment, never a trimmed one.
+       ────────────────────────────────────────────────────────────────
+       The frame is a fixed 3/4, and `cover` fills it by cropping whatever
+       does not fit — a square photograph lost a quarter of itself, taking
+       the model's head and feet with it. On a clothing shop the hem and
+       the neckline are the things being sold, so a photograph that is not
+       3/4 is letterboxed rather than cut.
+
+       A photograph that IS 3/4 renders identically either way, so this
+       changes nothing for correctly sized shots — it only stops the odd
+       one out from being trimmed.
+
+       Phones only, by request: the desktop grid keeps `cover`.
+
+       The soft surface tone, not white: the bands sit against the page,
+       and #ffffff would read as a lit panel behind the garment rather
+       than as the page showing through. */
+    .gallery-grid-item {
+        background: var(--bg-surface-soft);
+    }
+    .gallery-grid-img {
+        object-fit: contain;
+    }
+
     .product-gallery-grid > .gallery-grid-item:only-child {
         grid-column: unset;
         max-width: none;
