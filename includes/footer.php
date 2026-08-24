@@ -1564,25 +1564,37 @@ document.addEventListener('DOMContentLoaded', function () {
         var stage = railEl.querySelector('.owl-stage');
         if (!outer || !stage) { return; }
 
-        /* The CONTENT width, not the stage box. Owl's inline stage width counts
-           the margin after the final item, and clamping to that would leave one
-           gutter of dead space inside the right edge — the same trap the
-           centring helper above had to work around. */
-        function contentWidth() {
+        /* The CONTENT width, not the stage box — Owl's inline stage width is not
+           reliable to clamp against. `tail` says whether the margin after the
+           final item counts. */
+        function contentWidth(tail) {
             var total = 0, kids = stage.children;
             for (var i = 0; i < kids.length; i++) {
                 total += kids[i].getBoundingClientRect().width;
-                if (i < kids.length - 1) {
+                if (tail || i < kids.length - 1) {
                     total += parseFloat(getComputedStyle(kids[i]).marginRight) || 0;
                 }
             }
             return total;
         }
 
+        /* The last slide keeps its gutter.
+           ────────────────────────────────────────────────────────────────────
+           Owl puts the same margin-right on every item, the final one included,
+           so the CSS gutter was already there — but stopping at the last slide's
+           right EDGE scrolled straight past it, and the row ended hard against
+           the glass while every other gap in it was 15px. Counting that trailing
+           margin makes the strip stop 15px later, so the space after the last
+           slide matches the space between them.
+
+           Only when the row actually scrolls. If everything already fits there
+           is nothing to scroll and adding the tail would hand a static row 15px
+           of pointless travel. */
         function limit() {
             var view = outer.clientWidth;
             if (!view) { return null; }          // a hidden panel measures zero
-            return Math.min(0, view - contentWidth());
+            if (contentWidth(false) <= view) { return 0; }
+            return Math.min(0, view - contentWidth(true));
         }
 
         function targetX() {

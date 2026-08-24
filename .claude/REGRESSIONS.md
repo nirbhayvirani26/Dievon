@@ -97,7 +97,11 @@ Every item below lives in one of those.
   the right until they fill the viewport, then scrolls to that item's own coordinate — which lies
   past the end of the content when the last item is narrower than the viewport, parking the row
   with dead background on one side. `dvClampOwlTail()` in includes/footer.php corrects every rail
-  on the site; do not re-solve it per rail. It skips `loop` rails (the hero has no end).
+  on the site; do not re-solve it per rail. It skips `loop` rails (the hero has no end), and it
+  clamps to one gutter PAST the last slide, not to its right edge — Owl puts margin-right on the
+  final item too, and stopping at the edge scrolled straight past it, ending the row hard against
+  the glass while every other gap in it was 15px. Rows that already fit are left alone, or a
+  static row gains a gutter of pointless travel.
 - **rAF does not fire in a background tab.** A correction scheduled on requestAnimationFrame
   silently does nothing while the tab is hidden, then shows the uncorrected state when the tab
   comes back. Use `setTimeout(fn, 0)` for anything that must run after a write regardless of
