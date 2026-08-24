@@ -47,10 +47,26 @@ requireAdminCapability('catalogue.manage');
 $tabToType = [];
 foreach (DIEVON_ATTR_TYPES as $attrKey => $meta) { $tabToType[$meta['tab']] = $attrKey; }
 
-$type = (string)($_GET['type'] ?? 'colors');
-if (!isset($tabToType[$type])) { $type = 'colors'; }   // an unknown tab is not an error, it is colours
-$attrType  = $tabToType[$type];
-$attrMeta  = DIEVON_ATTR_TYPES[$attrType];
+/* Every list on ONE page, rather than a tab or a menu row each.
+   ────────────────────────────────────────────────────────────────────────────
+   These four are the same idea four times — a list of allowed values feeding a
+   shop filter — and splitting them across tabs meant three of them existed only
+   for someone who already knew the URL. Stacked on one screen you can see the
+   whole set, and which of them still has values to tidy, without navigating.
+
+   Which list an action belongs to therefore comes from the FORM, not the URL:
+   every add, delete and reconcile form carries its own attr_type. The old
+   ?type= links still work and simply scroll to that section. */
+$attrTypeFromPost = static function (array $src) use ($tabToType): ?string {
+    $t = (string)($src['attr_type'] ?? '');
+    if (isset(DIEVON_ATTR_TYPES[$t])) { return $t; }
+    if (isset($tabToType[$t]))        { return $tabToType[$t]; }
+    return null;
+};
+
+// Only used to highlight the sidebar and to honour an old ?type= link.
+$type      = (string)($_GET['type'] ?? 'colors');
+if (!isset($tabToType[$type])) { $type = 'colors'; }
 $activeTab = $type;
 $successMsg = '';
 $errorMsg   = '';
@@ -70,6 +86,10 @@ try {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_attr']) && !verifyCsrfToken($_POST['csrf_token'] ?? '')) {
     $errorMsg = "Security validation failed (Invalid CSRF token).";
 } elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_attr'])) {
+    // Which list this add belongs to comes from the form, since every list has
+    // its own add form on the one page now.
+    $attrType = $attrTypeFromPost($_POST) ?? 'color';
+    $attrMeta = DIEVON_ATTR_TYPES[$attrType];
     $name = trim($_POST['name'] ?? '');
     $code = trim($_POST['code'] ?? '');
     if ($name) {
@@ -109,6 +129,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete'])) {
         $errorMsg = 'Security token expired. Please refresh and try again.';
     } else {
         $delId = (int)$_POST['delete'];
+        $attrType = $attrTypeFromPost($_POST) ?? 'color';
         try {
             $pdo->prepare("DELETE FROM product_attributes WHERE id = :id")->execute(['id' => $delId]);
             $successMsg = "Item deleted successfully.";
@@ -136,6 +157,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reconcile'])) {
     } else {
         $mode  = (string)($_POST['reconcile'] ?? '');
         $stray = trim((string)($_POST['stray'] ?? ''));
+        $attrType = $attrTypeFromPost($_POST) ?? 'color';
+        $attrMeta = DIEVON_ATTR_TYPES[$attrType];
 
         if ($stray === '') {
             $errorMsg = 'Nothing selected.';
@@ -227,32 +250,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reconcile'])) {
     }
 }
 
-$strayColors = [];
-try { $strayColors = dievonStrayAttributes($pdo, $attrType); } catch (Throwable $e) {}
+/* Loaded per list by the render loop below, not once for a single type. */
 
-$attributes = [];
-try {
-    $targetType = $attrType;
+/* One loader, called per list by the render loop.
+   Alphabetical: this was id DESC, so a list read in the order things happened
+   to be typed, backwards — and a list of allowed values exists to be looked up
+   by name. No sort_order column on this table, so nothing manual is overridden. */
+$loadList = static function (PDO $pdo, string $t): array {
+    try {
+        $stmt = $pdo->prepare("SELECT * FROM product_attributes WHERE attr_type = :type ORDER BY name ASC, id ASC");
+        $stmt->execute(['type' => $t]);
+        return $stmt->fetchAll();
+    } catch (PDOException $e) { return []; }
+};
 
-    /* Alphabetical. This was id DESC, so the list was in the order the colours
-       happened to be typed, backwards — and a colour list exists to be looked up
-       by name. No sort_order column on this table, so nothing manual is being
-       overridden.
-
-       Only ever colours: $type is fixed above and the Sizes tab was deliberately
-       removed (see the note at the top of this file). Sorting by name would be
-       wrong for sizes — S, M, L, XL is a ladder, not an alphabet — but that
-       branch would be dead code here, so it is not written. If sizes ever return
-       to this page, they need id order, not this. */
-    $stmt = $pdo->prepare("SELECT * FROM product_attributes WHERE attr_type = :type ORDER BY name ASC, id ASC");
-    $stmt->execute(['type' => $targetType]);
-    $attributes = $stmt->fetchAll();
-} catch (PDOException $e) {}
-
-// This page renders its own richer <div class="admin-page-header"> below
-// (icon, specific title, detailed subtitle, action buttons), so suppress the
-// generic one in includes/header.php — otherwise both draw and the page shows
-// two titles. Same pattern as product_form.php.
 $hideHeaderTitle = true;
 require_once __DIR__ . '/includes/header.php';
 // Role check. The nav hides links this account cannot use, but the URL is
@@ -262,31 +273,36 @@ require_once __DIR__ . '/../config/config.php';
 
 ?>
 
-<div class="admin-page-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
+<div class="admin-page-header" style="margin-bottom: 18px;">
     <div>
-        <h1 class="admin-page-title">🎨 <?= htmlspecialchars($attrMeta['plural']) ?></h1>
+        <h1 class="admin-page-title">🎛️ Filters &amp; Attributes</h1>
         <p class="admin-page-subtitle">
-            The <?= htmlspecialchars(strtolower($attrMeta['label'])) ?> options a product can be given, and the
-            <?= htmlspecialchars(strtolower($attrMeta['label'])) ?> filter a shopper sees. Products choose from this
-            list; they cannot type their own.
+            The lists a product can choose from, and the filters a shopper sees on the shop page.
+            Products pick from these lists; they cannot type their own. Every list on one screen,
+            because they are the same idea four times and are usually tidied together.
         </p>
     </div>
 </div>
 
-<?php /* One tab per managed list. These were four separate ideas living in one
-         table with nothing to switch between them — the page simply forced
-         itself to colours. Each list is edited the same way and has the same
-         reconciliation panel, so a tab is all that was missing. */ ?>
-<div style="display:flex; gap:4px; margin-bottom:22px; border-bottom:1px solid var(--border-light); flex-wrap:wrap;">
+<?php if ($successMsg): ?>
+    <?= dvNotice(htmlspecialchars($successMsg), 'success') ?>
+<?php endif; ?>
+<?php if ($errorMsg): ?>
+    <?= dvNotice(htmlspecialchars($errorMsg), 'danger') ?>
+<?php endif; ?>
+
+<?php /* A jump bar, not tabs. Nothing is hidden — this only scrolls — and the
+         number beside a list is how many values products are using that the list
+         itself does not have, which is the only thing here that needs attention. */ ?>
+<div style="display:flex; gap:8px; margin-bottom:24px; flex-wrap:wrap;">
     <?php foreach (DIEVON_ATTR_TYPES as $tKey => $tMeta):
-        $isOn = ($tKey === $attrType);
         $pending = 0;
         try { $pending = count(dievonStrayAttributes($pdo, $tKey)); } catch (Throwable $e) {}
     ?>
-        <a href="attributes.php?type=<?= htmlspecialchars($tMeta['tab']) ?>"
-           style="padding:10px 16px; font-size:13.5px; font-weight:<?= $isOn ? '700' : '500' ?>; text-decoration:none;
-                  color:<?= $isOn ? 'var(--color-primary)' : 'var(--text-muted)' ?>;
-                  border-bottom:2px solid <?= $isOn ? 'var(--color-primary)' : 'transparent' ?>; margin-bottom:-1px;">
+        <a href="#list-<?= htmlspecialchars($tKey) ?>"
+           style="padding:8px 14px; font-size:13px; font-weight:600; text-decoration:none;
+                  color:var(--color-primary); border:1px solid var(--border-light);
+                  background:var(--bg-surface);">
             <?= htmlspecialchars($tMeta['plural']) ?>
             <?php if ($pending): ?>
                 <span style="display:inline-block; min-width:18px; padding:1px 6px; margin-left:5px; border-radius:9px;
@@ -296,120 +312,179 @@ require_once __DIR__ . '/../config/config.php';
     <?php endforeach; ?>
 </div>
 
-<?php if ($successMsg): ?>
-    <?= dvNotice(htmlspecialchars($successMsg), 'success') ?>
-<?php endif; ?>
+<?php
+/* One section per list. Identical markup for each — the only differences are
+   the wording, and the colour picker, which only colours have. */
+foreach (DIEVON_ATTR_TYPES as $attrType => $attrMeta):
+    $attributes  = $loadList($pdo, $attrType);
+    $strayColors = [];
+    try { $strayColors = dievonStrayAttributes($pdo, $attrType); } catch (Throwable $e) {}
+    $addHint = [
+        'color'   => 'Colour name (e.g. Emerald Green, Rose Gold)',
+        'sleeve'  => 'Sleeve (e.g. Three-quarter Sleeves, Long Sleeve)',
+        'neck'    => 'Neckline (e.g. Round Neck, V-neck)',
+        'pattern' => 'Pattern (e.g. Floral Embroidered, Ikat-inspired Print)',
+    ][$attrType] ?? 'Name';
+?>
 
-<?php if ($errorMsg): ?>
-    <?= dvNotice(htmlspecialchars($errorMsg), 'danger') ?>
-<?php endif; ?>
+<section id="list-<?= htmlspecialchars($attrType) ?>" style="margin-bottom:38px;">
 
-<div class="glass-panel form-section" style="margin-bottom: 24px;">
-    <h3 style="font-size: 16px; font-weight: 700; color: var(--text-primary); margin-bottom: 16px;">Add a <?= htmlspecialchars(strtolower($attrMeta['label'])) ?></h3>
-    <form action="attributes.php?type=<?= htmlspecialchars($type) ?>" method="POST">
-        <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
-        <div class="form-row" style="display: grid; grid-template-columns: 1fr auto auto; gap: 12px; align-items: center;">
-            <div class="form-group" style="margin:0;">
-                <input type="text" name="name" class="form-control" placeholder="<?= htmlspecialchars([
-                    'color'   => 'Colour name (e.g. Emerald Green, Rose Gold)',
-                    'sleeve'  => 'Sleeve (e.g. Three-quarter Sleeves, Long Sleeve)',
-                    'neck'    => 'Neckline (e.g. Round Neck, V-neck)',
-                    'pattern' => 'Pattern (e.g. Floral Embroidered, Ikat-inspired Print)',
-                ][$attrType] ?? 'Name') ?>" required>
-            </div>
-            <?php if ($attrType === 'color'): ?>
+    <h2 style="font-size:18px; font-weight:700; color:var(--text-primary); margin:0 0 4px;">
+        <?= htmlspecialchars($attrMeta['plural']) ?>
+        <span style="font-size:13px; font-weight:500; color:var(--text-muted);">
+            — <?= count($attributes) ?> on the list
+        </span>
+    </h2>
+    <p style="font-size:12.5px; color:var(--text-muted); margin:0 0 14px; max-width:74ch;">
+        The <?= htmlspecialchars(strtolower($attrMeta['label'])) ?> options a product can be given,
+        and the <?= htmlspecialchars(strtolower($attrMeta['label'])) ?> filter a shopper sees.
+    </p>
+
+    <div class="glass-panel form-section" style="margin-bottom: 16px;">
+        <form action="attributes.php" method="POST">
+            <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
+            <?php /* Which list this form belongs to. Every list has its own add
+                     form on this page, so the type cannot come from the URL. */ ?>
+            <input type="hidden" name="attr_type" value="<?= htmlspecialchars($attrType) ?>">
+            <div class="form-row" style="display: grid; grid-template-columns: 1fr auto auto; gap: 12px; align-items: center;">
                 <div class="form-group" style="margin:0;">
-                    <input type="color" name="code" value="#991b1b" style="width: 50px; height: 42px; padding: 2px; border: 1px solid var(--border-strong); cursor: pointer;">
+                    <input type="text" name="name" class="form-control" placeholder="<?= htmlspecialchars($addHint) ?>" required>
                 </div>
-            <?php endif; ?>
-            <button type="submit" name="add_attr" class="btn-primary" style="padding: 10px 20px; font-size: 14px;">
-                Add <?= htmlspecialchars(strtolower($attrMeta['label'])) ?>
-            </button>
-        </div>
-    </form>
-</div>
+                <?php if ($attrType === 'color'): ?>
+                    <div class="form-group" style="margin:0;">
+                        <input type="color" name="code" value="#991b1b" style="width: 50px; height: 42px; padding: 2px; border: 1px solid var(--border-strong); cursor: pointer;">
+                    </div>
+                <?php endif; ?>
+                <button type="submit" name="add_attr" class="btn-primary" style="padding: 10px 20px; font-size: 14px;">
+                    Add <?= htmlspecialchars(strtolower($attrMeta['label'])) ?>
+                </button>
+            </div>
+        </form>
+    </div>
 
-<?php /* Shown only when there is something to reconcile, so a tidy shop never
-         sees a panel telling it about a problem it does not have. */ ?>
-<?php if ($strayColors): ?>
-<div class="glass-panel" style="padding:0; overflow:hidden; margin-bottom:22px; border:1px solid #c9a227;">
-    <div style="padding:16px 24px; border-bottom:1px solid var(--border-light); background:rgba(201,162,39,0.08);">
-        <div style="font-weight:700; font-size:15px; color:var(--text-primary);">
-            ⚠️ <?= count($strayColors) ?> colour<?= count($strayColors) === 1 ? '' : 's' ?> in use but not on this list
+    <?php if ($strayColors): ?>
+    <div class="glass-panel" style="padding:0; overflow:hidden; margin-bottom:16px; border:1px solid #c9a227;">
+        <div style="padding:16px 24px; border-bottom:1px solid var(--border-light); background:rgba(201,162,39,0.08);">
+            <div style="font-weight:700; font-size:15px; color:var(--text-primary);">
+                ⚠️ <?= count($strayColors) ?> <?= htmlspecialchars(strtolower($attrMeta['label'])) ?>
+                value<?= count($strayColors) === 1 ? '' : 's' ?> in use but not on this list
+            </div>
+            <div style="font-size:12.5px; color:var(--text-muted); margin-top:6px; line-height:1.6; max-width:74ch;">
+                These were typed into products before this list existed. Each still appears in the shop's
+                filter as its own entry, matching only the products spelling it exactly this way.
+                <strong>Add</strong> keeps the value and puts it on the list.
+                <strong>Rename</strong> moves those products onto a value you already have.
+                Renaming changes the label only — nothing else about a product moves.
+            </div>
         </div>
-        <div style="font-size:12.5px; color:var(--text-muted); margin-top:6px; line-height:1.6; max-width:70ch;">
-            These were typed into products before colours had to be chosen from this list.
-            Each one still appears in the shop's colour filter as its own entry, matching only
-            the products that happen to spell it exactly this way.
-            <strong>Add</strong> keeps the colour and puts it on the list.
-            <strong>Rename</strong> moves those products onto a colour you already have.
-            Renaming changes the label only — sizes, stock, images and price overrides stay with
-            the colour, and past orders keep the name they were bought under.
-        </div>
-    </div>
-    <div class="table-wrapper">
-        <table class="data-table" style="width:100%;">
-            <thead>
-                <tr>
-                    <th>Colour found</th>
-                    <th>Where</th>
-                    <th>Used by</th>
-                    <th style="width:330px; text-align:right;">Fix</th>
-                </tr>
-            </thead>
-            <tbody>
-            <?php foreach ($strayColors as $sc): ?>
-                <tr>
-                    <td style="font-weight:600;"><?= htmlspecialchars($sc['value']) ?></td>
-                    <td style="font-size:12px; color:var(--text-muted);"><?= htmlspecialchars(implode(', ', $sc['fields'])) ?></td>
-                    <td style="font-size:12px; color:var(--text-muted);">
-                        <?php /* Named, not counted. A bare "3 products" cannot be acted on —
-                                 the shopkeeper has to know WHICH garments change. */ ?>
-                        <?= htmlspecialchars(implode(', ', array_slice(array_values($sc['products']), 0, 3))) ?>
-                        <?php if (count($sc['products']) > 3): ?>
-                            <em>and <?= count($sc['products']) - 3 ?> more</em>
-                        <?php endif; ?>
-                    </td>
-                    <td style="text-align:right;">
-                        <form method="POST" style="display:inline-flex; gap:6px; align-items:center; flex-wrap:wrap; justify-content:flex-end;">
-                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(generateCsrfToken()) ?>">
-                            <input type="hidden" name="stray" value="<?= htmlspecialchars($sc['value']) ?>">
-                            <button type="submit" name="reconcile" value="add" class="btn-secondary" style="padding:5px 10px; font-size:12px;">
-                                Add to list
-                            </button>
-                            <?php if ($attributes): ?>
-                                <select name="rename_to" class="form-control" style="width:150px; padding:5px 8px; font-size:12px;">
-                                    <option value="">Rename to&hellip;</option>
-                                    <?php foreach ($attributes as $a): ?>
-                                        <option value="<?= htmlspecialchars($a['name']) ?>"><?= htmlspecialchars($a['name']) ?></option>
-                                    <?php endforeach; ?>
-                                </select>
-                                <?php /* The shop's own dialog, not the browser's grey confirm box:
-                                         window.dievonConfirm, loaded on every admin page by
-                                         admin/includes/footer.php and used the same way by countries.php
-                                         and the product form. Wired below rather than inline, because it
-                                         returns a Promise and an onclick can only return true or false. */ ?>
-                                <button type="submit" name="reconcile" value="rename" class="btn-secondary" style="padding:5px 10px; font-size:12px;"
-                                        data-confirm-rename="Rename <?= htmlspecialchars($sc['value'], ENT_QUOTES) ?> on <?= count($sc['products']) ?> product(s)?&#10;&#10;Only the colour name changes. Sizes, stock, images and price overrides stay exactly where they are.">
-                                    Rename
-                                </button>
+        <div class="table-wrapper">
+            <table class="data-table" style="width:100%;">
+                <thead>
+                    <tr><th>Value found</th><th>Used by</th><th style="width:330px; text-align:right;">Fix</th></tr>
+                </thead>
+                <tbody>
+                <?php foreach ($strayColors as $sc): ?>
+                    <tr>
+                        <td style="font-weight:600;"><?= htmlspecialchars($sc['value']) ?></td>
+                        <td style="font-size:12px; color:var(--text-muted);">
+                            <?php /* Named, not counted. A bare "3 products" cannot be acted on. */ ?>
+                            <?= htmlspecialchars(implode(', ', array_slice(array_values($sc['products']), 0, 3))) ?>
+                            <?php if (count($sc['products']) > 3): ?>
+                                <em>and <?= count($sc['products']) - 3 ?> more</em>
                             <?php endif; ?>
-                        </form>
-                    </td>
-                </tr>
-            <?php endforeach; ?>
-            </tbody>
-        </table>
+                        </td>
+                        <td style="text-align:right;">
+                            <form method="POST" action="attributes.php" style="display:inline-flex; gap:6px; align-items:center; flex-wrap:wrap; justify-content:flex-end;">
+                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(generateCsrfToken()) ?>">
+                                <input type="hidden" name="attr_type" value="<?= htmlspecialchars($attrType) ?>">
+                                <input type="hidden" name="stray" value="<?= htmlspecialchars($sc['value']) ?>">
+                                <button type="submit" name="reconcile" value="add" class="btn-secondary" style="padding:5px 10px; font-size:12px;">
+                                    Add to list
+                                </button>
+                                <?php if ($attributes): ?>
+                                    <select name="rename_to" class="form-control" style="width:150px; padding:5px 8px; font-size:12px;">
+                                        <option value="">Rename to&hellip;</option>
+                                        <?php foreach ($attributes as $a): ?>
+                                            <option value="<?= htmlspecialchars($a['name']) ?>"><?= htmlspecialchars($a['name']) ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <button type="submit" name="reconcile" value="rename" class="btn-secondary" style="padding:5px 10px; font-size:12px;"
+                                            data-confirm-rename="Rename <?= htmlspecialchars($sc['value'], ENT_QUOTES) ?> on <?= count($sc['products']) ?> product(s)?&#10;&#10;Only the label changes. Nothing else about a product moves.">
+                                        Rename
+                                    </button>
+                                <?php endif; ?>
+                            </form>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
     </div>
-</div>
+    <?php endif; ?>
+
+    <div class="glass-panel" style="padding:0; overflow:hidden;">
+        <div class="table-wrapper">
+            <table class="data-table" style="width: 100%;">
+                <thead>
+                    <tr>
+                        <th style="width: 60px;">ID</th>
+                        <th><?= htmlspecialchars($attrMeta['label']) ?></th>
+                        <?php if ($attrType === 'color'): ?><th>Colour Code</th><?php endif; ?>
+                        <th style="width: 100px; text-align: right;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if (empty($attributes)): ?>
+                        <tr><td colspan="4" style="padding: 20px; text-align: center; color: var(--text-muted);">
+                            Nothing on this list yet. Until one value is added, products keep whatever they already
+                            hold and nothing is refused — so there is no rush and no way to be locked out.
+                        </td></tr>
+                    <?php else: ?>
+                        <?php foreach ($attributes as $a): ?>
+                            <tr>
+                                <td><?= (int)$a['id'] ?></td>
+                                <td style="font-weight:600;"><?= htmlspecialchars($a['name']) ?></td>
+                                <?php if ($attrType === 'color'): ?>
+                                    <td>
+                                        <?php $hex = trim((string)($a['code'] ?? '')); ?>
+                                        <?php if (preg_match('/^#[0-9a-fA-F]{6}$/', $hex)): ?>
+                                            <span style="display:inline-block; width:16px; height:16px; vertical-align:middle;
+                                                         border:1px solid var(--border-light); background:<?= htmlspecialchars($hex) ?>;"></span>
+                                            <span style="font-size:12px; color:var(--text-muted);"><?= htmlspecialchars($hex) ?></span>
+                                        <?php else: ?>
+                                            <span style="font-size:12px; color:var(--text-muted);"><?= $hex !== '' ? htmlspecialchars($hex) : '—' ?></span>
+                                        <?php endif; ?>
+                                    </td>
+                                <?php endif; ?>
+                                <td style="text-align:right;">
+                                    <form method="POST" action="attributes.php" style="display:inline;"
+                                          onsubmit="return dvConfirmForm(this,'Delete this entry? Products already using it keep it until you change them.');">
+                                        <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
+                                        <input type="hidden" name="attr_type" value="<?= htmlspecialchars($attrType) ?>">
+                                        <button type="submit" name="delete" value="<?= (int)$a['id'] ?>" class="btn-danger" style="padding:5px 10px; font-size:12px;">
+                                            Delete
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<?php endforeach; ?>
+
 <script>
 /* Uses the shop's dialog when it is there and the browser's box only if it is
    not, the same fallback countries.php and the product form use.
 
    requestSubmit(button) rather than form.submit(): the pressed button carries
    name="reconcile" value="rename", and a plain submit() drops the submitter, so
-   the handler would receive no action at all and silently do nothing. The
-   `confirmed` flag stops the second, real press from asking again. */
+   the handler would receive no action and silently do nothing. */
 document.addEventListener('click', function (e) {
     var btn = e.target.closest('[data-confirm-rename]');
     if (!btn || btn.dataset.confirmed === '1') { return; }
@@ -426,56 +501,5 @@ document.addEventListener('click', function (e) {
     });
 });
 </script>
-
-<?php endif; ?>
-
-<div class="glass-panel" style="padding:0; overflow:hidden;">
-    <div style="padding:18px 24px; border-bottom:1px solid var(--border-light); font-weight:700; font-size:15px; color:var(--text-primary);">
-        🏷️ Active <?= ucfirst($type) ?> List (<?= count($attributes) ?>)
-    </div>
-    <div class="table-wrapper">
-        <table class="data-table" style="width: 100%;">
-            <thead>
-                <tr>
-                    <th style="width: 60px;">ID</th>
-                    <th><?= ucfirst($type) ?> Name</th>
-                    <?php if ($attrType === 'color'): ?><th>Colour Code</th><?php endif; ?>
-                    <th style="width: 100px; text-align: right;">Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php if (empty($attributes)): ?>
-                    <tr><td colspan="4" style="padding: 20px; text-align: center; color: var(--text-muted);">No <?= htmlspecialchars($type) ?> created yet. Standard options available on product form.</td></tr>
-                <?php else: ?>
-                    <?php foreach ($attributes as $a): ?>
-                        <tr>
-                            <td style="color: var(--text-muted); font-size: 12px;">#<?= $a['id'] ?></td>
-                            <td><strong style="color: var(--text-primary); font-size: 14px;"><?= htmlspecialchars($a['name']) ?></strong></td>
-                            <?php if ($attrType === 'color'): ?>
-                                <td>
-                                    <div style="display: flex; align-items: center; gap: 8px;">
-                                        <span style="display: inline-block; width: 22px; height: 22px; background: <?= htmlspecialchars($a['code'] ?? '#991b1b') ?>; border: 1px solid var(--border-light);"></span>
-                                        <code style="font-size: 12px; color: var(--text-muted);"><?= htmlspecialchars($a['code'] ?? '#991b1b') ?></code>
-                                    </div>
-                                </td>
-                            <?php endif; ?>
-                            <td style="text-align: right;">
-                                <div class="admin-actions">
-                                    <form method="POST" action="attributes.php?type=<?= htmlspecialchars($type) ?>" style="display:inline;" onsubmit="return dvConfirmForm(this,'Delete this attribute?');">
-                                        <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
-                                        <input type="hidden" name="delete" value="<?= $a['id'] ?>">
-                                        <button type="submit" class="admin-action-btn is-danger" title="Delete" aria-label="Delete <?= htmlspecialchars($a['name'] ?? 'attribute') ?>">
-                                            <i class="fa-solid fa-trash"></i>
-                                        </button>
-                                    </form>
-                                </div>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-            </tbody>
-        </table>
-    </div>
-</div>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

@@ -658,13 +658,11 @@ document.addEventListener('DOMContentLoaded', function() {
         'Catalog &amp; Inventory' => [
             ['catalogue.view',   'products.php',            ['products'],                          'fa-shirt',          'Products &amp; Garments'],
             ['catalogue.manage', 'categories.php',          ['categories', 'subcategories'],       'fa-folder-tree',    'Categories &amp; Subcategories'],
-            // Four managed lists live on this page now — Colours, Sleeves, Necks and
-            // Patterns — each a tab, each feeding a shop filter. The label said
-            // "Colours", so the other three were reachable only by knowing the URL,
-            // and the highlight matched only the colours tab so the menu went dark
-            // on the others. Sizes are still not here: they live on the product form
-            // and in the size ladder.
-            ['catalogue.manage', 'attributes.php?type=colors', ['colors', 'sleeves', 'necks', 'patterns', 'sizes'], 'fa-palette', 'Colours &amp; Attributes'],
+            /* One page, one row. Colours, Sleeves, Necklines and Patterns are all
+               managed on attributes.php — they are the lists that feed the shop's
+               filters, and keeping them on one screen means you can see the whole
+               set at once instead of hunting a tab or a menu row per list. */
+            ['catalogue.manage', 'attributes.php', ['colors', 'sleeves', 'necks', 'patterns', 'sizes', 'attributes'], 'fa-filter', 'Filters &amp; Attributes'],
             // brands.php existed, enforced catalogue.manage and worked — but nothing
             // linked to it except setup_database.php, which is itself unlinked. The
             // only route in was typing the URL. This row even claimed 'brands' as one
