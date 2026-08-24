@@ -7480,22 +7480,20 @@ function dievonColorWayChecklist(PDO $pdo, ?string $current): string {
        does nothing and every checkbox is still there to tick. The product form
        is where the catalogue gets built, so it must not depend on a script
        loading to be usable. */
+    /* Classes, not inline styles — .dv-colour-picker in admin/assets/css/style.css,
+       which matches the accent and size the rest of the panel's checkboxes use. */
     $html  = '<input type="search" class="form-control dv-colour-search" data-colour-search="way"'
-           . ' placeholder="Search colours&hellip;" autocomplete="off"'
-           . ' style="margin-bottom:8px; padding:6px 10px; font-size:12.5px;">';
-    $html .= '<div data-colour-search-target="way"'
-          . ' style="display:flex; flex-wrap:wrap; gap:6px 14px; max-height:132px; overflow-y:auto;'
-          . ' padding:10px 12px; border:1px solid var(--border-light); background:var(--bg-surface);">';
+           . ' placeholder="Search colours&hellip;" autocomplete="off">';
+    $html .= '<div class="dv-colour-picker" data-colour-search-target="way">';
     foreach ($master as $name) {
         $stray = str_contains($name, "\0stray");
         $name  = str_replace("\0stray", '', $name);
         $on    = in_array(strtolower(trim($name)), $chosen, true);
-        $html .= '<label style="display:flex; align-items:center; gap:6px; font-size:12.5px; font-weight:400;'
-               . ' white-space:nowrap; cursor:pointer;">'
+        $html .= '<label>'
                . '<input type="checkbox" name="color_way[]" value="' . htmlspecialchars($name) . '"'
-               . ($on ? ' checked' : '') . ' style="margin:0;">'
-               . htmlspecialchars($name)
-               . ($stray ? ' <em style="color:var(--text-muted); font-size:11px;">(not in Color tab)</em>' : '')
+               . ($on ? ' checked' : '') . '>'
+               . '<span>' . htmlspecialchars($name)
+               . ($stray ? ' <em>(not in Color tab)</em>' : '') . '</span>'
                . '</label>';
     }
     return $html . '</div>';
