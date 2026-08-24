@@ -1518,7 +1518,7 @@ if ($occasions) {
                           ? webpUrlIfExists('products', $occCover) : '';
             ?>
                 <a href="<?= SITE_URL ?>/shop?<?= in_array($occ, array_column($menuCategories ?? [], 'name'), true) ? 'category' : 'occasions' ?>=<?= urlencode($occ) ?>"
-                   class="occasion-tile">
+                   class="occasion-tile reveal-on-scroll">
                     <?php /* The photograph is its own box now, because the caption sits
                              UNDER it rather than on it. The 3:4 frame moves here with
                              the picture — the tile itself is picture plus caption and

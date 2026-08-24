@@ -5294,7 +5294,7 @@ body.admin-wrapper {
         background: var(--bg-surface-soft);
     }
     .gallery-grid-img {
-        object-fit: contain;
+        object-fit: cover;
     }
 
     .product-gallery-grid > .gallery-grid-item:only-child {
@@ -10496,7 +10496,6 @@ input.chk-input-error:focus {
    nothing below it was ever suggested. A clamp keeps it generous without
    swallowing the fold. */
 .hero-slider-section {
-    height: clamp(520px, 78vh, 760px) !important;
     background: var(--bg-hero);
 }
 
@@ -10529,7 +10528,7 @@ input.chk-input-error:focus {
 .slide-2 .slide-media { background-image: url('../../uploads/products/silk_3_piece_1784414705496.jpg'); }
 .slide-3 .slide-media { background-image: url('../../uploads/products/linen_coord_1784414712638.jpg'); }
 
-.slide-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 22%; z-index: 0; }
+.slide-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 2%; z-index: 0; }
 
 .slide-panel {
     position: absolute;
@@ -12487,7 +12486,7 @@ input.chk-input-error:focus {
    which is what left a tall band of bare burgundy with the photographs
    flattened inside it. */
 @media (min-width: 1025px) {
-    .na-gallery.owl-loaded             { height: clamp(520px, 62.5vw, 1000px); }
+    .na-gallery.owl-loaded             { height: 100vh; }
     .na-gallery.owl-loaded .owl-stage-outer,
     .na-gallery.owl-loaded .owl-stage,
     .na-gallery.owl-loaded .owl-item,
@@ -13098,6 +13097,7 @@ input.chk-input-error:focus {
        separate cards, on the same pale ground as every other rail — so the
        inset is real spacing rather than a slab of burgundy. 16px, the same as
        the rails beside it. */
+       .trending-section .owl-carousel.owl-loaded,
     .new-arrivals-section .na-gallery.owl-loaded { padding-left: 16px; }
 }
 
@@ -13675,4 +13675,35 @@ input.chk-input-error:focus {
 }
 @media (min-width: 768px) and (max-width: 991px) {
     .photo-fan-section { --pf-visible: 2.8; }
+}
+
+/* ── Shop by Occasion fades up like the other rails ───────────────────────────
+   Its tiles were the only slides on the homepage without the fade. New Arrivals
+   and The Dievon Edit get it free — their slides ARE .product-card, which carries
+   reveal-on-scroll in the shared partial — and Collections is named in the
+   stagger list in includes/footer.php. An Occasion tile is hand-built markup on
+   neither route, so it was never opted in.
+
+   The class alone is not enough here, which is the part worth writing down. The
+   tile already declares `transition: transform 400ms` for the hover lift, and
+   that rule out-ranks .reveal-on-scroll (0,2,0 against 0,1,0) — so the opacity
+   had no transition to run on and the tile would have SNAPPED from invisible to
+   visible instead of fading. Naming opacity here is what makes the fade exist.
+
+   The hover lift keeps its own 400ms; only opacity is added alongside it.
+
+   One deliberate difference by breakpoint, and it is the right way round: above
+   768px each tile carries its resting tilt (rotate(-3deg) and so on) at (0,5,0),
+   which out-ranks the reveal's translateY(24px) — so a desktop tile fades in
+   place without moving, and the fan is never fought. Below 768px there is no
+   tilt, so the tile does the full fade AND rise, which is the phone behaviour
+   that was asked for.
+
+   No stagger, matching The Dievon Edit and New Arrivals. Collections is the only
+   rail that staggers, and footer.php explains why New Arrivals was taken out of
+   that list: revealing a composed row one item at a time animates the layout
+   apart before it settles. A fan of overlapping prints has the same problem. */
+.occasion-slider .occasion-tile {
+    transition: transform 400ms cubic-bezier(0.22, 0.61, 0.36, 1),
+                opacity 0.6s ease;
 }
