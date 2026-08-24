@@ -84,6 +84,15 @@ Every item below lives in one of those.
   stays on after release — the rail reads as sluggish while the others feel clean. New Arrivals
   kills it at 1024, Collections at 768, the photo fan and Shop by Occasion at 767. Shop by
   Occasion was the one rail that never got the block, which is exactly how it was spotted.
+- **Never bind per-slide work to `changed.owl.carousel`.** It fires as the settle animation
+  BEGINS, so anything written there lands on the first frames of the incoming slide. Shop by
+  Occasion renumbered every item's inline `z-index` there — values that never change, since they
+  are derived from the index — and the layer re-ordering made that one strip feel rougher than
+  the rest. Stacking belongs on `refreshed` (when Owl rebuilds items) or once at init, which is
+  what the photo fan does.
+- **A phone fires `resize` when the address bar slides away.** Height-only resizes hit while a
+  finger is still on a rail. Any resize handler that measures or writes layout must compare
+  `window.innerWidth` and bail when only the height moved.
 - **Owl's last page overshoots under autoWidth.** It picks the final page by walking items from
   the right until they fill the viewport, then scrolls to that item's own coordinate — which lies
   past the end of the content when the last item is narrower than the viewport, parking the row

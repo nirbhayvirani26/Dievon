@@ -1619,7 +1619,23 @@ if ($occasions) {
         window.addEventListener('load', function () {
             occStack();
             if (window.jQuery) {
-                window.jQuery(rail).on('changed.owl.carousel translated.owl.carousel refreshed.owl.carousel',
+                /* refreshed ONLY, not changed and translated as well.
+                   ────────────────────────────────────────────────────────────
+                   The number written here is 40 minus the item's index, so it
+                   can only change when Owl rebuilds its items — which is what
+                   refreshed means. Sliding does not renumber anything, so the
+                   other two events re-wrote all four items with the values they
+                   already had, twice per slide.
+
+                   Not merely wasted: changed fires as the settle animation
+                   BEGINS, so the inline write landed on the first frames of the
+                   incoming tile. z-index is what puts an item in its own
+                   stacking context, so rewriting it mid-animation makes the
+                   compositor re-order layers exactly when the next tile is
+                   coming in — the catch in this strip that the others do not
+                   have. The photo fan sets its stacking once at init and never
+                   touches it again; this now matches. */
+                window.jQuery(rail).on('refreshed.owl.carousel',
                     function () { window.setTimeout(occStack, 0); });
             }
         });

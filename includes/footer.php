@@ -1460,6 +1460,7 @@ document.addEventListener('DOMContentLoaded', function () {
            Re-checked on resize, since whether it fits depends entirely on the
            window width. */
         var fitTimer = null;
+        var fitWidth = window.innerWidth;
         function syncRailFit() {
             var outer = $rail.find('.owl-stage-outer')[0];
             var stage = $rail.find('.owl-stage')[0];
@@ -1499,6 +1500,15 @@ document.addEventListener('DOMContentLoaded', function () {
         requestAnimationFrame(syncRailFit);
         $rail.on('refreshed.owl.carousel resized.owl.carousel', syncRailFit);
         window.addEventListener('resize', function () {
+            /* Width changes only. Whether the row fits depends on how WIDE the
+               window is and on nothing else, but a phone fires resize when the
+               address bar slides away — which happens while you are scrolling
+               the page, and often while a finger is still on this strip. That
+               ran a full measure of every tile and could rewrite the stage's
+               inline width mid-gesture, moving the ground under Owl. Height-only
+               resizes are now ignored. */
+            if (window.innerWidth === fitWidth) { return; }
+            fitWidth = window.innerWidth;
             clearTimeout(fitTimer);
             fitTimer = setTimeout(syncRailFit, 150);
         });
