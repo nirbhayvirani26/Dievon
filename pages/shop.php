@@ -733,8 +733,23 @@ try {
     $initCategoryNames = isset($_GET['categories']) && $_GET['categories'] !== ''
         ? array_values(array_filter(array_map('trim', explode(',', (string)$_GET['categories']))))
         : [];
+    /* ?category= is a FALLBACK, not an addition — the same rule the AJAX branch
+       further up already follows, and the two must agree or the first page and
+       page two answer differently.
+       ────────────────────────────────────────────────────────────────────────
+       This ADDED the collection's own category to whatever the shopper had
+       ticked. Standing in /collections/kurtis and ticking "Short Kurtis" asked
+       for Short Kurtis OR Kurtis — and since the category clause ORs its ids,
+       that WIDENED the result back to every kurti instead of narrowing it to the
+       short ones. Measured: product ids 2, 7, 8 where /shop?categories=Short
+       Kurtis correctly returned 7, 8.
+
+       Latent until now, because the sidebar listed every category at once and
+       nobody had reason to tick a child while standing in its parent. The
+       sub-category filter makes that the obvious thing to do, so it had to be
+       fixed with it. */
     $initCategory = isset($_GET['category']) ? trim($_GET['category']) : '';
-    if ($initCategory !== '' && !in_array($initCategory, $initCategoryNames, true)) {
+    if ($initCategory !== '' && empty($initCategoryNames)) {
         $initCategoryNames[] = $initCategory;
     }
     $initSearch = isset($_GET['search']) ? trim($_GET['search']) : (isset($_GET['q']) ? trim($_GET['q']) : '');
@@ -1005,6 +1020,14 @@ $occasions  = [];
 // A value the page cannot render without does not belong behind a try.
 $activeSearch = trim((string)($_GET['search'] ?? $_GET['q'] ?? ''));
 
+/* Also defined BEFORE the try, and for exactly the reason written above about
+   $activeSearch: the sidebar heading reads this, so if any query inside the try
+   throws — or the category list simply comes back empty — an assignment made in
+   there would never happen and PHP 8 would print "Warning: Undefined variable"
+   into the storefront. False is the honest default: it means "these are
+   top-level categories", which is what an empty or failed list amounts to. */
+$categoryFilterIsSubLevel = false;
+
 try {
     $categories = $pdo->query("SELECT * FROM categories ORDER BY sort_order ASC, name ASC")->fetchAll();
     // Only the side of the shop being browsed. Without this the men's filter
@@ -1040,6 +1063,61 @@ try {
                 return true;
             }
         }));
+    }
+
+    /* One level at a time, and the level depends on where the shopper is.
+       ────────────────────────────────────────────────────────────────────────
+       This listed every category at once, parents and children together, on
+       every page. Two problems, and the second is the real one:
+
+       On /shop, "Kurtis" and "Short Kurtis" sat side by side as though they
+       were siblings. Ticking the parent already includes the child — that part
+       has always worked — so ticking both changes nothing and reads like the
+       filter ignored you.
+
+       On a category page it was worse than untidy. Standing in
+       /collections/kurtis, the sidebar still offered Bottoms, Coord Sets and
+       Women's Tops: filters for things that are not kurtis. Ticking one either
+       empties the page or drags the shopper out of the collection they chose —
+       a filter fighting the page it is on.
+
+       So: at the top of the shop, only top-level categories. Inside a category,
+       only that category's children, and the heading below says "Sub Category"
+       rather than "Categories". The parent is the page you are standing on; it
+       does not need to be a tick box as well. A category with no children keeps
+       showing the top-level list, because an empty filter box is worse than a
+       broad one. */
+    if ($categories) {
+        $activeCatId = null;
+        if ($activeCategoryRow && !empty($activeCategoryRow['id'])) {
+            $activeCatId = (int)$activeCategoryRow['id'];
+        } elseif (!empty($_GET['category'])) {
+            foreach ($categories as $c) {
+                if (strcasecmp(trim((string)$c['name']), trim((string)$_GET['category'])) === 0) {
+                    $activeCatId = (int)$c['id'];
+                    break;
+                }
+            }
+        }
+
+        if ($activeCatId !== null) {
+            $children = array_values(array_filter(
+                $categories,
+                fn($c) => (int)($c['parent_id'] ?? 0) === $activeCatId
+            ));
+            if ($children) {
+                $categories = $children;
+                $categoryFilterIsSubLevel = true;
+            }
+        }
+
+        if (!$categoryFilterIsSubLevel) {
+            // No category chosen, or one with nothing beneath it: top level only.
+            $categories = array_values(array_filter(
+                $categories,
+                fn($c) => empty($c['parent_id'])
+            ));
+        }
     }
     
     /* Brands a shopper can actually buy right now.
@@ -1457,8 +1535,14 @@ if (function_exists('currentShopGender') && currentShopGender() === 'men') {
             <h2 class="sidebar-filters-title">Filters</h2>
             
             <div class="filter-accordion">
+                <?php /* "Sub Category" when the boxes below are the children of the
+                         collection being browsed, "Categories" at the top of the shop.
+                         The heading has to say which, or the same four boxes mean two
+                         different things on two pages and the shopper cannot tell
+                         from looking. */ ?>
                 <button type="button" class="filter-header open" aria-expanded="true" onclick="toggleFilter(this)">
-                    Categories <i class="fa-solid fa-angle-down filter-toggle-icon" aria-hidden="true"></i>
+                    <?= $categoryFilterIsSubLevel ? 'Sub Category' : 'Categories' ?>
+                    <i class="fa-solid fa-angle-down filter-toggle-icon" aria-hidden="true"></i>
                 </button>
                 <div class="filter-body open" id="catFilterGroup">
                     <?php foreach ($categories as $cat): ?>
