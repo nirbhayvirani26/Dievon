@@ -565,13 +565,20 @@ if ($activeTab === 'revenue') {
         <button type="button" class="admin-mobile-toggle" onclick="toggleAdminSidebar()" style="display: none; background: none; border: none; color: #ffffff; font-size: 18px; cursor: pointer; padding: 4px;">
             <i class="fa-solid fa-bars"></i>
         </button>
-        <a href="../home.php" class="admin-brand-logo">
+        <?php /* SITE_URL, not ../home.php. The relative form resolved to a
+                 /home.php at the web root — a file that does not exist as a page
+                 in its own right, and an address the shop never uses anywhere
+                 else, so pressing the admin logo landed on dievon.com/home.php
+                 instead of dievon.com. Same rule as everywhere else in this
+                 codebase: links are built from SITE_URL, never guessed by
+                 counting ../ from wherever the file happens to sit. */ ?>
+        <a href="<?= SITE_URL ?>/" class="admin-brand-logo">
             <span class="logo-emoji">✨</span> <?= SHOP_NAME ?> <small>ATELIER ADMIN</small>
         </a>
     </div>
 
     <div class="admin-topbar-actions">
-        <a href="../home.php" target="_blank" class="topbar-btn-shop">
+        <a href="<?= SITE_URL ?>/" target="_blank" rel="noopener" class="topbar-btn-shop">
             <i class="fa-solid fa-globe"></i> View Live Shop ↗
         </a>
         <div class="admin-user-pill">

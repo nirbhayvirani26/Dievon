@@ -10,7 +10,9 @@ require_once __DIR__ . '/../config/db.php';
 
 $code = trim($_GET['code'] ?? '');
 if (empty($code)) {
-    header('Location: ' . SITE_URL . '/pages/home.php');
+    /* The shop root, not /pages/home.php — that address works but exposes the
+       folder layout and is a third URL for a page that already has one. */
+    header('Location: ' . SITE_URL . '/');
     exit;
 }
 
@@ -19,7 +21,9 @@ $stmt = $pdo->prepare("SELECT * FROM orders WHERE order_code = :code LIMIT 1");
 $stmt->execute(['code' => $code]);
 $order = $stmt->fetch();   // false, not null, when missing
 if (!$order) {
-    header('Location: ' . SITE_URL . '/pages/home.php');
+    /* The shop root, not /pages/home.php — that address works but exposes the
+       folder layout and is a third URL for a page that already has one. */
+    header('Location: ' . SITE_URL . '/');
     exit;
 }
 
