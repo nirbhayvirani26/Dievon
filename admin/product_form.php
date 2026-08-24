@@ -393,7 +393,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $supplier_name = '';   // "none" chosen: clear it deliberately
         }
     }
-    $color_way    = trim($_POST['color_way']    ?? '');
+    /* An array of ticked colours now, not one string. Every entry is checked
+       against the Color tab and stored in the master's own spelling, so this
+       field obeys the same rule as the single-colour pickers. */
+    $color_way    = dievonNormaliseColorWay($pdo, $_POST['color_way'] ?? '');
     // Sourcing is the same for every product — the whole range is sourced from
     // India — so the form has no input for it and every save writes INDIA.
     $sourcing = 'INDIA';
@@ -406,7 +409,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // filter, the product schema and the product page, so every save mirrors
     // color_way into it — one value, one place to type it. Truncated to the
     // width of the `color` column (50) so a long colour name cannot overflow it.
-    $color = mb_substr($color_way, 0, 50);
+    /* products.color is the PRIMARY colour — the first one ticked — not the whole
+       list. It is a 50-character column, so a long list would be cut mid-name and
+       leave a value matching nothing. The filter reads color_way for the full set
+       and this for the primary, so nothing is lost by keeping it to one. */
+    $colorWayParts = dievonColorWayList($color_way);
+    $color = mb_substr($colorWayParts[0] ?? '', 0, 50);
     $fabric       = trim($_POST['fabric'] ?? '');
     $sleeve       = trim($_POST['sleeve'] ?? '');
     // Fit / model reference — see the form comment: no invented defaults.
@@ -2122,9 +2130,15 @@ require_once __DIR__ . '/includes/header.php';
                                          products.color is derived from this field further up
                                          (mb_substr($color_way, 0, 50)), so constraining this one
                                          constrains both columns the filter reads. */ ?>
-                                <select name="color_way" class="form-control">
-                                    <?= dievonColorOptions($pdo, (string)($product['color_way'] ?? ($product['color'] ?? ''))) ?>
-                                </select>
+                                <?php /* Checkboxes, because a garment can BE two colours.
+                                         "Purple, Gold" used to be typed here as one string, which
+                                         the shop filter then compared whole — so it became its own
+                                         filter entry and a shopper filtering Purple never found it.
+                                         Ticking two stores them as a list the filter splits, so
+                                         Purple and Gold each appear once and either one finds this
+                                         product. Leave one ticked for an ordinary single-colour
+                                         garment; this is not a required field. */ ?>
+                                <?= dievonColorWayChecklist($pdo, (string)($product['color_way'] ?? ($product['color'] ?? ''))) ?>
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Composition</label>

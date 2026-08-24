@@ -397,14 +397,35 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
         // Colourways are the newer, richer feature, so the filter was blind to a
         // growing share of the catalogue precisely as the owner used it more.
         // EXISTS mirrors how the size filter reaches product_variants.
-        $sql .= " AND (color IN ($in) OR color_way IN ($in)
+        /* FIND_IN_SET on the product's own two columns, IN() on the variants.
+           ────────────────────────────────────────────────────────────────────
+           `color_way` may now hold a list — "Purple,Gold" for a garment that is
+           both — and IN() compares the whole string, so filtering Purple missed
+           it entirely. FIND_IN_SET looks inside the list and still matches a
+           plain single value, so it covers the old data unchanged.
+
+           The REPLACE is belt and braces for anything saved by hand with a space
+           after the comma: FIND_IN_SET splits on the comma exactly and does not
+           trim, so ", Gold" would be searched for as " Gold" and never match.
+
+           product_colors stays on IN(): a colour variant is one colour and never
+           a list, and EXISTS with IN() is the cheaper of the two. */
+        $cwTests = [];
+        $cwParams = [];
+        foreach ($colorsList as $cVal) {
+            $cwTests[]  = "FIND_IN_SET(?, REPLACE(color_way, ', ', ',')) > 0";
+            $cwParams[] = $cVal;
+            $cwTests[]  = "FIND_IN_SET(?, REPLACE(color, ', ', ',')) > 0";
+            $cwParams[] = $cVal;
+        }
+        $sql .= " AND ((" . implode(' OR ', $cwTests) . ")
                        OR EXISTS (
                               SELECT 1 FROM product_colors pc
                                WHERE pc.product_id = products.id
                                  AND pc.is_active = 1
                                  AND pc.color_name IN ($in)
                           ))";
-        $params = array_merge($params, $colorsList, $colorsList, $colorsList);
+        $params = array_merge($params, $cwParams, $colorsList);
     }
 
     // Size is the one filter that cannot be a column comparison: sellable sizes
@@ -789,7 +810,24 @@ try {
         if (!$initValues) { continue; }
         $quoted = implode(',', array_map([$pdo, 'quote'], $initValues));
         $parts  = [];
-        foreach ($initColumns as $col) { $parts[] = "$col IN ($quoted)"; }
+        foreach ($initColumns as $col) {
+            /* Colour Way can hold a list ("Purple,Gold" for a garment that is
+               both), so its two columns need FIND_IN_SET here for the same
+               reason the main query does — and this is the copy that renders
+               the FIRST page, so leaving it on IN() would have shown "no
+               products found" until the shopper scrolled and the AJAX branch
+               answered differently. Every other filter is a single value per
+               column and stays on IN(). */
+            if ($initParam === 'colors') {
+                $tests = [];
+                foreach ($initValues as $iv) {
+                    $tests[] = "FIND_IN_SET(" . $pdo->quote($iv) . ", REPLACE($col, ', ', ',')) > 0";
+                }
+                $parts[] = '(' . implode(' OR ', $tests) . ')';
+            } else {
+                $parts[] = "$col IN ($quoted)";
+            }
+        }
         // Colour also lives in product_colors, and this copy must reach it too.
         //
         // Exactly the drift the comment above describes, one layer further in:
@@ -1136,7 +1174,17 @@ try {
     foreach ($colorSources as $colorSql) {
         try {
             foreach ($pdo->query($colorSql . " ORDER BY c ASC")->fetchAll(PDO::FETCH_COLUMN) as $cVal) {
-                $prodColors[] = $cVal;
+                /* Split, because Color Way can hold more than one colour now — a
+                   garment that IS purple and gold stores "Purple,Gold". Listed
+                   whole it would offer the shopper a checkbox reading
+                   "Purple, Gold" that matched one product; split, Purple and Gold
+                   each appear once and both find it.
+
+                   A no-op for the other two sources: a colour variant is a single
+                   colour and never contains a comma. */
+                foreach (dievonColorWayList((string)$cVal) as $one) {
+                    $prodColors[] = $one;
+                }
             }
         } catch (PDOException $e) {
             // One colour source failing must not cost the shop its other six

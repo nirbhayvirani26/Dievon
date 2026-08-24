@@ -7349,3 +7349,116 @@ function dievonColorOptions(PDO $pdo, string $current = '', string $blankLabel =
     }
     return $html;
 }
+
+/* ── A product that IS two colours ────────────────────────────────────────────
+ * Two different ideas share the word "colour" in this shop, and they are not
+ * interchangeable:
+ *
+ *   product_colors  — the garment COMES IN purple or gold. The shopper picks
+ *                     one. Each has its own photographs, SKU, price and
+ *                     per-size stock. Untouched by anything below.
+ *
+ *   products.color_way — the garment IS purple and gold. One item, one stock
+ *                     number, woven in both.
+ *
+ * The second could not be expressed. Typing "Purple, Gold" into Color Way stored
+ * one string, and the shop's filter compares whole strings — so it became its own
+ * filter entry reading "Purple, Gold", and a shopper filtering Purple never found
+ * the garment at all.
+ *
+ * Color Way now holds a comma-separated list of master colours. No new table, so
+ * nothing has to be run on the live database — and the filter splits the value
+ * when building its list and matches with FIND_IN_SET, so Purple and Gold each
+ * appear once and either one finds the product.
+ *
+ * Stored WITHOUT a space after the comma, because FIND_IN_SET splits on the comma
+ * exactly and does not trim: 'Purple,Bone Ivory' matches 'Bone Ivory', while
+ * 'Purple, Bone Ivory' would look for ' Bone Ivory' and miss. Display adds the
+ * space back; the column never carries it. Colour names may not contain a comma
+ * (enforced in the Color tab) or the delimiter would be ambiguous.
+ */
+function dievonColorWayList(?string $stored): array {
+    $out = [];
+    foreach (explode(',', (string)$stored) as $one) {
+        $one = trim($one);
+        if ($one !== '') { $out[] = $one; }
+    }
+    return $out;
+}
+
+/**
+ * Turn what the form posted into the value for the column.
+ *
+ * Every entry is checked against the master list and stored in the master's own
+ * spelling, so the same rule that governs the single-colour fields governs this
+ * one — anything not on the list is dropped rather than saved. Order is the
+ * order chosen, so "Purple, Gold" and "Gold, Purple" stay distinguishable to a
+ * reader while matching identically in the filter.
+ */
+function dievonNormaliseColorWay(PDO $pdo, $posted): string {
+    $values = is_array($posted) ? $posted : dievonColorWayList((string)$posted);
+    $clean  = [];
+    foreach ($values as $v) {
+        $canonical = dievonCanonicalColor($pdo, (string)$v);
+        if ($canonical === null) {
+            /* Not on the master list. Kept only if it is what the product
+               already had — a value saved before the list was enforced must not
+               be silently dropped by an edit that never touched it. The
+               reconciliation panel in the Color tab is where those get fixed. */
+            $canonical = trim((string)$v);
+            if ($canonical === '' || !dievonMasterColors($pdo)) { continue; }
+        }
+        if (!in_array($canonical, $clean, true)) { $clean[] = $canonical; }
+    }
+    return implode(',', $clean);
+}
+
+/** "Purple,Gold" as a person reads it. */
+function dievonColorWayLabel(?string $stored): string {
+    return implode(', ', dievonColorWayList($stored));
+}
+
+/**
+ * The Color Way picker: one checkbox per master colour.
+ *
+ * Checkboxes rather than a <select multiple>, which on every platform hides how
+ * many are chosen behind a scroll and needs ctrl-click to add a second — the
+ * whole point here is that picking two is ordinary, not an expert gesture.
+ */
+function dievonColorWayChecklist(PDO $pdo, ?string $current): string {
+    $chosen = array_map(
+        static fn($c) => strtolower(trim($c)),
+        dievonColorWayList($current)
+    );
+    $master = array_keys(dievonMasterColors($pdo));
+
+    /* A value the product already holds that is no longer on the list is shown
+       and stays ticked, exactly as the single-colour pickers do it — otherwise
+       opening the product and saving would quietly drop it. */
+    foreach (dievonColorWayList($current) as $held) {
+        $known = false;
+        foreach ($master as $m) { if (strcasecmp($m, $held) === 0) { $known = true; break; } }
+        if (!$known) { array_unshift($master, $held . "\0stray"); }
+    }
+
+    if (!$master) {
+        return '<p style="margin:0; font-size:12px; color:var(--text-muted);">'
+             . 'No colours yet — add them in the Color tab first.</p>';
+    }
+
+    $html = '<div style="display:flex; flex-wrap:wrap; gap:6px 14px; max-height:132px; overflow-y:auto;'
+          . ' padding:10px 12px; border:1px solid var(--border-light); background:var(--bg-surface);">';
+    foreach ($master as $name) {
+        $stray = str_contains($name, "\0stray");
+        $name  = str_replace("\0stray", '', $name);
+        $on    = in_array(strtolower(trim($name)), $chosen, true);
+        $html .= '<label style="display:flex; align-items:center; gap:6px; font-size:12.5px; font-weight:400;'
+               . ' white-space:nowrap; cursor:pointer;">'
+               . '<input type="checkbox" name="color_way[]" value="' . htmlspecialchars($name) . '"'
+               . ($on ? ' checked' : '') . ' style="margin:0;">'
+               . htmlspecialchars($name)
+               . ($stray ? ' <em style="color:var(--text-muted); font-size:11px;">(not in Color tab)</em>' : '')
+               . '</label>';
+    }
+    return $html . '</div>';
+}

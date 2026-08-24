@@ -64,6 +64,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_attr']) && !verif
                is now the only source of colours for every product, it is what
                the shop's filter names, and two rows spelling one colour is
                exactly the drift the whole change exists to remove. */
+            /* A comma is the separator Color Way uses to hold more than one
+               colour on a product, so a colour NAMED with a comma would split
+               into two that do not exist and match nothing. */
+            if ($attrType === 'color' && str_contains($name, ',')) {
+                throw new RuntimeException('A colour name cannot contain a comma — the comma is what separates two colours on a product.');
+            }
             $clash = $pdo->prepare("SELECT name FROM product_attributes
                                      WHERE attr_type = :type AND LOWER(TRIM(name)) = LOWER(TRIM(:name)) LIMIT 1");
             $clash->execute(['type' => $attrType, 'name' => $name]);
