@@ -2609,6 +2609,13 @@ document.addEventListener('keydown', e => {
                 ]);
 
                 capped.then(() => {
+                    /* Give the DOM back before overwriting it. When Owl is
+                       driving (phones), the gallery's children are its stage,
+                       not the tiles — writing innerHTML straight over that
+                       leaves Owl's instance data attached to a node whose
+                       contents it no longer owns, and the carousel freezes on
+                       the colour that was showing. No-op on desktop. */
+                    if (window.dievonGalleryOwl) { window.dievonGalleryOwl.teardown(); }
                     // <picture> with the WebP source, matching how the same
                     // gallery is rendered server-side at line 748.
                     grid.innerHTML = imgsToDisplay.map((im, i) => `
@@ -2634,6 +2641,8 @@ document.addEventListener('keydown', e => {
                     grid.classList.remove('is-swapping');
                     grid.scrollLeft = 0;
                     initGallerySlideCounter();
+                    // Rebuild the carousel around the new colour's photographs.
+                    if (window.dievonGalleryOwl) { window.dievonGalleryOwl.sync(); }
                     // The tiles are new elements, so the parallax has to let go
                     // of the ones it measured and pick these up instead.
                     document.dispatchEvent(new CustomEvent('dievon:gallery-swapped'));
@@ -2824,6 +2833,184 @@ document.addEventListener('keydown', e => {
             }, 60);
         }, { passive: true });
     })();
+
+    /* ── Owl Carousel on phones ───────────────────────────────────────
+       Owl is vendored and loaded site-wide (includes/header.php) and every
+       other rail in the shop rides it. The product gallery was the last
+       hand-rolled slider, so the one place a shopper looks hardest behaved
+       differently under the finger from everywhere else.
+
+       Owl takes over below 768px only. Above it the gallery is a
+       two-column grid rather than a slider, so the carousel is destroyed
+       outright — restyling it would leave Owl's stage wrapper in the DOM
+       and the grid measuring against a transformed parent.
+
+       The scroll-snap rail underneath is left fully intact and is not a
+       dead branch: if jQuery or the plugin fails to arrive, .is-owl never
+       lands, the CSS keeps the native slider in charge, and the gallery
+       still swipes. This is an enhancement over a working gallery, not a
+       replacement for one. */
+    var dievonGalleryOwl = (function () {
+        /* Must match the peek in the responsive CSS. It is repeated here
+           because Owl's autoWidth needs a pixel width BEFORE it measures,
+           and reading the computed flex-basis off a slide the CSS has
+           already stopped applying (Owl reparents them) returns nothing
+           useful. Change one, change the other. */
+        var PEEK = 84;
+        var mq = window.matchMedia('(max-width: 768px)');
+        var active = false;
+
+        function grid()  { return document.getElementById('productGalleryGrid'); }
+        function wrap()  { return document.getElementById('galleryWrap'); }
+        function ready() { return !!window.jQuery && typeof jQuery.fn.owlCarousel === 'function'; }
+
+        /* Owl's autoWidth reads each slide's own width, so it has to be a
+           real number before init. Measured off the wrap rather than the
+           grid: the grid is the element Owl restructures, and once it holds
+           a stage its clientWidth no longer describes the screen. */
+        function sizeSlides(g) {
+            var host = wrap() || g;
+            var w = host.clientWidth;
+            if (!w) { return 0; }
+            var slide = Math.max(120, Math.round(w - PEEK));
+            g.querySelectorAll('.gallery-grid-item').forEach(function (el) {
+                el.style.width = slide + 'px';
+            });
+            return slide;
+        }
+
+        /* The arrows and dots are Owl's own, so the labels the hand-rolled
+           controls carried have to be put back on them — Owl ships bare
+           buttons. The gallery IS the product on a clothing shop; leaving
+           its controls unnamed to a screen reader would undo the WCAG
+           retrofit the markup above was written for. */
+        function labelControls(g) {
+            var nav = g.querySelectorAll('.owl-nav button');
+            if (nav[0]) { nav[0].setAttribute('aria-label', 'Previous photo'); }
+            if (nav[1]) { nav[1].setAttribute('aria-label', 'Next photo'); }
+            g.querySelectorAll('.owl-dots button').forEach(function (d, i) {
+                d.setAttribute('aria-label', 'Go to photo ' + (i + 1));
+            });
+        }
+
+        function build() {
+            var g = grid(), wp = wrap();
+            if (!g || !wp || active || !ready() || !mq.matches) { return; }
+            // One photograph is not a carousel — no stage, no dots, no arrows.
+            if (g.querySelectorAll('.gallery-grid-item').length <= 1) { return; }
+            if (!sizeSlides(g)) { return; }
+
+            var $g = jQuery(g);
+            /* Owl's stylesheet is scoped to .owl-carousel and Owl never adds
+               that class itself. Added here rather than in the markup for the
+               same reason home.php does it: that stylesheet also hides
+               .owl-carousel until .owl-loaded exists, so in the HTML it would
+               blank the gallery until the script ran — and permanently if the
+               library never arrived. */
+            $g.addClass('owl-carousel');
+            /* A slide is a picture, and pictures are draggable objects by
+               default — the browser's own drag-and-drop eats the pointer
+               events Owl needs and the gallery simply will not move. Firefox
+               ignores the CSS property, so the attribute has to say it too. */
+            $g.find('img, a').attr('draggable', 'false');
+
+            $g.owlCarousel({
+                /* autoWidth, not items:1 + stagePadding. stagePadding insets
+                   BOTH edges, which would gutter the first photograph on the
+                   left by however much peek was wanted on the right. The
+                   reference is a photograph starting at the page inset with
+                   the next one bleeding off the right edge, and only a real
+                   per-slide width gives that. */
+                autoWidth: true,
+                /* Not a sizing instruction — autoWidth already decides that
+                   from each slide's measured width. This is here because Owl
+                   decides whether the controls are needed at all with
+                   `items().length <= settings.items`, and `items` defaults to
+                   THREE. Left unset, every product whose colour has three or
+                   fewer photographs got .disabled on the whole nav and dot
+                   strip, and the arrows and dots simply were not there — on a
+                   gallery that still had two or three photographs to show. It
+                   only looked right on the five-photo product it was built
+                   against. At 1 the controls stand down for a single
+                   photograph and in no other case. */
+                items: 1,
+                margin: 8,
+                nav: true,          // Owl's own .owl-nav, styled in style.css
+                dots: true,         // Owl's own .owl-dots, below the photograph
+                loop: false,        // a product's photographs end; they do not wrap
+                slideBy: 1,
+                mouseDrag: true,
+                touchDrag: true,
+                freeDrag: false,
+                smartSpeed: 400,
+                autoHeight: false,
+                navText: [
+                    '<i class="fa-solid fa-chevron-left" aria-hidden="true"></i>',
+                    '<i class="fa-solid fa-chevron-right" aria-hidden="true"></i>'
+                ]
+            });
+
+            labelControls(g);
+            $g.on('refreshed.owl.carousel', function () { labelControls(g); });
+            wp.classList.add('is-owl');
+            active = true;
+        }
+
+        /* Hand the DOM back exactly as Owl found it. Called before the
+           colour swap rewrites the gallery's innerHTML — writing over a live
+           Owl leaves its stage wrapper orphaned and its instance data still
+           attached, so the next init silently no-ops and the gallery freezes
+           on whichever colour was showing. */
+        function teardown() {
+            var g = grid(), wp = wrap();
+            if (!g) { return; }
+            if (ready()) {
+                var $g = jQuery(g);
+                if ($g.data('owl.carousel')) { $g.trigger('destroy.owl.carousel'); }
+                $g.removeClass('owl-carousel owl-loaded owl-drag owl-grab owl-rtl owl-hidden');
+            }
+            g.querySelectorAll('.gallery-grid-item').forEach(function (el) {
+                el.style.width = '';
+            });
+            if (wp) { wp.classList.remove('is-owl'); }
+            active = false;
+        }
+
+        // The single entry point: decides from the viewport whether the
+        // gallery should be an Owl carousel right now, and makes it so.
+        function sync() {
+            if (mq.matches) {
+                if (!active) { build(); }
+                else { sizeSlides(grid()); jQuery(grid()).trigger('refresh.owl.carousel'); }
+            } else if (active) {
+                teardown();
+            }
+        }
+
+        var resizeTimer = null;
+        window.addEventListener('resize', function () {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(sync, 150);
+        });
+        if (mq.addEventListener) { mq.addEventListener('change', sync); }
+        else if (mq.addListener) { mq.addListener(sync); }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', sync);
+        } else {
+            sync();
+        }
+        /* Owl and jQuery are deferred, and a deferred script that is still
+           being fetched has not defined jQuery.fn.owlCarousel by
+           DOMContentLoaded. One more attempt on load costs nothing and is
+           the difference between a carousel and a plain rail on a slow
+           connection. */
+        window.addEventListener('load', function () { if (!active) { sync(); } });
+
+        return { build: build, teardown: teardown, sync: sync,
+                 isActive: function () { return active; } };
+    })();
+    window.dievonGalleryOwl = dievonGalleryOwl;
 
     // ── Sticky gallery "lift" effect (desktop only) ──────────────────
     // Detects when .product-image-section is actually in its pinned/stuck

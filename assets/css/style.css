@@ -5252,10 +5252,12 @@ body.admin-wrapper {
            looks like a single static picture — nothing tells the shopper there
            are four more. The peeking sliver is what says "swipe me", and it
            says it without an arrow or a caption.
-           84px = 8px gap + 76px of the next photograph. Nothing in the JS
-           hardcodes that number — the slide counter and the arrows measure the
-           real slide pitch off the DOM — so this stays the single place the
-           peek is tuned. */
+           84px = 8px gap + 76px of the next photograph. This rule drives the
+           fallback rail only. When Owl is running it sets each slide's width
+           itself, from PEEK in initGalleryOwl() (pages/product.php) — Owl's
+           autoWidth needs a pixel width before it measures, and by then it has
+           reparented the slides out from under this rule. The two constants
+           have to be changed together. */
         flex: 0 0 calc(100% - 84px);
         scroll-snap-align: start;
         border: none;
@@ -5285,6 +5287,139 @@ body.admin-wrapper {
     }
     .product-gallery-slide-counter .dot.active {
         background: #ffffff;
+    }
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   PRODUCT GALLERY — Owl Carousel on phones
+   ───────────────────────────────────────────────────────────
+   Owl is already vendored and loaded site-wide (includes/header.php),
+   and every other rail in the shop rides it. The product gallery was
+   the one hand-rolled slider left, so it behaved differently from the
+   rest of the shop under the finger.
+
+   Owl drives the gallery only below 768px. Above it the two-column grid
+   is not a slider at all, so the carousel is destroyed rather than
+   merely restyled — see initGalleryOwl() in pages/product.php.
+
+   Everything here hangs off .is-owl, which that code adds only after
+   Owl reports itself initialised. If jQuery or the plugin fails to
+   load, the class never lands, the scroll-snap rail above stays in
+   charge and the gallery still swipes. The enhancement is allowed to
+   fail; the gallery is not.
+   ═══════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+
+    /* Owl slides by transforming its own stage. The scroll-snap rail has
+       to stand down while it does, or a single swipe moves the gallery
+       twice — once by Owl's transform and once by the native scroll
+       underneath it. */
+    .product-gallery-slider-wrap.is-owl .product-gallery-grid {
+        display: block;
+        position: relative;
+        overflow: visible;
+        overflow-x: visible;
+        gap: 0;
+        scroll-snap-type: none;
+    }
+    .product-gallery-slider-wrap.is-owl .gallery-grid-item {
+        flex: none;
+        scroll-snap-align: none;
+        /* Width is written inline per slide by initGalleryOwl(), measured
+           from the container — Owl's autoWidth reads that measurement.
+           A percentage cannot be used: inside .owl-stage it would resolve
+           against the stage's total scroll width, not the screen. */
+    }
+
+    /* The hand-rolled arrows and dot strip step aside for Owl's own, but
+       are left in the markup rather than removed: they are the fallback
+       that runs when Owl never loads. */
+    .product-gallery-slider-wrap.is-owl .gallery-nav,
+    .product-gallery-slider-wrap.is-owl .product-gallery-slide-counter {
+        display: none;
+    }
+
+    /* ── Owl's nav, wearing the arrows this shop already uses ─────────
+       The !important is answering an !important, not decorating one. Every
+       other slider on this site draws its own controls, so Owl's are killed
+       site-wide further down this file ("Owl's own nav and dots, hidden").
+       That rule is right and stays; the product gallery is the one place
+       that genuinely uses Owl's pair, so it opts back in by name rather
+       than by weakening the blanket rule for the hero slider, the occasion
+       strip and the product rails as well. */
+    .product-gallery-slider-wrap.is-owl .owl-nav {
+        margin: 0;
+        display: block !important;
+    }
+    /* Owl marks the whole control .disabled when every slide already fits,
+       and the opt-in above would otherwise force it back into view. */
+    .product-gallery-slider-wrap.is-owl .owl-nav.disabled,
+    .product-gallery-slider-wrap.is-owl .owl-dots.disabled {
+        display: none !important;
+    }
+    .product-gallery-slider-wrap.is-owl .owl-nav button.owl-prev,
+    .product-gallery-slider-wrap.is-owl .owl-nav button.owl-next {
+        position: absolute;
+        /* Centred on the PHOTOGRAPH, not on the carousel — the dot strip
+           sits below the stage and is part of the element's height, so a
+           plain top:50% would hang the arrows low. */
+        top: 0;
+        bottom: 42px;
+        height: 36px;
+        margin: auto 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        padding: 0;
+        border: 1px solid var(--border-light);
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.85);
+        color: var(--text-primary);
+        font-size: 14px;
+        z-index: 5;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+        transition: background 0.2s ease, opacity 0.2s ease;
+    }
+    .product-gallery-slider-wrap.is-owl .owl-nav button.owl-prev { left: 10px; }
+    /* Clear of the peeking photograph rather than on top of it: the sliver
+       is the thing telling the shopper there is more, and an arrow parked
+       over it hid the very cue it duplicates. */
+    .product-gallery-slider-wrap.is-owl .owl-nav button.owl-next { right: 94px; }
+    .product-gallery-slider-wrap.is-owl .owl-nav button:active {
+        background: #ffffff;
+        transform: scale(0.95);
+    }
+    /* Owl marks an end-stop button .disabled. Dimmed rather than hidden,
+       so the control does not jump in and out of the layout mid-swipe. */
+    .product-gallery-slider-wrap.is-owl .owl-nav button.disabled {
+        opacity: 0.35;
+        pointer-events: none;
+    }
+
+    /* ── Owl's dots, below the photograph ──────────────────────────── */
+    .product-gallery-slider-wrap.is-owl .owl-dots {
+        display: flex !important;   /* see the note on .owl-nav above */
+        justify-content: center;
+        align-items: center;
+        gap: 6px;
+        padding: 14px 0 2px;
+        line-height: 0;
+    }
+    .product-gallery-slider-wrap.is-owl .owl-dots button.owl-dot {
+        width: 26px;
+        height: 4px;
+        padding: 0;
+        border: none;
+        border-radius: 2px;
+        background: var(--border-strong);
+        opacity: 0.45;
+        transition: background 0.25s ease, opacity 0.25s ease;
+    }
+    .product-gallery-slider-wrap.is-owl .owl-dots button.owl-dot.active {
+        background: var(--color-primary);
+        opacity: 1;
     }
 }
 
