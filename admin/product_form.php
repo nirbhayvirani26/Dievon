@@ -415,7 +415,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
        and this for the primary, so nothing is lost by keeping it to one. */
     $colorWayParts = dievonColorWayList($color_way);
     $color = mb_substr($colorWayParts[0] ?? '', 0, 50);
-    $fabric       = trim($_POST['fabric'] ?? '');
+    $fabric       = $dvKeepListed('fabric', 'fabric');
     /* Sleeve, Neck and Pattern come from a managed list now.
        ────────────────────────────────────────────────────────────────────────
        A <select> is only a suggestion to anything that is not a browser, and
@@ -450,7 +450,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $model_size_worn = trim($_POST['model_size_worn'] ?? '');
     $neck         = $dvKeepListed('neck', 'neck');
     $pattern      = $dvKeepListed('pattern', 'pattern');
-    $occasion     = trim($_POST['occasion'] ?? '');
+    $occasion     = $dvKeepListed('occasion', 'occasion');
     // The input is gone (see the note in the fashion fields below), so absent now
     // means "keep what is stored" rather than "reset to 0" — the same rule as
     // related_ids and nuts_allergy. Nothing reads this column, but destroying a
@@ -2198,8 +2198,20 @@ require_once __DIR__ . '/includes/header.php';
                         </div>
                         <div class="form-row">
                             <div class="form-group">
-                                <label class="form-label">Fabric</label>
-                                <input type="text" name="fabric" list="dv-fabric-options" class="form-control" placeholder="e.g. Cotton" value="<?= htmlspecialchars($product['fabric'] ?? '') ?>">
+                                <label class="form-label">Fabric
+                                    <a href="attributes.php?type=fabrics" target="_blank" rel="noopener"
+                                       style="font-size:11px; font-weight:400; color:var(--text-muted); margin-left:6px;"
+                                       title="Manage the shop's fabric list">
+                                        <?php $nfabric = count(dievonMasterList($pdo, 'fabric')); ?>
+                                        <?= $nfabric ? (int)$nfabric . ' saved' : 'add ' . 'fabrics' ?> &rarr;
+                                    </a>
+                                </label>
+                                <?php /* Chosen from the fabric list, not typed — the same rule the
+                                         other four fields follow. Clean today only because the catalogue is young; this is the
+                                         field that collects "Cotton", "cotton" and "100% Cotton". */ ?>
+                                <input type="search" class="form-control dv-colour-search" data-colour-search="fabric"
+                                       placeholder="Search fabric&hellip;" autocomplete="off">
+                                <select name="fabric" class="form-control" data-colour-search-target="fabric"><?= dievonAttributeOptions($pdo, 'fabric', (string)($product['fabric'] ?? '')) ?></select>
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Sleeve
@@ -2272,8 +2284,21 @@ require_once __DIR__ . '/includes/header.php';
                         </div>
                         <div class="form-row">
                             <div class="form-group">
-                                <label class="form-label">Occasion</label>
-                                <input type="text" name="occasion" list="dv-occasion-options" class="form-control" placeholder="e.g. Casual" value="<?= htmlspecialchars($product['occasion'] ?? '') ?>">
+                                <label class="form-label">Occasion
+                                    <a href="attributes.php?type=occasions" target="_blank" rel="noopener"
+                                       style="font-size:11px; font-weight:400; color:var(--text-muted); margin-left:6px;"
+                                       title="Manage the shop's occasion list">
+                                        <?php $noccasion = count(dievonMasterList($pdo, 'occasion')); ?>
+                                        <?= $noccasion ? (int)$noccasion . ' saved' : 'add ' . 'occasions' ?> &rarr;
+                                    </a>
+                                </label>
+                                <?php /* Chosen from the occasion list, not typed — the same rule the
+                                         other four fields follow. This one reaches further than a filter: every distinct value
+                                         becomes a tile in Shop by Occasion on the homepage, so a typo
+                                         here appears on the front page of the shop. */ ?>
+                                <input type="search" class="form-control dv-colour-search" data-colour-search="occasion"
+                                       placeholder="Search occasion&hellip;" autocomplete="off">
+                                <select name="occasion" class="form-control" data-colour-search-target="occasion"><?= dievonAttributeOptions($pdo, 'occasion', (string)($product['occasion'] ?? '')) ?></select>
                             </div>
                             <?php // The "Discount (%)" box that stood here has been REMOVED.
                                   //
@@ -2920,8 +2945,6 @@ require_once __DIR__ . '/includes/header.php';
                  same list. Fabric, Occasion and Composition remain here because
                  they are still deliberately free text. */ ?>
         <?php foreach ([
-            'fabric'      => 'dv-fabric-options',
-            'occasion'    => 'dv-occasion-options',
             'composition' => 'dv-composition-options',
         ] as $specCol => $specListId): ?>
         <datalist id="<?= $specListId ?>">

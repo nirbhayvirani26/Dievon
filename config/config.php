@@ -7524,6 +7524,28 @@ const DIEVON_ATTR_TYPES = [
                   'columns' => ['products.neck']],
     'pattern' => ['label' => 'Pattern', 'plural' => 'Patterns', 'tab' => 'patterns',
                   'columns' => ['products.pattern']],
+    /* Fabric and Occasion were left free text at first because both looked
+       clean — 3 fabrics, 12 occasions, no duplicates. Two things changed that.
+
+       Occasion does not merely feed a filter: every distinct value becomes a
+       TILE in Shop by Occasion on the homepage (pages/home.php, "SELECT occasion
+       FROM products"). A typo there is not a stray checkbox in a sidebar, it is a
+       wrongly-named tile on the front page of the shop. That is a stronger
+       reason to manage it than any of the three managed before it, and it was
+       missed when the filter alone was being looked at.
+
+       Fabric is the duller case: clean only because the catalogue is young, and
+       exactly the field that attracts "Cotton", "cotton", "100% Cotton" and
+       "Pure Cotton" as products are added on different days. That is not a
+       prediction — it is what already happened to Sleeve, which arrived at three
+       names for one thing.
+
+       And with these two, every value a shopper can filter by is managed. Three
+       pickers beside two free-text boxes is its own small confusion. */
+    'fabric'   => ['label' => 'Fabric',   'plural' => 'Fabrics',   'tab' => 'fabrics',
+                   'columns' => ['products.fabric']],
+    'occasion' => ['label' => 'Occasion', 'plural' => 'Occasions', 'tab' => 'occasions',
+                   'columns' => ['products.occasion']],
 ];
 
 /** Every value on a managed list, in its own spelling. */
