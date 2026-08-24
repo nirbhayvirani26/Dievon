@@ -13668,7 +13668,13 @@ input.chk-input-error:focus {
    an Occasion tile's 251px, which is close already, and that band was tuned
    and signed off recently — not worth reopening for 23px. */
 @media (min-width: 1200px) {
-    .photo-fan-section { --pf-visible: 4.75; }
+    /* 4.62, not 4.75. The old number matched Occasion's print WIDTH; this one
+       matches its PEEK — how much of the cut print shows at the right edge,
+       which is the part the eye actually reads as "this row continues".
+       Measured at 1434 before: the Edit showed 0.81 of the next print against
+       Occasion's 0.67, so its cut print looked almost whole rather than
+       deliberately clipped. */
+    .photo-fan-section { --pf-visible: 4.62; }
 }
 @media (min-width: 992px) and (max-width: 1199px) {
     .photo-fan-section { --pf-visible: 3.7; }
@@ -13706,4 +13712,23 @@ input.chk-input-error:focus {
 .occasion-slider .occasion-tile {
     transition: transform 400ms cubic-bezier(0.22, 0.61, 0.36, 1),
                 opacity 0.6s ease;
+}
+
+/* ── The Dievon Edit peeks like the rails beside it, on a phone ───────────────
+   Its cut print showed 0.51 of a slide at 375 — a true half — while Shop by
+   Occasion and New Arrivals both showed 0.37. Half of a print reads as one that
+   did not fit; a third reads as a row deliberately continuing past the edge.
+
+   --pf-visible is a COUNT, so this is the lever: 1.5 means "one and a half
+   across", and a half is exactly what was showing. 1.375 leaves the same third
+   the other two rails leave — checked by measuring, not by arithmetic: 1.35 came
+   out at 0.34 and 1.375 lands on 0.37.
+
+   Worth knowing, and it is why the two cannot be locked together at every size:
+   Occasion sizes its tiles as a share of the SCREEN (67vw here, 20vw on a
+   desktop) while this rail divides its SHELF by a count. Those are different
+   functions, so they agree at the width they are tuned for and drift a little
+   either side of it. Tuned here at 375, the size actually being looked at. */
+@media (max-width: 767px) {
+    .photo-fan-section { --pf-visible: 1.375; }
 }
