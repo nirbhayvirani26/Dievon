@@ -2202,7 +2202,17 @@ require_once __DIR__ . '/includes/header.php';
                                 <input type="text" name="fabric" list="dv-fabric-options" class="form-control" placeholder="e.g. Cotton" value="<?= htmlspecialchars($product['fabric'] ?? '') ?>">
                             </div>
                             <div class="form-group">
-                                <label class="form-label">Sleeve</label>
+                                <label class="form-label">Sleeve
+                                    <?php /* Where the list is kept, and a way to add to it. Without
+                                             this a value that is not on the list is a dead end on the
+                                             one screen where the catalogue gets built. */ ?>
+                                    <a href="attributes.php?type=sleeves" target="_blank" rel="noopener"
+                                       style="font-size:11px; font-weight:400; color:var(--text-muted); margin-left:6px;"
+                                       title="Manage the shop's sleeve list">
+                                        <?php $nsleeve = count(dievonMasterList($pdo, 'sleeve')); ?>
+                                        <?= $nsleeve ? (int)$nsleeve . ' saved' : 'add ' . 'sleeves' ?> &rarr;
+                                    </a>
+                                </label>
                                 <?php /* Chosen from the sleeve list, not typed. This was a text box whose
                                          suggestions came from values already saved, so the first
                                          typo became a suggestion for the next product — which is
@@ -2216,7 +2226,17 @@ require_once __DIR__ . '/includes/header.php';
                         </div>
                         <div class="form-row">
                             <div class="form-group">
-                                <label class="form-label">Neck</label>
+                                <label class="form-label">Neck
+                                    <?php /* Where the list is kept, and a way to add to it. Without
+                                             this a value that is not on the list is a dead end on the
+                                             one screen where the catalogue gets built. */ ?>
+                                    <a href="attributes.php?type=necks" target="_blank" rel="noopener"
+                                       style="font-size:11px; font-weight:400; color:var(--text-muted); margin-left:6px;"
+                                       title="Manage the shop's neck list">
+                                        <?php $nneck = count(dievonMasterList($pdo, 'neck')); ?>
+                                        <?= $nneck ? (int)$nneck . ' saved' : 'add ' . 'necks' ?> &rarr;
+                                    </a>
+                                </label>
                                 <?php /* Chosen from the neck list, not typed. This was a text box whose
                                          suggestions came from values already saved, so the first
                                          typo became a suggestion for the next product — which is
@@ -2228,7 +2248,17 @@ require_once __DIR__ . '/includes/header.php';
                                 <select name="neck" class="form-control" data-colour-search-target="neck"><?= dievonAttributeOptions($pdo, 'neck', (string)($product['neck'] ?? '')) ?></select>
                             </div>
                             <div class="form-group">
-                                <label class="form-label">Pattern</label>
+                                <label class="form-label">Pattern
+                                    <?php /* Where the list is kept, and a way to add to it. Without
+                                             this a value that is not on the list is a dead end on the
+                                             one screen where the catalogue gets built. */ ?>
+                                    <a href="attributes.php?type=patterns" target="_blank" rel="noopener"
+                                       style="font-size:11px; font-weight:400; color:var(--text-muted); margin-left:6px;"
+                                       title="Manage the shop's pattern list">
+                                        <?php $npattern = count(dievonMasterList($pdo, 'pattern')); ?>
+                                        <?= $npattern ? (int)$npattern . ' saved' : 'add ' . 'patterns' ?> &rarr;
+                                    </a>
+                                </label>
                                 <?php /* Chosen from the pattern list, not typed. This was a text box whose
                                          suggestions came from values already saved, so the first
                                          typo became a suggestion for the next product — which is
@@ -2879,14 +2909,18 @@ require_once __DIR__ . '/includes/header.php';
                  datalists below are unaffected: they suggest values for fields
                  that are still deliberately free text. */ ?>
 
-        <?php // One datalist per fashion field, built from the values already in the
-              // catalogue. Suggestions only — anything new can still be typed, and
-              // becomes a suggestion for the next product by virtue of existing. ?>
+        <?php /* One datalist per free-text fashion field, built from the values
+                 already in the catalogue. Suggestions only — anything new can still
+                 be typed and becomes a suggestion for the next product.
+
+                 That last sentence is exactly how the shop filter filled with three
+                 names for one sleeve, so sleeve, neck and pattern are NOT in this
+                 list any more: they are <select> fed by dievonAttributeOptions(),
+                 and keeping a datalist beside them would be a second copy of the
+                 same list. Fabric, Occasion and Composition remain here because
+                 they are still deliberately free text. */ ?>
         <?php foreach ([
             'fabric'      => 'dv-fabric-options',
-            'sleeve'      => 'dv-sleeve-options',
-            'neck'        => 'dv-neck-options',
-            'pattern'     => 'dv-pattern-options',
             'occasion'    => 'dv-occasion-options',
             'composition' => 'dv-composition-options',
         ] as $specCol => $specListId): ?>
