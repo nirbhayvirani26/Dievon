@@ -1058,6 +1058,37 @@ $shopPageScopeSql = static function (string $alias = '') use ($pdo): string {
             }
         } catch (Throwable $e) { /* leave the list broad rather than empty */ }
     }
+    /* If the narrowed page holds nothing, do not narrow the sidebar either.
+       ────────────────────────────────────────────────────────────────────────
+       A sale with no stock in it would otherwise render a filter panel with no
+       chips at all — accurate, but it reads as though the page failed to load
+       rather than as though the sale is empty. Falling back to the full lists
+       keeps the panel looking like itself.
+
+       The honest trade, written down because it is a real one: in that state
+       every chip leads to an empty grid. It is the lesser of the two only
+       because the grid is already empty, so a shopper is not being promised
+       stock that the page could have shown. The moment one product qualifies,
+       the scoping above takes over and the chips mean something again.
+
+       Counted once and remembered — this helper is called eight times while the
+       sidebar is built, and none of them should each run a COUNT. */
+    static $hasAny = null;
+    if ($sql !== '') {
+        if ($hasAny === null) {
+            try {
+                $hasAny = (int)$pdo->query(
+                    "SELECT COUNT(*) FROM products
+                      WHERE available = 1 AND (is_deleted = 0 OR is_deleted IS NULL)"
+                    . str_replace('p.', '', $sql)
+                )->fetchColumn() > 0;
+            } catch (Throwable $e) {
+                $hasAny = true;   // never blank the sidebar because a count failed
+            }
+        }
+        if (!$hasAny) { return ''; }
+    }
+
     return $sql;
 };
 
