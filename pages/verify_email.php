@@ -12,9 +12,13 @@ require_once __DIR__ . '/../config/db.php';
 // typing it. Now every new account starts unverified, and this page is the
 // one place a customer proves they own the address:
 //
-//   pages/verify_email.php?token=…&email=…   the link from the email
-//   pages/verify_email.php?sent=1&email=…    \"check your inbox\" (after register/resend)
-//   pages/verify_email.php?resend=1&email=…  offer to resend the link
+//   /verify_email?token=…&email=…   the link from the email
+//   /verify_email?sent=1&email=…    \"check your inbox\" (after register/resend)
+//   /verify_email?resend=1&email=…  offer to resend the link
+//
+// Routed addresses, served by index.php out of this same file. The older
+// /pages/verify_email.php form still resolves, so links already sent stay
+// good; nothing new is built that way.
 //
 // Guest orders are linked to the account at the moment of verification —
 // the only time an email match is proof of anything.
@@ -58,7 +62,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($raw === null) {
                     $error = 'A verification email was sent very recently. Please wait a couple of minutes before requesting another.';
                 } else {
-                    $verifyUrl = SITE_URL . '/pages/verify_email.php?token=' . urlencode($raw) . '&email=' . urlencode($email);
+                    /* The routed address, not the file path. index.php maps /verify_email to
+                       pages/verify_email.php the same way it maps every other page, and
+                       the query string is untouched by routing. Tested against a real
+                       token before changing: the routed form took the account from
+                       unverified-with-token to verified-with-token-cleared, exactly as the
+                       file path did.
+
+                       Links already sitting in inboxes keep working — index.php strips a
+                       trailing .php and /pages/… still resolves directly — so no customer
+                       is stranded by the switch. */
+                    $verifyUrl = SITE_URL . '/verify_email?token=' . urlencode($raw) . '&email=' . urlencode($email);
                     try {
                         require_once __DIR__ . '/../services/EmailService.php';
                         $emailService = new EmailService($pdo);

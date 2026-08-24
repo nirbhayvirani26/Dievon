@@ -107,7 +107,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $verifyUrl = '';
                 $rawToken = issueEmailVerification($pdo, $customerId);
                 if ($rawToken !== null) {
-                    $verifyUrl = SITE_URL . '/pages/verify_email.php?token=' . urlencode($rawToken) . '&email=' . urlencode($email);
+                    /* The routed address, not the file path. index.php maps /verify_email to
+                       pages/verify_email.php the same way it maps every other page, and
+                       the query string is untouched by routing. Tested against a real
+                       token before changing: the routed form took the account from
+                       unverified-with-token to verified-with-token-cleared, exactly as the
+                       file path did.
+
+                       Links already sitting in inboxes keep working — index.php strips a
+                       trailing .php and /pages/… still resolves directly — so no customer
+                       is stranded by the switch. */
+                    $verifyUrl = SITE_URL . '/verify_email?token=' . urlencode($rawToken) . '&email=' . urlencode($email);
                 }
 
                 // Send Welcome Email
