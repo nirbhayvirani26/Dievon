@@ -2115,7 +2115,16 @@ require_once __DIR__ . '/includes/header.php';
                                         <?= $masterColors ? count($masterColors) . ' saved' : 'add colours' ?> &rarr;
                                     </a>
                                 </label>
-                                <input type="text" name="color_way" list="dv-color-options" class="form-control" placeholder="e.g. Mint Green" value="<?= htmlspecialchars($product['color_way'] ?? ($product['color'] ?? '')) ?>">
+                                <?php /* A select, not a free-text box with suggestions.
+                                         This was <input list="dv-color-options">, and a datalist
+                                         only SUGGESTS — anything typed was saved, which is how the
+                                         shop's colour filter ended up with entries like 'ff'.
+                                         products.color is derived from this field further up
+                                         (mb_substr($color_way, 0, 50)), so constraining this one
+                                         constrains both columns the filter reads. */ ?>
+                                <select name="color_way" class="form-control">
+                                    <?= dievonColorOptions($pdo, (string)($product['color_way'] ?? ($product['color'] ?? ''))) ?>
+                                </select>
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Composition</label>
@@ -2799,11 +2808,12 @@ require_once __DIR__ . '/includes/header.php';
               // datalist suggests without restricting, so an unlisted colour can
               // still be typed; adding it to Colours & Sizes afterwards keeps the
               // spelling consistent the next time. ?>
-        <datalist id="dv-color-options">
-            <?php foreach ($masterColors as $mc): ?>
-            <option value="<?= htmlspecialchars($mc) ?>"></option>
-            <?php endforeach; ?>
-        </datalist>
+        <?php /* The colour datalist is gone. All three colour fields are <select>
+                 now and take their options from dievonColorOptions(), so a list
+                 of suggestions here would be a second copy of the same list —
+                 exactly the drift this change exists to stop. The other
+                 datalists below are unaffected: they suggest values for fields
+                 that are still deliberately free text. */ ?>
 
         <?php // One datalist per fashion field, built from the values already in the
               // catalogue. Suggestions only — anything new can still be typed, and
@@ -3077,7 +3087,7 @@ require_once __DIR__ . '/includes/header.php';
                         <div style="flex:1; min-width:220px; display:grid; grid-template-columns:1fr 1fr; gap:10px;">
                             <div>
                                 <label class="form-label" style="font-size:11px;">Colour Name *</label>
-                                <input type="text" id="cname-<?= $c['id'] ?>" list="dv-color-options" class="form-control" value="<?= htmlspecialchars($c['color_name']) ?>" onchange="updateColor(<?= $c['id'] ?>)">
+                                <select id="cname-<?= $c['id'] ?>" class="form-control" onchange="updateColor(<?= $c['id'] ?>)"><?= dievonColorOptions($pdo, (string)$c['color_name']) ?></select>
                             </div>
                             <div>
                                 <label class="form-label" style="font-size:11px;">Variant SKU</label>
@@ -3367,7 +3377,17 @@ require_once __DIR__ . '/includes/header.php';
             <?php endif; ?>
 
             <div style="display:flex; align-items:center; gap:12px; margin-top:14px; padding:14px 16px; border:2px dashed var(--border-strong); background:var(--bg-surface); flex-wrap:wrap;">
-                <input type="text" id="newColorName" list="dv-color-options" placeholder="Colour name (e.g. Green)" class="form-control" style="flex:1; min-width:140px;">
+                <?php /* Picker plus a way out. Colours now come from the Color tab
+                         only, so a colour that is not on the list would otherwise be
+                         a dead end here — the link says where to add it and comes
+                         back to this product. */ ?>
+                <span style="display:flex; flex-direction:column; gap:3px; flex:1; min-width:140px;">
+                    <select id="newColorName" class="form-control"><?= dievonColorOptions($pdo, '', '— Select a colour —') ?></select>
+                    <a href="attributes.php?type=colors" target="_blank" rel="noopener"
+                       style="font-size:11px; color:var(--text-muted); text-decoration:underline;">
+                        Colour not listed? Add it in the Color tab &rarr;
+                    </a>
+                </span>
                 <input type="text" id="newColorSku" placeholder="Variant SKU (optional)" class="form-control" style="width:160px;">
                 <input type="number" step="0.01" min="0" id="newColorPrice" placeholder="Price override (optional)" class="form-control" style="width:170px;">
                 <button type="button" class="btn-primary" style="padding:10px 18px; flex-shrink:0;" onclick="addColor(<?= (int)$product['id'] ?>)">
@@ -4321,7 +4341,14 @@ function escHtml(str) {
 function addColor(productId) {
     const nameEl = document.getElementById('newColorName');
     const name   = nameEl.value.trim();
-    if (!name) { alert('Please enter a colour name (e.g. Green)'); nameEl.focus(); return; }
+    /* There is nothing to type any more — the only way to get here empty is to
+       leave the picker on its placeholder, so the message says where colours
+       come from rather than asking for one to be entered. */
+    if (!name) {
+        alert('Pick a colour from the list.\n\nIf the one you want is missing, add it in the Color tab first (Attributes \u2192 Colours), then choose it here.');
+        nameEl.focus();
+        return;
+    }
 
     const fd = new FormData();
     fd.append('action', 'add');

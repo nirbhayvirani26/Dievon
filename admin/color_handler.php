@@ -145,6 +145,25 @@ if ($action === 'list') {
 }
 
 // ── ADD colour ──────────────────────────────────────────────
+/* The colour must be one from the Color tab.
+   ────────────────────────────────────────────────────────────────────────────
+   The product form now offers a constrained list rather than a free-text box,
+   but a <select> is only a suggestion to anything that is not a browser — this
+   endpoint takes POSTs, so the rule has to be enforced where the write happens
+   or the same drift walks straight back in.
+
+   Returns the master's OWN spelling, so 'navy' is stored as 'Navy' and the shop
+   filter — which matches product_colors.color_name as a string — cannot end up
+   with the same colour under three casings. */
+function dievon_master_color_or_error(PDO $pdo, string $name) {
+    $canonical = dievonCanonicalColor($pdo, $name);
+    if ($canonical !== null) { return ['ok' => true, 'name' => $canonical]; }
+    if (!dievonMasterColors($pdo)) { return ['ok' => true, 'name' => trim($name)]; }  // master not set up yet
+    return ['ok' => false, 'message' =>
+        '"' . $name . '" is not in the Color tab. Add it there first (Attributes → Colours), '
+        . 'then choose it here — that is what keeps the shop\'s colour filter working.'];
+}
+
 if ($action === 'add') {
     $colorName = trim($_POST['color_name'] ?? '');
     $sku       = trim($_POST['sku'] ?? '');
@@ -155,6 +174,10 @@ if ($action === 'add') {
         echo json_encode(['success' => false, 'message' => 'Colour name is required.']);
         exit;
     }
+
+    $master = dievon_master_color_or_error($pdo, $colorName);
+    if (!$master['ok']) { echo json_encode(['success' => false, 'message' => $master['message']]); exit; }
+    $colorName = $master['name'];
 
     if ($priceError = dievon_validate_color_prices($pdo, $productId, $priceOverride, $mrpPriceOverride)) {
         echo json_encode(['success' => false, 'message' => $priceError]);
@@ -197,6 +220,20 @@ if ($action === 'update') {
     if ($id <= 0 || strlen($colorName) < 1) {
         echo json_encode(['success' => false, 'message' => 'Invalid data.']);
         exit;
+    }
+
+    /* Only when the name is actually being CHANGED. A colour saved before this
+       rule existed may hold a value that is no longer selectable, and editing
+       that colour's price or SKU must not be refused because of its name — that
+       would strand the row with no way to fix it from the form. */
+    $current = $pdo->prepare("SELECT color_name FROM product_colors WHERE id = :id AND product_id = :pid");
+    $current->execute(['id' => $id, 'pid' => $productId]);
+    $existingName = (string)($current->fetchColumn() ?: '');
+
+    if (strcasecmp(trim($existingName), $colorName) !== 0) {
+        $master = dievon_master_color_or_error($pdo, $colorName);
+        if (!$master['ok']) { echo json_encode(['success' => false, 'message' => $master['message']]); exit; }
+        $colorName = $master['name'];
     }
 
     if ($priceError = dievon_validate_color_prices($pdo, $productId, $priceOverride, $mrpPriceOverride)) {

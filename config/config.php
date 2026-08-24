@@ -7201,3 +7201,151 @@ function productImageRatioError(string $tmpPath, string $shownName = ''): ?strin
     return $label . $w . '×' . $h . 'px, which is not 3:4 — ' . $where
          . '. Product photographs must be 3:4 portrait (1500×2000px). Re-export it and try again.';
 }
+
+/* ── The colour master list ───────────────────────────────────────────────────
+ * Colours are added in the Color tab (admin/attributes.php, attr_type='color')
+ * and only chosen in the product form. Before this, the product form offered
+ * the master list as a <datalist> — a suggestion, not a constraint — so any
+ * string could be typed and saved into products.color, products.color_way or
+ * product_colors.color_name.
+ *
+ * The shop's colour filter is built by unioning those three columns
+ * (pages/shop.php), so every typo became its own checkbox matching one product.
+ * The local database had 16 colours in use against 11 in the master, including
+ * 'ff' and 'pink'.
+ *
+ * These three helpers are the single place that answers "is this a real
+ * colour?", so the form, the colour-variant handler and the reconciliation
+ * screen cannot drift apart on the answer.
+ *
+ * Note what is NOT changed: product_colors.color_name stays a VARCHAR. Sizes,
+ * stock, images and price overrides all hang off product_colors.id, and an
+ * order records its own copy in order_items.variant_name — so constraining the
+ * label touches none of them, and a colour can still be renamed later without
+ * disturbing a single variant or a single past order.
+ */
+function dievonMasterColors(PDO $pdo): array {
+    static $cache = null;
+    if ($cache !== null) { return $cache; }
+    $cache = [];
+    try {
+        $rows = $pdo->query("SELECT name, code FROM product_attributes
+                              WHERE attr_type = 'color' AND name IS NOT NULL AND name <> ''
+                              ORDER BY name ASC, id ASC");
+        foreach ($rows as $r) {
+            $name = trim((string)$r['name']);
+            if ($name !== '') { $cache[$name] = trim((string)($r['code'] ?? '')); }
+        }
+    } catch (PDOException $e) {
+        /* No master table yet (a fresh install before the Color tab is opened).
+           Returning empty would make every save fail, so callers treat an empty
+           master as "not configured" and let the value through — see
+           dievonIsMasterColor(). */
+    }
+    return $cache;
+}
+
+/**
+ * The master's own spelling of a colour, or null if it is not on the list.
+ *
+ * Matched case- and space-insensitively so 'navy' and ' Navy ' both resolve to
+ * the master's 'Navy' and save that way. Without this the list would fill with
+ * the same colour in three casings, which is the drift this is meant to stop.
+ */
+function dievonCanonicalColor(PDO $pdo, string $name): ?string {
+    $needle = strtolower(trim($name));
+    if ($needle === '') { return null; }
+    foreach (array_keys(dievonMasterColors($pdo)) as $master) {
+        if (strtolower(trim($master)) === $needle) { return $master; }
+    }
+    return null;
+}
+
+/**
+ * Whether a colour may be saved.
+ *
+ * An EMPTY master list means the Color tab has never been filled in — on a
+ * fresh install, or on a database where the table is missing. Refusing every
+ * colour there would lock the shopkeeper out of their own product form with no
+ * way to recover, so an empty list is treated as "not configured yet" and lets
+ * the value through. The moment one colour exists, the list is enforced.
+ */
+function dievonIsMasterColor(PDO $pdo, string $name): bool {
+    if (trim($name) === '') { return true; }              // blank is "no colour", always allowed
+    if (!dievonMasterColors($pdo)) { return true; }       // master not configured yet
+    return dievonCanonicalColor($pdo, $name) !== null;
+}
+
+/**
+ * Every colour a product actually carries that is NOT on the master list, with
+ * the products using it. Powers the reconciliation panel in the Color tab.
+ *
+ * Reads whatever database it is running in and hardcodes no colour names —
+ * local's strays ('ff', 'pink', the QA colours) are testing junk that will not
+ * exist on the live shop, and live will have strays of its own. Each site is
+ * reconciled against its own data.
+ */
+function dievonStrayColors(PDO $pdo): array {
+    $master = array_map(
+        static fn($n) => strtolower(trim((string)$n)),
+        array_keys(dievonMasterColors($pdo))
+    );
+    $found = [];
+
+    $sources = [
+        ['sql' => "SELECT id, name, color      AS c FROM products WHERE color      IS NOT NULL AND color      <> ''", 'where' => 'Colour'],
+        ['sql' => "SELECT id, name, color_way  AS c FROM products WHERE color_way  IS NOT NULL AND color_way  <> ''", 'where' => 'Color Way'],
+        ['sql' => "SELECT p.id, p.name, pc.color_name AS c
+                     FROM product_colors pc JOIN products p ON p.id = pc.product_id
+                    WHERE pc.color_name IS NOT NULL AND pc.color_name <> ''", 'where' => 'Colour variant'],
+    ];
+
+    foreach ($sources as $src) {
+        try { $rows = $pdo->query($src['sql']); } catch (PDOException $e) { continue; }
+        foreach ($rows as $r) {
+            $value = trim((string)$r['c']);
+            if ($value === '' || in_array(strtolower($value), $master, true)) { continue; }
+            $key = strtolower($value);
+            if (!isset($found[$key])) {
+                $found[$key] = ['value' => $value, 'fields' => [], 'products' => []];
+            }
+            $found[$key]['fields'][$src['where']] = true;
+            $found[$key]['products'][(int)$r['id']] = (string)$r['name'];
+        }
+    }
+
+    ksort($found);
+    return array_values(array_map(static function (array $f) {
+        $f['fields'] = array_keys($f['fields']);
+        return $f;
+    }, $found));
+}
+
+/**
+ * The <option> list for a colour picker, with the current value preserved.
+ *
+ * The point of the second argument: a product saved before the Color tab was
+ * enforced may hold a colour that is no longer on the list. Rendering only the
+ * master list would make the browser select the FIRST option instead, so simply
+ * opening that product and pressing Save would silently repaint it a different
+ * colour. Instead its own value is kept, selected, and labelled — the shopkeeper
+ * sees what it is and chooses deliberately.
+ */
+function dievonColorOptions(PDO $pdo, string $current = '', string $blankLabel = '— Select a colour —'): string {
+    $current = trim($current);
+    $html = '<option value="">' . htmlspecialchars($blankLabel) . '</option>';
+    $matched = false;
+
+    foreach (array_keys(dievonMasterColors($pdo)) as $name) {
+        $selected = ($current !== '' && strcasecmp(trim($name), $current) === 0);
+        if ($selected) { $matched = true; }
+        $html .= '<option value="' . htmlspecialchars($name) . '"' . ($selected ? ' selected' : '') . '>'
+               . htmlspecialchars($name) . '</option>';
+    }
+
+    if ($current !== '' && !$matched) {
+        $html = '<option value="' . htmlspecialchars($current) . '" selected>'
+              . htmlspecialchars($current) . ' — not in Color tab</option>' . $html;
+    }
+    return $html;
+}
