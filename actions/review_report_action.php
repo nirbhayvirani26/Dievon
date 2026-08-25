@@ -85,6 +85,44 @@ try {
         ->execute([':id' => $reviewId]);
     $pdo->commit();
 
+    /* Tell the shop, because nothing else will.
+       ────────────────────────────────────────────────────────────────────────
+       The shopper has just been told the review is "flagged for us to look at",
+       and until now nobody was told to look. This is worse than the pending-review
+       queue beside it: a reported review is ALREADY on the product page, so
+       whatever somebody found objectionable stays in front of every other
+       shopper until a human notices a counter on an admin screen.
+
+       Reporting deliberately does not hide the review — one press should not let
+       anyone remove a genuine review — which is exactly why the notification has
+       to exist: hiding it is a judgement only the shop can make, and it cannot
+       make it without knowing.
+
+       After the commit, in its own try/catch: the report is recorded, and a mail
+       failure must not tell the shopper their report failed when it did not. */
+    try {
+        require_once __DIR__ . '/../includes/mailer.php';
+        $ctx = $pdo->prepare(
+            "SELECT r.author_name, r.review_text, r.reported_count, p.name AS product_name
+               FROM product_reviews r
+               LEFT JOIN products p ON p.id = r.product_id
+              WHERE r.id = :id"
+        );
+        $ctx->execute([':id' => $reviewId]);
+        $row = $ctx->fetch(PDO::FETCH_ASSOC) ?: [];
+
+        getEmailService()->sendReviewReportedAdminEmail([
+            'product_name'   => $row['product_name']   ?? '',
+            'author_name'    => $row['author_name']    ?? '',
+            'review_text'    => $row['review_text']    ?? '',
+            'reported_count' => $row['reported_count'] ?? 1,
+            'reason'         => $reason,
+            'details'        => $details,
+        ]);
+    } catch (\Throwable $e) {
+        error_log('Review report email failed for review ' . $reviewId . ': ' . $e->getMessage());
+    }
+
     echo json_encode(['success' => true, 'message' => 'Thank you — this review has been flagged for us to look at.']);
     exit;
 

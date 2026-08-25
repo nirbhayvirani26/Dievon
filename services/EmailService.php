@@ -1211,6 +1211,92 @@ class EmailService {
             'Your Dievon account has been deleted', $html, 'account_deleted');
     }
 
+    /**
+     * A review is waiting to be published — told to the shop.
+     *
+     * Reviews are stored 'Pending' and a human publishes them, and the customer
+     * is told as much: "It will appear on the product page once approved." But
+     * nothing told the shop one had arrived, so approval waited on somebody
+     * happening to open the reviews screen. A customer who was promised their
+     * words would appear could wait indefinitely for a queue nobody was watching.
+     *
+     * Same shape as the return-request gap: something needs attention and the
+     * only person who can act on it is not told.
+     */
+    public function sendReviewPendingAdminEmail(array $review): bool {
+        $product = htmlspecialchars($review['product_name'] ?? ('#' . (int)($review['product_id'] ?? 0)));
+        $author  = htmlspecialchars($review['author_name'] ?? 'A customer');
+        $rating  = max(0, min(5, (int)($review['rating'] ?? 0)));
+        $stars   = str_repeat('★', $rating) . str_repeat('☆', 5 - $rating);
+        $title   = trim((string)($review['title'] ?? ''));
+        $titleTx = $title !== '' ? '<strong>' . htmlspecialchars($title) . '</strong><br>' : '';
+        $text    = trim((string)($review['review_text'] ?? ''));
+        $textTx  = $text !== '' ? nl2br(htmlspecialchars($text)) : '<em>No words, rating only</em>';
+
+        $body = "
+            <h2 style='font-family: Georgia, serif; font-size: 20px; font-weight: 400; color: #8A6D3B; margin-top: 0;'>⭐ A review is waiting for approval</h2>
+            <p><strong>{$author}</strong> reviewed <strong>{$product}</strong>.</p>
+
+            <div style='background: #FAF8F5; border-left: 4px solid #8A6D3B; padding: 14px 18px; margin: 18px 0;'>
+                <span style='font-size:18px; letter-spacing:2px; color:#C9A227;'>{$stars}</span>
+                &nbsp;<span style='color:#6b6b6b;'>{$rating} of 5</span><br><br>
+                {$titleTx}{$textTx}
+            </div>
+
+            <p>It is <strong>not visible on the site</strong> until you publish it, and the customer has been
+            told it will appear once approved.</p>
+
+            <div style='text-align: center; margin-top: 26px;'>
+                <a href='" . SITE_URL . "/admin/reviews.php' class='btn-luxury'>Open Reviews &rarr;</a>
+            </div>
+        ";
+        $html = $this->wrapLuxuryTemplate('Review awaiting approval', 'Review Awaiting Approval', $body);
+        return $this->sendMail($this->adminAddress, 'Dievon',
+            "Review awaiting approval — {$product}", $html, 'review_pending_admin');
+    }
+
+    /**
+     * Somebody reported a published review — told to the shop, urgently.
+     *
+     * This one is worse than the pending-review gap it sits beside: a reported
+     * review is already ON the product page. Whatever a shopper found offensive
+     * enough to report stays visible to every other shopper until somebody
+     * notices the report, and nothing was raising it.
+     */
+    public function sendReviewReportedAdminEmail(array $report): bool {
+        $product = htmlspecialchars($report['product_name'] ?? '');
+        $author  = htmlspecialchars($report['author_name'] ?? 'Unknown');
+        $reason  = htmlspecialchars((string)($report['reason'] ?? '—'));
+        $details = trim((string)($report['details'] ?? ''));
+        $detailT = $details !== '' ? nl2br(htmlspecialchars($details)) : '<em>None given</em>';
+        $count   = max(1, (int)($report['reported_count'] ?? 1));
+        $excerpt = trim((string)($report['review_text'] ?? ''));
+        $excerptT= $excerpt !== '' ? nl2br(htmlspecialchars(mb_substr($excerpt, 0, 400))) : '<em>(no text)</em>';
+
+        $body = "
+            <h2 style='font-family: Georgia, serif; font-size: 20px; font-weight: 400; color: #A94442; margin-top: 0;'>🚩 A review has been reported</h2>
+            <p>A shopper reported a review of <strong>{$product}</strong>, written by <strong>{$author}</strong>.
+               It has now been reported <strong>{$count}</strong> time" . ($count === 1 ? '' : 's') . ".</p>
+
+            <div style='background: #FAF8F5; border-left: 4px solid #A94442; padding: 14px 18px; margin: 18px 0;'>
+                Reason given: <strong>{$reason}</strong><br><br>{$detailT}
+            </div>
+
+            <p style='margin-bottom:6px;'><strong>The review itself</strong></p>
+            <p style='background:#fff; border:1px solid #EDE7DF; padding:12px 14px; margin-top:0;'>{$excerptT}</p>
+
+            <p><strong>It is still visible on the product page.</strong> Reporting does not hide it —
+            only you can, from the reviews screen.</p>
+
+            <div style='text-align: center; margin-top: 26px;'>
+                <a href='" . SITE_URL . "/admin/reviews.php' class='btn-luxury'>Open Reviews &rarr;</a>
+            </div>
+        ";
+        $html = $this->wrapLuxuryTemplate('Review reported', 'Review Reported', $body);
+        return $this->sendMail($this->adminAddress, 'Dievon',
+            "Review reported on {$product} — still visible", $html, 'review_reported_admin');
+    }
+
     public function sendReturnRequestedAdminEmail(array $rma): bool {
         $code     = htmlspecialchars($rma['return_code'] ?? '');
         $orderTxt = htmlspecialchars($rma['order_code'] ?? '');

@@ -126,6 +126,36 @@ try {
         ':text'   => $review,
     ]);
 
+    /* Tell the shop it is waiting.
+       ────────────────────────────────────────────────────────────────────────
+       The customer has just been promised their words will appear "once
+       approved", and nothing told the person who does the approving. The queue
+       was only ever seen by somebody happening to open the reviews screen, so a
+       review could sit unpublished indefinitely against that promise.
+
+       After the save and in its own try/catch: the review is already stored, so
+       a mail failure must not turn a successful submission into an error. */
+    try {
+        require_once __DIR__ . '/../includes/mailer.php';
+        $pName = '';
+        try {
+            $pn = $pdo->prepare("SELECT name FROM products WHERE id = :id");
+            $pn->execute(['id' => $productId]);
+            $pName = (string)$pn->fetchColumn();
+        } catch (\Throwable $e) { /* the name is a courtesy; the id is in the subject */ }
+
+        getEmailService()->sendReviewPendingAdminEmail([
+            'product_id'   => $productId,
+            'product_name' => $pName,
+            'author_name'  => $author,
+            'rating'       => $rating,
+            'title'        => $title,
+            'review_text'  => $review,
+        ]);
+    } catch (\Throwable $e) {
+        error_log('Review pending email failed for product ' . $productId . ': ' . $e->getMessage());
+    }
+
     echo json_encode([
         'success' => true,
         'message' => 'Thank you for your review. It will appear on the product page once approved.',
