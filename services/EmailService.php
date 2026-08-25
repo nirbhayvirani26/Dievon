@@ -1083,6 +1083,57 @@ class EmailService {
             "Order #{$code} cancelled by customer — do not ship", $html, 'order_cancelled_admin');
     }
 
+    /**
+     * A customer has asked to return something — told to the shop.
+     *
+     * The customer's side of this already existed: sendOrderStatusEmail() has a
+     * 'return requested' case, written and never reached, because the handler
+     * that creates the RMA moved the order on with a raw UPDATE instead of going
+     * through the status path. The shop's side did not exist at all — a return
+     * surfaced only when somebody happened to open the returns page, so a request
+     * could sit unseen for days while the customer waited.
+     *
+     * Modelled on sendOrderCancelledAdminEmail() above, which was written for the
+     * same gap on cancellations. Carries the reason and the RMA code, because
+     * both decide what happens next and neither is guessable from the order.
+     */
+    public function sendReturnRequestedAdminEmail(array $rma): bool {
+        $code     = htmlspecialchars($rma['return_code'] ?? '');
+        $orderTxt = htmlspecialchars($rma['order_code'] ?? '');
+        $safeName = htmlspecialchars($rma['customer_name'] ?? 'Customer');
+        $type     = htmlspecialchars(ucfirst((string)($rma['request_type'] ?? 'Return')));
+        $reason   = htmlspecialchars((string)($rma['reason'] ?? '—'));
+        $details  = trim((string)($rma['details'] ?? ''));
+        $detailTx = $details !== '' ? nl2br(htmlspecialchars($details)) : '<em>None given</em>';
+        $sizeTxt  = trim((string)($rma['exchange_size'] ?? ''));
+        $hasPhoto = !empty($rma['photo_path']);
+
+        $body = "
+            <h2 style='font-family: Georgia, serif; font-size: 20px; font-weight: 400; color: #8A6D3B; margin-top: 0;'>📮 Return requested by the customer</h2>
+            <p><strong>{$safeName}</strong> has requested a <strong>{$type}</strong> on order <strong>#{$orderTxt}</strong>.</p>
+
+            <div style='background: #FAF8F5; border-left: 4px solid #8A6D3B; padding: 14px 18px; margin: 18px 0;'>
+                RMA: <strong>{$code}</strong><br>
+                Reason: <strong>{$reason}</strong>"
+                . ($sizeTxt !== '' ? "<br>Exchange size wanted: <strong>" . htmlspecialchars($sizeTxt) . "</strong>" : '')
+                . "<br>Photo attached: <strong>" . ($hasPhoto ? 'Yes' : 'No') . "</strong>
+            </div>
+
+            <p style='margin-bottom:6px;'><strong>What they said</strong></p>
+            <p style='background:#fff; border:1px solid #EDE7DF; padding:12px 14px; margin-top:0;'>{$detailTx}</p>
+
+            <p>The order is now <strong>Return Requested</strong>. Nothing has been refunded — approving a
+            return does not move any money, and the refund has its own email once it is actually issued.</p>
+
+            <div style='text-align: center; margin-top: 26px;'>
+                <a href='" . SITE_URL . "/admin/returns.php' class='btn-luxury'>Open Returns &rarr;</a>
+            </div>
+        ";
+        $html = $this->wrapLuxuryTemplate("Return requested {$code}", "Return Requested", $body);
+        return $this->sendMail($this->adminAddress, 'Dievon',
+            "Return {$code} requested on order #{$orderTxt}", $html, 'return_requested_admin');
+    }
+
     // ============================================================
     //  5f. RETURN / RMA STATUS CHANGED
     // ============================================================

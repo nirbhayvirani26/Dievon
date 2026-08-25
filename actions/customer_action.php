@@ -376,6 +376,42 @@ if ($action === 'submit_return') {
         $updOrder = $pdo->prepare("UPDATE orders SET status = 'Return Requested' WHERE id = :oid");
         $updOrder->execute(['oid' => $orderId]);
 
+        /* Tell both sides, exactly as the cancellation handler above does.
+           ────────────────────────────────────────────────────────────────────
+           Neither was told before. The customer got an on-screen line they lose
+           on refresh and nothing in writing — no RMA code in their inbox. The
+           shop got nothing at all, so a return surfaced only when somebody
+           happened to open the returns page and could sit unseen for days.
+
+           The customer's email already existed and was simply never reached:
+           sendOrderStatusEmail() has a 'return requested' case, written and
+           ready, but the raw UPDATE above moves the order without going through
+           the status path. Note the asymmetry that hid this — a return status
+           set in ADMIN does email the customer (admin/update_order.php), so only
+           the customer's own submission was silent.
+
+           Wrapped in its own try/catch and placed AFTER the save, so a mail
+           failure can never cost the customer their return: the RMA is already
+           written and the order already moved. Failures are logged, not shown —
+           the request genuinely did succeed. */
+        try {
+            require_once __DIR__ . '/../includes/mailer.php';
+            $order['status'] = 'Return Requested';
+            getEmailService()->sendOrderStatusEmail($order, 'Return Requested');
+            getEmailService()->sendReturnRequestedAdminEmail([
+                'return_code'   => $returnCode,
+                'order_code'    => $order['order_code'] ?? ('#' . $orderId),
+                'customer_name' => $order['customer_name'] ?? '',
+                'request_type'  => $requestType,
+                'reason'        => $reason,
+                'details'       => $details,
+                'exchange_size' => $exchangeSize,
+                'photo_path'    => $photoPath,
+            ]);
+        } catch (\Throwable $e) {
+            error_log('Return request email failed for ' . $returnCode . ': ' . $e->getMessage());
+        }
+
         jsonResp(true, 'RMA Request ' . $returnCode . ' submitted successfully. Our atelier team will review your photos.');
     } catch (PDOException $e) {
         jsonResp(false, 'Database error submitting return request.');
