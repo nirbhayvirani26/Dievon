@@ -883,6 +883,68 @@ class EmailService {
                     . 'takes 3–5 business days to appear once processed. '
                     . 'We will confirm separately with the refund reference.';
                 break;
+            /* The statuses below had no wording of their own, so they fell to the
+               generic "Your order status has been updated." That is thin for a
+               customer owed money or waiting on a courier — the line arrives, says
+               nothing, and has to be chased. Each now says what actually happened
+               and what the customer should expect next.
+
+               Pending and Pending Payment are deliberately absent: the order-placed
+               email already covers "we have your order", and a second message
+               saying the same thing the moment it is filed is noise. */
+            case 'confirmed':
+                $statusIcon = '📋';
+                $statusColor = '#1E6B37';
+                $statusMessage = 'Your order is confirmed and has entered our atelier queue. '
+                    . 'We will write again the moment it is on its way.';
+                break;
+            case 'packed':
+                $statusIcon = '🎀';
+                $statusMessage = 'Your order has been packed and is waiting for the courier. '
+                    . 'A tracking link follows as soon as it is collected.';
+                break;
+            case 'in progress':
+                $statusIcon = '🧵';
+                $statusMessage = 'Your order is being worked on now.';
+                break;
+            case 'out for delivery':
+                $statusIcon = '🛵';
+                $statusColor = '#1E6B37';
+                $statusMessage = 'Your order is out for delivery and should reach you today. '
+                    . 'Please keep your phone nearby — the courier may call.';
+                break;
+            case 'rto':
+                /* Returned to origin: the courier could not deliver and has sent the
+                   parcel back. The customer needs to know it is not lost and that
+                   they do not have to do anything yet, because the alternative is
+                   a tracking page that simply stops. */
+                $statusIcon = '↩️';
+                $statusColor = '#8A6D3B';
+                $statusMessage = 'Your parcel could not be delivered and is on its way back to us. '
+                    . 'Nothing is lost — we will contact you to arrange redelivery or a refund.';
+                break;
+            case 'cancellation requested':
+                $statusIcon = '🕓';
+                $statusColor = '#8A6D3B';
+                $statusMessage = 'We have received your cancellation request and are checking whether '
+                    . 'the order can still be stopped. You will hear from us shortly either way.';
+                break;
+            case 'exchange requested':
+                $statusIcon = '🔁';
+                $statusColor = '#8A6D3B';
+                $statusMessage = 'We have received your exchange request and are reviewing it. '
+                    . 'We will confirm the replacement and how to send the original back.';
+                break;
+            case 'refund pending':
+                /* Says nothing about timing on purpose. Nothing in this codebase
+                   moves money — refunds are issued by hand — so a promised date
+                   would be a guess, and a missed guess on money is worse than no
+                   date at all. The same reasoning as the 'refunded' case above. */
+                $statusIcon = '⏳';
+                $statusColor = '#8A6D3B';
+                $statusMessage = 'Your refund has been approved and is being processed. '
+                    . 'We will confirm here with the reference once it has been sent to your bank.';
+                break;
             case 'return requested':
                 $statusIcon = '📮';
                 $statusColor = '#8A6D3B';
@@ -1097,6 +1159,58 @@ class EmailService {
      * same gap on cancellations. Carries the reason and the RMA code, because
      * both decide what happens next and neither is guessable from the order.
      */
+    /**
+     * A deletion receipt, sent to the address being erased.
+     *
+     * Deleting an account changed thirteen tables and told nobody. The customer
+     * was left with an on-screen line and no proof the request was honoured —
+     * which is precisely the thing a person asking to be forgotten wants in
+     * writing, and the one message that can never be re-sent afterwards because
+     * the address is gone.
+     *
+     * Sent BEFORE the rows are erased, for that reason: after the delete there is
+     * no address left to write to.
+     *
+     * Says what was kept as well as what went. Orders survive because tax law
+     * requires them, anonymised — claiming "everything has been deleted" when
+     * order rows remain would be a plain untruth in a receipt whose whole value
+     * is being trustworthy.
+     */
+    public function sendAccountDeletedEmail(string $email, string $name, int $ordersKept = 0): bool {
+        $email = trim($email);
+        if ($email === '') { return false; }
+        $safeName = htmlspecialchars($name !== '' ? $name : 'there');
+
+        $keptLine = $ordersKept > 0
+            ? "<p>Your <strong>" . (int)$ordersKept . " past order" . ($ordersKept === 1 ? '' : 's')
+              . "</strong> had to be kept — tax law requires a shop to hold its sales records — but they no "
+              . "longer carry your name, email, phone or address, and nothing links them back to you.</p>"
+            : '';
+
+        $body = "
+            <h2 style='font-family: Georgia, serif; font-size: 20px; font-weight: 400; color: #511126; margin-top: 0;'>Your account has been deleted</h2>
+            <p>Hello {$safeName},</p>
+            <p>Your Dievon account has been closed and your personal details erased, as you asked.
+               This is your confirmation — no reply is needed.</p>
+
+            <div style='background: #FAF8F5; border-left: 4px solid #511126; padding: 14px 18px; margin: 18px 0;'>
+                <strong>Erased:</strong> your account, saved addresses, wishlist,
+                support tickets, enquiries and newsletter subscription.
+            </div>
+
+            {$keptLine}
+
+            <p>Any reviews you left stay on the products, under <em>Dievon Customer</em> rather than your name,
+               so other shoppers keep the rating.</p>
+
+            <p style='color:#6b6b6b; font-size:13px;'>If you did not ask for this, reply to this message
+               straight away — this address will stop working once the deletion completes.</p>
+        ";
+        $html = $this->wrapLuxuryTemplate('Your Dievon account has been deleted', 'Account Deleted', $body);
+        return $this->sendMail($email, $name !== '' ? $name : 'Customer',
+            'Your Dievon account has been deleted', $html, 'account_deleted');
+    }
+
     public function sendReturnRequestedAdminEmail(array $rma): bool {
         $code     = htmlspecialchars($rma['return_code'] ?? '');
         $orderTxt = htmlspecialchars($rma['order_code'] ?? '');

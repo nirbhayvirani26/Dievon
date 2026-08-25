@@ -696,6 +696,35 @@ if ($action === 'delete_account') {
 
         $email = (string)$me['email'];
 
+        /* The receipt goes out BEFORE the rows are erased.
+           ────────────────────────────────────────────────────────────────────
+           This is the one message that cannot be sent afterwards: the address is
+           about to be deleted, so there is nothing left to write to. A person
+           asking to be forgotten gets proof it was honoured, which is the whole
+           point of the request, and until now they got only an on-screen line.
+
+           Counted first, because the receipt states how many orders were kept —
+           tax law requires a shop to hold its sales records, so they survive
+           anonymised, and a receipt claiming "everything has been deleted" while
+           order rows remain would be untrue.
+
+           Its own try/catch, and deliberately NOT allowed to stop the deletion:
+           a mail failure must never be the reason somebody cannot close their
+           account. Logged instead. */
+        $ordersKept = 0;
+        try {
+            $okStmt = $pdo->prepare("SELECT COUNT(*) FROM orders WHERE customer_id = :cid");
+            $okStmt->execute(['cid' => $customerId]);
+            $ordersKept = (int)$okStmt->fetchColumn();
+        } catch (\Throwable $e) { /* the count is a courtesy, not a precondition */ }
+
+        try {
+            require_once __DIR__ . '/../includes/mailer.php';
+            getEmailService()->sendAccountDeletedEmail($email, (string)($me['name'] ?? ''), $ordersKept);
+        } catch (\Throwable $e) {
+            error_log('Account deletion receipt failed for customer ' . $customerId . ': ' . $e->getMessage());
+        }
+
         $pdo->beginTransaction();
 
         // Orders: kept, because tax law requires them — but they stop being
