@@ -7445,7 +7445,19 @@ function dievonColorWayChecklist(PDO $pdo, ?string $current): string {
        loading to be usable. */
     /* Classes, not inline styles — .dv-colour-picker in admin/assets/css/style.css,
        which matches the accent and size the rest of the panel's checkboxes use. */
-    $html  = '<input type="search" class="form-control dv-colour-search" data-colour-search="way"'
+    /* The same dropdown the other five attributes wear, for the same reason and
+       by the same rules: rendered OPEN with the toggle hidden, collapsed only
+       once dvMultiSelect() marks it, so a failed script leaves a usable list
+       rather than an unreachable one. Colour was left out when the others were
+       converted, which made it the one field on the screen behaving differently
+       from its four neighbours. */
+    $summary = $chosen ? implode(', ', dievonColorWayList($current)) : 'Select colours';
+    $html  = '<div class="dv-multiselect" data-multiselect="colours">';
+    $html .= '<button type="button" class="dv-multiselect-toggle" aria-expanded="false">'
+           . '<span class="dv-multiselect-value">' . htmlspecialchars($summary) . '</span>'
+           . '<span class="dv-multiselect-caret" aria-hidden="true"></span></button>';
+    $html .= '<div class="dv-multiselect-panel">';
+    $html .= '<input type="search" class="form-control dv-colour-search" data-colour-search="way"'
            . ' placeholder="Search colours&hellip;" autocomplete="off">';
     $html .= '<div class="dv-colour-picker" data-colour-search-target="way">';
     foreach ($master as $name) {
@@ -7459,7 +7471,7 @@ function dievonColorWayChecklist(PDO $pdo, ?string $current): string {
                . ($stray ? ' <em>(not in Color tab)</em>' : '') . '</span>'
                . '</label>';
     }
-    return $html . '</div>';
+    return $html . '</div></div></div>';   // picker, panel, wrapper
 }
 
 /* ── A product video that the browser will actually load ──────────────────────
