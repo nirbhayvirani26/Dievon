@@ -72,6 +72,7 @@ $dvAdminPageCaps = [
     'backup.php'              => 'settings.manage',
     'logs.php'                => 'settings.manage',
     'email_logs.php'          => 'settings.manage',
+    'health.php'              => 'settings.manage',
 ];
 $dvPage = basename((string)($_SERVER['SCRIPT_NAME'] ?? ''));
 requireAdminCapability($dvAdminPageCaps[$dvPage] ?? 'settings.manage');
@@ -303,7 +304,7 @@ $validTabs = [
     'stock', 'customers', 'promos', 'reviews', 'invoices', 'banners',
     'homepage', 'blog', 'seo', 'newsletter', 'media', 'revenue_report', 'revenue',
     'settings', 'backup', 'admin_users', 'roles', 'logs', 'inquiries', 'dashboard',
-    'returns', 'support_tickets', 'size_guide', 'countries', 'lookbook', 'email_logs',
+    'returns', 'support_tickets', 'size_guide', 'countries', 'lookbook', 'email_logs', 'health',
     /* A tab missing from this list is silently rewritten to 'orders' by the line
        below — so suppliers.php set $activeTab = 'suppliers', it failed the
        whitelist, and the sidebar highlighted Orders & Invoices while you stood on
@@ -699,6 +700,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // who changed a price, who archived a product, who altered a permission —
             // and none of it could be read without typing the URL.
             ['settings.manage', 'email_logs.php',         ['email_logs'],                 'fa-envelope-open-text','Email Log'],
+            ['settings.manage', 'health.php',             ['health'],                     'fa-stethoscope',       'System Health Check'],
             ['settings.manage', 'logs.php',               ['logs'],                       'fa-clipboard-list',    'Audit Logs'],
             ['settings.manage', 'backup.php',             ['backup'],                     'fa-database',          'Database Backup'],
         ],
