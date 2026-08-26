@@ -244,10 +244,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reconcile'])) {
                         if ($field === '' || !preg_match('/^[a-z_]+$/', $field)) {
                             throw new RuntimeException('That list cannot be renamed automatically.');
                         }
-                        $u = $pdo->prepare("UPDATE products SET `$field` = :to
-                                             WHERE LOWER(TRIM(`$field`)) = LOWER(TRIM(:from))");
-                        $u->execute(['to' => $to, 'from' => $stray]);
-                        $moved += $u->rowCount();
+                        /* Rename the VALUE inside the column, not the column.
+                           ────────────────────────────────────────────────────
+                           This matched the whole field, so it only ever worked
+                           while a product held exactly one value. A garment
+                           tagged "Cotton, Velvet" did not match "Velvet" at
+                           all: the rename reported 0 rows, changed nothing, and
+                           left the stray exactly where it was — the one screen
+                           whose entire job is clearing strays, quietly unable
+                           to clear them. Occasion has held lists all along, so
+                           it never worked there; the other four joined it when
+                           the product form gained multi-select.
+                           Colour has always done it this way (see the color_way
+                           branch above); this is the same walk for the rest. */
+                        $sel = $pdo->prepare("SELECT id, `$field` AS v FROM products
+                                               WHERE `$field` IS NOT NULL AND `$field` <> ''");
+                        $sel->execute();
+                        $set = $pdo->prepare("UPDATE products SET `$field` = :v WHERE id = :id");
+                        $sep = dievonAttrListSeparator($attrType);
+                        foreach ($sel as $row) {
+                            $parts = dievonSplitAttrList($attrType, (string)$row['v']);
+                            $hit = false;
+                            foreach ($parts as $i2 => $part) {
+                                if (strcasecmp(trim($part), $stray) === 0) { $parts[$i2] = $to; $hit = true; }
+                            }
+                            if (!$hit) { continue; }
+                            /* unique(), or renaming one value onto another the
+                               product already carries leaves "Cotton, Cotton". */
+                            $seen = []; $out = [];
+                            foreach ($parts as $part) {
+                                $k = mb_strtolower(trim($part));
+                                if ($k === '' || isset($seen[$k])) { continue; }
+                                $seen[$k] = true; $out[] = trim($part);
+                            }
+                            $set->execute(['v' => implode($sep, $out), 'id' => (int)$row['id']]);
+                            $moved++;
+                        }
                     }
                     $pdo->commit();
                     /* The reassurance has to be true for the list being renamed.

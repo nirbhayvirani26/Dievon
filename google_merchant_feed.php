@@ -120,7 +120,24 @@ echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
     $shipRate = ($freeOver > 0 && $sellPrice >= $freeOver) ? 0.0 : $shipFee;
 
     $description = trim(preg_replace('/\s+/', ' ', strip_tags((string)$p['description'])));
-    $material    = trim((string)($p['composition'] ?: ($p['fabric'] ?? '')));
+    /* Merchant Center's own shape for these two, now that both columns can hold
+       a list.
+       ────────────────────────────────────────────────────────────────────────
+       g:material takes the PRIMARY material first and up to two more separated
+       by a SLASH ("leather/cotton/polyester") — not the comma the column stores.
+       g:pattern takes ONE value; there is no multi-pattern form in the spec.
+       Sent as stored, a garment saved "Cotton, Linen, Silk" arrived as a single
+       unrecognised material string, which is how an item starts collecting
+       attribute warnings without anything on the shop looking wrong.
+       Composition is free text and is left exactly as typed. */
+    $materialRaw = trim((string)($p['composition'] ?: ($p['fabric'] ?? '')));
+    $material    = $materialRaw;
+    if ($p['composition'] === null || trim((string)$p['composition']) === '') {
+        $matParts = dievonSplitAttrList('fabric', $materialRaw);
+        if ($matParts) { $material = implode('/', array_slice($matParts, 0, 3)); }
+    }
+    $patternParts = dievonSplitAttrList('pattern', (string)($p['pattern'] ?? ''));
+    $feedPattern  = $patternParts[0] ?? '';
 
     // A garment with no photograph or no description is not advertisable, so it
     // is left OUT of the feed rather than padded to look complete.
@@ -245,7 +262,7 @@ echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
         }
         feedTag('g:color', $feedColour, true);
         feedTag('g:material', $material, true);
-        feedTag('g:pattern', $p['pattern'] ?? '', true);
+        feedTag('g:pattern', $feedPattern, true);
 ?>
       <g:shipping>
         <g:country><?= htmlspecialchars($country, ENT_XML1) ?></g:country>

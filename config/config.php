@@ -7792,14 +7792,26 @@ function dievonStrayAttributes(PDO $pdo, string $type): array {
                               WHERE `$field` IS NOT NULL AND `$field` <> ''");
     } catch (PDOException $e) { return []; }
 
+    /* Judge each VALUE, not the whole column.
+       ────────────────────────────────────────────────────────────────────────
+       These columns hold lists. Compared whole, a garment correctly tagged
+       "Cotton, Linen, Silk" was reported as a stray value in its own right —
+       three perfectly listed fabrics accused of being an unknown one, and the
+       owner invited to reconcile something that was never wrong. Occasion has
+       held lists all along ("Casual / Everyday / Day Out"), so it has been
+       reporting that false stray for as long as the panel has existed; the
+       other four inherited it when the form gained multi-select.
+       Split, only the parts that really are off-list are named. */
     foreach ($rows as $r) {
-        $value = trim((string)$r['v']);
-        if ($value === '' || in_array(strtolower($value), $master, true)) { continue; }
-        $key = strtolower($value);
-        if (!isset($found[$key])) {
-            $found[$key] = ['value' => $value, 'fields' => [DIEVON_ATTR_TYPES[$type]['label']], 'products' => []];
+        foreach (dievonSplitAttrList($type, (string)$r['v']) as $value) {
+            $value = trim($value);
+            if ($value === '' || in_array(strtolower($value), $master, true)) { continue; }
+            $key = strtolower($value);
+            if (!isset($found[$key])) {
+                $found[$key] = ['value' => $value, 'fields' => [DIEVON_ATTR_TYPES[$type]['label']], 'products' => []];
+            }
+            $found[$key]['products'][(int)$r['id']] = (string)$r['name'];
         }
-        $found[$key]['products'][(int)$r['id']] = (string)$r['name'];
     }
     ksort($found);
     return array_values($found);

@@ -1552,20 +1552,39 @@ try {
 
     // The column names are literals here, never request data — nothing a
     // visitor sends can name a column.
-    $fabrics   = $attrOptions('fabric');
-    $sleeves   = $attrOptions('sleeve');
-    $necks     = $attrOptions('neck');
-    $patterns  = $attrOptions('pattern');
-    /* Split for the same reason: $attrOptions returns DISTINCT whole fields, so
-       the sidebar offered one tick box per product, each labelled with a whole
-       sentence. Split, deduped and sorted, it offers the handful of occasions
-       the shop really sells for. */
-    $occasions = [];
-    foreach ($attrOptions('occasion') as $occRaw) {
-        foreach (dievonSplitOccasions($occRaw) as $occOne) { $occasions[$occOne] = true; }
-    }
-    $occasions = array_keys($occasions);
-    sort($occasions);
+    /* Every one of these holds a LIST now, so every one has to be split.
+       ────────────────────────────────────────────────────────────────────────
+       $attrOptions returns DISTINCT WHOLE fields. Occasion was split here
+       already, for exactly this reason — the sidebar was offering one tick box
+       per product, each labelled with a whole sentence. The other four became
+       lists when the product form gained multi-select, and inherited the same
+       fault: a garment saved as "Cotton, Linen, Silk" put that entire string in
+       the sidebar as one chip, while Linen and Silk were offered nowhere, so a
+       shopper could not filter by a fabric the shop demonstrably sells.
+       Worse than useless: ticking the combined chip sends it as one value and
+       FIND_IN_SET matches nothing at all.
+
+       dievonSplitAttrList() knows each field's separator, which is why this
+       cannot simply explode on "/" — "3/4 Sleeve" would come back as "3" and
+       "4 Sleeve". */
+    $splitOptions = static function (string $type, string $column) use ($attrOptions): array {
+        $set = [];
+        foreach ($attrOptions($column) as $raw) {
+            foreach (dievonSplitAttrList($type, $raw) as $one) {
+                $one = trim($one);
+                if ($one !== '') { $set[$one] = true; }
+            }
+        }
+        $out = array_keys($set);
+        sort($out);
+        return $out;
+    };
+
+    $fabrics   = $splitOptions('fabric',   'fabric');
+    $sleeves   = $splitOptions('sleeve',   'sleeve');
+    $necks     = $splitOptions('neck',     'neck');
+    $patterns  = $splitOptions('pattern',  'pattern');
+    $occasions = $splitOptions('occasion', 'occasion');
 } catch (PDOException $e) {}
 ?>
 
