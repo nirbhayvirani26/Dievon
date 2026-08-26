@@ -3906,3 +3906,70 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
     padding: 8px 12px;
     font-size: 13px;
 }
+
+/* ── Multi-select dropdown ─────────────────────────────────────────────────
+   Wraps the tick list (.dv-colour-picker) so five long lists do not each take
+   a third of the screen. Everything here is scoped to .is-js, which the script
+   adds on init: with no JavaScript the panel stays open and the toggle stays
+   hidden, which is the behaviour the form had before and still works. */
+.dv-multiselect { position: relative; }
+.dv-multiselect .dv-multiselect-toggle { display: none; }
+
+.dv-multiselect.is-js .dv-multiselect-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+    padding: 11px 14px;
+    border: 1px solid var(--border-light);
+    background: var(--bg-surface);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary, #1e293b);
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.15s ease;
+}
+.dv-multiselect.is-js .dv-multiselect-toggle:hover,
+.dv-multiselect.is-js.is-open .dv-multiselect-toggle {
+    border-color: var(--color-primary, #511126);
+}
+/* Nothing chosen reads as a prompt, not as a value. */
+.dv-multiselect.is-js.is-empty .dv-multiselect-value { color: var(--text-muted); }
+.dv-multiselect-value {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.dv-multiselect-caret {
+    flex: 0 0 auto;
+    width: 0; height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 6px solid var(--text-muted);
+    transition: transform 0.18s ease;
+}
+.dv-multiselect.is-js.is-open .dv-multiselect-caret { transform: rotate(180deg); }
+
+/* Floated over the fields below rather than pushing them down — a picker that
+   shoves half the form aside each time it opens is worse than one that is
+   always open. */
+.dv-multiselect.is-js .dv-multiselect-panel {
+    display: none;
+    position: absolute;
+    z-index: 30;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    padding: 10px;
+    border: 1px solid var(--color-primary, #511126);
+    background: var(--bg-surface);
+    box-shadow: 0 10px 28px rgba(0,0,0,0.13);
+}
+.dv-multiselect.is-js.is-open .dv-multiselect-panel { display: block; }
+.dv-multiselect.is-js .dv-multiselect-panel .dv-colour-picker {
+    max-height: 190px;
+    border: none;
+    padding: 4px 2px;
+}

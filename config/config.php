@@ -7724,7 +7724,21 @@ function dievonAttributeChecklist(PDO $pdo, string $type, ?string $current, stri
              . 'No ' . htmlspecialchars(mb_strtolower($label)) . ' values yet — add them under Filters &amp; Attributes first.</p>';
     }
 
-    $html  = '<input type="search" class="form-control dv-colour-search" data-colour-search="' . htmlspecialchars($field) . '"'
+    /* A dropdown, but only once JavaScript says so.
+       ────────────────────────────────────────────────────────────────────────
+       The panel is rendered OPEN and the toggle is hidden until dvMultiSelect()
+       marks the wrapper. With no script the shopkeeper still sees every tick and
+       can still save — the product form is where the catalogue gets built, so it
+       must not need a script to be usable. The collapsing is a convenience laid
+       on top, not the thing holding it up. */
+    $summary = $chosen ? implode(', ', dievonSplitAttrList($type, $current))
+                       : 'Select ' . mb_strtolower($label);
+    $html  = '<div class="dv-multiselect" data-multiselect="' . htmlspecialchars($field) . '">';
+    $html .= '<button type="button" class="dv-multiselect-toggle" aria-expanded="false">'
+           . '<span class="dv-multiselect-value">' . htmlspecialchars($summary) . '</span>'
+           . '<span class="dv-multiselect-caret" aria-hidden="true"></span></button>';
+    $html .= '<div class="dv-multiselect-panel">';
+    $html .= '<input type="search" class="form-control dv-colour-search" data-colour-search="' . htmlspecialchars($field) . '"'
            . ' placeholder="Search ' . htmlspecialchars(mb_strtolower($label)) . '&hellip;" autocomplete="off">';
     $html .= '<div class="dv-colour-picker" data-colour-search-target="' . htmlspecialchars($field) . '">';
     foreach ($master as $name) {
@@ -7738,7 +7752,7 @@ function dievonAttributeChecklist(PDO $pdo, string $type, ?string $current, stri
                . ($stray ? ' <em>(not on the ' . htmlspecialchars($label) . ' list)</em>' : '') . '</span>'
                . '</label>';
     }
-    return $html . '</div>';
+    return $html . '</div></div></div>';   // picker, panel, wrapper
 }
 
 

@@ -4521,8 +4521,61 @@ function escHtml(str) {
             });
         });
     }
+    /* ── The multi-select dropdown ────────────────────────────────────────
+       Progressive enhancement: the markup renders with the panel open and the
+       toggle hidden, and .is-js is what collapses it. If this script never
+       runs the picker is simply always open — which is exactly what it was
+       yesterday, and still saves. */
+    function dvMultiSelect(wrap) {
+        var toggle = wrap.querySelector('.dv-multiselect-toggle');
+        var panel  = wrap.querySelector('.dv-multiselect-panel');
+        var value  = wrap.querySelector('.dv-multiselect-value');
+        var search = wrap.querySelector('.dv-colour-search');
+        if (!toggle || !panel || !value) { return; }
+        wrap.classList.add('is-js');
+
+        var prompt = 'Select ' + (wrap.getAttribute('data-multiselect') || '');
+        function boxes() { return wrap.querySelectorAll('input[type="checkbox"]'); }
+        function summarise() {
+            var on = Array.prototype.filter.call(boxes(), function (c) { return c.checked; })
+                          .map(function (c) { return c.value; });
+            /* The values themselves, not "3 selected" — the whole reason for a
+               summary is to see what a garment is tagged without opening
+               anything. Ellipsis is the CSS's job when it runs out of room. */
+            value.textContent = on.length ? on.join(', ') : prompt;
+            wrap.classList.toggle('is-empty', on.length === 0);
+        }
+        function open()  { wrap.classList.add('is-open');  toggle.setAttribute('aria-expanded','true');
+                           if (search) { search.focus(); } }
+        function close() { wrap.classList.remove('is-open'); toggle.setAttribute('aria-expanded','false'); }
+
+        toggle.addEventListener('click', function (e) {
+            e.preventDefault();
+            /* One at a time. Two panels floating over each other is how a tick
+               gets aimed at the wrong list. */
+            document.querySelectorAll('.dv-multiselect.is-open').forEach(function (o) {
+                if (o !== wrap) { o.classList.remove('is-open');
+                    var t = o.querySelector('.dv-multiselect-toggle');
+                    if (t) { t.setAttribute('aria-expanded','false'); } }
+            });
+            wrap.classList.contains('is-open') ? close() : open();
+        });
+        wrap.addEventListener('change', summarise);
+        // Clicking a label inside must not reach the document handler and shut
+        // the panel before the tick registers.
+        panel.addEventListener('click', function (e) { e.stopPropagation(); });
+        document.addEventListener('click', function (e) {
+            if (!wrap.contains(e.target)) { close(); }
+        });
+        wrap.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && wrap.classList.contains('is-open')) { close(); toggle.focus(); }
+        });
+        summarise();
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
         document.querySelectorAll('[data-colour-search]').forEach(wire);
+        document.querySelectorAll('[data-multiselect]').forEach(dvMultiSelect);
     });
 })();
 
