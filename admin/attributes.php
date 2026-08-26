@@ -171,7 +171,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reconcile'])) {
         $attrMeta = DIEVON_ATTR_TYPES[$attrType];
         $openType = $attrType;
 
-        if ($stray === '') {
+        if ($mode === 'add_all') {
+            /* The five managed lists start empty on a shop whose products were
+               built before them, so every picker in the product form offers
+               exactly one tick box -- the garment's own value -- and a second
+               fabric or occasion cannot be chosen at all until the list is
+               filled. Add-one-at-a-time meant a round trip per value here, then
+               the whole set again on the live shop, which has its own lists. */
+            try {
+                $clash = $pdo->prepare("SELECT name FROM product_attributes
+                                         WHERE attr_type = :t AND LOWER(TRIM(name)) = LOWER(TRIM(:name)) LIMIT 1");
+                $ins   = $pdo->prepare("INSERT INTO product_attributes (attr_type, name, code) VALUES (:t, :name, '')");
+                $added = [];
+                $already = [];
+                foreach (dievonStrayAttributes($pdo, $attrType) as $sc) {
+                    $val = trim((string)($sc['value'] ?? ''));
+                    if ($val === '') { continue; }
+                    $clash->execute(['t' => $attrType, 'name' => $val]);
+                    if ($clash->fetchColumn()) { $already[] = $val; continue; }
+                    $ins->execute(['t' => $attrType, 'name' => $val]);
+                    $added[] = $val;
+                }
+                if (!$added && !$already) {
+                    $errorMsg = 'Nothing left to add.';
+                } else {
+                    /* Named, never counted -- a bare number here reads as a bug
+                       when one value silently does not appear on the list. */
+                    $successMsg = $added
+                        ? 'Added to the ' . strtolower($attrMeta['label']) . ' list: ' . implode(', ', $added) . '.'
+                        : '';
+                    if ($already) {
+                        $successMsg .= ($successMsg ? ' ' : '')
+                            . 'Already on the list, left alone: ' . implode(', ', $already) . '.';
+                    }
+                }
+            } catch (PDOException $e) {
+                $errorMsg = 'Could not add those ' . strtolower($attrMeta['label']) . ' values: ' . $e->getMessage();
+            }
+        } elseif ($stray === '') {
             $errorMsg = 'Nothing selected.';
         } elseif ($mode === 'add') {
             try {
@@ -183,11 +220,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reconcile'])) {
                 }
                 $ins = $pdo->prepare("INSERT INTO product_attributes (attr_type, name, code) VALUES (:t, :name, '')");
                 $ins->execute(['t' => $attrType, 'name' => $stray]);
-                $successMsg = "'{$stray}' added to the colour list. The products already using it now match the filter.";
+                $successMsg = "'{$stray}' added to the " . strtolower($attrMeta['label'])
+                               . " list. The products already using it now match the filter.";
             } catch (RuntimeException $e) {
                 $errorMsg = $e->getMessage();
             } catch (PDOException $e) {
-                $errorMsg = 'Could not add that colour: ' . $e->getMessage();
+                $errorMsg = 'Could not add that ' . strtolower($attrMeta['label']) . ': ' . $e->getMessage();
             }
         } elseif ($mode === 'rename') {
             $to = trim((string)($_POST['rename_to'] ?? ''));
@@ -440,6 +478,17 @@ foreach (DIEVON_ATTR_TYPES as $attrType => $attrMeta):
                 <strong>Rename</strong> moves those products onto a value you already have.
                 Renaming changes the label only — nothing else about a product moves.
             </div>
+            <?php /* The whole backlog in one click. Keeps every value exactly as
+                     typed -- this only puts them on the list, no product changes. */ ?>
+            <form method="POST" action="attributes.php" style="margin-top:12px;">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(generateCsrfToken()) ?>">
+                <input type="hidden" name="attr_type" value="<?= htmlspecialchars($attrType) ?>">
+                <button type="submit" name="reconcile" value="add_all" class="btn-primary"
+                        style="padding:7px 14px; font-size:12.5px;"
+                        data-confirm-rename="Add all <?= count($strayColors) ?> <?= htmlspecialchars(strtolower($attrMeta['label'])) ?> value<?= count($strayColors) === 1 ? '' : 's' ?> to the list? Products are not changed.">
+                    Add all <?= count($strayColors) ?> to the list
+                </button>
+            </form>
         </div>
         <div class="table-wrapper">
             <table class="data-table" style="width:100%;">
