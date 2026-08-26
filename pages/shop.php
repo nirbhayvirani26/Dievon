@@ -992,8 +992,30 @@ $shopPageNo     = max(1, (int)($_GET['page'] ?? 1));
 // a 404 JSON body would break the client.  And pages reached through the
 // sidebar multi-category filter (?categories=Kurtis,3 Piece Suits) are
 // legitimate filter combinations, not a named collection that should 404.
+// A filter the shopper ticked is NOT an empty collection. Every narrowing
+// parameter below is offered by this page's own sidebar, and two of them that
+// no single garment shares -- ?fabrics=Cotton&necks=Collar on /collections/kurtis,
+// both listed there -- match nothing together. The grid handles that fine over
+// AJAX, but the address bar is updated with pushState, so refreshing, sharing
+// or bookmarking that URL re-entered this file as a plain GET and answered a
+// hard 404: a dead end with no sidebar and no way back but the Back button.
+// The thin-page worry the 404 was there for is already covered a few lines
+// down, where an empty grid sets $noindex. So the 404 now means what the
+// comment above always said it meant -- a collection with nothing in it.
+$shopNarrowedByFilter = false;
+foreach (['badges', 'brands', 'colors', 'fabrics', 'max_price', 'min_price',
+          'necks', 'occasions', 'patterns', 'sizes', 'sleeves', 'sale',
+          'search', 'q'] as $shopFilterKey) {
+    $shopFilterVal = $_GET[$shopFilterKey] ?? '';
+    if (is_array($shopFilterVal) ? $shopFilterVal !== [] : trim((string)$shopFilterVal) !== '') {
+        $shopNarrowedByFilter = true;
+        break;
+    }
+}
+
 if ($activeCategoryRow
     && empty($initialProducts)
+    && !$shopNarrowedByFilter
     && empty($_GET['ajax'])
     && ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET') {
     $shopNotFound();
