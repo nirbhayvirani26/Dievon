@@ -87,12 +87,20 @@ $fp = fopen('php://output', 'w');
 fwrite($fp, "\xEF\xBB\xBF");
 
 // ── Section 1: Orders ─────────────────────────────────────
-fputcsv($fp, ['=== ORDERS: ' . $from . ' to ' . $to . ' ===']);
+/* The escape argument is passed explicitly on every call below.
+   ────────────────────────────────────────────────────────────────────────
+   PHP 8.4 deprecates omitting it, and this handler streams to php://output
+   with a text/csv attachment header — so with display_errors on, each
+   deprecation notice is written INTO the download and the accountant opens
+   a corrupt file. '' is the RFC-4180 behaviour PHP is moving toward:
+   quotes are doubled and nothing is backslash-escaped, which is what Excel
+   and every other reader expect. */
+fputcsv($fp, ['=== ORDERS: ' . $from . ' to ' . $to . ' ==='], ',', '"', '');
 fputcsv($fp, [
     'Date', 'Order Code', 'Customer', 'Phone', 'Status',
     'Payment', 'Postcode', 'Items', 'Subtotal (' . currencySymbol() . ')', 'Discount (' . currencySymbol() . ')',
     'Delivery (' . currencySymbol() . ')', 'Total (' . currencySymbol() . ')'
-]);
+], ',', '"', '');
 
 $totalRevenue = 0;
 $totalOnline  = 0;
@@ -128,26 +136,26 @@ foreach ($orders as $order) {
         number_format($order['discount_amount'] ?? 0, 2),
         number_format($delivery, 2),
         number_format($order['total_price'], 2),
-    ]);
+    ], ',', '"', '');
     
     if ($order['payment_status'] === 'Paid')  { $totalRevenue += $order['total_price']; $totalOnline += $order['total_price']; }
     if ($order['payment_status'] === 'Cash')  { $totalRevenue += $order['total_price']; $totalCash   += $order['total_price']; }
     if ($order['payment_status'] === 'Unpaid') $totalUnpaid  += $order['total_price'];
 }
 
-fputcsv($fp, []);
-fputcsv($fp, ['', '', '', '', '', '', '', 'TOTAL REVENUE:', currencySymbol() . number_format($totalRevenue, 2)]);
-fputcsv($fp, ['', '', '', '', '', '', '', 'Online (Card):', currencySymbol() . number_format($totalOnline, 2)]);
-fputcsv($fp, ['', '', '', '', '', '', '', 'Cash:', currencySymbol() . number_format($totalCash, 2)]);
-fputcsv($fp, ['', '', '', '', '', '', '', 'Unpaid Total:', currencySymbol() . number_format($totalUnpaid, 2)]);
+fputcsv($fp, [], ',', '"', '');
+fputcsv($fp, ['', '', '', '', '', '', '', 'TOTAL REVENUE:', currencySymbol() . number_format($totalRevenue, 2)], ',', '"', '');
+fputcsv($fp, ['', '', '', '', '', '', '', 'Online (Card):', currencySymbol() . number_format($totalOnline, 2)], ',', '"', '');
+fputcsv($fp, ['', '', '', '', '', '', '', 'Cash:', currencySymbol() . number_format($totalCash, 2)], ',', '"', '');
+fputcsv($fp, ['', '', '', '', '', '', '', 'Unpaid Total:', currencySymbol() . number_format($totalUnpaid, 2)], ',', '"', '');
 
 // ── Section 2: Category Breakdown ─────────────────────────
-fputcsv($fp, []);
-fputcsv($fp, ['=== CATEGORY REVENUE BREAKDOWN ===']);
-fputcsv($fp, ['Category', 'Revenue (' . currencySymbol() . ')', 'Items Sold']);
+fputcsv($fp, [], ',', '"', '');
+fputcsv($fp, ['=== CATEGORY REVENUE BREAKDOWN ==='], ',', '"', '');
+fputcsv($fp, ['Category', 'Revenue (' . currencySymbol() . ')', 'Items Sold'], ',', '"', '');
 arsort($catRevenue);
 foreach ($catRevenue as $cat => $data) {
-    fputcsv($fp, [$cat, number_format($data['revenue'], 2), $data['qty']]);
+    fputcsv($fp, [$cat, number_format($data['revenue'], 2), $data['qty']], ',', '"', '');
 }
 
 fclose($fp);

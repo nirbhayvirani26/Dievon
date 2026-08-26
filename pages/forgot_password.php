@@ -7,7 +7,7 @@ require_once __DIR__ . '/../config/db.php';
 
 // Redirect if already logged in
 if (isset($_SESSION['customer_id'])) {
-    header('Location: account.php');
+    header('Location: ' . SITE_URL . '/account');
     exit;
 }
 

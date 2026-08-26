@@ -46,9 +46,9 @@ if (($_GET['export'] ?? '') === 'csv') {
     header('Content-Disposition: attachment; filename="newsletter_subscribers_' . date('Y-m-d') . '.csv"');
     header('Pragma: no-cache');
     $fp = fopen('php://output', 'w');
-    fputcsv($fp, ['Email', 'Subscribed On']);
+    fputcsv($fp, ['Email', 'Subscribed On'], ',', '"', '');
     foreach ($subscribers as $s) {
-        fputcsv($fp, [$s['email'], $s['created_at']]);
+        fputcsv($fp, [$s['email'], $s['created_at']], ',', '"', '');
     }
     fclose($fp);
     exit;

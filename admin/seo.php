@@ -453,10 +453,16 @@ require_once __DIR__ . '/includes/header.php';
                           //  typed wrong, and saved through basename() so a path cannot be
                           //  smuggled in. Empty falls back to the shop logo. ?>
                     <?php
-                        $sgGallery = array_values(array_filter(
-                            scandir(__DIR__ . '/../uploads/gallery') ?: [],
+                        /* is_dir() first. `?: []` catches scandir's FALSE but not the
+                           two warnings it prints on the way there, and uploads/gallery
+                           does not exist until the first image is filed into it — so a
+                           shop that has not used the gallery yet rendered this page with
+                           PHP warnings across the top of it. */
+                        $sgDir     = __DIR__ . '/../uploads/gallery';
+                        $sgGallery = is_dir($sgDir) ? array_values(array_filter(
+                            scandir($sgDir) ?: [],
                             fn($x) => preg_match('/\.(jpe?g|png|webp)$/i', $x)
-                        ));
+                        )) : [];
                         sort($sgGallery);
                     ?>
                     <div class="form-group" style="margin-bottom:14px;">

@@ -7,7 +7,7 @@ require_once __DIR__ . '/../config/config.php';
 
 // Redirect if already logged in
 if (isset($_SESSION['customer_id'])) {
-    header('Location: account.php');
+    header('Location: ' . SITE_URL . '/account');
     exit;
 }
 
@@ -135,7 +135,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Not signed in yet: the verification link is the key to the
                 // account (and its guest orders), so the account is presented
                 // after the address is proved.
-                header('Location: verify_email.php?sent=1&email=' . urlencode($email));
+                header('Location: ' . SITE_URL . '/verify_email?sent=1&email=' . urlencode($email));
                 exit;
             }
         } catch (PDOException $e) {

@@ -7,7 +7,7 @@ require_once __DIR__ . '/../config/config.php';
 
 // Redirect if already logged in
 if (isset($_SESSION['customer_id'])) {
-    header('Location: account.php');
+    header('Location: ' . SITE_URL . '/account');
     exit;
 }
 
@@ -103,7 +103,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         linkGuestOrdersByEmail($pdo, (int)$customer['id'], (string)($customer['email'] ?? ''));
                     }
 
-                    header('Location: account.php');
+                    header('Location: ' . SITE_URL . '/account');
                     exit;
                 } else {
                     error_log("[Auth Diagnostic] Failed password_verify for customer ID " . (int)$customer['id'] . ". DB Hash length: " . strlen($customer['password']) . ", Hash prefix: " . substr($customer['password'], 0, 7));

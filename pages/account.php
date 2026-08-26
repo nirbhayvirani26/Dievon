@@ -7,7 +7,7 @@ require_once __DIR__ . '/../config/config.php';
 
 // Redirect if not logged in
 if (!isset($_SESSION['customer_id'])) {
-    header('Location: login.php');
+    header('Location: ' . SITE_URL . '/login');
     exit;
 }
 
@@ -109,7 +109,7 @@ try {
 } catch (PDOException $e) {}
 
 if (!$customer) {
-    header('Location: logout.php');
+    header('Location: ' . SITE_URL . '/logout.php');
     exit;
 }
 
