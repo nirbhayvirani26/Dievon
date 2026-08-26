@@ -415,7 +415,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
        and this for the primary, so nothing is lost by keeping it to one. */
     $colorWayParts = dievonColorWayList($color_way);
     $color = mb_substr($colorWayParts[0] ?? '', 0, 50);
-    $fabric       = $dvKeepListed('fabric', 'fabric');
     /* Sleeve, Neck and Pattern come from a managed list now.
        ────────────────────────────────────────────────────────────────────────
        A <select> is only a suggestion to anything that is not a browser, and
@@ -442,6 +441,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         return (strcasecmp($existing, $posted) === 0) ? $existing : '';
     };
 
+    /* Fabric sits HERE, with the other four, and not above.
+       ────────────────────────────────────────────────────────────────────────
+       It was called sixteen lines before $dvKeepListed was assigned. A closure
+       in a variable does not hoist, so the call found null and PHP stopped with
+       "Value of type null is not callable" — a hard fatal on the POST branch,
+       which meant EVERY product save in the admin died before writing anything.
+       The form still rendered perfectly on GET, so the panel looked healthy and
+       only saving was gone. Keeping all five calls below the definition is what
+       stops the next field from being added above it. */
+    $fabric       = $dvKeepListed('fabric', 'fabric');
     $sleeve       = $dvKeepListed('sleeve', 'sleeve');
     // Fit / model reference — see the form comment: no invented defaults.
     $image_alt       = trim($_POST['image_alt'] ?? '');
