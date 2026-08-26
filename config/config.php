@@ -7617,47 +7617,130 @@ function dievonAttributeOptions(PDO $pdo, string $type, string $current = '', st
 }
 
 /**
- * The same options, for a field that holds SEVERAL of them.
+ * The separator a multi-value attribute column is stored with.
  *
- * Only occasion does. A garment has one neckline and one sleeve length, but it
- * genuinely is both Casual and Festive — which is why the shop already reads
- * the field as a list (dievonSplitOccasions, OCCASION_MATCH_SQL) and filters
- * inside it. The reading side was built for several; only the form that writes
- * it could set one. This is the missing half.
+ * Two conventions, and the difference is not cosmetic. "3/4 Sleeve" contains a
+ * SLASH, so a slash-separated sleeve column would split into "3" and "4 Sleeve"
+ * the first time anything read it — silently, and on data already saved. Every
+ * field but occasion therefore follows the comma convention colour_way has used
+ * all along, and is matched with FIND_IN_SET the same way.
  *
- * Deliberately a separate function rather than a flag on dievonAttributeOptions:
- * that one is shared by fabric, sleeve, neck and pattern, and those four must
- * keep behaving exactly as they do. Nothing here can reach them.
- *
- * No placeholder <option>. In a multi-select an "— Select a … —" row is not a
- * prompt, it is a selectable value that would be saved as an empty occasion.
- * Selecting nothing is how you clear the field.
+ * Occasion keeps " / " because that is what is already in the column and what
+ * OCCASION_MATCH_SQL and dievonSplitOccasions() already parse; its values are
+ * plain words with no slash in them.
  */
-function dievonAttributeOptionsMulti(PDO $pdo, string $type, string $current = ''): string {
-    $chosen = dievonSplitOccasions($current);           // forgiving of "/" and ","
-    $lower  = array_map('mb_strtolower', $chosen);
-    $html   = '';
-    $seen   = [];
-
-    foreach (array_keys(dievonMasterList($pdo, $type)) as $name) {
-        $on = in_array(mb_strtolower(trim($name)), $lower, true);
-        if ($on) { $seen[] = mb_strtolower(trim($name)); }
-        $html .= '<option value="' . htmlspecialchars($name) . '"' . ($on ? ' selected' : '') . '>'
-               . htmlspecialchars($name) . '</option>';
-    }
-
-    /* Values stored before the list existed stay, selected and labelled, so
-       opening a product and saving cannot silently drop one. Same promise the
-       single-value builder makes — it just has to hold for each of several. */
-    $listName = DIEVON_ATTR_TYPES[$type]['label'] ?? ucfirst($type);
-    foreach ($chosen as $one) {
-        if (in_array(mb_strtolower($one), $seen, true)) { continue; }
-        $html = '<option value="' . htmlspecialchars($one) . '" selected>'
-              . htmlspecialchars($one) . ' — not on the ' . htmlspecialchars($listName) . ' list</option>'
-              . $html;
-    }
-    return $html;
+function dievonAttrListSeparator(string $type): string {
+    return $type === 'occasion' ? ' / ' : ', ';
 }
+
+/** The individual values inside a multi-value attribute column. */
+function dievonSplitAttrList(string $type, ?string $raw): array {
+    if ($type === 'occasion') { return dievonSplitOccasions($raw); }
+    // Comma only — never slash. See dievonAttrListSeparator().
+    $out = [];
+    foreach (explode(',', (string)$raw) as $one) {
+        $one = trim($one);
+        if ($one !== '') { $out[] = $one; }
+    }
+    return $out;
+}
+
+/**
+ * SQL that matches ONE value inside such a column, for any column.
+ *
+ * The comma-separated fields reuse colour's FIND_IN_SET approach, which cannot
+ * mistake "Cotton" for part of "Cotton Blend" the way a bare LIKE '%Cotton%'
+ * would. Occasion has its own constant because its separator differs.
+ */
+function dievonAttrMatchSql(string $type, string $column, PDO $pdo, string $value): string {
+    if ($type === 'occasion') {
+        return OCCASION_MATCH_SQL . ' LIKE ' . $pdo->quote('%/' . $value . '/%');
+    }
+    return 'FIND_IN_SET(' . $pdo->quote($value) . ", REPLACE($column, ', ', ',')) > 0";
+}
+
+/**
+ * What the form posted, turned into the value for the column.
+ *
+ * Each entry goes through the same master-list check the single-value fields
+ * use, so an off-list value is dropped on exactly the same terms — this simply
+ * runs once per ticked box and rejoins them. Order is the order the list is in,
+ * and duplicates cannot survive.
+ *
+ * A plain string still works: a save posted from an older cached copy of the
+ * form is read as one value rather than lost.
+ */
+function dievonNormaliseAttrList(PDO $pdo, string $type, $posted, ?array $product = null, string $field = ''): string {
+    if (!is_array($posted)) { $posted = ($posted === '' || $posted === null) ? [] : [$posted]; }
+    $kept = [];
+    foreach ($posted as $one) {
+        $one = trim((string)$one);
+        if ($one === '') { continue; }
+        $canonical = dievonCanonicalAttribute($pdo, $type, $one);
+        if ($canonical === null) {
+            // List not configured yet — a fresh install must not be locked out.
+            if (!dievonMasterList($pdo, $type)) { $canonical = $one; }
+            else {
+                /* Not on the list. Kept only if the product already held it, so
+                   opening a product and saving cannot quietly retag it — the
+                   same promise the single-value fields make. */
+                $held = dievonSplitAttrList($type, (string)(($product ?? [])[$field] ?? ''));
+                foreach ($held as $h) { if (strcasecmp($h, $one) === 0) { $canonical = $h; break; } }
+                if ($canonical === null) { continue; }
+            }
+        }
+        if (!in_array($canonical, $kept, true)) { $kept[] = $canonical; }
+    }
+    return implode(dievonAttrListSeparator($type), $kept);
+}
+
+/**
+ * The picker itself: a search box over a scrollable list of ticks.
+ *
+ * This is dievonColorWayChecklist() generalised. Colour has had this control
+ * all along and it is the right one — a native <select multiple> asks a shopkeeper
+ * to Ctrl-click, which is a way to lose four selections by clicking a fifth.
+ * Ticks cannot do that, they show every choice at once, and they need no
+ * JavaScript to work.
+ *
+ * The search filters what is SHOWN and never what is TICKED, so typing to find
+ * one value cannot drop another already chosen.
+ */
+function dievonAttributeChecklist(PDO $pdo, string $type, ?string $current, string $field): string {
+    $chosen = array_map('mb_strtolower', array_map('trim', dievonSplitAttrList($type, $current)));
+    $master = array_keys(dievonMasterList($pdo, $type));
+    $label  = DIEVON_ATTR_TYPES[$type]['label'] ?? ucfirst($type);
+
+    /* A value the product holds that is no longer on the list stays, and stays
+       ticked — otherwise opening the product and saving would drop it. */
+    foreach (dievonSplitAttrList($type, $current) as $held) {
+        $known = false;
+        foreach ($master as $m) { if (strcasecmp($m, $held) === 0) { $known = true; break; } }
+        if (!$known) { array_unshift($master, $held . "\0stray"); }
+    }
+
+    if (!$master) {
+        return '<p style="margin:0; font-size:12px; color:var(--text-muted);">'
+             . 'No ' . htmlspecialchars(mb_strtolower($label)) . ' values yet — add them under Filters &amp; Attributes first.</p>';
+    }
+
+    $html  = '<input type="search" class="form-control dv-colour-search" data-colour-search="' . htmlspecialchars($field) . '"'
+           . ' placeholder="Search ' . htmlspecialchars(mb_strtolower($label)) . '&hellip;" autocomplete="off">';
+    $html .= '<div class="dv-colour-picker" data-colour-search-target="' . htmlspecialchars($field) . '">';
+    foreach ($master as $name) {
+        $stray = str_contains($name, "\0stray");
+        $name  = str_replace("\0stray", '', $name);
+        $on    = in_array(mb_strtolower(trim($name)), $chosen, true);
+        $html .= '<label>'
+               . '<input type="checkbox" name="' . htmlspecialchars($field) . '[]" value="' . htmlspecialchars($name) . '"'
+               . ($on ? ' checked' : '') . '>'
+               . '<span>' . htmlspecialchars($name)
+               . ($stray ? ' <em>(not on the ' . htmlspecialchars($label) . ' list)</em>' : '') . '</span>'
+               . '</label>';
+    }
+    return $html . '</div>';
+}
+
 
 /**
  * Values products carry that the list does not have, with the products using

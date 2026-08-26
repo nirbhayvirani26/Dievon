@@ -464,26 +464,46 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
     }
 
     if (!empty($fabricsList)) {
-        $in = str_repeat('?,', count($fabricsList) - 1) . '?';
-        $sql .= " AND fabric IN ($in)";
+        /* A list, like colour_way — see dievonAttrListSeparator(). IN() matched
+           only a product whose whole column equalled the tick box, so a garment
+           that is Cotton AND Linen answered to neither. FIND_IN_SET rather than
+           LIKE so "Cotton" cannot match "Cotton Blend". */
+        $where = implode(' OR ', array_fill(0, count($fabricsList),
+                  "FIND_IN_SET(?, REPLACE(fabric, ', ', ',')) > 0"));
+        $sql .= " AND ($where)";
         $params = array_merge($params, $fabricsList);
     }
 
     if (!empty($sleevesList)) {
-        $in = str_repeat('?,', count($sleevesList) - 1) . '?';
-        $sql .= " AND sleeve IN ($in)";
+        /* A list, like colour_way — see dievonAttrListSeparator(). IN() matched
+           only a product whose whole column equalled the tick box, so a garment
+           that is Cotton AND Linen answered to neither. FIND_IN_SET rather than
+           LIKE so "Cotton" cannot match "Cotton Blend". */
+        $where = implode(' OR ', array_fill(0, count($sleevesList),
+                  "FIND_IN_SET(?, REPLACE(sleeve, ', ', ',')) > 0"));
+        $sql .= " AND ($where)";
         $params = array_merge($params, $sleevesList);
     }
 
     if (!empty($necksList)) {
-        $in = str_repeat('?,', count($necksList) - 1) . '?';
-        $sql .= " AND neck IN ($in)";
+        /* A list, like colour_way — see dievonAttrListSeparator(). IN() matched
+           only a product whose whole column equalled the tick box, so a garment
+           that is Cotton AND Linen answered to neither. FIND_IN_SET rather than
+           LIKE so "Cotton" cannot match "Cotton Blend". */
+        $where = implode(' OR ', array_fill(0, count($necksList),
+                  "FIND_IN_SET(?, REPLACE(neck, ', ', ',')) > 0"));
+        $sql .= " AND ($where)";
         $params = array_merge($params, $necksList);
     }
 
     if (!empty($patternsList)) {
-        $in = str_repeat('?,', count($patternsList) - 1) . '?';
-        $sql .= " AND pattern IN ($in)";
+        /* A list, like colour_way — see dievonAttrListSeparator(). IN() matched
+           only a product whose whole column equalled the tick box, so a garment
+           that is Cotton AND Linen answered to neither. FIND_IN_SET rather than
+           LIKE so "Cotton" cannot match "Cotton Blend". */
+        $where = implode(' OR ', array_fill(0, count($patternsList),
+                  "FIND_IN_SET(?, REPLACE(pattern, ', ', ',')) > 0"));
+        $sql .= " AND ($where)";
         $params = array_merge($params, $patternsList);
     }
 
@@ -834,6 +854,18 @@ try {
                answered differently. Every other filter is a single value per
                column and stays on IN(). */
             if ($initParam === 'colors') {
+                $tests = [];
+                foreach ($initValues as $iv) {
+                    $tests[] = "FIND_IN_SET(" . $pdo->quote($iv) . ", REPLACE($col, ', ', ',')) > 0";
+                }
+                $parts[] = '(' . implode(' OR ', $tests) . ')';
+            } elseif (in_array($initParam, ['fabrics','sleeves','necks','patterns'], true)) {
+                /* These hold LISTS now — a garment can be Cotton AND Linen, and
+                   the product form ticks several. Left on IN(), only a product
+                   whose whole column equalled the tick box matched, so a
+                   two-fabric piece answered to neither. Comma-separated and
+                   matched with FIND_IN_SET, exactly as colour_way is: a bare
+                   LIKE would let "Cotton" match "Cotton Blend". */
                 $tests = [];
                 foreach ($initValues as $iv) {
                     $tests[] = "FIND_IN_SET(" . $pdo->quote($iv) . ", REPLACE($col, ', ', ',')) > 0";

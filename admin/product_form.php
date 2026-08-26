@@ -415,71 +415,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
        and this for the primary, so nothing is lost by keeping it to one. */
     $colorWayParts = dievonColorWayList($color_way);
     $color = mb_substr($colorWayParts[0] ?? '', 0, 50);
-    /* Sleeve, Neck and Pattern come from a managed list now.
+    /* The five managed attributes, each of them a list.
        ────────────────────────────────────────────────────────────────────────
-       A <select> is only a suggestion to anything that is not a browser, and
-       this handler takes a POST, so the rule is enforced where the write
-       happens — the same as colour. Stored in the list's own spelling, so one
-       value cannot arrive in three casings.
+       A tick-box picker is only a suggestion to anything that is not a browser,
+       and this handler takes a POST, so the rule is enforced where the write
+       happens — the same as colour. Each value is stored in the list's own
+       spelling, so one value cannot arrive in three casings.
 
        The important part is what happens to a value that is NOT on the list.
        Blanking it would be destructive: a product tagged "Half Sleeve" before
        the list existed would lose that tag the next time anyone edited its
-       price. So an unlisted value is KEPT when it is the value the product
-       already had, and refused only when a request is trying to introduce a
-       new one. That is also what the picker shows — the product's own value,
-       selected and labelled "not on the Sleeve list" — so the screen and the
-       save agree. The reconciliation panel in Attributes is where those get
-       merged onto real entries. */
-    $dvKeepListed = static function (string $type, string $field) use ($pdo, $product): string {
-        $posted = trim((string)($_POST[$field] ?? ''));
-        if ($posted === '') { return ''; }
-        $canonical = dievonCanonicalAttribute($pdo, $type, $posted);
-        if ($canonical !== null) { return $canonical; }
-        if (!dievonMasterList($pdo, $type)) { return $posted; }   // list not set up yet
-        $existing = trim((string)(($product ?? [])[$field] ?? ''));
-        return (strcasecmp($existing, $posted) === 0) ? $existing : '';
-    };
+       price. So an unlisted value is KEPT when the product already had it, and
+       refused only when a request tries to introduce a new one. That is also
+       what the picker shows — ticked and labelled "not on the Sleeve list" — so
+       the screen and the save agree. The reconciliation panel in Attributes is
+       where those get merged onto real entries.
 
-    /* Fabric sits HERE, with the other four, and not above.
-       ────────────────────────────────────────────────────────────────────────
-       It was called sixteen lines before $dvKeepListed was assigned. A closure
-       in a variable does not hoist, so the call found null and PHP stopped with
-       "Value of type null is not callable" — a hard fatal on the POST branch,
-       which meant EVERY product save in the admin died before writing anything.
-       The form still rendered perfectly on GET, so the panel looked healthy and
-       only saving was gone. Keeping all five calls below the definition is what
-       stops the next field from being added above it. */
-    $fabric       = $dvKeepListed('fabric', 'fabric');
-    $sleeve       = $dvKeepListed('sleeve', 'sleeve');
+       Separators differ by field and the difference matters: see
+       dievonAttrListSeparator(). "3/4 Sleeve" contains a slash, so these four
+       are comma-separated like colour_way, and only occasion uses " / ". */
+    $fabric       = dievonNormaliseAttrList($pdo, 'fabric', $_POST['fabric'] ?? [], $product, 'fabric');
+    $sleeve       = dievonNormaliseAttrList($pdo, 'sleeve', $_POST['sleeve'] ?? [], $product, 'sleeve');
     // Fit / model reference — see the form comment: no invented defaults.
     $image_alt       = trim($_POST['image_alt'] ?? '');
     $fit_description = trim($_POST['fit_description'] ?? '');
     $model_height    = trim($_POST['model_height'] ?? '');
     $model_size_worn = trim($_POST['model_size_worn'] ?? '');
-    $neck         = $dvKeepListed('neck', 'neck');
-    $pattern      = $dvKeepListed('pattern', 'pattern');
-    /* Occasion arrives as an ARRAY — it is the one field of the five that holds
-       several (see the select in the form). Each value goes through exactly the
-       same list check the single fields use, so an off-list value is dropped or
-       kept on precisely the same terms; the only difference is that this runs
-       once per chosen value and rejoins them.
-       " / " is the separator dievonSplitOccasions() and OCCASION_MATCH_SQL have
-       always expected, so nothing downstream has to learn anything new.
-       A plain string still works: a save posted from an older cached copy of the
-       form, or from anywhere else, is treated as one value rather than lost. */
-    $occasion = (static function () use ($dvKeepListed): string {
-        $raw = $_POST['occasion'] ?? '';
-        if (!is_array($raw)) { $raw = ($raw === '') ? [] : [$raw]; }
-        $kept = [];
-        foreach ($raw as $one) {
-            $_POST['occasion'] = (string)$one;          // validate one at a time
-            $clean = $dvKeepListed('occasion', 'occasion');
-            if ($clean !== '' && !in_array($clean, $kept, true)) { $kept[] = $clean; }
-        }
-        $_POST['occasion'] = $raw;                       // leave the request as found
-        return implode(' / ', $kept);
-    })();
+    /* All five are lists now — every one is a tick-box picker in the form and
+       posts an array. dievonNormaliseAttrList() applies the same master-list
+       check the single fields used, once per ticked value, and joins them with
+       the separator that field is stored with (see dievonAttrListSeparator:
+       comma for these, " / " for occasion, because "3/4 Sleeve" has a slash in
+       it and would otherwise split in half). */
+    $neck         = dievonNormaliseAttrList($pdo, 'neck',     $_POST['neck']     ?? [], $product, 'neck');
+    $pattern      = dievonNormaliseAttrList($pdo, 'pattern',  $_POST['pattern']  ?? [], $product, 'pattern');
+    $occasion     = dievonNormaliseAttrList($pdo, 'occasion', $_POST['occasion'] ?? [], $product, 'occasion');
     // The input is gone (see the note in the fashion fields below), so absent now
     // means "keep what is stored" rather than "reset to 0" — the same rule as
     // related_ids and nuts_allergy. Nothing reads this column, but destroying a
@@ -2238,9 +2208,7 @@ require_once __DIR__ . '/includes/header.php';
                                 <?php /* Chosen from the fabric list, not typed — the same rule the
                                          other four fields follow. Clean today only because the catalogue is young; this is the
                                          field that collects "Cotton", "cotton" and "100% Cotton". */ ?>
-                                <input type="search" class="form-control dv-colour-search" data-colour-search="fabric"
-                                       placeholder="Search fabric&hellip;" autocomplete="off">
-                                <select name="fabric" class="form-control" data-colour-search-target="fabric"><?= dievonAttributeOptions($pdo, 'fabric', (string)($product['fabric'] ?? '')) ?></select>
+                                <?= dievonAttributeChecklist($pdo, 'fabric', (string)($product['fabric'] ?? ''), 'fabric') ?>
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Sleeve
@@ -2260,9 +2228,7 @@ require_once __DIR__ . '/includes/header.php';
                                          how the shop filter ended up with three names for one
                                          sleeve, a fabric filed under Neck and a neck under
                                          Pattern. */ ?>
-                                <input type="search" class="form-control dv-colour-search" data-colour-search="sleeve"
-                                       placeholder="Search sleeve&hellip;" autocomplete="off">
-                                <select name="sleeve" class="form-control" data-colour-search-target="sleeve"><?= dievonAttributeOptions($pdo, 'sleeve', (string)($product['sleeve'] ?? '')) ?></select>
+                                <?= dievonAttributeChecklist($pdo, 'sleeve', (string)($product['sleeve'] ?? ''), 'sleeve') ?>
                             </div>
                         </div>
                         <div class="form-row">
@@ -2284,9 +2250,7 @@ require_once __DIR__ . '/includes/header.php';
                                          how the shop filter ended up with three names for one
                                          sleeve, a fabric filed under Neck and a neck under
                                          Pattern. */ ?>
-                                <input type="search" class="form-control dv-colour-search" data-colour-search="neck"
-                                       placeholder="Search neck&hellip;" autocomplete="off">
-                                <select name="neck" class="form-control" data-colour-search-target="neck"><?= dievonAttributeOptions($pdo, 'neck', (string)($product['neck'] ?? '')) ?></select>
+                                <?= dievonAttributeChecklist($pdo, 'neck', (string)($product['neck'] ?? ''), 'neck') ?>
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Pattern
@@ -2306,9 +2270,7 @@ require_once __DIR__ . '/includes/header.php';
                                          how the shop filter ended up with three names for one
                                          sleeve, a fabric filed under Neck and a neck under
                                          Pattern. */ ?>
-                                <input type="search" class="form-control dv-colour-search" data-colour-search="pattern"
-                                       placeholder="Search pattern&hellip;" autocomplete="off">
-                                <select name="pattern" class="form-control" data-colour-search-target="pattern"><?= dievonAttributeOptions($pdo, 'pattern', (string)($product['pattern'] ?? '')) ?></select>
+                                <?= dievonAttributeChecklist($pdo, 'pattern', (string)($product['pattern'] ?? ''), 'pattern') ?>
                             </div>
                         </div>
                         <div class="form-row">
@@ -2325,18 +2287,7 @@ require_once __DIR__ . '/includes/header.php';
                                          other four fields follow. This one reaches further than a filter: every distinct value
                                          becomes a tile in Shop by Occasion on the homepage, so a typo
                                          here appears on the front page of the shop. */ ?>
-                                <input type="search" class="form-control dv-colour-search" data-colour-search="occasion"
-                                       placeholder="Search occasion&hellip;" autocomplete="off">
-                                <?php /* Several, because a garment genuinely is more than one. The shop
-                                         has always read this field as a list — it filters INSIDE it
-                                         (OCCASION_MATCH_SQL) and the homepage splits it into tiles —
-                                         but this form could only ever set one, so the capability was
-                                         half-built. Ctrl/Cmd-click, or drag, to choose more than one.
-                                         The stored format is unchanged: " / " separated, exactly what
-                                         dievonSplitOccasions() has always parsed. */ ?>
-                                <select name="occasion[]" class="form-control" multiple size="6"
-                                        data-colour-search-target="occasion"><?= dievonAttributeOptionsMulti($pdo, 'occasion', (string)($product['occasion'] ?? '')) ?></select>
-                                <small class="text-muted d-block mt-1">Hold Ctrl (Cmd on Mac) to choose more than one — a piece can suit several.</small>
+                                <?= dievonAttributeChecklist($pdo, 'occasion', (string)($product['occasion'] ?? ''), 'occasion') ?>
                             </div>
                             <?php // The "Discount (%)" box that stood here has been REMOVED.
                                   //
@@ -2977,11 +2928,12 @@ require_once __DIR__ . '/includes/header.php';
                  be typed and becomes a suggestion for the next product.
 
                  That last sentence is exactly how the shop filter filled with three
-                 names for one sleeve, so sleeve, neck and pattern are NOT in this
-                 list any more: they are <select> fed by dievonAttributeOptions(),
-                 and keeping a datalist beside them would be a second copy of the
-                 same list. Fabric, Occasion and Composition remain here because
-                 they are still deliberately free text. */ ?>
+                 names for one sleeve, so none of the five managed attributes are in
+                 this list any more: fabric, sleeve, neck, pattern and occasion are
+                 tick-box pickers fed by dievonAttributeChecklist(), and keeping a
+                 datalist beside them would be a second copy of the same list.
+                 Composition remains here because it is still deliberately free
+                 text. */ ?>
         <?php foreach ([
             'composition' => 'dv-composition-options',
         ] as $specCol => $specListId): ?>
