@@ -839,6 +839,25 @@ try {
                     $tests[] = "FIND_IN_SET(" . $pdo->quote($iv) . ", REPLACE($col, ', ', ',')) > 0";
                 }
                 $parts[] = '(' . implode(' OR ', $tests) . ')';
+            } elseif ($initParam === 'occasions') {
+                /* Occasion holds a LIST too — the same drift as colour, one
+                   column further along. The comment above says every other
+                   filter is a single value per column; occasion is the
+                   exception, and the main query already knows it (see
+                   OCCASION_MATCH_SQL where $occasionsList is applied). Left on
+                   IN(), a garment tagged "Casual / Festive" matched neither
+                   Casual nor Festive on the FIRST page — only a product whose
+                   whole field equalled the tick box did — so the homepage's
+                   occasion tiles, which link straight here, answered "no
+                   products found" until the shopper scrolled and the AJAX
+                   branch replied differently.
+                   Harmless while the product form could only store one
+                   occasion; wrong the moment it could store several. */
+                $tests = [];
+                foreach ($initValues as $iv) {
+                    $tests[] = OCCASION_MATCH_SQL . ' LIKE ' . $pdo->quote('%/' . $iv . '/%');
+                }
+                $parts[] = '(' . implode(' OR ', $tests) . ')';
             } else {
                 $parts[] = "$col IN ($quoted)";
             }

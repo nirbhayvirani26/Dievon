@@ -459,7 +459,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $model_size_worn = trim($_POST['model_size_worn'] ?? '');
     $neck         = $dvKeepListed('neck', 'neck');
     $pattern      = $dvKeepListed('pattern', 'pattern');
-    $occasion     = $dvKeepListed('occasion', 'occasion');
+    /* Occasion arrives as an ARRAY — it is the one field of the five that holds
+       several (see the select in the form). Each value goes through exactly the
+       same list check the single fields use, so an off-list value is dropped or
+       kept on precisely the same terms; the only difference is that this runs
+       once per chosen value and rejoins them.
+       " / " is the separator dievonSplitOccasions() and OCCASION_MATCH_SQL have
+       always expected, so nothing downstream has to learn anything new.
+       A plain string still works: a save posted from an older cached copy of the
+       form, or from anywhere else, is treated as one value rather than lost. */
+    $occasion = (static function () use ($dvKeepListed): string {
+        $raw = $_POST['occasion'] ?? '';
+        if (!is_array($raw)) { $raw = ($raw === '') ? [] : [$raw]; }
+        $kept = [];
+        foreach ($raw as $one) {
+            $_POST['occasion'] = (string)$one;          // validate one at a time
+            $clean = $dvKeepListed('occasion', 'occasion');
+            if ($clean !== '' && !in_array($clean, $kept, true)) { $kept[] = $clean; }
+        }
+        $_POST['occasion'] = $raw;                       // leave the request as found
+        return implode(' / ', $kept);
+    })();
     // The input is gone (see the note in the fashion fields below), so absent now
     // means "keep what is stored" rather than "reset to 0" — the same rule as
     // related_ids and nuts_allergy. Nothing reads this column, but destroying a
@@ -2307,7 +2327,16 @@ require_once __DIR__ . '/includes/header.php';
                                          here appears on the front page of the shop. */ ?>
                                 <input type="search" class="form-control dv-colour-search" data-colour-search="occasion"
                                        placeholder="Search occasion&hellip;" autocomplete="off">
-                                <select name="occasion" class="form-control" data-colour-search-target="occasion"><?= dievonAttributeOptions($pdo, 'occasion', (string)($product['occasion'] ?? '')) ?></select>
+                                <?php /* Several, because a garment genuinely is more than one. The shop
+                                         has always read this field as a list — it filters INSIDE it
+                                         (OCCASION_MATCH_SQL) and the homepage splits it into tiles —
+                                         but this form could only ever set one, so the capability was
+                                         half-built. Ctrl/Cmd-click, or drag, to choose more than one.
+                                         The stored format is unchanged: " / " separated, exactly what
+                                         dievonSplitOccasions() has always parsed. */ ?>
+                                <select name="occasion[]" class="form-control" multiple size="6"
+                                        data-colour-search-target="occasion"><?= dievonAttributeOptionsMulti($pdo, 'occasion', (string)($product['occasion'] ?? '')) ?></select>
+                                <small class="text-muted d-block mt-1">Hold Ctrl (Cmd on Mac) to choose more than one — a piece can suit several.</small>
                             </div>
                             <?php // The "Discount (%)" box that stood here has been REMOVED.
                                   //
@@ -4499,18 +4528,34 @@ function escHtml(str) {
             var all = Array.prototype.map.call(target.options, function (o) {
                 return { value: o.value, text: o.text };
             });
+            /* Every selected value, not just the first.
+               ────────────────────────────────────────────────────────────────
+               This read target.value and wrote it back, which holds exactly ONE
+               value. Occasion is now a multi-select, so typing a single letter
+               in the search box rebuilt the list and restored one of the ticked
+               occasions — quietly discarding the rest. The field looked fine
+               until the product was saved with a narrower list than was chosen.
+               Selected values are also never filtered out, whatever is typed:
+               hiding a chosen option is how it would get dropped on the next
+               rebuild. Single selects behave exactly as before — the array
+               simply holds one. */
+            var chosen = function () {
+                return Array.prototype.filter.call(target.options, function (o) { return o.selected; })
+                            .map(function (o) { return o.value; });
+            };
             box.addEventListener('input', function () {
                 var q = box.value.trim().toLowerCase();
-                var keep = target.value;
+                var keep = chosen();
                 target.innerHTML = '';
                 all.forEach(function (o) {
                     var isPlaceholder = o.value === '';
-                    if (q && !isPlaceholder && o.text.toLowerCase().indexOf(q) === -1 && o.value !== keep) { return; }
+                    var isKept = keep.indexOf(o.value) > -1;
+                    if (q && !isPlaceholder && !isKept && o.text.toLowerCase().indexOf(q) === -1) { return; }
                     var opt = document.createElement('option');
                     opt.value = o.value; opt.text = o.text;
+                    if (isKept) { opt.selected = true; }
                     target.appendChild(opt);
                 });
-                target.value = keep;
             });
             return;
         }

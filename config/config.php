@@ -7617,6 +7617,49 @@ function dievonAttributeOptions(PDO $pdo, string $type, string $current = '', st
 }
 
 /**
+ * The same options, for a field that holds SEVERAL of them.
+ *
+ * Only occasion does. A garment has one neckline and one sleeve length, but it
+ * genuinely is both Casual and Festive — which is why the shop already reads
+ * the field as a list (dievonSplitOccasions, OCCASION_MATCH_SQL) and filters
+ * inside it. The reading side was built for several; only the form that writes
+ * it could set one. This is the missing half.
+ *
+ * Deliberately a separate function rather than a flag on dievonAttributeOptions:
+ * that one is shared by fabric, sleeve, neck and pattern, and those four must
+ * keep behaving exactly as they do. Nothing here can reach them.
+ *
+ * No placeholder <option>. In a multi-select an "— Select a … —" row is not a
+ * prompt, it is a selectable value that would be saved as an empty occasion.
+ * Selecting nothing is how you clear the field.
+ */
+function dievonAttributeOptionsMulti(PDO $pdo, string $type, string $current = ''): string {
+    $chosen = dievonSplitOccasions($current);           // forgiving of "/" and ","
+    $lower  = array_map('mb_strtolower', $chosen);
+    $html   = '';
+    $seen   = [];
+
+    foreach (array_keys(dievonMasterList($pdo, $type)) as $name) {
+        $on = in_array(mb_strtolower(trim($name)), $lower, true);
+        if ($on) { $seen[] = mb_strtolower(trim($name)); }
+        $html .= '<option value="' . htmlspecialchars($name) . '"' . ($on ? ' selected' : '') . '>'
+               . htmlspecialchars($name) . '</option>';
+    }
+
+    /* Values stored before the list existed stay, selected and labelled, so
+       opening a product and saving cannot silently drop one. Same promise the
+       single-value builder makes — it just has to hold for each of several. */
+    $listName = DIEVON_ATTR_TYPES[$type]['label'] ?? ucfirst($type);
+    foreach ($chosen as $one) {
+        if (in_array(mb_strtolower($one), $seen, true)) { continue; }
+        $html = '<option value="' . htmlspecialchars($one) . '" selected>'
+              . htmlspecialchars($one) . ' — not on the ' . htmlspecialchars($listName) . ' list</option>'
+              . $html;
+    }
+    return $html;
+}
+
+/**
  * Values products carry that the list does not have, with the products using
  * them. Reads whichever database it runs in and hardcodes nothing, so a shop is
  * always reconciled against its own data.
