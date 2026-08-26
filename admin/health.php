@@ -257,13 +257,24 @@ $envPath = __DIR__ . '/../.env';
 if (!is_file($envPath)) {
     hcAdd($G, 'fail', '.env not found', 'The shop is running entirely on defaults.');
 } else {
-    hcAdd($G, 'pass', '.env present');
+    /* The full path, not just ".env". Read on one machine and acted on on
+       another, the bare filename says nothing about WHICH copy is being
+       reported -- local or live -- and a permission changed on the wrong one
+       leaves the warning standing with no clue why. Names the file so the
+       fix can land on the file actually being measured. */
+    $envReal = realpath($envPath) ?: $envPath;
+    hcAdd($G, 'pass', '.env present', $envReal);
+    /* fileperms() answers from PHP's stat cache, which can still hold the
+       reading taken before a chmod earlier in this same request. */
+    clearstatcache(true, $envPath);
     $perms = substr(sprintf('%o', fileperms($envPath)), -3);
     /* World-readable matters on shared hosting, where another account on the
        same box can read it. */
     ((int)$perms % 10) > 0
-        ? hcAdd($G, 'warn', '.env is world-readable (permissions ' . $perms . ')', 'chmod 640 .env')
-        : hcAdd($G, 'pass', '.env permissions are ' . $perms);
+        ? hcAdd($G, 'warn', '.env is world-readable (permissions ' . $perms . ')',
+                'chmod 640 ' . $envReal . ' — that exact file, not .env.example. '
+              . 'If it still reads ' . $perms . ' after changing it, the change did not save.')
+        : hcAdd($G, 'pass', '.env permissions are ' . $perms, $envReal);
 }
 
 // ── 7. PHP ───────────────────────────────────────────────────────────
