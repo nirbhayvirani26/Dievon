@@ -268,13 +268,36 @@ if (!is_file($envPath)) {
        reading taken before a chmod earlier in this same request. */
     clearstatcache(true, $envPath);
     $perms = substr(sprintf('%o', fileperms($envPath)), -3);
-    /* World-readable matters on shared hosting, where another account on the
-       same box can read it. */
-    ((int)$perms % 10) > 0
-        ? hcAdd($G, 'warn', '.env is world-readable (permissions ' . $perms . ')',
-                'chmod 640 ' . $envReal . ' — that exact file, not .env.example. '
-              . 'If it still reads ' . $perms . ' after changing it, the change did not save.')
-        : hcAdd($G, 'pass', '.env permissions are ' . $perms, $envReal);
+
+    /* The rule that actually keeps .env off the web, checked in the file rather
+       than by requesting the URL -- a PHP page fetching its own site can take
+       the last free worker and hang. */
+    $htaccess    = @file_get_contents(__DIR__ . '/../.htaccess') ?: '';
+    $envWebBlock = (bool)preg_match('/^\s*(<FilesMatch|RewriteRule).*\\\.env/mi', $htaccess);
+
+    $envWebBlock
+        ? hcAdd($G, 'pass', '.env is blocked from the web', '.htaccess denies it directly.')
+        : hcAdd($G, 'fail', '.env is NOT blocked from the web',
+                'Anyone could open ' . SITE_URL . '/.env and read every password in it. '
+              . 'Restore the FilesMatch and RewriteRule that deny it in .htaccess.');
+
+    /* World-readable matters on hosting where another account shares the
+       filesystem. It is a WARNING and not a failure because the fix is not
+       universally safe: where PHP runs as a user other than the file's owner --
+       common on shared hosting -- 640 stops the shop reading its own database
+       password, and the whole site answers "Database Connection Error" until
+       644 is put back. Telling an owner to run a command that can take their
+       shop down, without saying so, is worse than not checking at all. */
+    if (((int)$perms % 10) > 0) {
+        hcAdd($G, 'warn', '.env is world-readable (permissions ' . $perms . ')',
+              ($envWebBlock ? 'The web cannot reach it, so this only concerns other accounts on the same server. ' : '')
+            . 'Try: chmod 640 ' . $envReal . ' — that exact file, not .env.example. '
+            . 'If the site then shows "Database Connection Error", this host runs PHP as a different '
+            . 'user and needs ' . $perms . '; put it back with chmod ' . $perms . ' and leave it. '
+            . 'Rotating the passwords inside is the protection that does not depend on the host.');
+    } else {
+        hcAdd($G, 'pass', '.env permissions are ' . $perms, $envReal);
+    }
 }
 
 // ── 7. PHP ───────────────────────────────────────────────────────────
