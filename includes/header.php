@@ -397,9 +397,14 @@ $searchHint = $searchHintNames
          shortcut's name and icon, and theme-color paints its address bar. Left
          out deliberately: the 16x16/32x32 rel="icon" pair favicon.io emits,
          because a later rel="icon" wins over an earlier one and would quietly
-         override whatever the shop has chosen in the panel. -->
+         override whatever the shop has chosen in the panel.
+
+         The manifest and its android icons sit in assets/images/logo/ with the
+         rest of the brand artwork. apple-touch-icon stays at the web root
+         because link-preview and bookmark services request that exact path
+         without reading the page, and favicon.ico for the same reason. -->
     <link rel="apple-touch-icon" sizes="180x180" href="<?= SITE_URL ?>/apple-touch-icon.png">
-    <link rel="manifest" href="<?= SITE_URL ?>/site.webmanifest">
+    <link rel="manifest" href="<?= SITE_URL ?>/assets/images/logo/site.webmanifest">
     <meta name="theme-color" content="#511126">
     <!-- Versioned with filemtime, not time(): a cache-buster that changes on every
          request defeats browser caching and re-downloads the CSS on each page view,
