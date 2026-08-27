@@ -187,6 +187,14 @@ RewriteRule ^(.*)$ index.php?route=$1 [QSA,L]
     BrowserMatch \bMSIE !no-gzip !gzip-only-text/html
 </IfModule>
 
+# MIME types Apache does not know by default. Without the first line the
+# manifest is served as text/plain and Chrome refuses to install the shop as an
+# app; the .ico line stops some hosts labelling it application/octet-stream.
+<IfModule mod_mime.c>
+    AddType application/manifest+json .webmanifest
+    AddType image/x-icon .ico
+</IfModule>
+
 # Browser Caching (Expires Headers)
 <IfModule mod_expires.c>
     ExpiresActive On
@@ -201,6 +209,7 @@ RewriteRule ^(.*)$ index.php?route=$1 [QSA,L]
     ExpiresByType text/javascript "access plus 1 month"
     ExpiresByType application/pdf "access plus 1 month"
     ExpiresByType image/x-icon "access plus 1 year"
+    ExpiresByType application/manifest+json "access plus 1 week"
 
     # HTML gets no shelf life. Without this line the ExpiresDefault below
     # applies to pages as well as files, handing every HTML response a two-day

@@ -391,6 +391,16 @@ $searchHint = $searchHintNames
     <?php else: ?>
     <link rel="icon" type="<?= siteFaviconMime($pdo ?? null, $faviconLight) ?>" href="<?= htmlspecialchars($faviconLight) ?>">
     <?php endif; ?>
+    <!-- The tab icon above stays admin-managed (Store Settings > Favicon). The
+         three below are the ones no setting covered: iOS uses apple-touch-icon
+         for a home-screen bookmark, Android reads the manifest for an installed
+         shortcut's name and icon, and theme-color paints its address bar. Left
+         out deliberately: the 16x16/32x32 rel="icon" pair favicon.io emits,
+         because a later rel="icon" wins over an earlier one and would quietly
+         override whatever the shop has chosen in the panel. -->
+    <link rel="apple-touch-icon" sizes="180x180" href="<?= SITE_URL ?>/apple-touch-icon.png">
+    <link rel="manifest" href="<?= SITE_URL ?>/site.webmanifest">
+    <meta name="theme-color" content="#511126">
     <!-- Versioned with filemtime, not time(): a cache-buster that changes on every
          request defeats browser caching and re-downloads the CSS on each page view,
          hurting LCP and PageSpeed. filemtime only changes when the file does. -->
