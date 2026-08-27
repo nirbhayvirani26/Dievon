@@ -116,11 +116,21 @@ $addCheck = function (string $label, bool $ok, string $detail, string $fix = '',
     $checks[] = ['label' => $label, 'ok' => $ok, 'detail' => $detail, 'fix' => $fix, 'products' => $products];
 };
 
+/* This can only see the token saved here. Search Console accepts several other
+   proofs -- a DNS record, an uploaded HTML file, a linked Analytics or Tag
+   Manager account -- and none of them leave a trace this page can read. Worded
+   as "not saved yet" alone it reads as "you are not verified" to an owner who
+   already is, which is the opposite of what the panel is for. */
 $addCheck(
     'Search Console ownership',
     $gscToken !== '',
-    $gscToken !== '' ? 'Verification tag is being published on every page.' : 'No verification token saved yet.',
-    'Add the property in Search Console, choose the HTML tag method, and paste the token above.'
+    $gscToken !== ''
+        ? 'Verification tag is being published on every page.'
+        : 'No verification token saved here. That is expected if the property was verified another way — '
+          . 'by DNS record, uploaded file, or a linked Google account. This page cannot see those.',
+    'Only needed if Search Console still asks you to verify. Choose the HTML tag method there and paste '
+  . 'the token above. Adding it when already verified is harmless, and leaves a second proof of ownership '
+  . 'if the first one is ever lost.'
 );
 
 $isHttps = stripos(SITE_URL, 'https://') === 0;
