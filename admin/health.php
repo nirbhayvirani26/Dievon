@@ -145,6 +145,67 @@ if ($rzpKey === '' || $rzpSecret === '') {
         : hcAdd($G, 'pass', 'Razorpay webhook secret is set');
 }
 
+// ── 2b. Shipping ─────────────────────────────────────────────────────
+/* The three things shiprocket_handler.php refuses a booking over, checked in
+   the same order it checks them, so this page names the cause instead of the
+   owner discovering it one order at a time. Worth its own group because the
+   failure is silent in the only place it shows: the handler writes the reason
+   to a flash message that orders.php prints ONCE and clears, so a refresh or a
+   click elsewhere loses it, and the only remaining symptom is a "Send to
+   Shiprocket" button that never became a shipment number.
+
+   Deliberately no live API call. Logging in to check would put a network round
+   trip on a page that must render, would create a session token as a side
+   effect of looking, and would hang this page whenever Shiprocket is down —
+   which is exactly when the owner opens it. Credentials being PRESENT is what
+   is checked; whether Shiprocket accepts them shows on the next booking. */
+$G = 'Shipping';
+$srEmail = trim((string)EnvLoader::get('SHIPROCKET_EMAIL', ''));
+$srPass  = trim((string)EnvLoader::get('SHIPROCKET_PASSWORD', ''));
+$srPick  = trim((string)storeSetting($pdo, 'shiprocket_pickup_location', ''));
+
+if ($srEmail === '' || $srPass === '') {
+    hcAdd($G, 'warn', 'Shiprocket is not set up',
+        'SHIPROCKET_EMAIL and SHIPROCKET_PASSWORD are missing from .env. Fine if you book couriers by hand — the Send to Shiprocket button will refuse every order until they are set.');
+} else {
+    hcAdd($G, 'pass', 'Shiprocket credentials are set');
+    if ($srPick === '') {
+        hcAdd($G, 'fail', 'Shiprocket pickup location is not set',
+            'Settings > Shipping. Every booking is refused without it. It must match a pickup address registered in your Shiprocket account EXACTLY — spacing and capitalisation included — which is what catches most shops the first time.');
+    } else {
+        hcAdd($G, 'pass', 'Pickup location is "' . htmlspecialchars($srPick) . '"',
+            'Confirm this string exists verbatim in your Shiprocket pickup addresses.');
+    }
+}
+
+/* Orders that were never booked. A booking that fails leaves no trace on the
+   order — shiprocket_shipment_id stays NULL and the button stays put — so a
+   refused booking looks identical to one nobody has got to yet. Counting the
+   ones already moved past Pending is the difference: those are orders the shop
+   believes are on their way. */
+try {
+    $srWaiting = (int)$pdo->query(
+        "SELECT COUNT(*) FROM orders
+          WHERE COALESCE(is_deleted,0) = 0
+            AND (shiprocket_shipment_id IS NULL OR shiprocket_shipment_id = '')
+            AND status IN ('Confirmed','Processing','Packed','Ready to Ship')"
+    )->fetchColumn();
+    $srBooked = (int)$pdo->query(
+        "SELECT COUNT(*) FROM orders
+          WHERE COALESCE(is_deleted,0) = 0
+            AND shiprocket_shipment_id IS NOT NULL AND shiprocket_shipment_id <> ''"
+    )->fetchColumn();
+
+    $srWaiting > 0
+        ? hcAdd($G, 'warn', $srWaiting . ' confirmed order(s) have no shipment booked',
+            'Either nobody has booked them yet, or a booking was refused and the message was missed. Open Orders and press Send to Shiprocket on one — the red banner names the reason.')
+        : hcAdd($G, 'pass', 'No confirmed order is waiting on a booking');
+    hcAdd($G, 'pass', $srBooked . ' order(s) booked with Shiprocket to date');
+} catch (PDOException $e) {
+    hcAdd($G, 'warn', 'Shiprocket columns not present on the orders table',
+        'Run the database updater — shiprocket_order_id, shiprocket_shipment_id and shiprocket_booked_at are added there.');
+}
+
 // ── 3. Database ──────────────────────────────────────────────────────
 $G = 'Database';
 $needTables = [
