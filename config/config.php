@@ -5521,6 +5521,27 @@ function isHumanReadableAttribute($value): bool {
     return true;
 }
 
+/**
+ * The colour a customer should be shown for a product.
+ *
+ * Two columns hold this. color_way is the real one — the full list a garment IS,
+ * "Ivory, Gold" — written by the Colour Way picker in the admin. products.color
+ * is a leftover: admin/product_form.php stores only the FIRST entry there,
+ * truncated to 50 characters, for the older code that still reads it.
+ *
+ * Reading `color` therefore shows one colour where the garment has three, and
+ * five places had each picked their own order. The Merchant Centre feed had it
+ * right and the compare drawer had it wrong, so the same garment was one colour
+ * to Google and another in the table. color_way first, everywhere; `color` stays
+ * as the fallback for any product not re-saved since the picker arrived, and an
+ * empty string when neither is set so callers can test it plainly.
+ */
+function dievonProductColour($product): string {
+    $way = trim((string)(is_array($product) ? ($product['color_way'] ?? '') : ''));
+    if ($way !== '') { return $way; }
+    return trim((string)(is_array($product) ? ($product['color'] ?? '') : ''));
+}
+
 /** Truncate on a word boundary, never mid-word, and never exceed $limit including the ellipsis. */
 function seoTruncate($text, $limit) {
     $text = trim(preg_replace('/\s+/', ' ', strip_tags((string)$text)));

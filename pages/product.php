@@ -628,8 +628,8 @@ require_once __DIR__ . '/../includes/header.php';
     }
     if ($productColors) {
         $schemaProduct['color'] = array_values(array_map(fn($c) => $c['color_name'], $productColors));
-    } elseif (!empty($product['color'])) {
-        $schemaProduct['color'] = $product['color'];
+    } elseif (dievonProductColour($product) !== '') {
+        $schemaProduct['color'] = dievonProductColour($product);
     }
     if ($schemaSizes) { $schemaProduct['size'] = $schemaSizes; }
 
@@ -1498,7 +1498,7 @@ require_once __DIR__ . '/../includes/header.php';
                                 <?php if (!empty($product['atelier_code'])): ?>
                                 <div><strong>Atelier Code:</strong> <?= htmlspecialchars($product['atelier_code']) ?></div>
                                 <?php endif; ?>
-                                <div><strong>Color:</strong> <?= htmlspecialchars(!empty($product['color']) ? $product['color'] : (!empty($product['color_way']) ? $product['color_way'] : 'Editorial')) ?></div>
+                                <div><strong>Color:</strong> <?= htmlspecialchars(dievonProductColour($product) ?: 'Editorial') ?></div>
                                 <div><strong>Brand:</strong> <?= htmlspecialchars(!empty($product['brand']) ? $product['brand'] : 'Dievon In-House') ?></div>
                                 <div><strong>Fabric:</strong> <?= htmlspecialchars(!empty($product['fabric']) ? $product['fabric'] : '100% Premium Material') ?></div>
                                 <?php // Rendered only when the garment really has them. Trousers were
@@ -1843,7 +1843,7 @@ $dvAdd = function (string $label, $value) use (&$dvSheetRows) {
 };
 $dvAdd('Fabric',      $product['fabric']);
 $dvAdd('Composition', $product['composition']);
-$dvAdd('Colour',      $product['color'] ?: ($product['color_way'] ?? ''));
+$dvAdd('Colour',      dievonProductColour($product));
 $dvAdd('Pattern',     $product['pattern']);
 $dvAdd('Sleeve',      $product['sleeve']);
 $dvAdd('Neck',        $product['neck']);

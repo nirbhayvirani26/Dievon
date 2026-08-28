@@ -41,7 +41,7 @@ try {
        301 out of a drawer whose whole job is to be clicked. */
     $in = implode(',', array_fill(0, count($ids), '?'));
     $stmt = $pdo->prepare("SELECT id, name, seo_url, price, mrp_price, category, image, emoji, description,
-                                  fabric, color, sleeve, neck, pattern, occasion, brand, badge,
+                                  fabric, color, color_way, sleeve, neck, pattern, occasion, brand, badge,
                                   track_stock, stock_qty, created_at
                            FROM products
                            WHERE id IN ($in)
@@ -145,7 +145,7 @@ try {
             'sizes'     => $sizes ? implode(', ', $sizes) : '—',
             // isHumanReadableAttribute keeps hex colour swatches out of the table.
             'fabric'    => isHumanReadableAttribute($p['fabric'] ?? '')   ? $p['fabric']   : '—',
-            'colour'    => isHumanReadableAttribute($p['color'] ?? '')    ? $p['color']    : '—',
+            'colour'    => isHumanReadableAttribute(dievonProductColour($p)) ? dievonProductColour($p) : '—',
             'sleeve'    => isHumanReadableAttribute($p['sleeve'] ?? '')   ? $p['sleeve']   : '—',
             'neck'      => isHumanReadableAttribute($p['neck'] ?? '')     ? $p['neck']     : '—',
             'pattern'   => isHumanReadableAttribute($p['pattern'] ?? '')  ? $p['pattern']  : '—',

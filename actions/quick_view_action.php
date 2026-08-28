@@ -32,7 +32,7 @@ try {
        not. category_id comes along for sizeLadderForCategory() below, which
        was reading a column that was never selected. */
     $stmt = $pdo->prepare("SELECT id, name, description, price, mrp_price, category, category_id,
-                                  image, emoji, fabric, color, sleeve, neck, pattern, occasion,
+                                  image, emoji, fabric, color, color_way, sleeve, neck, pattern, occasion,
                                   badge, available, track_stock, stock_qty, seo_url, created_at
                            FROM products
                           WHERE id = :id
@@ -292,7 +292,7 @@ try {
             // which also keeps hex colour swatches out of customer-facing text.
             'attributes'  => array_filter([
                 'Fabric'   => isHumanReadableAttribute($p['fabric'] ?? '')   ? $p['fabric']   : null,
-                'Colour'   => isHumanReadableAttribute($p['color'] ?? '')    ? $p['color']    : null,
+                'Colour'   => isHumanReadableAttribute(dievonProductColour($p)) ? dievonProductColour($p) : null,
                 'Sleeve'   => isHumanReadableAttribute($p['sleeve'] ?? '')   ? $p['sleeve']   : null,
                 'Neck'     => isHumanReadableAttribute($p['neck'] ?? '')     ? $p['neck']     : null,
                 'Pattern'  => isHumanReadableAttribute($p['pattern'] ?? '')  ? $p['pattern']  : null,

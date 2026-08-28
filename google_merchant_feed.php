@@ -256,9 +256,20 @@ echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
            the sizes to either, which colour this item is cannot be known, and
            inventing one is worse than omitting it — a wrong colour on a live
            listing is a returned parcel. */
-        $feedColour = $row['colour'] !== '' ? $row['colour'] : ($p['color_way'] ?: ($p['color'] ?? ''));
+        $feedColour = $row['colour'] !== '' ? $row['colour'] : dievonProductColour($p);
         if (trim((string)$feedColour) === '' && count($soleColourway) === 1) {
             $feedColour = $soleColourway[0];
+        }
+        /* g:color takes the same shape as g:material: primary colour first, up to
+           two more, separated by slashes. dievonProductColour() may hand back the
+           comma-separated list the Colour Way picker stores — "Ivory, Gold" — and
+           Google reads that whole string as ONE colour name it does not recognise,
+           which is how an item starts collecting attribute warnings. Split on the
+           list's own separator and rejoin Google's way. A single colour passes
+           through untouched. */
+        $colourParts = dievonSplitAttrList('colour', (string)$feedColour);
+        if (count($colourParts) > 1) {
+            $feedColour = implode('/', array_slice($colourParts, 0, 3));
         }
         feedTag('g:color', $feedColour, true);
         feedTag('g:material', $material, true);
