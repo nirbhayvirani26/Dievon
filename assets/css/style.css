@@ -4306,10 +4306,21 @@ body.admin-wrapper {
     left: 0;
     bottom: 0;
     height: calc(100vh - 60px);
+    /* dvh tracks the viewport as the browser's own bars slide in and out; vh is
+       the tall one, measured as if they were never there. With vh alone the foot
+       of this panel sits under the address bar whenever that bar is showing, so
+       the last menu rows cannot be reached however far the list is dragged —
+       which reads as a sidebar that has stopped scrolling. Declared second so a
+       browser without dvh keeps the vh line above. */
+    height: calc(100dvh - 60px);
     width: 250px;
     background: #2B080F;
     border-right: 1px solid #3D0B13;
     overflow-y: auto;
+    /* Once the list reaches its end the drag was passing to the page behind it,
+       which moves while the panel appears stuck. Keep the gesture in here. */
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
     z-index: 400;
     box-sizing: border-box;
 }

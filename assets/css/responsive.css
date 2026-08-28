@@ -109,6 +109,9 @@
         bottom: 0;
         width: 270px;
         height: calc(100vh - 60px);
+        height: calc(100dvh - 60px);
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
         transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         z-index: 1000;
         box-shadow: 10px 0 30px rgba(0,0,0,0.3);
@@ -963,6 +966,9 @@ body.admin-wrapper .table-wrapper {
         bottom: 0 !important;
         width: 260px !important;
         height: calc(100vh - 60px) !important;
+        height: calc(100dvh - 60px) !important;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
         transform: translateX(-100%); 
         transition: transform 0.3s ease; 
         z-index: 999 !important;
