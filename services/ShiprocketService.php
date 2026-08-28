@@ -34,6 +34,9 @@ class ShiprocketService
 
     public function lastError(): string { return $this->lastError; }
 
+    /** Pincode lookups within one request; a basket never has many. */
+    private array $pinCache = [];
+
     /** Configured at all? Used to hide the button rather than fail on click. */
     public function isConfigured(): bool
     {
@@ -221,6 +224,51 @@ class ShiprocketService
        The address is split back into first/last name because Shiprocket
        requires both. A single-word name gives a last name of "." rather than
        an empty string, which their validator refuses. */
+    /**
+     * City and state for an Indian pincode.
+     *
+     * The shop never asks for either. Checkout collects one free-text address
+     * line, a pincode and a phone number, and the orders table stores exactly
+     * those — so the two fields Shiprocket requires had nowhere to come from and
+     * were filled from a pair of shop-wide settings instead. Left blank, every
+     * order reached Shiprocket unshippable; filled in, every parcel carried the
+     * same city no matter where the customer lived.
+     *
+     * An Indian pincode names its city and state on its own, and Shiprocket will
+     * tell us which. Looked up per order, so a Mumbai customer is labelled Mumbai
+     * whatever the shop's own address says.
+     *
+     * Returns null on any doubt — no token, no network, an unknown pincode, a
+     * response in a shape we did not expect. The caller falls back to the
+     * configured defaults, so a lookup that cannot answer costs nothing beyond
+     * the behaviour that was already there.
+     */
+    public function locationForPincode(string $pincode, ?string $token = null): ?array
+    {
+        $pin = preg_replace('/\D+/', '', $pincode);
+        if (strlen($pin) !== 6) { return null; }
+
+        /* array_key_exists, not isset: a pincode Shiprocket does not know caches
+           as null, and isset() reads a stored null as absent — so the miss was
+           looked up again on every item in the basket. */
+        if (array_key_exists($pin, $this->pinCache)) { return $this->pinCache[$pin]; }
+
+        $token = $token ?? $this->token();
+        if ($token === null) { return null; }
+
+        $res = $this->request('GET', '/open/postcode/details?postcode=' . $pin, [], $token);
+
+        /* Their payload has moved between a flat object and one nested under
+           postcode_details across versions, so read both rather than trust one. */
+        $row = $res['postcode_details'] ?? $res;
+        $city  = trim((string)($row['city']  ?? ''));
+        $state = trim((string)($row['state'] ?? ($row['state_name'] ?? '')));
+
+        $out = ($city !== '' && $state !== '') ? ['city' => $city, 'state' => $state] : null;
+        $this->pinCache[$pin] = $out;
+        return $out;
+    }
+
     public function bookOrder(array $order, array $items): ?array
     {
         $token = $this->token();
@@ -249,6 +297,24 @@ class ShiprocketService
             ];
         }
 
+        /* The customer's own city and state, from their pincode, falling back to
+           the shop-wide settings when the lookup cannot answer. Both blank is
+           what put an order into Shiprocket that it would accept and then refuse
+           to ship, so bookOrder() stops rather than creating another one — see
+           the guard below. */
+        $pin   = (string)($order['postcode'] ?? '');
+        $loc   = $this->locationForPincode($pin, $token);
+        $city  = $loc['city']  ?? (string)storeSetting($this->pdo, 'shiprocket_default_city', '');
+        $state = $loc['state'] ?? (string)storeSetting($this->pdo, 'shiprocket_default_state', '');
+
+        if (trim($city) === '' || trim($state) === '') {
+            $this->lastError = 'No city or state for pincode "' . $pin . '". Shiprocket requires both and '
+                . 'the shop does not collect them, so they are looked up from the pincode with the Shipping '
+                . 'settings as a fallback. Set a default city and state in Settings > Shipping, or correct '
+                . 'the pincode on this order. Nothing was sent.';
+            return null;
+        }
+
         $payload = [
             'order_id'               => (string)$order['order_code'],
             'order_date'             => date('Y-m-d H:i', strtotime((string)$order['created_at'])),
@@ -256,9 +322,9 @@ class ShiprocketService
             'billing_customer_name'  => $first,
             'billing_last_name'      => $last,
             'billing_address'        => (string)($order['address'] ?? ''),
-            'billing_city'           => (string)storeSetting($this->pdo, 'shiprocket_default_city', ''),
-            'billing_pincode'        => (string)($order['postcode'] ?? ''),
-            'billing_state'          => (string)storeSetting($this->pdo, 'shiprocket_default_state', ''),
+            'billing_city'           => $city,
+            'billing_pincode'        => $pin,
+            'billing_state'          => $state,
             'billing_country'        => 'India',
             'billing_email'          => (string)($order['customer_email'] ?? ''),
             'billing_phone'          => preg_replace('/\D+/', '', (string)($order['phone'] ?? '')),

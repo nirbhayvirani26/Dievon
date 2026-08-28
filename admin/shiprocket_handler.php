@@ -43,6 +43,15 @@ if (!empty($order['shiprocket_shipment_id'])) {
     srFail('This order is already booked with Shiprocket (shipment '
          . $order['shiprocket_shipment_id'] . '). Cancel it there first if you need to rebook.');
 }
+/* An order that reached Shiprocket without a shipment is still an order there.
+   The guard above only knew about shipments, so an incomplete booking — the one
+   that lands under "Action needed" — read as never sent, and a second press
+   created a second copy of it. */
+if (!empty($order['shiprocket_order_id'])) {
+    srFail('This order is already IN Shiprocket (their order ' . $order['shiprocket_order_id']
+         . ') but has no shipment — it needs fixing there, under "Action needed". Booking again '
+         . 'would create a duplicate.');
+}
 
 $items = orderItems($order['items_json']);
 if (!$items) { srFail('This order has no items to ship.'); }
@@ -61,6 +70,35 @@ if ($res === null) {
     // sends the owner to a dashboard to guess.
     error_log('Shiprocket booking failed for order ' . $order['order_code'] . ': ' . $sr->lastError());
     srFail('Shiprocket refused the booking: ' . $sr->lastError(), 502);
+}
+
+/* Shiprocket can accept the order and still not ship it.
+   ────────────────────────────────────────────────────────────────────────────
+   /orders/create/adhoc answers 200 with an order_id and no shipment_id when the
+   order is missing something it needs — the dashboard then shows it under
+   "Action needed: some orders are missing required information". That is not a
+   refusal, so the check above passes, and the UPDATE below wrote NULL into
+   shiprocket_shipment_id, which is what orders.php reads to decide whether to
+   show the button. The order existed in Shiprocket and the panel still invited
+   another one.
+
+   Saved anyway, because the order is REAL: shiprocket_order_id is the only
+   record the shop has that it exists, and booking again would duplicate it. */
+if (empty($res['shipment_id'])) {
+    try {
+        $pdo->prepare("UPDATE orders SET shiprocket_order_id = :soid, shiprocket_booked_at = NOW() WHERE id = :id")
+            ->execute([':soid' => $res['shiprocket_order_id'], ':id' => $orderId]);
+    } catch (PDOException $e) {
+        error_log('Shiprocket: incomplete booking, could not save order id for ' . $orderId . ': ' . $e->getMessage());
+    }
+    logAdminAction($_SESSION['admin_id'] ?? 1, 'shiprocket_book_incomplete',
+        'Order ' . $order['order_code'] . ' reached Shiprocket as ' . ($res['shiprocket_order_id'] ?? 'unknown') . ' with no shipment');
+    error_log('Shiprocket incomplete booking for order ' . $order['order_code']
+        . ' (their order id ' . ($res['shiprocket_order_id'] ?? 'unknown') . ') — no shipment_id returned');
+    srFail('Shiprocket accepted order ' . $order['order_code'] . ' but did not ship it — it is sitting in your '
+         . 'Shiprocket dashboard under "Action needed", missing something it needs. Their order id is '
+         . ($res['shiprocket_order_id'] ?? 'unknown') . '. Fix it there rather than booking again, or you will '
+         . 'have two.', 502);
 }
 
 /* Written AFTER a confirmed booking, never before. The AWB also goes into
