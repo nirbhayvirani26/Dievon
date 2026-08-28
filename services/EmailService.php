@@ -279,6 +279,28 @@ class EmailService {
                 // a localhost address the recipient's mail client cannot reach.
                 $logoUrl = self::toPublicUrl((string)siteLogoUrl($this->pdo instanceof PDO ? $this->pdo : null));
             }
+
+            /* A copy of the mark with white behind it, for the header only.
+               ────────────────────────────────────────────────────────────────
+               logo.PNG is RGBA and 84% of it is see-through — the burgundy
+               strokes and nothing else. On a white header that is exactly right.
+               In Gmail's dark mode, which repaints backgrounds regardless of the
+               color-scheme meta, the bgcolor and the media query below, the dark
+               grey comes through those transparent pixels and the mark is dark
+               burgundy on dark grey. Nearly invisible, and the first thing in
+               the message.
+               A flattened copy carries its own white and cannot be seen through,
+               so the mark stays legible whatever the client paints around it.
+               Only swapped in when the file is actually there; any shop that has
+               not generated one keeps the logo it had. */
+            if ($logoUrl !== '') {
+                $emailLogo = dirname(__DIR__) . '/assets/images/logo/logo-email.png';
+                if (is_file($emailLogo)) {
+                    $logoUrl = self::toPublicUrl(
+                        (defined('SITE_URL') ? SITE_URL : '') . '/assets/images/logo/logo-email.png?v=' . filemtime($emailLogo)
+                    );
+                }
+            }
         } catch (\Throwable $e) { /* fall through to the text mark */ }
 
         // The alt-text colour is burgundy, not gold, because the header behind it is
@@ -339,10 +361,10 @@ class EmailService {
         /* Also declared inline on the <img> itself — Gmail strips <style> blocks,
            so anything that must survive has to be an inline attribute. */
         .brand-logo-img { display: inline-block; max-width: 170px; height: auto; border: 0; }
-        .brand-subtitle { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: #8C8285; margin-top: 8px; }
+        .brand-subtitle { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: #7B7275; margin-top: 8px; }
         .content-area { padding: 32px; font-size: 14px; line-height: 1.7; color: #3A3537; }
         .btn-luxury { display: inline-block; background: #511126; color: #FFFFFF !important; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; padding: 14px 28px; text-decoration: none; margin: 18px 0; }
-        .footer { background: #FAF8F5; padding: 24px 32px; border-top: 1px solid #EAE4DC; text-align: center; font-size: 11px; color: #8C8285; line-height: 1.6; }
+        .footer { background: #FAF8F5; padding: 24px 32px; border-top: 1px solid #EAE4DC; text-align: center; font-size: 11px; color: #7B7275; line-height: 1.6; }
         .footer a { color: #511126; text-decoration: none; font-weight: 600; }
         table.item-table { width: 100%; border-collapse: collapse; margin: 18px 0; }
         table.item-table th { background: #FAF8F5; color: #511126; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; padding: 10px 12px; text-align: left; border-bottom: 1px solid #EAE4DC; }
@@ -379,23 +401,23 @@ class EmailService {
     </style>
 </head>
 <body>
-<div class='wrapper'>
-    <table class='main-card' width='100%' cellpadding='0' cellspacing='0'>
+<div class='wrapper' style='background-color:#FAF8F5;'>
+    <table class='main-card' width='100%' cellpadding='0' cellspacing='0' bgcolor='#FFFFFF' style='background-color:#FFFFFF;'>
         <tr>
             <td class='brand-header' align='center' bgcolor='#FFFFFF'
                 style='background:#FFFFFF; padding:32px; text-align:center; color:#511126; border-bottom:2px solid #D4AF37;'>
                 {$logoBlock}
-                <div class='brand-subtitle' style='font-size:11px; text-transform:uppercase; letter-spacing:2px; color:#8C8285; margin-top:8px;'>"
+                <div class='brand-subtitle' style='font-size:11px; text-transform:uppercase; letter-spacing:2px; color:#7B7275; margin-top:8px;'>"
                 . htmlspecialchars($subtitle) . "</div>
             </td>
         </tr>
         <tr>
-            <td class='content-area'>
+            <td class='content-area' bgcolor='#FFFFFF' style='background-color:#FFFFFF;'>
                 {$bodyContent}
             </td>
         </tr>
         <tr>
-            <td class='footer'>
+            <td class='footer' bgcolor='#FAF8F5' style='background-color:#FAF8F5;'>
                 " . ($footerText ? htmlspecialchars($footerText) . "<br>" : "") . "
                 &copy; {$year} Dievon &bull; " . htmlspecialchars(SHOP_TAGLINE) . "<br>
                 Need assistance? Contact our concierge at <a href='mailto:" . CONTACT_EMAIL . "'>" . CONTACT_EMAIL . "</a>
@@ -677,7 +699,7 @@ class EmailService {
             <div style='margin-top: 26px; text-align: center;'>
                 <a href='" . SITE_URL . "/print_invoice.php?code=" . urlencode((string)($order['order_code'] ?? '')) . "' class='btn-luxury'>View &amp; Print Your Invoice &rarr;</a>
             </div>
-            <p style='font-size: 12px; color: #8a8a8a; text-align: center; margin-top: 10px;'>
+            <p style='font-size: 12px; color: #757575; text-align: center; margin-top: 10px;'>
                 Opens your invoice on the site, where it can be saved as a PDF. You will be asked to sign in first, so
                 the document is only ever shown to you.
             </p>
@@ -740,7 +762,7 @@ class EmailService {
             if (!empty($it['supplier']))     { $refBits[] = htmlspecialchars((string)$it['supplier']); }
             if (!empty($it['supplier_ref'])) { $refBits[] = htmlspecialchars((string)$it['supplier_ref']); }
             $ref = $refBits
-                ? "<br><span style='font-size:11px;color:#8a765d;font-family:monospace;'>" . implode(' &middot; ', $refBits) . "</span>"
+                ? "<br><span style='font-size:11px;color:#8D7146;font-family:monospace;'>" . implode(' &middot; ', $refBits) . "</span>"
                 : '';
 
             $itemRows .= "
@@ -1787,7 +1809,7 @@ class EmailService {
             <div style='background: #FAF8F5; border-left: 3px solid #511126; padding: 14px 18px; margin: 18px 0; font-size: 14px;'>
                 {$safeReply}
             </div>
-            <div style='border-top: 1px solid #EAE4DC; padding-top: 14px; margin-top: 22px; font-size: 12px; color: #8a8a8a;'>
+            <div style='border-top: 1px solid #EAE4DC; padding-top: 14px; margin-top: 22px; font-size: 12px; color: #757575;'>
                 <strong>Your original message ({$subject}):</strong><br>{$original}
             </div>";
         return $this->sendMail(
