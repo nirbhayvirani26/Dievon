@@ -219,6 +219,15 @@ $inv_paid = strtolower((string)($order['payment_status'] ?? '')) === 'paid'
     .dn-container{ border:none; box-shadow:none; padding:0; }
     .no-print{ display:none !important; }
   }
+  /* A tax invoice cannot drop columns to fit a phone — HSN, taxable value and
+     the GST split are the point of the document, and the customer reads this on
+     the same handset they ordered on. So the table keeps every column and
+     scrolls inside its own box instead of pushing the page sideways: measured
+     493px of table in a 390px viewport, which took the whole invoice with it.
+     Only on screen; @media print leaves the table whole on the page. */
+  .dn-scroll{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  @media print{ .dn-scroll{ overflow-x:visible; } }
+
   @media (max-width:640px){
     .dn-grid{ grid-template-columns:1fr; }
     .dn-footer{ grid-template-columns:1fr; }
@@ -285,6 +294,7 @@ $inv_paid = strtolower((string)($order['payment_status'] ?? '')) === 'paid'
     </div>
   </div>
 
+  <div class="dn-scroll">
   <table class="dn-table">
     <thead>
       <tr>
@@ -334,6 +344,7 @@ $inv_paid = strtolower((string)($order['payment_status'] ?? '')) === 'paid'
       <?php endforeach; ?>
     </tbody>
   </table>
+  </div>
 
   <div class="totals-wrap">
     <div class="words">
@@ -387,6 +398,7 @@ $inv_paid = strtolower((string)($order['payment_status'] ?? '')) === 'paid'
   <?php if ($inv_hasTax && $inv_hsnRows): ?>
   <div class="taxsum">
     <h4>HSN / Tax Summary</h4>
+    <div class="dn-scroll">
     <table class="dn-table" style="margin-bottom:0;">
       <thead>
         <tr>
@@ -417,6 +429,7 @@ $inv_paid = strtolower((string)($order['payment_status'] ?? '')) === 'paid'
         <?php endforeach; ?>
       </tbody>
     </table>
+    </div>
   </div>
   <?php endif; ?>
 
