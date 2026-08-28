@@ -1910,7 +1910,20 @@ html {
    only, so widening the window brings it straight back.
    ─────────────────────────────────────────────────────────────────────────── */
 @media (max-width: 900px) {
-    .compare-toggle { display: none; }
+    /* Both selectors, and the second one is the point. style.css:12160 sets
+       `.product-card .product-card-wishlist-btn, .product-card .compare-toggle
+       { display: flex }` — two class names to this rule's one, so a bare
+       .compare-toggle here lost to it no matter which sheet came last. The
+       arrow came back on phones while .cmp-bar below, which nothing overrode,
+       stayed hidden: the control was tappable, it ticked, and the tray that is
+       the only way to open the comparison never arrived. A dead button on the
+       product photo.
+
+       Matching that rule's specificity is what makes this one hold. The bare
+       selector stays for a .compare-toggle rendered outside a product card —
+       there is none today, and it would otherwise be visible again. */
+    .compare-toggle,
+    .product-card .compare-toggle { display: none; }
     .cmp-bar { display: none; }
 }
 
