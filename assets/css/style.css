@@ -5838,7 +5838,12 @@ body.qv-open { overflow: hidden; }
 @media (hover: none), (max-width: 900px) {
     .compare-toggle { opacity: 1; }
 }
-.compare-toggle input { accent-color: var(--color-primary); cursor: pointer; margin: 0; }
+/* The checkbox itself is never seen. product_card.php is the only place a
+   .compare-toggle is emitted and it always sits inside an <article class="product-card">,
+   where the rule further down takes the input out of flow at opacity 0 with
+   pointer-events off — the arrow glyph beside it is the whole control. An
+   accent-color and a cursor on a transparent, unclickable box styled nothing;
+   they only read as if a bare checkbox were still on show somewhere. */
 .compare-toggle:has(input:checked) { border-color: var(--color-primary); color: var(--color-primary); }
 
 .cmp-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 9500; background: var(--bg-surface);
