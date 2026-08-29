@@ -536,6 +536,11 @@ switch ($action) {
     case 'update':
         $cartKey = trim($_POST['cart_key'] ?? '');
         $qty     = (int)($_POST['quantity'] ?? 0);
+        /* Kept so the clamps below can say what they did. Asking for 999 came
+           back as 10 with no message at all -- a number that changes itself and
+           explains nothing reads as the cart being broken. */
+        $qtyAsked   = $qty;
+        $qtyNotices = [];
 
         if ($cartKey !== '' && isset($_SESSION['cart'][$cartKey])) {
             if ($qty <= 0) {
@@ -568,7 +573,17 @@ switch ($action) {
                    variant stock alone, so a line whose stock is untracked (NULL,
                    or a product with track_stock off) could still be typed up to
                    any figure from the quantity box on the cart page. */
-                $qty = min($qty, cartMaxQtyPerItem($pdo));
+                $lineCeiling = cartMaxQtyPerItem($pdo);
+                $qty = min($qty, $lineCeiling);
+
+                if ($qtyAsked > $qty && $qty > 0) {
+                    $itemName = $_SESSION['cart'][$cartKey]['name'] ?? 'this item';
+                    /* Named, not counted -- the shopper has to be able to see WHICH
+                       line was changed and to what, or the correction looks arbitrary. */
+                    $qtyNotices[] = ($limit !== null && $qty === (int)$limit)
+                        ? sprintf('%s: only %d left, so your bag now holds %d.', $itemName, $qty, $qty)
+                        : sprintf('%s: you can order up to %d of one item, so your bag now holds %d.', $itemName, $lineCeiling, $qty);
+                }
 
                 if ($qty <= 0) {
                     unset($_SESSION['cart'][$cartKey]);
@@ -577,7 +592,11 @@ switch ($action) {
                 }
             }
         }
-        echo json_encode(cartSummary());
+        $updateSummary = cartSummary();
+        if ($qtyNotices) {
+            $updateSummary['stock_notices'] = array_merge($updateSummary['stock_notices'] ?? [], $qtyNotices);
+        }
+        echo json_encode($updateSummary);
         break;
 
     // ── CLEAR CART ───────────────────────────────────────────────

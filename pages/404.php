@@ -30,9 +30,15 @@ require_once __DIR__ . '/../includes/header.php';
         <p style="max-width: 500px; margin: 0 auto 30px;">
             The page or garment collection you were searching for may have moved or is no longer available.
         </p>
-        <div style="display: flex; justify-content: center; gap: 15px;">
-            <a href="<?= SITE_URL ?>/" class="btn-luxury">Return to Homepage</a>
-            <a href="<?= SITE_URL ?>/shop" class="btn-luxury-outline">Browse Shop Collections</a>
+        <?php /* wrap + stretch. Without them the row refused to break, so on a
+                 narrow screen the two buttons squeezed against each other until
+                 their labels ran to two and three lines and the pair finished at
+                 different heights -- the last thing a shopper sees before deciding
+                 whether to carry on. They sit side by side while there is room and
+                 stack cleanly when there is not. */ ?>
+        <div style="display: flex; justify-content: center; align-items: stretch; flex-wrap: wrap; gap: 15px;">
+            <a href="<?= SITE_URL ?>/" class="btn-luxury" style="white-space: nowrap;">Return to Homepage</a>
+            <a href="<?= SITE_URL ?>/shop" class="btn-luxury-outline" style="white-space: nowrap;">Browse Shop Collections</a>
         </div>
     </div>
 </section>

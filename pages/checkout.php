@@ -388,7 +388,17 @@ $storeCodMax       = (float)storeSetting($pdo, 'cod_max_order_value', COD_MAX_OR
                         <div class="form-row">
                             <div class="form-luxury-group">
                                 <label class="chk-field-label" for="phone">Phone Number *</label>
+                                <?php /* The postcode beside this one answers back as it is typed;
+                                         the phone said nothing at all, so "12" was accepted here and
+                                         refused only by validatePhoneNumber() after Place Order --
+                                         the whole form filled in, submitted, and handed back. The
+                                         pattern is deliberately loose: digits, spaces and the +()-
+                                         a written number carries, 7 to 24 of them. The server takes
+                                         7 to 13 DIGITS, so nothing this accepts can be rejected
+                                         there for length, and no international format is shut out. */ ?>
                                 <input type="tel" id="phone" name="phone" autocomplete="tel" class="form-luxury-input" required
+                                       pattern="[0-9+()\s\-]{7,24}"
+                                       title="Enter your phone number — digits, and + ( ) - or spaces if you use them."
                                        value="<?= htmlspecialchars($customer['phone'] ?? $_POST['phone'] ?? '') ?>" placeholder="<?= htmlspecialchars(shopPhone()) ?>" style="width: 100%; padding: 12px; font-size: 13px;">
                             </div>
                             <div class="form-luxury-group">
