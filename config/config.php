@@ -3999,9 +3999,19 @@ function categoryUrlByName(PDO $pdo, string $name): string {
         } catch (PDOException $e) {}
     }
     $key = mb_strtolower(trim($name));
-    return isset($slugs[$key])
-        ? SITE_URL . '/collections/' . rawurlencode($slugs[$key])
-        : SITE_URL . '/shop?category=' . urlencode($name);
+    if (isset($slugs[$key])) {
+        return SITE_URL . '/collections/' . rawurlencode($slugs[$key]);
+    }
+    /* An unknown name used to be handed back as ?category=<name>, which shop.php
+       answers with a hard 404 -- correct for a shopper's typo, wrong for a link
+       this site prints itself. Three buttons on the live homepage pointed at
+       "3 Piece Suits" and "Coord Sets" while the shop's own categories had been
+       renamed to "3 Pis Kurti Set" and "Coord Set", so the primary call to
+       action on the landing page went to Page Not Found. A caller asking for a
+       category by name has no way to know it has been renamed; degrading to the
+       full shop keeps the shopper moving, and a rename can no longer turn a
+       button into a dead end. */
+    return SITE_URL . '/shop';
 }
 
 /** Look a category up by its URL slug. Returns null when there is no match. */

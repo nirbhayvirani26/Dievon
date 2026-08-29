@@ -364,6 +364,18 @@ $heroSlideCount = !empty($heroBanners)
                         // such as /product/<slug>-<id>. Make it absolute unless it is already
                         // an absolute URL or root-relative path.
                         $bannerLink = trim($banner['link'] ?? '') ?: 'shop';
+                        /* A category NAME typed here is only as good as the category
+                           keeping that name. "shop?category=kurta" was authored when a
+                           category was called that; it has since been renamed, and the
+                           banner's Shop Now button had been answering 404 ever since --
+                           on the hero, on the landing page. Names in this field are now
+                           resolved through the category table, which maps them to the
+                           clean /collections/<slug> address and falls back to the full
+                           shop when the name no longer exists. Every other kind of link
+                           the field accepts is passed through untouched. */
+                        if (preg_match('~^/?shop\?category=([^&]+)$~i', $bannerLink, $bm)) {
+                            $bannerLink = categoryUrlByName($pdo, urldecode($bm[1]));
+                        }
                         // `~` delimiter, not `#` — the pattern itself contains a literal `#`
                         // (anchor links), which would terminate a `#`-delimited regex early.
                         if (!preg_match('~^(https?://|//|/|#|mailto:|tel:)~i', $bannerLink)) {
