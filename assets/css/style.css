@@ -2946,9 +2946,10 @@ body.admin-wrapper .product-form-grid {
    for any count. */
 .slider-container { display: flex; width: 100%; height: 100%; transition: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1); }
 .slide { flex: 0 0 100%; width: 100%; height: 100%; position: relative; background-size: cover; background-position: center; }
-.slide-1 { background-image: url('../../uploads/products/georgette_kurti_1784414698877.jpg'); }
-.slide-2 { background-image: url('../../uploads/products/silk_3_piece_1784414705496.jpg'); }
-.slide-3 { background-image: url('../../uploads/products/linen_coord_1784414712638.jpg'); }
+/* Second copy of the seed-photograph paths -- this file declares a number of
+   selectors twice, and BOTH copies fetched, so removing only the later one
+   left the 404s exactly where they were. See the note at the .slide-media
+   rules further down. */
 .slide-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.3); z-index: 1; }
 /* Content raised from bottom: 15% so the block no longer crowds the slider
    dots at the very bottom (which it hid on shorter screens) — the empty band
@@ -10540,9 +10541,14 @@ input.chk-input-error:focus {
     background-image: none;
 }
 .slide-media { position: absolute; inset: 0; overflow: hidden; background: var(--bg-surface-soft); background-size: cover; background-position: center; }
-.slide-1 .slide-media { background-image: url('../../uploads/products/georgette_kurti_1784414698877.jpg'); }
-.slide-2 .slide-media { background-image: url('../../uploads/products/silk_3_piece_1784414705496.jpg'); }
-.slide-3 .slide-media { background-image: url('../../uploads/products/linen_coord_1784414712638.jpg'); }
+/* The three fallback hero slides used to name seed photographs here. Those
+   files only ever existed on a development machine, so on the live shop each
+   page load fired eight requests that 404ed and printed three errors into
+   every visitor's console -- for slides that sit behind the real banners and
+   are never seen while any banner exists. The panel colour below is what the
+   slides fall back to now, which is also what they showed in practice. Point
+   these at real uploads only if the fallback hero is ever meant to carry a
+   photograph of its own. */
 
 .slide-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 2%; z-index: 0; }
 
