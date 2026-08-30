@@ -588,11 +588,19 @@ $heroSlideCount = !empty($heroBanners)
                 //     nothing and a well-stocked collection fell back to the
                 //     placeholder.
                 $catImgSrc = SITE_URL . '/assets/images/placeholder.png';
+                /* The WebP twin generateWebpCopy() already wrote beside the upload.
+                   These tiles are the heaviest images on the page -- a collection
+                   photograph is 2.2MB as PNG and 163KB as WebP, the same pixels
+                   either way -- and this <img> asked for the PNG every time, so the
+                   twin sat on disk unused. Null for the placeholder, which has no
+                   twin and does not need one. */
+                $catImgWebp = null;
                 $ownImage  = trim((string)($cat['image'] ?? ''));
 
                 if ($ownImage !== '') {
                     // Same folder the category editor and the OG tags use.
                     $catImgSrc = SITE_URL . '/uploads/gallery/' . rawurlencode($ownImage);
+                    $catImgWebp = webpUrlIfExists('gallery', $ownImage);
                 } else {
                     // Newest product with a photo, matched by id OR name so both the
                     // current and the legacy filing work. Stable ordering, so the
@@ -608,6 +616,7 @@ $heroSlideCount = !empty($heroBanners)
                     $prodImg = $stmtProdImg->fetchColumn();
                     if ($prodImg) {
                         $catImgSrc = SITE_URL . '/uploads/products/' . rawurlencode((string)$prodImg);
+                        $catImgWebp = webpUrlIfExists('products', (string)$prodImg);
                     }
                 }
             ?>
@@ -623,9 +632,12 @@ $heroSlideCount = !empty($heroBanners)
                      images land. */ ?>
             <a href="<?= htmlspecialchars(categoryUrlByName($pdo, $cat['name'])) ?>"
                class="category-card zoom-box<?= $catIndex === 0 ? ' is-feature' : '' ?>">
-                <img class="zoom-img" src="<?= $catImgSrc ?>"
-                     alt="<?= htmlspecialchars($cat['name']) ?> collection"
-                     width="800" height="1000" loading="lazy" decoding="async">
+                <picture>
+                    <?php if ($catImgWebp): ?><source srcset="<?= htmlspecialchars($catImgWebp) ?>" type="image/webp"><?php endif; ?>
+                    <img class="zoom-img" src="<?= $catImgSrc ?>"
+                         alt="<?= htmlspecialchars($cat['name']) ?> collection"
+                         width="800" height="1000" loading="lazy" decoding="async">
+                </picture>
                 <div class="category-card-overlay">
                     <div>
                         <h3><?= htmlspecialchars($cat['name']) ?></h3>

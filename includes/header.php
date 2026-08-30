@@ -940,9 +940,19 @@ $searchHint = $searchHintNames
                                    duplicates a photograph, and it tells the shopper something
                                    the pictures cannot. */
                                 $pAllImgs = $categoryPromos[$pId] ?? [];
+                                /* Paired with the WebP twin generateWebpCopy() already
+                                   wrote beside each upload. These photographs sit in the
+                                   header, so they load on EVERY page of the shop, and this
+                                   asked for the original every time -- a product shot is
+                                   around 2MB as PNG against 180KB as WebP, the same pixels
+                                   either way. The original stays as the <img> fallback, so
+                                   a browser without WebP support still gets a picture. */
                                 $pPromoImgs = [];
                                 foreach (array_slice($pAllImgs, 0, 2) as $pImg) {
-                                    $pPromoImgs[] = SITE_URL . '/uploads/products/' . rawurlencode($pImg);
+                                    $pPromoImgs[] = [
+                                        'src'  => SITE_URL . '/uploads/products/' . rawurlencode($pImg),
+                                        'webp' => webpUrlIfExists('products', $pImg),
+                                    ];
                                 }
                                 /* The third slot always carries a photograph.
                                    ────────────────────────────────────────────────────────
@@ -958,6 +968,7 @@ $searchHint = $searchHintNames
                                 $pTileImg = $pTileSrc !== ''
                                     ? SITE_URL . '/uploads/products/' . rawurlencode($pTileSrc)
                                     : '';
+                                $pTileWebp = $pTileSrc !== '' ? webpUrlIfExists('products', $pTileSrc) : null;
                                 $pShopUrl   = categoryUrlByName($pdo, $pCat['name']);
                                 $pLiveCount = (int)($subtreeCounts[$pId] ?? 0);
                                 ?>
@@ -969,10 +980,13 @@ $searchHint = $searchHintNames
                                 <?php if ($pPromoImgs): ?>
                                 <div class="mega-promo-column">
                                     <div class="mega-promo-grid">
-                                        <?php foreach ($pPromoImgs as $pIdx => $pSrc): ?>
+                                        <?php foreach ($pPromoImgs as $pIdx => $pPromo): ?>
                                         <a href="<?= htmlspecialchars($pShopUrl) ?>" class="mega-promo-card"
                                            aria-label="Shop <?= htmlspecialchars($pName) ?>"<?= $pIdx ? ' tabindex="-1" aria-hidden="true"' : '' ?>>
-                                            <img src="<?= htmlspecialchars($pSrc) ?>" alt="<?= htmlspecialchars($pName) ?>" loading="lazy">
+                                            <picture>
+                                                <?php if ($pPromo['webp']): ?><source srcset="<?= htmlspecialchars($pPromo['webp']) ?>" type="image/webp"><?php endif; ?>
+                                                <img src="<?= htmlspecialchars($pPromo['src']) ?>" alt="<?= htmlspecialchars($pName) ?>" loading="lazy">
+                                            </picture>
                                         </a>
                                         <?php endforeach; ?>
 
@@ -980,7 +994,10 @@ $searchHint = $searchHintNames
                                            class="mega-promo-card mega-promo-tile<?= $pTileImg ? ' mega-promo-tile--photo' : '' ?>"
                                            aria-label="View all <?= htmlspecialchars($pName) ?>">
                                             <?php if ($pTileImg): ?>
-                                            <img src="<?= htmlspecialchars($pTileImg) ?>" alt="" loading="lazy">
+                                            <picture>
+                                                <?php if ($pTileWebp): ?><source srcset="<?= htmlspecialchars($pTileWebp) ?>" type="image/webp"><?php endif; ?>
+                                                <img src="<?= htmlspecialchars($pTileImg) ?>" alt="" loading="lazy">
+                                            </picture>
                                             <?php endif; ?>
                                             <span class="mega-promo-tile-body">
                                                 <span class="mega-promo-tile-count"><?= $pLiveCount ?></span>
